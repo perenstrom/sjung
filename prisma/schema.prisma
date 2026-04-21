@@ -6,3 +6,132 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  // Nullable on User itself to allow bootstrapping the first/system user
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
+
+  name String
+
+  createdBy User?  @relation("UserCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?  @relation("UserUpdatedBy", fields: [updatedById], references: [id])
+
+  // Audit back-relations
+  createdUsers              User[]               @relation("UserCreatedBy")
+  updatedUsers              User[]               @relation("UserUpdatedBy")
+  createdGroups             Group[]              @relation("GroupCreatedBy")
+  updatedGroups             Group[]              @relation("GroupUpdatedBy")
+  createdSheetMusic         SheetMusic[]         @relation("SheetMusicCreatedBy")
+  updatedSheetMusic         SheetMusic[]         @relation("SheetMusicUpdatedBy")
+  createdFiles              File[]               @relation("FileCreatedBy")
+  updatedFiles              File[]               @relation("FileUpdatedBy")
+  createdPeople             Person[]             @relation("PersonCreatedBy")
+  updatedPeople             Person[]             @relation("PersonUpdatedBy")
+  groups UsersToGroups[]
+
+  @@map("users")
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  name String
+
+  createdBy User @relation("GroupCreatedBy", fields: [createdById], references: [id])
+  updatedBy User @relation("GroupUpdatedBy", fields: [updatedById], references: [id])
+
+  users      UsersToGroups[]
+  sheetMusic SheetMusic[]
+  people     Person[]
+
+  @@map("groups")
+}
+
+model UsersToGroups {
+  userId  String @map("user_id")
+  groupId String @map("group_id")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@map("users_to_groups")
+}
+
+model SheetMusic {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  name    String
+  groupId String @map("group_id")
+
+  createdBy User               @relation("SheetMusicCreatedBy", fields: [createdById], references: [id])
+  updatedBy User               @relation("SheetMusicUpdatedBy", fields: [updatedById], references: [id])
+  group     Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  files     File[]
+  credits   PersonToSheetMusic[]
+
+  @@map("sheet_music")
+}
+
+model File {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  displayName String @map("display_name")
+  fileName    String @map("file_name")
+  storagePath String @map("storage_path")
+  mimeType    String @map("mime_type")
+  size        Int
+
+  sheetMusicId String     @map("sheet_music_id")
+  createdBy    User       @relation("FileCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User       @relation("FileUpdatedBy", fields: [updatedById], references: [id])
+  sheetMusic   SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@map("files")
+}
+
+model Person {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  name    String
+  groupId String @map("group_id")
+
+  createdBy User                 @relation("PersonCreatedBy", fields: [createdById], references: [id])
+  updatedBy User                 @relation("PersonUpdatedBy", fields: [updatedById], references: [id])
+  group     Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  credits   PersonToSheetMusic[]
+
+  @@map("people")
+}
+
+model PersonToSheetMusic {
+  personId     String @map("person_id")
+  sheetMusicId String @map("sheet_music_id")
+  role         String
+
+  person     Person     @relation(fields: [personId], references: [id], onDelete: Restrict)
+  sheetMusic SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@id([personId, sheetMusicId, role])
+  @@map("people_to_sheet_music")
+}
