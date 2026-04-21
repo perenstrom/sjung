@@ -7,8 +7,48 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
+const DEFAULT_GROUP_ID = "00000000-0000-0000-0000-000000000002";
+
 async function main() {
-  // Add seed data here
+  const user = await prisma.user.upsert({
+    where: { id: SYSTEM_USER_ID },
+    update: {},
+    create: {
+      id: SYSTEM_USER_ID,
+      name: "Systemanvändare",
+      createdById: null,
+      updatedById: null,
+    },
+  });
+
+  const group = await prisma.group.upsert({
+    where: { id: DEFAULT_GROUP_ID },
+    update: {},
+    create: {
+      id: DEFAULT_GROUP_ID,
+      name: "Standardgrupp",
+      createdById: SYSTEM_USER_ID,
+      updatedById: SYSTEM_USER_ID,
+    },
+  });
+
+  await prisma.usersToGroups.upsert({
+    where: {
+      userId_groupId: {
+        userId: SYSTEM_USER_ID,
+        groupId: DEFAULT_GROUP_ID,
+      },
+    },
+    update: {},
+    create: {
+      userId: SYSTEM_USER_ID,
+      groupId: DEFAULT_GROUP_ID,
+    },
+  });
+
+  console.log(`Seeded user: ${user.name} (${user.id})`);
+  console.log(`Seeded group: ${group.name} (${group.id})`);
 }
 
 main()

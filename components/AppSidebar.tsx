@@ -1,3 +1,7 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarContent,
@@ -10,23 +14,38 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { House } from "lucide-react";
+import { Music, Users } from "lucide-react";
+
+const navItems = [
+  { href: "/", label: "Noter", icon: Music },
+  { href: "/people", label: "Personer", icon: Users },
+];
 
 export function AppSidebar() {
+  const pathname = usePathname();
+
   return (
     <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>Header</SidebarHeader>
+      <SidebarHeader>Sjung</SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Sjung</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={"Tooltip"}>
-                  <House />
-                  <span>Hem</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {navItems.map(({ href, label, icon: Icon }) => (
+                <SidebarMenuItem key={href}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={label}
+                    isActive={pathname === href}
+                  >
+                    <Link href={href}>
+                      <Icon />
+                      <span>{label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
