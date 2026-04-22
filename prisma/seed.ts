@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Pool } from "pg";
+import argon2 from "argon2";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../app/generated/prisma/client";
 
@@ -8,15 +9,22 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000001";
+const SYSTEM_USER_EMAIL = "system@local.invalid";
 const DEFAULT_GROUP_ID = "00000000-0000-0000-0000-000000000002";
 
 async function main() {
+  const passwordHash = await argon2.hash("change-me-system-password");
   const user = await prisma.user.upsert({
     where: { id: SYSTEM_USER_ID },
-    update: {},
+    update: {
+      email: SYSTEM_USER_EMAIL,
+      passwordHash,
+    },
     create: {
       id: SYSTEM_USER_ID,
       name: "Systemanvändare",
+      email: SYSTEM_USER_EMAIL,
+      passwordHash,
       createdById: null,
       updatedById: null,
     },

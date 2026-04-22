@@ -17,8 +17,8 @@ import {
 import { Music, Users } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Noter", icon: Music },
-  { href: "/people", label: "Personer", icon: Users },
+  { href: "/app", label: "Noter", icon: Music },
+  { href: "/app/people", label: "Personer", icon: Users },
 ];
 
 export function AppSidebar() {
@@ -37,7 +37,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     tooltip={label}
-                    isActive={pathname === href}
+                    isActive={pathname === href || pathname.startsWith(`${href}/`)}
                   >
                     <Link href={href}>
                       <Icon />

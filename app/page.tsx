@@ -1,60 +1,28 @@
-import { getSheetMusic } from "@/app/actions/sheetMusic";
-import { getPeople } from "@/app/actions/people";
-import { CreateSheetMusicDialog } from "@/components/CreateSheetMusicDialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import Link from "next/link";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
-export default async function Home() {
-  const [sheetMusic, people] = await Promise.all([
-    getSheetMusic(),
-    getPeople(),
-  ]);
+export default async function LandingPage() {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/app");
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Noter</h1>
-        <CreateSheetMusicDialog people={people} />
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
+      <h1 className="text-4xl font-semibold">Sjung</h1>
+      <p className="text-muted-foreground">
+        Hantera noter och medverkande tillsammans med din grupp.
+      </p>
+      <div className="flex gap-3">
+        <Button asChild>
+          <Link href="/auth/login">Logga in</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/auth/signup">Skapa konto</Link>
+        </Button>
       </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Namn</TableHead>
-            <TableHead>Medverkande</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sheetMusic.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={2} className="text-muted-foreground">
-                Inga noter tillagda ännu.
-              </TableCell>
-            </TableRow>
-          ) : (
-            sheetMusic.map((piece) => {
-              const creditsText =
-                piece.credits.length > 0
-                  ? piece.credits
-                      .map((c) => `${c.person.name} (${c.role})`)
-                      .join(", ")
-                  : "–";
-              return (
-                <TableRow key={piece.id}>
-                  <TableCell>{piece.name}</TableCell>
-                  <TableCell>{creditsText}</TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-    </div>
+    </main>
   );
 }
