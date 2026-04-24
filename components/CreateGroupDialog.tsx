@@ -1,0 +1,47 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { createGroup } from "@/app/actions/groups";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export function CreateGroupDialog() {
+  const [open, setOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  async function handleSubmit(formData: FormData) {
+    await createGroup(formData);
+    setOpen(false);
+    formRef.current?.reset();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>Lägg till</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Lägg till grupp</DialogTitle>
+        </DialogHeader>
+        <form ref={formRef} action={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="group-name">Gruppnamn</Label>
+            <Input id="group-name" name="name" required autoFocus />
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit">Spara</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

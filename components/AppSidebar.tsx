@@ -14,11 +14,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Music, Users } from "lucide-react";
+import { Boxes, Music, Users } from "lucide-react";
 
 const navItems = [
   { href: "/app", label: "Noter", icon: Music },
   { href: "/app/people", label: "Personer", icon: Users },
+  { href: "/app/groups", label: "Grupper", icon: Boxes },
 ];
 
 export function AppSidebar() {
