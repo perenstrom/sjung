@@ -1,6 +1,6 @@
 ---
 name: ticket-implementer
-description: Picks a Todo ticket from the Sjung Linear project and implements it end-to-end: creates a git branch, writes the code following project conventions, verifies with lints and build, commits, and moves the ticket to In Review. Use when the user wants to implement a ticket, work on a ticket, or says "pick a ticket and implement it".
+description: Picks a Todo ticket from the Sjung Linear project and implements it end-to-end: creates a git branch, writes the code following project conventions, verifies with lints and build, commits, pushes, opens a pull request to main, and moves the ticket to In Review. Use when the user wants to implement a ticket, work on a ticket, or says "pick a ticket and implement it".
 ---
 
 # Ticket Implementer
@@ -69,15 +69,26 @@ Follow these project conventions:
 2. Run `nvm use 22 && npx next build` and confirm it succeeds.
 3. If the build fails, fix the issues and re-verify.
 
-## Step 8: Commit in small increments and update ticket
+## Step 8: Commit in small increments
 
 - Do **not** bundle the whole implementation into one large commit unless the change is truly tiny.
 - Split work into small, logical commits (for example: schema change, server action update, UI update, tests/docs), each leaving the branch in a coherent state.
 - Keep each commit message clear and specific, and reference the ticket in every commit, e.g.:
   - `SJ-42: Add composer filter to sheet music query`
   - `SJ-42: Add composer filter controls to Noter page`
-- Before the final status change, ensure commits read as a clean story and are easy to review.
-- Call `save_issue` with `id` and `state: "In Review"` after the implementation is committed.
+- Before pushing, ensure commits read as a clean story and are easy to review.
+
+## Step 9: Push, open PR to main, move ticket to In Review
+
+1. Push the branch: `git push -u origin <branch>` (use the branch from Step 4).
+2. Resolve `owner` and `repo` for GitHub (e.g. parse `github.com/<owner>/<repo>` from `git remote get-url origin`).
+3. Use the `user-github` MCP server: read the tool descriptor for `create_pull_request`, then call it with:
+   - `base`: `main`
+   - `head`: the pushed branch name (same repo; if the workflow uses a fork, use `forkOwner:branch` for `head` per GitHub’s API)
+   - `title`: concise, aligned with the ticket (include the ticket id when helpful, e.g. `SJ-42: Add composer filtering`)
+   - `body`: short summary of what changed and why; link the Linear issue URL when you have the issue id or identifier
+4. Share the PR URL with the user.
+5. Call `save_issue` with `id` and `state: "In Review"`.
 
 ---
 
@@ -106,3 +117,9 @@ Server: `plugin-linear-linear`
 | List Todo issues | `list_issues` |
 | Get full issue details | `get_issue` |
 | Update issue state | `save_issue` |
+
+Server: `user-github`
+
+| Task | Tool |
+|------|------|
+| Open PR into `main` | `create_pull_request` (`owner`, `repo`, `title`, `head`, `base`; optional `body`, `draft`) — always read the tool descriptor under the MCP folder before calling |
