@@ -1,57 +1,38 @@
-import { getSheetMusic } from "@/app/actions/sheetMusic";
-import { getPeople } from "@/app/actions/people";
-import { CreateSheetMusicDialog } from "@/components/CreateSheetMusicDialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getGroups } from "@/app/actions/groups";
+import { requireUser } from "@/lib/auth/require-user";
 
-export default async function Home() {
-  const [sheetMusic, people] = await Promise.all([getSheetMusic(), getPeople()]);
+export default async function AppHubPage() {
+  await requireUser();
+  const groups = await getGroups();
+
+  if (groups.length === 0) {
+    redirect("/app/me/groups");
+  }
+
+  if (groups.length === 1) {
+    redirect(`/app/${groups[0].slug}`);
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Noter</h1>
-        <CreateSheetMusicDialog people={people} />
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Namn</TableHead>
-            <TableHead>Medverkande</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sheetMusic.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={2} className="text-muted-foreground">
-                Inga noter tillagda ännu.
-              </TableCell>
-            </TableRow>
-          ) : (
-            sheetMusic.map((piece) => {
-              const creditsText =
-                piece.credits.length > 0
-                  ? piece.credits
-                      .map((c) => `${c.person.name} (${c.role})`)
-                      .join(", ")
-                  : "–";
-              return (
-                <TableRow key={piece.id}>
-                  <TableCell>{piece.name}</TableCell>
-                  <TableCell>{creditsText}</TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      <h1 className="text-2xl font-semibold">Välj grupp</h1>
+      <p className="text-muted-foreground">
+        Du tillhör flera grupper. Välj vilken du vill arbeta i.
+      </p>
+      <ul className="space-y-2">
+        {groups.map((g) => (
+          <li key={g.id}>
+            <Link
+              href={`/app/${g.slug}`}
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              {g.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

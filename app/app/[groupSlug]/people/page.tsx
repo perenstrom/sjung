@@ -9,14 +9,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default async function PeoplePage() {
-  const people = await getPeople();
+type PageProps = {
+  params: Promise<{ groupSlug: string }>;
+};
+
+export default async function TenantPeoplePage({ params }: PageProps) {
+  const { groupSlug } = await params;
+  const people = await getPeople(groupSlug);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Personer</h1>
-        <CreatePersonDialog />
+        <CreatePersonDialog groupSlug={groupSlug} />
       </div>
 
       <Table>
