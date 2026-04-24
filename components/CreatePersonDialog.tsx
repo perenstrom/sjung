@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function CreatePersonDialog() {
+export function CreatePersonDialog({ groupSlug }: { groupSlug: string }) {
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -33,6 +33,7 @@ export function CreatePersonDialog() {
           <DialogTitle>Lägg till person</DialogTitle>
         </DialogHeader>
         <form ref={formRef} action={handleSubmit} className="space-y-4">
+          <input type="hidden" name="groupSlug" value={groupSlug} />
           <div className="space-y-2">
             <Label htmlFor="name">Namn</Label>
             <Input id="name" name="name" required autoFocus />

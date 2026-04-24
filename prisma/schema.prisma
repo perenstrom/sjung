@@ -46,6 +46,7 @@ model Group {
   updatedById String   @map("updated_by_id")
 
   name String
+  slug String @unique @map("slug")
 
   createdBy User @relation("GroupCreatedBy", fields: [createdById], references: [id])
   updatedBy User @relation("GroupUpdatedBy", fields: [updatedById], references: [id])

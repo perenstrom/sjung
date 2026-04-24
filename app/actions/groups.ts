@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
+import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 
 export async function getGroups() {
   const user = await requireUser();
@@ -16,6 +17,7 @@ export async function getGroups() {
     select: {
       id: true,
       name: true,
+      slug: true,
       createdById: true,
     },
   });
@@ -23,6 +25,7 @@ export async function getGroups() {
   return groups.map((g) => ({
     id: g.id,
     name: g.name,
+    slug: g.slug,
     isCreator: g.createdById === user.id,
   }));
 }
@@ -34,23 +37,57 @@ export async function createGroup(formData: FormData) {
     throw new Error("Gruppnamn krävs");
   }
 
+  const trimmed = name.trim();
+  const base = slugifyGroupName(trimmed);
+  if (isReservedGroupSlug(base)) {
+    throw new Error(
+      "Det namnet ger en förbjuden adress. Välj ett annat gruppnamn."
+    );
+  }
+
+  let assignedSlug: string | null = null;
+
   await prisma.$transaction(async (tx) => {
-    const group = await tx.group.create({
-      data: {
-        name: name.trim(),
-        createdById: user.id,
-        updatedById: user.id,
-      },
-    });
-    await tx.usersToGroups.create({
-      data: {
-        userId: user.id,
-        groupId: group.id,
-      },
-    });
+    let n = 0;
+    while (true) {
+      const slug = n === 0 ? base : `${base}-${n + 1}`;
+      if (isReservedGroupSlug(slug)) {
+        n += 1;
+        continue;
+      }
+      const clash = await tx.group.findUnique({
+        where: { slug },
+        select: { id: true },
+      });
+      if (clash) {
+        n += 1;
+        continue;
+      }
+
+      const group = await tx.group.create({
+        data: {
+          name: trimmed,
+          slug,
+          createdById: user.id,
+          updatedById: user.id,
+        },
+      });
+      await tx.usersToGroups.create({
+        data: {
+          userId: user.id,
+          groupId: group.id,
+        },
+      });
+      assignedSlug = slug;
+      break;
+    }
   });
 
-  revalidatePath("/app/groups");
+  revalidatePath("/app");
+  revalidatePath("/app/me/groups");
+  if (assignedSlug) {
+    revalidatePath(`/app/${assignedSlug}`);
+  }
 }
 
 export async function updateGroup(formData: FormData) {
@@ -67,6 +104,7 @@ export async function updateGroup(formData: FormData) {
 
   const existing = await prisma.group.findFirst({
     where: { id, createdById: user.id },
+    select: { slug: true },
   });
   if (!existing) {
     throw new Error("Du har inte behörighet att redigera den här gruppen");
@@ -80,7 +118,11 @@ export async function updateGroup(formData: FormData) {
     },
   });
 
-  revalidatePath("/app/groups");
+  revalidatePath("/app");
+  revalidatePath("/app/me/groups");
+  if (existing.slug) {
+    revalidatePath(`/app/${existing.slug}`);
+  }
 }
 
 export async function deleteGroup(formData: FormData) {
@@ -92,6 +134,7 @@ export async function deleteGroup(formData: FormData) {
 
   const existing = await prisma.group.findFirst({
     where: { id, createdById: user.id },
+    select: { slug: true },
   });
   if (!existing) {
     throw new Error("Du har inte behörighet att ta bort den här gruppen");
@@ -101,5 +144,9 @@ export async function deleteGroup(formData: FormData) {
     where: { id },
   });
 
-  revalidatePath("/app/groups");
+  revalidatePath("/app");
+  revalidatePath("/app/me/groups");
+  if (existing.slug) {
+    revalidatePath(`/app/${existing.slug}`);
+  }
 }

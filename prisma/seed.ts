@@ -32,10 +32,13 @@ async function main() {
 
   const group = await prisma.group.upsert({
     where: { id: DEFAULT_GROUP_ID },
-    update: {},
+    update: {
+      slug: "standardgrupp",
+    },
     create: {
       id: DEFAULT_GROUP_ID,
       name: "Standardgrupp",
+      slug: "standardgrupp",
       createdById: SYSTEM_USER_ID,
       updatedById: SYSTEM_USER_ID,
     },

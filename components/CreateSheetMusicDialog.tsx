@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { createSheetMusic } from "@/app/actions/sheetMusic";
 import { ROLES } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,13 @@ type CreditRow = {
 
 let nextId = 0;
 
-export function CreateSheetMusicDialog({ people }: { people: Person[] }) {
+export function CreateSheetMusicDialog({
+  people,
+  groupSlug,
+}: {
+  people: Person[];
+  groupSlug: string;
+}) {
   const [open, setOpen] = useState(false);
   const [credits, setCredits] = useState<CreditRow[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
@@ -81,6 +88,7 @@ export function CreateSheetMusicDialog({ people }: { people: Person[] }) {
           <DialogTitle>Lägg till noter</DialogTitle>
         </DialogHeader>
         <form ref={formRef} action={handleSubmit} className="space-y-5">
+          <input type="hidden" name="groupSlug" value={groupSlug} />
           <div className="space-y-2">
             <Label htmlFor="name">Namn</Label>
             <Input id="name" name="name" required autoFocus />
@@ -103,7 +111,13 @@ export function CreateSheetMusicDialog({ people }: { people: Person[] }) {
             {people.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 Inga personer tillagda ännu. Lägg till personer under{" "}
-                <em>Personer</em> först.
+                <Link
+                  href={`/app/${groupSlug}/people`}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Personer
+                </Link>{" "}
+                först.
               </p>
             )}
 
