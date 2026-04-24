@@ -6,7 +6,7 @@ const authPages = new Set(["/auth/login", "/auth/signup"]);
 
 export default async function middleware(req: NextRequest) {
   const { nextUrl } = req;
-  const token = await getToken({ req });
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
   const isAuthenticated = Boolean(token?.sub);
   const isProtectedRoute = nextUrl.pathname.startsWith("/app");
   const isAuthPage = authPages.has(nextUrl.pathname);
