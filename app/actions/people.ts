@@ -2,19 +2,28 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { DEFAULT_GROUP_ID } from "@/lib/context";
-import { requireUser } from "@/lib/auth/require-user";
+import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
-export async function getPeople() {
-  await requireUser();
+function readGroupSlug(formData: FormData): string {
+  const raw = formData.get("groupSlug");
+  if (!raw || typeof raw !== "string" || raw.trim() === "") {
+    throw new Error("Saknar grupp");
+  }
+  return raw.trim();
+}
+
+export async function getPeople(groupSlug: string) {
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   return prisma.person.findMany({
-    where: { groupId: DEFAULT_GROUP_ID },
+    where: { groupId },
     orderBy: { name: "asc" },
   });
 }
 
 export async function createPerson(formData: FormData) {
-  const user = await requireUser();
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+
   const name = formData.get("name");
   if (!name || typeof name !== "string" || name.trim() === "") {
     throw new Error("Namn krävs");
@@ -23,11 +32,12 @@ export async function createPerson(formData: FormData) {
   await prisma.person.create({
     data: {
       name: name.trim(),
-      groupId: DEFAULT_GROUP_ID,
-      createdById: user.id,
-      updatedById: user.id,
+      groupId,
+      createdById: userId,
+      updatedById: userId,
     },
   });
 
-  revalidatePath("/app/people");
+  revalidatePath(`/app/${groupSlug}`);
+  revalidatePath(`/app/${groupSlug}/people`);
 }

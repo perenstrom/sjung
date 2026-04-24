@@ -2,13 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { DEFAULT_GROUP_ID } from "@/lib/context";
-import { requireUser } from "@/lib/auth/require-user";
+import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
-export async function getSheetMusic() {
-  await requireUser();
+function readGroupSlug(formData: FormData): string {
+  const raw = formData.get("groupSlug");
+  if (!raw || typeof raw !== "string" || raw.trim() === "") {
+    throw new Error("Saknar grupp");
+  }
+  return raw.trim();
+}
+
+export async function getSheetMusic(groupSlug: string) {
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   return prisma.sheetMusic.findMany({
-    where: { groupId: DEFAULT_GROUP_ID },
+    where: { groupId },
     orderBy: { name: "asc" },
     include: {
       credits: {
@@ -26,7 +33,9 @@ type Credit = {
 };
 
 export async function createSheetMusic(formData: FormData) {
-  const user = await requireUser();
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+
   const name = formData.get("name");
   if (!name || typeof name !== "string" || name.trim() === "") {
     throw new Error("Namn krävs");
@@ -41,9 +50,9 @@ export async function createSheetMusic(formData: FormData) {
   await prisma.sheetMusic.create({
     data: {
       name: name.trim(),
-      groupId: DEFAULT_GROUP_ID,
-      createdById: user.id,
-      updatedById: user.id,
+      groupId,
+      createdById: userId,
+      updatedById: userId,
       credits: {
         create: credits.map((c) => ({
           personId: c.personId,
@@ -53,5 +62,5 @@ export async function createSheetMusic(formData: FormData) {
     },
   });
 
-  revalidatePath("/app");
+  revalidatePath(`/app/${groupSlug}`);
 }
