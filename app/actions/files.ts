@@ -1,6 +1,10 @@
 "use server";
 
-import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
@@ -10,6 +14,7 @@ import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const UPLOAD_URL_EXPIRES_SECONDS = 60 * 10;
+const DOWNLOAD_URL_EXPIRES_SECONDS = 60 * 5;
 const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
   "image/jpeg",
@@ -131,6 +136,40 @@ export async function finalizePieceFileUpload(formData: FormData) {
   });
 
   revalidatePath(`/app/${groupSlug}`);
+}
+
+export async function createPieceFileDownloadUrl(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const fileId = readString(formData, "fileId", "Fil saknas");
+
+  const file = await prisma.file.findFirst({
+    where: {
+      id: fileId,
+      piece: { groupId },
+    },
+    select: {
+      storagePath: true,
+      fileName: true,
+      mimeType: true,
+    },
+  });
+
+  if (!file) {
+    throw new Error("Fil hittades inte");
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: getR2Bucket(),
+    Key: file.storagePath,
+    ResponseContentType: file.mimeType,
+    ResponseContentDisposition: `attachment; filename="${file.fileName}"`,
+  });
+  const downloadUrl = await getSignedUrl(getR2Client(), command, {
+    expiresIn: DOWNLOAD_URL_EXPIRES_SECONDS,
+  });
+
+  return { downloadUrl };
 }
 
 export async function deletePieceFile(formData: FormData) {

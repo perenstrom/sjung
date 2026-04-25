@@ -23,6 +23,9 @@ export async function getPieces(groupSlug: string) {
           person: { select: { name: true } },
         },
       },
+      files: {
+        orderBy: { createdAt: "desc" },
+      },
       links: {
         orderBy: { createdAt: "desc" },
       },
