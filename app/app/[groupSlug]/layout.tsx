@@ -1,4 +1,3 @@
-import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { requireTenantGroup } from "@/lib/tenant-group";
 
 export default async function TenantGroupLayout({
@@ -10,6 +9,5 @@ export default async function TenantGroupLayout({
 }>) {
   const { groupSlug } = await params;
   await requireTenantGroup(groupSlug);
-  await setActiveGroupSlugCookie(groupSlug);
   return children;
 }
