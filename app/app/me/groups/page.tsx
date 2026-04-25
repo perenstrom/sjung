@@ -27,14 +27,13 @@ export default async function GroupsPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Namn</TableHead>
-            <TableHead className="w-[120px]">Öppna</TableHead>
             <TableHead className="w-[340px] text-right">Åtgärder</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {groups.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={3} className="text-muted-foreground">
+              <TableCell colSpan={2} className="text-muted-foreground">
                 Inga grupper ännu.
               </TableCell>
             </TableRow>
@@ -42,14 +41,6 @@ export default async function GroupsPage() {
             groups.map((group) => (
               <TableRow key={group.id}>
                 <TableCell>{group.name}</TableCell>
-                <TableCell>
-                  <Link
-                    href={`/app/${group.slug}`}
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    Öppna
-                  </Link>
-                </TableCell>
                 <TableCell className="text-right">
                   {group.isCreator ? (
                     <div className="flex justify-end gap-2">

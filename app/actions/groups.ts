@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
+import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 
 export async function getGroups() {
   const user = await requireUser();
@@ -29,6 +30,16 @@ export async function getGroups() {
     slug: g.slug,
     isCreator: g.createdById === user.id,
   }));
+}
+
+export async function setActiveGroup(groupSlug: string) {
+  const slug = groupSlug.trim();
+  if (!slug) {
+    throw new Error("Ogiltig grupp");
+  }
+
+  await getWritableGroupIdForSlug(slug);
+  await setActiveGroupSlugCookie(slug);
 }
 
 export async function createGroup(formData: FormData) {
