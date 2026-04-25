@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
+import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 export async function getGroups() {
   const user = await requireUser();
@@ -149,4 +150,140 @@ export async function deleteGroup(formData: FormData) {
   if (existing.slug) {
     revalidatePath(`/app/${existing.slug}`);
   }
+}
+
+function readEmail(formData: FormData): string {
+  const raw = formData.get("email");
+  if (!raw || typeof raw !== "string" || raw.trim() === "") {
+    throw new Error("E-post krävs");
+  }
+  return raw.trim().toLowerCase();
+}
+
+function readGroupSlug(formData: FormData): string {
+  const raw = formData.get("groupSlug");
+  if (!raw || typeof raw !== "string" || raw.trim() === "") {
+    throw new Error("Ogiltig grupp");
+  }
+  return raw.trim();
+}
+
+async function requireCreatorGroupBySlug(groupSlug: string) {
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    select: { createdById: true },
+  });
+  if (!group || group.createdById !== userId) {
+    throw new Error("Du har inte behörighet att hantera medlemmar i gruppen");
+  }
+  return { userId, groupId };
+}
+
+export async function listGroupMembers(groupSlug: string) {
+  const { groupId } = await requireCreatorGroupBySlug(groupSlug);
+
+  const rows = await prisma.usersToGroups.findMany({
+    where: { groupId },
+    select: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      user: {
+        name: "asc",
+      },
+    },
+  });
+
+  return rows.map((row) => row.user);
+}
+
+export async function addMemberToGroup(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const email = readEmail(formData);
+  const { groupId } = await requireCreatorGroupBySlug(groupSlug);
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  });
+  if (!user) {
+    throw new Error("Ingen användare med den e-posten hittades");
+  }
+
+  const exists = await prisma.usersToGroups.findUnique({
+    where: {
+      userId_groupId: {
+        userId: user.id,
+        groupId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (exists) {
+    throw new Error("Användaren är redan medlem i gruppen");
+  }
+
+  await prisma.usersToGroups.create({
+    data: {
+      userId: user.id,
+      groupId,
+    },
+  });
+
+  revalidatePath("/app/me/groups");
+  revalidatePath(`/app/${groupSlug}`);
+  revalidatePath(`/app/${groupSlug}/members`);
+}
+
+export async function removeMemberFromGroup(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const memberUserId = formData.get("memberUserId");
+  if (!memberUserId || typeof memberUserId !== "string") {
+    throw new Error("Ogiltig medlem");
+  }
+
+  const { userId, groupId } = await requireCreatorGroupBySlug(groupSlug);
+  if (memberUserId === userId) {
+    throw new Error("Du kan inte ta bort dig själv från gruppen");
+  }
+
+  const membership = await prisma.usersToGroups.findUnique({
+    where: {
+      userId_groupId: {
+        userId: memberUserId,
+        groupId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (!membership) {
+    throw new Error("Medlemmen finns inte i gruppen");
+  }
+
+  const memberCount = await prisma.usersToGroups.count({
+    where: { groupId },
+  });
+  if (memberCount <= 1) {
+    throw new Error("Kan inte ta bort sista medlemmen i gruppen");
+  }
+
+  await prisma.usersToGroups.delete({
+    where: {
+      userId_groupId: {
+        userId: memberUserId,
+        groupId,
+      },
+    },
+  });
+
+  revalidatePath("/app/me/groups");
+  revalidatePath(`/app/${groupSlug}`);
+  revalidatePath(`/app/${groupSlug}/members`);
 }
