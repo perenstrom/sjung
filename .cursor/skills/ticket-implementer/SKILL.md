@@ -29,7 +29,10 @@ Run these lookups upfront; reuse the results for the rest of the session.
 ## Step 4: Create a git branch
 
 - Derive a branch name: lowercase ticket identifier + slugified title, e.g. `sj-42/add-sheet-music-filtering`.
-- Run `git checkout -b <branch>`.
+- Ensure local `main` is up to date first:
+  - `git checkout main`
+  - `git pull origin main`
+- Create the feature branch from the updated `main`: `git checkout -b <branch>`.
 
 ## Step 5: Explore the codebase
 

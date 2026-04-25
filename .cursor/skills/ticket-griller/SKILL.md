@@ -37,6 +37,8 @@ Rules:
 - Include one option that matches your recommended answer and make the recommendation explicit in the prompt (with a brief rationale).
 - If none of the predefined options fit, include an "Other / needs discussion" option.
 - If a question can be answered by exploring the codebase, explore instead of asking.
+- Actively evaluate ticket size during grilling. If scope exceeds what one agent can implement and verify in a focused pass, guide the user to split it into smaller, independently shippable slices.
+- When splitting is needed, resolve and document: (1) which slice stays in the current ticket, (2) clear boundaries for each follow-up slice, and (3) ordering/dependencies.
 - Continue until all decisions are resolved and shared understanding is reached.
 
 ## Step 5: Compile and update the ticket
@@ -60,6 +62,12 @@ After grilling is complete, write an enriched description and update the ticket.
 
 - [ ] [Criterion]
 
+## Scope and Slicing
+
+- Ticket size decision: [Single ticket / Split required]
+- If split required, this ticket covers: [smallest valuable slice]
+- Follow-up slices: [title + boundary + dependency note for each]
+
 ## Hints
 
 - Relevant files: [e.g. `app/actions/sheetMusic.ts`]
@@ -70,6 +78,8 @@ Call `save_issue` with:
 - `id`: the ticket identifier (e.g. `SJ-42`)
 - `description`: the enriched markdown above (literal newlines, no escape sequences)
 - `state`: "Todo"
+
+If splitting is required, only move this ticket to `Todo` when the description is narrowed to one implementation-sized slice. Keep follow-up slices explicitly listed in `Scope and Slicing` so they can be created as separate tickets.
 
 ## Step 6: Stop
 
