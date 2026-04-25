@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { createSheetMusic } from "@/app/actions/sheetMusic";
+import { createPiece } from "@/app/actions/pieces";
 import { ROLES } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,7 @@ type CreditRow = {
 
 let nextId = 0;
 
-export function CreateSheetMusicDialog({
+export function CreatePieceDialog({
   people,
   groupSlug,
 }: {
@@ -72,7 +72,7 @@ export function CreateSheetMusicDialog({
       "credits",
       JSON.stringify(validCredits.map(({ personId, role }) => ({ personId, role })))
     );
-    await createSheetMusic(formData);
+    await createPiece(formData);
     setOpen(false);
     setCredits([]);
     formRef.current?.reset();

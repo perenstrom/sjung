@@ -1,6 +1,6 @@
-import { getSheetMusic } from "@/app/actions/sheetMusic";
+import { getPieces } from "@/app/actions/pieces";
 import { getPeople } from "@/app/actions/people";
-import { CreateSheetMusicDialog } from "@/components/CreateSheetMusicDialog";
+import { CreatePieceDialog } from "@/components/CreatePieceDialog";
 import {
   Table,
   TableBody,
@@ -16,8 +16,8 @@ type PageProps = {
 
 export default async function TenantNoterPage({ params }: PageProps) {
   const { groupSlug } = await params;
-  const [sheetMusic, people] = await Promise.all([
-    getSheetMusic(groupSlug),
+  const [pieces, people] = await Promise.all([
+    getPieces(groupSlug),
     getPeople(groupSlug),
   ]);
 
@@ -25,7 +25,7 @@ export default async function TenantNoterPage({ params }: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Noter</h1>
-        <CreateSheetMusicDialog people={people} groupSlug={groupSlug} />
+        <CreatePieceDialog people={people} groupSlug={groupSlug} />
       </div>
 
       <Table>
@@ -36,14 +36,14 @@ export default async function TenantNoterPage({ params }: PageProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sheetMusic.length === 0 ? (
+          {pieces.length === 0 ? (
             <TableRow>
               <TableCell colSpan={2} className="text-muted-foreground">
                 Inga noter tillagda ännu.
               </TableCell>
             </TableRow>
           ) : (
-            sheetMusic.map((piece) => {
+            pieces.map((piece) => {
               const creditsText =
                 piece.credits.length > 0
                   ? piece.credits

@@ -27,8 +27,8 @@ model User {
   updatedUsers              User[]               @relation("UserUpdatedBy")
   createdGroups             Group[]              @relation("GroupCreatedBy")
   updatedGroups             Group[]              @relation("GroupUpdatedBy")
-  createdSheetMusic         SheetMusic[]         @relation("SheetMusicCreatedBy")
-  updatedSheetMusic         SheetMusic[]         @relation("SheetMusicUpdatedBy")
+  createdPieces             Piece[]              @relation("PieceCreatedBy")
+  updatedPieces             Piece[]              @relation("PieceUpdatedBy")
   createdFiles              File[]               @relation("FileCreatedBy")
   updatedFiles              File[]               @relation("FileUpdatedBy")
   createdPeople             Person[]             @relation("PersonCreatedBy")
@@ -51,9 +51,9 @@ model Group {
   createdBy User @relation("GroupCreatedBy", fields: [createdById], references: [id])
   updatedBy User @relation("GroupUpdatedBy", fields: [updatedById], references: [id])
 
-  users      UsersToGroups[]
-  sheetMusic SheetMusic[]
-  people     Person[]
+  users  UsersToGroups[]
+  pieces Piece[]
+  people Person[]
 
   @@map("groups")
 }
@@ -69,7 +69,7 @@ model UsersToGroups {
   @@map("users_to_groups")
 }
 
-model SheetMusic {
+model Piece {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -79,13 +79,13 @@ model SheetMusic {
   name    String
   groupId String @map("group_id")
 
-  createdBy User               @relation("SheetMusicCreatedBy", fields: [createdById], references: [id])
-  updatedBy User               @relation("SheetMusicUpdatedBy", fields: [updatedById], references: [id])
-  group     Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User          @relation("PieceCreatedBy", fields: [createdById], references: [id])
+  updatedBy User          @relation("PieceUpdatedBy", fields: [updatedById], references: [id])
+  group     Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
   files     File[]
-  credits   PersonToSheetMusic[]
+  credits   PersonToPiece[]
 
-  @@map("sheet_music")
+  @@map("pieces")
 }
 
 model File {
@@ -101,10 +101,10 @@ model File {
   mimeType    String @map("mime_type")
   size        Int
 
-  sheetMusicId String     @map("sheet_music_id")
-  createdBy    User       @relation("FileCreatedBy", fields: [createdById], references: [id])
-  updatedBy    User       @relation("FileUpdatedBy", fields: [updatedById], references: [id])
-  sheetMusic   SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+  pieceId   String @map("piece_id")
+  createdBy User   @relation("FileCreatedBy", fields: [createdById], references: [id])
+  updatedBy User   @relation("FileUpdatedBy", fields: [updatedById], references: [id])
+  piece     Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
   @@map("files")
 }
@@ -119,22 +119,22 @@ model Person {
   name    String
   groupId String @map("group_id")
 
-  createdBy User                 @relation("PersonCreatedBy", fields: [createdById], references: [id])
-  updatedBy User                 @relation("PersonUpdatedBy", fields: [updatedById], references: [id])
-  group     Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  credits   PersonToSheetMusic[]
+  createdBy User            @relation("PersonCreatedBy", fields: [createdById], references: [id])
+  updatedBy User            @relation("PersonUpdatedBy", fields: [updatedById], references: [id])
+  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  credits   PersonToPiece[]
 
   @@map("people")
 }
 
-model PersonToSheetMusic {
-  personId     String @map("person_id")
-  sheetMusicId String @map("sheet_music_id")
-  role         String
+model PersonToPiece {
+  personId String @map("person_id")
+  pieceId  String @map("piece_id")
+  role     String
 
-  person     Person     @relation(fields: [personId], references: [id], onDelete: Restrict)
-  sheetMusic SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+  person Person @relation(fields: [personId], references: [id], onDelete: Restrict)
+  piece  Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
-  @@id([personId, sheetMusicId, role])
-  @@map("people_to_sheet_music")
+  @@id([personId, pieceId, role])
+  @@map("people_to_pieces")
 }
