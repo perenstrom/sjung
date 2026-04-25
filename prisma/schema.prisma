@@ -33,6 +33,8 @@ model User {
   updatedFiles              File[]               @relation("FileUpdatedBy")
   createdPeople             Person[]             @relation("PersonCreatedBy")
   updatedPeople             Person[]             @relation("PersonUpdatedBy")
+  createdLinks              Link[]               @relation("LinkCreatedBy")
+  updatedLinks              Link[]               @relation("LinkUpdatedBy")
   groups UsersToGroups[]
 
   @@map("users")
@@ -84,8 +86,28 @@ model Piece {
   group     Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
   files     File[]
   credits   PersonToPiece[]
+  links     Link[]
 
   @@map("pieces")
+}
+
+model Link {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  url   String
+  label String?
+
+  pieceId String @map("piece_id")
+
+  createdBy User  @relation("LinkCreatedBy", fields: [createdById], references: [id])
+  updatedBy User  @relation("LinkUpdatedBy", fields: [updatedById], references: [id])
+  piece     Piece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  @@map("links")
 }
 
 model File {
