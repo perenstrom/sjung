@@ -1,6 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import Link from "next/link";
 import {
   Sidebar,
@@ -15,6 +17,20 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { Boxes, Music, UserPlus, Users } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { setActiveGroup } from "@/app/actions/groups";
+
+type GroupOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
 
 function tenantSlugFromPathname(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
@@ -23,18 +39,65 @@ function tenantSlugFromPathname(pathname: string): string | null {
   return parts[1];
 }
 
-export function AppSidebar() {
+type AppSidebarProps = {
+  groups: GroupOption[];
+};
+
+export function AppSidebar({ groups }: AppSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const tenantSlug = tenantSlugFromPathname(pathname);
+  const currentGroupSlug = tenantSlug ?? groups[0]?.slug ?? "";
+  const currentGroup = groups.find((group) => group.slug === currentGroupSlug);
 
   const noterHref = tenantSlug ? `/app/${tenantSlug}` : null;
   const peopleHref = tenantSlug ? `/app/${tenantSlug}/people` : null;
   const membersHref = tenantSlug ? `/app/${tenantSlug}/members` : null;
   const groupsHref = "/app/me/groups";
 
+  function handleGroupChange(nextGroupSlug: string) {
+    if (!nextGroupSlug || nextGroupSlug === currentGroupSlug) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await setActiveGroup(nextGroupSlug);
+        router.push(`/app/${nextGroupSlug}`);
+      } catch {
+        // Keep UX stable if the server action rejects (e.g. stale membership).
+      }
+    });
+  }
+
   return (
     <Sidebar variant="inset" collapsible="icon">
-      <SidebarHeader>Sjung</SidebarHeader>
+      <SidebarHeader>
+        <div className="px-2 py-1 text-sm font-semibold">Sjung</div>
+        {groups.length <= 1 ? (
+          <div className="px-2 text-xs text-muted-foreground">
+            {currentGroup?.name ?? "Ingen grupp"}
+          </div>
+        ) : (
+          <Select
+            value={currentGroupSlug}
+            onValueChange={handleGroupChange}
+            disabled={isPending}
+          >
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue placeholder="Välj grupp" />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map((group) => (
+                <SelectItem key={group.id} value={group.slug}>
+                  {group.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Sjung</SidebarGroupLabel>
