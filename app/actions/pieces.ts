@@ -12,9 +12,9 @@ function readGroupSlug(formData: FormData): string {
   return raw.trim();
 }
 
-export async function getSheetMusic(groupSlug: string) {
+export async function getPieces(groupSlug: string) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  return prisma.sheetMusic.findMany({
+  return prisma.piece.findMany({
     where: { groupId },
     orderBy: { name: "asc" },
     include: {
@@ -32,7 +32,7 @@ type Credit = {
   role: string;
 };
 
-export async function createSheetMusic(formData: FormData) {
+export async function createPiece(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
 
@@ -47,7 +47,7 @@ export async function createSheetMusic(formData: FormData) {
       ? JSON.parse(creditsJson)
       : [];
 
-  await prisma.sheetMusic.create({
+  await prisma.piece.create({
     data: {
       name: name.trim(),
       groupId,
