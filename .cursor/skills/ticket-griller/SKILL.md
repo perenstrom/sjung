@@ -79,7 +79,7 @@ Call `save_issue` with:
 - `description`: the enriched markdown above (literal newlines, no escape sequences)
 - `state`: "Todo"
 
-If splitting is required, only move this ticket to `Todo` when the description is narrowed to one implementation-sized slice. Keep follow-up slices explicitly listed in `Scope and Slicing` so they can be created as separate tickets.
+If splitting is required, only move this ticket to `Todo` when the description is narrowed to one implementation-sized slice. Keep follow-up slices explicitly listed in `Scope and Slicing`, then create those follow-up tickets using the `linear-ticket-creator` skill.
 
 ## Step 6: Stop
 
