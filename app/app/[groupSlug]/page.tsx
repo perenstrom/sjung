@@ -1,6 +1,7 @@
 import { getPieces } from "@/app/actions/pieces";
 import { getPeople } from "@/app/actions/people";
 import { CreatePieceDialog } from "@/components/CreatePieceDialog";
+import { PieceLinksDialog } from "@/components/PieceLinksDialog";
 import {
   Table,
   TableBody,
@@ -33,12 +34,13 @@ export default async function TenantNoterPage({ params }: PageProps) {
           <TableRow>
             <TableHead>Namn</TableHead>
             <TableHead>Medverkande</TableHead>
+            <TableHead className="w-[1%] whitespace-nowrap">Länkar</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {pieces.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={2} className="text-muted-foreground">
+              <TableCell colSpan={3} className="text-muted-foreground">
                 Inga noter tillagda ännu.
               </TableCell>
             </TableRow>
@@ -54,6 +56,9 @@ export default async function TenantNoterPage({ params }: PageProps) {
                 <TableRow key={piece.id}>
                   <TableCell>{piece.name}</TableCell>
                   <TableCell>{creditsText}</TableCell>
+                  <TableCell>
+                    <PieceLinksDialog groupSlug={groupSlug} piece={piece} />
+                  </TableCell>
                 </TableRow>
               );
             })

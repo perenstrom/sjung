@@ -23,6 +23,9 @@ export async function getPieces(groupSlug: string) {
           person: { select: { name: true } },
         },
       },
+      links: {
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 }
@@ -60,6 +63,89 @@ export async function createPiece(formData: FormData) {
         })),
       },
     },
+  });
+
+  revalidatePath(`/app/${groupSlug}`);
+}
+
+export async function addLink(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+
+  const pieceId = formData.get("pieceId");
+  if (!pieceId || typeof pieceId !== "string" || pieceId.trim() === "") {
+    throw new Error("Stycke saknas");
+  }
+
+  const urlRaw = formData.get("url");
+  if (!urlRaw || typeof urlRaw !== "string" || urlRaw.trim() === "") {
+    throw new Error("Länk krävs");
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(urlRaw.trim());
+  } catch {
+    throw new Error("Ogiltig länk");
+  }
+
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    throw new Error("Länk måste börja med http eller https");
+  }
+
+  const piece = await prisma.piece.findFirst({
+    where: { id: pieceId.trim(), groupId },
+    select: { id: true },
+  });
+
+  if (!piece) {
+    throw new Error("Stycke hittades inte");
+  }
+
+  const labelRaw = formData.get("label");
+  const label =
+    typeof labelRaw === "string" && labelRaw.trim() !== ""
+      ? labelRaw.trim()
+      : null;
+
+  await prisma.link.create({
+    data: {
+      pieceId: piece.id,
+      url: parsedUrl.toString(),
+      label,
+      createdById: userId,
+      updatedById: userId,
+    },
+  });
+
+  revalidatePath(`/app/${groupSlug}`);
+}
+
+export async function removeLink(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+
+  const linkId = formData.get("linkId");
+  if (!linkId || typeof linkId !== "string" || linkId.trim() === "") {
+    throw new Error("Länk saknas");
+  }
+
+  const link = await prisma.link.findFirst({
+    where: {
+      id: linkId.trim(),
+      piece: {
+        groupId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!link) {
+    throw new Error("Länk hittades inte");
+  }
+
+  await prisma.link.delete({
+    where: { id: link.id },
   });
 
   revalidatePath(`/app/${groupSlug}`);
