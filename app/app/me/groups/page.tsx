@@ -3,6 +3,7 @@ import { getGroups } from "@/app/actions/groups";
 import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { DeleteGroupDialog } from "@/components/DeleteGroupDialog";
 import { EditGroupDialog } from "@/components/EditGroupDialog";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -27,7 +28,7 @@ export default async function GroupsPage() {
           <TableRow>
             <TableHead>Namn</TableHead>
             <TableHead className="w-[120px]">Öppna</TableHead>
-            <TableHead className="w-[220px] text-right">Åtgärder</TableHead>
+            <TableHead className="w-[340px] text-right">Åtgärder</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -52,6 +53,9 @@ export default async function GroupsPage() {
                 <TableCell className="text-right">
                   {group.isCreator ? (
                     <div className="flex justify-end gap-2">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/app/${group.slug}/members`}>Medlemmar</Link>
+                      </Button>
                       <EditGroupDialog group={{ id: group.id, name: group.name }} />
                       <DeleteGroupDialog group={{ id: group.id, name: group.name }} />
                     </div>

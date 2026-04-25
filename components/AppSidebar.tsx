@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Boxes, Music, Users } from "lucide-react";
+import { Boxes, Music, UserPlus, Users } from "lucide-react";
 
 function tenantSlugFromPathname(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
@@ -29,6 +29,7 @@ export function AppSidebar() {
 
   const noterHref = tenantSlug ? `/app/${tenantSlug}` : null;
   const peopleHref = tenantSlug ? `/app/${tenantSlug}/people` : null;
+  const membersHref = tenantSlug ? `/app/${tenantSlug}/members` : null;
   const groupsHref = "/app/me/groups";
 
   return (
@@ -75,6 +76,26 @@ export function AppSidebar() {
                   <SidebarMenuButton tooltip="Personer" disabled>
                     <Users />
                     <span>Personer</span>
+                  </SidebarMenuButton>
+                )}
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                {membersHref ? (
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Medlemmar"
+                    isActive={pathname === membersHref}
+                  >
+                    <Link href={membersHref}>
+                      <UserPlus />
+                      <span>Medlemmar</span>
+                    </Link>
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton tooltip="Medlemmar" disabled>
+                    <UserPlus />
+                    <span>Medlemmar</span>
                   </SidebarMenuButton>
                 )}
               </SidebarMenuItem>
