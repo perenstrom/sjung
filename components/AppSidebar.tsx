@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Boxes, Music, UserPlus, Users } from "lucide-react";
+import { Boxes, ListMusic, Music, UserPlus, Users } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -56,6 +56,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
 
   const noterHref = hasActiveGroup ? `/app/${currentGroupSlug}` : null;
   const peopleHref = hasActiveGroup ? `/app/${currentGroupSlug}/people` : null;
+  const setListsHref = hasActiveGroup ? `/app/${currentGroupSlug}/setlists` : null;
   const membersHref = hasActiveGroup
     ? `/app/${currentGroupSlug}/members`
     : null;
@@ -127,6 +128,26 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
                   <SidebarMenuButton tooltip="Personer" disabled>
                     <Users />
                     <span>Personer</span>
+                  </SidebarMenuButton>
+                )}
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                {setListsHref ? (
+                  <SidebarMenuButton
+                    asChild
+                    tooltip="Repertoarer"
+                    isActive={pathname === setListsHref}
+                  >
+                    <Link href={setListsHref}>
+                      <ListMusic />
+                      <span>Repertoarer</span>
+                    </Link>
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton tooltip="Repertoarer" disabled>
+                    <ListMusic />
+                    <span>Repertoarer</span>
                   </SidebarMenuButton>
                 )}
               </SidebarMenuItem>
