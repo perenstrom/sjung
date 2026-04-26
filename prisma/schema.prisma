@@ -35,6 +35,8 @@ model User {
   updatedPeople             Person[]             @relation("PersonUpdatedBy")
   createdLinks              Link[]               @relation("LinkCreatedBy")
   updatedLinks              Link[]               @relation("LinkUpdatedBy")
+  createdSetLists           SetList[]            @relation("SetListCreatedBy")
+  updatedSetLists           SetList[]            @relation("SetListUpdatedBy")
   groups UsersToGroups[]
 
   @@map("users")
@@ -56,6 +58,7 @@ model Group {
   users  UsersToGroups[]
   pieces Piece[]
   people Person[]
+  setLists SetList[]
 
   @@map("groups")
 }
@@ -159,4 +162,22 @@ model PersonToPiece {
 
   @@id([personId, pieceId, role])
   @@map("people_to_pieces")
+}
+
+model SetList {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  name    String
+  date    DateTime?
+  groupId String @map("group_id")
+
+  createdBy User  @relation("SetListCreatedBy", fields: [createdById], references: [id])
+  updatedBy User  @relation("SetListUpdatedBy", fields: [updatedById], references: [id])
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("set_lists")
 }
