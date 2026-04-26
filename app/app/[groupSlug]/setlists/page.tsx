@@ -2,6 +2,7 @@ import { getSetLists } from "@/app/actions/setlists";
 import { CreateSetListDialog } from "@/components/CreateSetListDialog";
 import { DeleteSetListDialog } from "@/components/DeleteSetListDialog";
 import { EditSetListDialog } from "@/components/EditSetListDialog";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -51,7 +52,14 @@ export default async function TenantSetListsPage({ params }: PageProps) {
           ) : (
             setLists.map((setList) => (
               <TableRow key={setList.id}>
-                <TableCell>{setList.name}</TableCell>
+                <TableCell>
+                  <Link
+                    href={`/app/${groupSlug}/setlists/${setList.id}`}
+                    className="underline-offset-4 hover:underline"
+                  >
+                    {setList.name}
+                  </Link>
+                </TableCell>
                 <TableCell>{formatSetListDate(setList.date)}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">

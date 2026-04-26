@@ -11,6 +11,24 @@ type SetListRow = {
   updatedAt: Date;
 };
 
+export type SetListDetail = {
+  id: string;
+  name: string;
+  date: Date | null;
+  updatedAt: Date;
+  pieces: Array<{
+    id: string;
+    pieceId: string;
+    pieceName: string;
+    createdAt: Date;
+  }>;
+};
+
+export type SetListPieceOption = {
+  id: string;
+  name: string;
+};
+
 function readGroupSlug(formData: FormData): string {
   const raw = formData.get("groupSlug");
   if (!raw || typeof raw !== "string" || raw.trim() === "") {
@@ -75,6 +93,65 @@ export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
       name: true,
       date: true,
       updatedAt: true,
+    },
+  });
+}
+
+export async function getSetListDetail(
+  groupSlug: string,
+  setListId: string
+): Promise<SetListDetail | null> {
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setList = await prisma.setList.findFirst({
+    where: { id: setListId, groupId },
+    select: {
+      id: true,
+      name: true,
+      date: true,
+      updatedAt: true,
+      pieces: {
+        select: {
+          id: true,
+          pieceId: true,
+          createdAt: true,
+          piece: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!setList) {
+    return null;
+  }
+
+  return {
+    id: setList.id,
+    name: setList.name,
+    date: setList.date,
+    updatedAt: setList.updatedAt,
+    pieces: setList.pieces
+      .map((entry) => ({
+        id: entry.id,
+        pieceId: entry.pieceId,
+        pieceName: entry.piece.name,
+        createdAt: entry.createdAt,
+      }))
+      .sort((a, b) => a.pieceName.localeCompare(b.pieceName, "sv-SE")),
+  };
+}
+
+export async function getSetListPieceOptions(groupSlug: string): Promise<SetListPieceOption[]> {
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  return prisma.piece.findMany({
+    where: { groupId },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
     },
   });
 }
@@ -186,6 +263,7 @@ export async function addPieceToSetList(formData: FormData) {
 
   revalidatePath(`/app/${groupSlug}`);
   revalidatePath(`/app/${groupSlug}/setlists`);
+  revalidatePath(`/app/${groupSlug}/setlists/${setList.id}`);
 }
 
 export async function removePieceFromSetList(formData: FormData) {
@@ -198,7 +276,7 @@ export async function removePieceFromSetList(formData: FormData) {
       id: setListPieceId,
       setList: { groupId },
     },
-    select: { id: true },
+    select: { id: true, setListId: true },
   });
 
   if (!setListPiece) {
@@ -211,4 +289,5 @@ export async function removePieceFromSetList(formData: FormData) {
 
   revalidatePath(`/app/${groupSlug}`);
   revalidatePath(`/app/${groupSlug}/setlists`);
+  revalidatePath(`/app/${groupSlug}/setlists/${setListPiece.setListId}`);
 }
