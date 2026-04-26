@@ -27,6 +27,22 @@ function readSetListId(formData: FormData): string {
   return raw.trim();
 }
 
+function readSetListPieceId(formData: FormData): string {
+  const raw = formData.get("setListPieceId");
+  if (!raw || typeof raw !== "string" || raw.trim() === "") {
+    throw new Error("Repertoarpost saknas");
+  }
+  return raw.trim();
+}
+
+function readPieceId(formData: FormData): string {
+  const raw = formData.get("pieceId");
+  if (!raw || typeof raw !== "string" || raw.trim() === "") {
+    throw new Error("Stycke saknas");
+  }
+  return raw.trim();
+}
+
 function readName(formData: FormData): string {
   const raw = formData.get("name");
   if (!raw || typeof raw !== "string" || raw.trim() === "") {
@@ -128,6 +144,69 @@ export async function deleteSetList(formData: FormData) {
 
   await prisma.setList.delete({
     where: { id: existing.id },
+  });
+
+  revalidatePath(`/app/${groupSlug}`);
+  revalidatePath(`/app/${groupSlug}/setlists`);
+}
+
+export async function addPieceToSetList(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setListId = readSetListId(formData);
+  const pieceId = readPieceId(formData);
+
+  const [setList, piece] = await Promise.all([
+    prisma.setList.findFirst({
+      where: { id: setListId, groupId },
+      select: { id: true },
+    }),
+    prisma.piece.findFirst({
+      where: { id: pieceId, groupId },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!setList) {
+    throw new Error("Repertoar hittades inte");
+  }
+
+  if (!piece) {
+    throw new Error("Stycke hittades inte");
+  }
+
+  await prisma.setListPiece.create({
+    data: {
+      setListId: setList.id,
+      pieceId: piece.id,
+      createdById: userId,
+      updatedById: userId,
+    },
+  });
+
+  revalidatePath(`/app/${groupSlug}`);
+  revalidatePath(`/app/${groupSlug}/setlists`);
+}
+
+export async function removePieceFromSetList(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setListPieceId = readSetListPieceId(formData);
+
+  const setListPiece = await prisma.setListPiece.findFirst({
+    where: {
+      id: setListPieceId,
+      setList: { groupId },
+    },
+    select: { id: true },
+  });
+
+  if (!setListPiece) {
+    throw new Error("Repertoarpost hittades inte");
+  }
+
+  await prisma.setListPiece.delete({
+    where: { id: setListPiece.id },
   });
 
   revalidatePath(`/app/${groupSlug}`);
