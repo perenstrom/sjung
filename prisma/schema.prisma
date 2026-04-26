@@ -37,6 +37,8 @@ model User {
   updatedLinks              Link[]               @relation("LinkUpdatedBy")
   createdSetLists           SetList[]            @relation("SetListCreatedBy")
   updatedSetLists           SetList[]            @relation("SetListUpdatedBy")
+  createdSetListPieces      SetListPiece[]       @relation("SetListPieceCreatedBy")
+  updatedSetListPieces      SetListPiece[]       @relation("SetListPieceUpdatedBy")
   groups UsersToGroups[]
 
   @@map("users")
@@ -90,6 +92,7 @@ model Piece {
   files     File[]
   credits   PersonToPiece[]
   links     Link[]
+  setListEntries SetListPiece[]
 
   @@map("pieces")
 }
@@ -178,6 +181,26 @@ model SetList {
   createdBy User  @relation("SetListCreatedBy", fields: [createdById], references: [id])
   updatedBy User  @relation("SetListUpdatedBy", fields: [updatedById], references: [id])
   group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  pieces    SetListPiece[]
 
   @@map("set_lists")
+}
+
+model SetListPiece {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  setListId String @map("set_list_id")
+  pieceId   String @map("piece_id")
+  position  Int?
+
+  createdBy User    @relation("SetListPieceCreatedBy", fields: [createdById], references: [id])
+  updatedBy User    @relation("SetListPieceUpdatedBy", fields: [updatedById], references: [id])
+  setList   SetList @relation(fields: [setListId], references: [id], onDelete: Cascade)
+  piece     Piece   @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  @@map("set_list_pieces")
 }
