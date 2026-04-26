@@ -4,6 +4,7 @@ import { CreatePieceDialog } from "@/components/CreatePieceDialog";
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { PieceLinksDialog } from "@/components/PieceLinksDialog";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -57,7 +58,11 @@ export default async function TenantNoterPage({ params }: PageProps) {
                   : "–";
               return (
                 <TableRow key={piece.id}>
-                  <TableCell>{piece.name}</TableCell>
+                  <TableCell>
+                    <Link className="underline" href={`/app/${groupSlug}/pieces/${piece.id}`}>
+                      {piece.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{creditsText}</TableCell>
                   <TableCell>
                     <PieceLinksDialog groupSlug={groupSlug} piece={piece} />
