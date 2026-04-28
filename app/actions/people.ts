@@ -2,14 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { readGroupSlugInput, readRequiredString } from "@/lib/actions/input";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 function readGroupSlug(formData: FormData): string {
-  const raw = formData.get("groupSlug");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Saknar grupp");
-  }
-  return raw.trim();
+  return readGroupSlugInput(formData);
 }
 
 export async function getPeople(groupSlug: string) {
@@ -24,10 +21,7 @@ export async function createPerson(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
 
-  const name = formData.get("name");
-  if (!name || typeof name !== "string" || name.trim() === "") {
-    throw new Error("Namn krävs");
-  }
+  const name = readRequiredString(formData, "name", "Namn krävs");
 
   await prisma.person.create({
     data: {
