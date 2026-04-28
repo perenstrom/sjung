@@ -1,4 +1,5 @@
 import { getPieceDetail } from "@/app/actions/pieces";
+import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import {
   Table,
   TableBody,
@@ -45,13 +46,7 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
         <h1 className="text-2xl font-semibold">{piece.name}</h1>
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-medium">Metadata</h2>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
-          <dt className="text-muted-foreground">ID</dt>
-          <dd>{piece.id}</dd>
-        </dl>
-      </section>
+      <PieceMetadataSection groupSlug={groupSlug} pieceId={piece.id} initialName={piece.name} />
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Medverkande</h2>
