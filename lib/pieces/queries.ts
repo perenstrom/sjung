@@ -1,23 +1,16 @@
 import prisma from "@/lib/prisma";
-import type { PieceDetail, PieceWithRelations } from "@/lib/pieces/types";
+import {
+  pieceDetailSelect,
+  pieceWithRelationsInclude,
+  type PieceDetail,
+  type PieceWithRelations,
+} from "@/lib/pieces/types";
 
 export async function getPiecesForGroup(groupId: string): Promise<PieceWithRelations[]> {
   return prisma.piece.findMany({
     where: { groupId },
     orderBy: { name: "asc" },
-    include: {
-      credits: {
-        include: {
-          person: { select: { name: true } },
-        },
-      },
-      files: {
-        orderBy: { createdAt: "desc" },
-      },
-      links: {
-        orderBy: { createdAt: "desc" },
-      },
-    },
+    include: pieceWithRelationsInclude,
   });
 }
 
@@ -27,50 +20,7 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
       id: pieceId,
       groupId,
     },
-    select: {
-      id: true,
-      name: true,
-      credits: {
-        select: {
-          personId: true,
-          role: true,
-          person: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-      files: {
-        select: {
-          id: true,
-          createdAt: true,
-          displayName: true,
-          fileName: true,
-          mimeType: true,
-          size: true,
-        },
-      },
-      links: {
-        select: {
-          id: true,
-          createdAt: true,
-          url: true,
-          label: true,
-        },
-      },
-      setListEntries: {
-        select: {
-          id: true,
-          setListId: true,
-          setList: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-    },
+    select: pieceDetailSelect,
   });
 
   if (!piece) {
