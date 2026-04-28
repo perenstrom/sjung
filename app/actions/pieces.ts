@@ -10,6 +10,8 @@ import type { PieceDetail } from "@/lib/pieces/types";
 import { revalidateGroupPieceDetailRoutes, revalidateGroupRoute } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
+const DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
+
 function readGroupSlug(formData: FormData): string {
   return readGroupSlugInput(formData);
 }
@@ -219,10 +221,12 @@ export async function deletePiece(formData: FormData) {
     5
   );
   if (deletionResult.failedCount > 0) {
+    const failedKeySample = deletionResult.failedKeys.slice(0, DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE);
     console.error("deletePiece failed to remove one or more R2 objects", {
       pieceId: piece.id,
       failedCount: deletionResult.failedCount,
       totalCount: deletionResult.totalCount,
+      failedKeysSample: failedKeySample,
     });
     throw new Error("Kunde inte ta bort en eller flera filer från lagringen");
   }
