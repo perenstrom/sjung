@@ -1,6 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import {
+  readGroupSlugInput,
+  readIdField,
+  readOptionalDate as readOptionalDateInput,
+  readRequiredString,
+} from "@/lib/actions/input";
 import prisma from "@/lib/prisma";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
@@ -30,57 +36,27 @@ export type SetListPieceOption = {
 };
 
 function readGroupSlug(formData: FormData): string {
-  const raw = formData.get("groupSlug");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Saknar grupp");
-  }
-  return raw.trim();
+  return readGroupSlugInput(formData);
 }
 
 function readSetListId(formData: FormData): string {
-  const raw = formData.get("setListId");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Repertoar saknas");
-  }
-  return raw.trim();
+  return readIdField(formData, "setListId", "Repertoar saknas");
 }
 
 function readSetListPieceId(formData: FormData): string {
-  const raw = formData.get("setListPieceId");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Repertoarpost saknas");
-  }
-  return raw.trim();
+  return readIdField(formData, "setListPieceId", "Repertoarpost saknas");
 }
 
 function readPieceId(formData: FormData): string {
-  const raw = formData.get("pieceId");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Stycke saknas");
-  }
-  return raw.trim();
+  return readIdField(formData, "pieceId", "Stycke saknas");
 }
 
 function readName(formData: FormData): string {
-  const raw = formData.get("name");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Namn krävs");
-  }
-  return raw.trim();
+  return readRequiredString(formData, "name", "Namn krävs");
 }
 
 function readOptionalDate(formData: FormData): Date | null {
-  const raw = formData.get("date");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    return null;
-  }
-
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error("Ogiltigt datum");
-  }
-
-  return parsed;
+  return readOptionalDateInput(formData, "date", "Ogiltigt datum");
 }
 
 export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
