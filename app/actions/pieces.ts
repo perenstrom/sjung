@@ -301,6 +301,33 @@ export async function updatePiece(formData: FormData) {
   revalidatePath(`/app/${groupSlug}`);
 }
 
+export async function updatePieceMetadata(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const pieceId = readPieceId(formData);
+  const name = readRequiredString(formData, "name", "Namn krävs");
+
+  const piece = await prisma.piece.findFirst({
+    where: { id: pieceId, groupId },
+    select: { id: true },
+  });
+
+  if (!piece) {
+    throw new Error("Stycke hittades inte");
+  }
+
+  await prisma.piece.update({
+    where: { id: piece.id },
+    data: {
+      name: name.trim(),
+      updatedById: userId,
+    },
+  });
+
+  revalidatePath(`/app/${groupSlug}`);
+  revalidatePath(`/app/${groupSlug}/pieces/${piece.id}`);
+}
+
 export async function addLink(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
