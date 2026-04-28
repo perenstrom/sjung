@@ -33,6 +33,33 @@ function readPieceId(formData: FormData): string {
   return readIdField(formData, "pieceId", "Stycke saknas");
 }
 
+function parseRequiredHttpUrl(formData: FormData): URL {
+  const urlRaw = readRequiredString(formData, "url", "Länk krävs");
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(urlRaw.trim());
+  } catch {
+    throw new Error("Ogiltig länk");
+  }
+
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    throw new Error("Länk måste börja med http eller https");
+  }
+
+  return parsedUrl;
+}
+
+async function requirePieceForLinkMutation(formData: FormData, groupId: string) {
+  const pieceId = readIdField(formData, "pieceId", "Stycke saknas");
+  return requirePieceInGroup(pieceId, groupId);
+}
+
+async function requireLinkForLinkMutation(formData: FormData, groupId: string) {
+  const linkId = readIdField(formData, "linkId", "Länk saknas");
+  return requireLinkInGroup(linkId, groupId);
+}
+
 export async function createPiece(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
@@ -141,23 +168,8 @@ export async function updatePieceMetadata(formData: FormData) {
 export async function addLink(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-
-  const pieceId = readIdField(formData, "pieceId", "Stycke saknas");
-
-  const urlRaw = readRequiredString(formData, "url", "Länk krävs");
-
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(urlRaw.trim());
-  } catch {
-    throw new Error("Ogiltig länk");
-  }
-
-  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-    throw new Error("Länk måste börja med http eller https");
-  }
-
-  const piece = await requirePieceInGroup(pieceId, groupId);
+  const parsedUrl = parseRequiredHttpUrl(formData);
+  const piece = await requirePieceForLinkMutation(formData, groupId);
 
   const label = readOptionalString(formData, "label");
 
@@ -177,10 +189,7 @@ export async function addLink(formData: FormData) {
 export async function removeLink(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-
-  const linkId = readIdField(formData, "linkId", "Länk saknas");
-
-  const link = await requireLinkInGroup(linkId, groupId);
+  const link = await requireLinkForLinkMutation(formData, groupId);
 
   await prisma.link.delete({
     where: { id: link.id },
