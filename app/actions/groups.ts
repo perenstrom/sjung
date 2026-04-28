@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
@@ -8,6 +7,11 @@ import { requireCreatorGroupById, requireCreatorGroupBySlug } from "@/lib/action
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { readGroupSlugInput, readIdField, readRequiredString } from "@/lib/actions/input";
+import {
+  revalidateAppAndMyGroupsRoutes,
+  revalidateAppAndMyGroupsWithGroupRoute,
+  revalidateGroupMembersRoutes,
+} from "@/lib/revalidate/group-routes";
 
 export async function getGroups() {
   const user = await requireUser();
@@ -94,11 +98,11 @@ export async function createGroup(formData: FormData) {
     }
   });
 
-  revalidatePath("/app");
-  revalidatePath("/app/me/groups");
   if (assignedSlug) {
-    revalidatePath(`/app/${assignedSlug}`);
+    revalidateAppAndMyGroupsWithGroupRoute(assignedSlug);
+    return;
   }
+  revalidateAppAndMyGroupsRoutes();
 }
 
 export async function updateGroup(formData: FormData) {
@@ -119,11 +123,11 @@ export async function updateGroup(formData: FormData) {
     },
   });
 
-  revalidatePath("/app");
-  revalidatePath("/app/me/groups");
   if (existing.slug) {
-    revalidatePath(`/app/${existing.slug}`);
+    revalidateAppAndMyGroupsWithGroupRoute(existing.slug);
+    return;
   }
+  revalidateAppAndMyGroupsRoutes();
 }
 
 export async function deleteGroup(formData: FormData) {
@@ -139,11 +143,11 @@ export async function deleteGroup(formData: FormData) {
     where: { id },
   });
 
-  revalidatePath("/app");
-  revalidatePath("/app/me/groups");
   if (existing.slug) {
-    revalidatePath(`/app/${existing.slug}`);
+    revalidateAppAndMyGroupsWithGroupRoute(existing.slug);
+    return;
   }
+  revalidateAppAndMyGroupsRoutes();
 }
 
 function readEmail(formData: FormData): string {
@@ -211,9 +215,7 @@ export async function addMemberToGroup(formData: FormData) {
     },
   });
 
-  revalidatePath("/app/me/groups");
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/members`);
+  revalidateGroupMembersRoutes(groupSlug);
 }
 
 export async function removeMemberFromGroup(formData: FormData) {
@@ -254,7 +256,5 @@ export async function removeMemberFromGroup(formData: FormData) {
     },
   });
 
-  revalidatePath("/app/me/groups");
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/members`);
+  revalidateGroupMembersRoutes(groupSlug);
 }

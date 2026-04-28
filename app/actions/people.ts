@@ -1,8 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { readGroupSlugInput, readRequiredString } from "@/lib/actions/input";
+import { revalidateGroupPeopleRoutes } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 function readGroupSlug(formData: FormData): string {
@@ -32,6 +32,5 @@ export async function createPerson(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/people`);
+  revalidateGroupPeopleRoutes(groupSlug);
 }
