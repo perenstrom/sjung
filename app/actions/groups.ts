@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
+import { requireCreatorGroupById, requireCreatorGroupBySlug } from "@/lib/actions/guards";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { readGroupSlugInput, readIdField, readRequiredString } from "@/lib/actions/input";
@@ -105,13 +106,10 @@ export async function updateGroup(formData: FormData) {
   const id = readIdField(formData, "id", "Ogiltig grupp");
   const name = readRequiredString(formData, "name", "Gruppnamn krävs");
 
-  const existing = await prisma.group.findFirst({
-    where: { id, createdById: user.id },
+  const existing = await requireCreatorGroupById(id, user.id, {
+    forbiddenMessage: "Du har inte behörighet att redigera den här gruppen",
     select: { slug: true },
   });
-  if (!existing) {
-    throw new Error("Du har inte behörighet att redigera den här gruppen");
-  }
 
   await prisma.group.update({
     where: { id },
@@ -132,13 +130,10 @@ export async function deleteGroup(formData: FormData) {
   const user = await requireUser();
   const id = readIdField(formData, "id", "Ogiltig grupp");
 
-  const existing = await prisma.group.findFirst({
-    where: { id, createdById: user.id },
+  const existing = await requireCreatorGroupById(id, user.id, {
+    forbiddenMessage: "Du har inte behörighet att ta bort den här gruppen",
     select: { slug: true },
   });
-  if (!existing) {
-    throw new Error("Du har inte behörighet att ta bort den här gruppen");
-  }
 
   await prisma.group.delete({
     where: { id },
@@ -157,18 +152,6 @@ function readEmail(formData: FormData): string {
 
 function readGroupSlug(formData: FormData): string {
   return readGroupSlugInput(formData, "Ogiltig grupp");
-}
-
-async function requireCreatorGroupBySlug(groupSlug: string) {
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const group = await prisma.group.findUnique({
-    where: { id: groupId },
-    select: { createdById: true },
-  });
-  if (!group || group.createdById !== userId) {
-    throw new Error("Du har inte behörighet att hantera medlemmar i gruppen");
-  }
-  return { userId, groupId };
 }
 
 export async function listGroupMembers(groupSlug: string) {

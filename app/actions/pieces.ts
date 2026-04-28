@@ -4,6 +4,7 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
+import { requireLinkInGroup, requirePieceInGroup } from "@/lib/actions/guards";
 import { getR2Bucket, getR2Client } from "@/lib/r2";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
@@ -237,8 +238,7 @@ export async function updatePiece(formData: FormData) {
   const credits = parseCredits(formData);
   assertNoDuplicateCredits(credits);
 
-  const piece = await prisma.piece.findFirst({
-    where: { id: pieceId, groupId },
+  const piece = await requirePieceInGroup(pieceId, groupId, {
     select: {
       id: true,
       credits: {
@@ -249,10 +249,6 @@ export async function updatePiece(formData: FormData) {
       },
     },
   });
-
-  if (!piece) {
-    throw new Error("Stycke hittades inte");
-  }
 
   const nextKeys = new Set(credits.map((credit) => `${credit.personId}::${credit.role}`));
   const currentKeys = new Set(
@@ -307,14 +303,7 @@ export async function updatePieceMetadata(formData: FormData) {
   const pieceId = readPieceId(formData);
   const name = readRequiredString(formData, "name", "Namn krävs");
 
-  const piece = await prisma.piece.findFirst({
-    where: { id: pieceId, groupId },
-    select: { id: true },
-  });
-
-  if (!piece) {
-    throw new Error("Stycke hittades inte");
-  }
+  const piece = await requirePieceInGroup(pieceId, groupId);
 
   await prisma.piece.update({
     where: { id: piece.id },
@@ -347,14 +336,7 @@ export async function addLink(formData: FormData) {
     throw new Error("Länk måste börja med http eller https");
   }
 
-  const piece = await prisma.piece.findFirst({
-    where: { id: pieceId, groupId },
-    select: { id: true },
-  });
-
-  if (!piece) {
-    throw new Error("Stycke hittades inte");
-  }
+  const piece = await requirePieceInGroup(pieceId, groupId);
 
   const label = readOptionalString(formData, "label");
 
@@ -377,19 +359,7 @@ export async function removeLink(formData: FormData) {
 
   const linkId = readIdField(formData, "linkId", "Länk saknas");
 
-  const link = await prisma.link.findFirst({
-    where: {
-      id: linkId,
-      piece: {
-        groupId,
-      },
-    },
-    select: { id: true },
-  });
-
-  if (!link) {
-    throw new Error("Länk hittades inte");
-  }
+  const link = await requireLinkInGroup(linkId, groupId);
 
   await prisma.link.delete({
     where: { id: link.id },
@@ -403,11 +373,7 @@ export async function deletePiece(formData: FormData) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   const pieceId = readPieceId(formData);
 
-  const piece = await prisma.piece.findFirst({
-    where: {
-      id: pieceId,
-      groupId,
-    },
+  const piece = await requirePieceInGroup(pieceId, groupId, {
     select: {
       id: true,
       files: {
@@ -417,10 +383,6 @@ export async function deletePiece(formData: FormData) {
       },
     },
   });
-
-  if (!piece) {
-    throw new Error("Stycke hittades inte");
-  }
 
   for (const file of piece.files) {
     try {
