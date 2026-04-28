@@ -3,15 +3,12 @@
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import { getR2Bucket, getR2Client } from "@/lib/r2";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 function readGroupSlug(formData: FormData): string {
-  const raw = formData.get("groupSlug");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Saknar grupp");
-  }
-  return raw.trim();
+  return readGroupSlugInput(formData);
 }
 
 export async function getPieces(groupSlug: string) {
@@ -153,11 +150,7 @@ type Credit = {
 };
 
 function readPieceId(formData: FormData): string {
-  const pieceId = formData.get("pieceId");
-  if (!pieceId || typeof pieceId !== "string" || pieceId.trim() === "") {
-    throw new Error("Stycke saknas");
-  }
-  return pieceId.trim();
+  return readIdField(formData, "pieceId", "Stycke saknas");
 }
 
 function parseCredits(formData: FormData): Credit[] {
@@ -211,10 +204,7 @@ export async function createPiece(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
 
-  const name = formData.get("name");
-  if (!name || typeof name !== "string" || name.trim() === "") {
-    throw new Error("Namn krävs");
-  }
+  const name = readRequiredString(formData, "name", "Namn krävs");
 
   const credits = parseCredits(formData);
   assertNoDuplicateCredits(credits);
@@ -242,10 +232,7 @@ export async function updatePiece(formData: FormData) {
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
   const pieceId = readPieceId(formData);
 
-  const name = formData.get("name");
-  if (!name || typeof name !== "string" || name.trim() === "") {
-    throw new Error("Namn krävs");
-  }
+  const name = readRequiredString(formData, "name", "Namn krävs");
 
   const credits = parseCredits(formData);
   assertNoDuplicateCredits(credits);
@@ -318,15 +305,9 @@ export async function addLink(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
 
-  const pieceId = formData.get("pieceId");
-  if (!pieceId || typeof pieceId !== "string" || pieceId.trim() === "") {
-    throw new Error("Stycke saknas");
-  }
+  const pieceId = readIdField(formData, "pieceId", "Stycke saknas");
 
-  const urlRaw = formData.get("url");
-  if (!urlRaw || typeof urlRaw !== "string" || urlRaw.trim() === "") {
-    throw new Error("Länk krävs");
-  }
+  const urlRaw = readRequiredString(formData, "url", "Länk krävs");
 
   let parsedUrl: URL;
   try {
@@ -340,7 +321,7 @@ export async function addLink(formData: FormData) {
   }
 
   const piece = await prisma.piece.findFirst({
-    where: { id: pieceId.trim(), groupId },
+    where: { id: pieceId, groupId },
     select: { id: true },
   });
 
@@ -348,11 +329,7 @@ export async function addLink(formData: FormData) {
     throw new Error("Stycke hittades inte");
   }
 
-  const labelRaw = formData.get("label");
-  const label =
-    typeof labelRaw === "string" && labelRaw.trim() !== ""
-      ? labelRaw.trim()
-      : null;
+  const label = readOptionalString(formData, "label");
 
   await prisma.link.create({
     data: {
@@ -371,14 +348,11 @@ export async function removeLink(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
 
-  const linkId = formData.get("linkId");
-  if (!linkId || typeof linkId !== "string" || linkId.trim() === "") {
-    throw new Error("Länk saknas");
-  }
+  const linkId = readIdField(formData, "linkId", "Länk saknas");
 
   const link = await prisma.link.findFirst({
     where: {
-      id: linkId.trim(),
+      id: linkId,
       piece: {
         groupId,
       },

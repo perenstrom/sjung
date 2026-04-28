@@ -8,6 +8,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import prisma from "@/lib/prisma";
 import { getR2Bucket, getR2Client, sanitizeFileName } from "@/lib/r2";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
@@ -23,20 +24,12 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/gif",
 ]);
 
-function readString(formData: FormData, field: string, errorMessage: string): string {
-  const value = formData.get(field);
-  if (!value || typeof value !== "string" || value.trim() === "") {
-    throw new Error(errorMessage);
-  }
-  return value.trim();
-}
-
 function readGroupSlug(formData: FormData): string {
-  return readString(formData, "groupSlug", "Saknar grupp");
+  return readGroupSlugInput(formData);
 }
 
 function readFileSize(formData: FormData): number {
-  const value = Number(readString(formData, "size", "Filstorlek saknas"));
+  const value = Number(readRequiredString(formData, "size", "Filstorlek saknas"));
   if (!Number.isInteger(value) || value <= 0) {
     throw new Error("Ogiltig filstorlek");
   }
@@ -47,7 +40,7 @@ function readFileSize(formData: FormData): number {
 }
 
 function readMimeType(formData: FormData): string {
-  const mimeType = readString(formData, "mimeType", "Filtyp saknas");
+  const mimeType = readRequiredString(formData, "mimeType", "Filtyp saknas");
   if (!ALLOWED_MIME_TYPES.has(mimeType)) {
     throw new Error("Filtypen stöds inte");
   }
@@ -71,8 +64,8 @@ async function assertPieceAccess(pieceId: string, groupId: string) {
 export async function createPieceFileUploadUrl(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const pieceId = readString(formData, "pieceId", "Stycke saknas");
-  const fileName = readString(formData, "fileName", "Filnamn saknas");
+  const pieceId = readIdField(formData, "pieceId", "Stycke saknas");
+  const fileName = readRequiredString(formData, "fileName", "Filnamn saknas");
   const mimeType = readMimeType(formData);
   const size = readFileSize(formData);
 
@@ -103,12 +96,11 @@ export async function createPieceFileUploadUrl(formData: FormData) {
 export async function finalizePieceFileUpload(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const pieceId = readString(formData, "pieceId", "Stycke saknas");
-  const fileName = readString(formData, "fileName", "Filnamn saknas");
-  const storagePath = readString(formData, "storagePath", "Sökväg saknas");
+  const pieceId = readIdField(formData, "pieceId", "Stycke saknas");
+  const fileName = readRequiredString(formData, "fileName", "Filnamn saknas");
+  const storagePath = readRequiredString(formData, "storagePath", "Sökväg saknas");
   const mimeType = readMimeType(formData);
   const size = readFileSize(formData);
-  const displayNameRaw = formData.get("displayName");
 
   await assertPieceAccess(pieceId, groupId);
 
@@ -117,10 +109,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
     throw new Error("Ogiltig filsökväg");
   }
 
-  const displayName =
-    typeof displayNameRaw === "string" && displayNameRaw.trim() !== ""
-      ? displayNameRaw.trim()
-      : fileName;
+  const displayName = readOptionalString(formData, "displayName") ?? fileName;
 
   await prisma.file.create({
     data: {
@@ -141,7 +130,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
 export async function createPieceFileDownloadUrl(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const fileId = readString(formData, "fileId", "Fil saknas");
+  const fileId = readIdField(formData, "fileId", "Fil saknas");
 
   const file = await prisma.file.findFirst({
     where: {
@@ -175,7 +164,7 @@ export async function createPieceFileDownloadUrl(formData: FormData) {
 export async function deletePieceFile(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const fileId = readString(formData, "fileId", "Fil saknas");
+  const fileId = readIdField(formData, "fileId", "Fil saknas");
 
   const file = await prisma.file.findFirst({
     where: {

@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
+import { readGroupSlugInput, readIdField, readRequiredString } from "@/lib/actions/input";
 
 export async function getGroups() {
   const user = await requireUser();
@@ -44,10 +45,7 @@ export async function setActiveGroup(groupSlug: string) {
 
 export async function createGroup(formData: FormData) {
   const user = await requireUser();
-  const name = formData.get("name");
-  if (!name || typeof name !== "string" || name.trim() === "") {
-    throw new Error("Gruppnamn krävs");
-  }
+  const name = readRequiredString(formData, "name", "Gruppnamn krävs");
 
   const trimmed = name.trim();
   const base = slugifyGroupName(trimmed);
@@ -104,15 +102,8 @@ export async function createGroup(formData: FormData) {
 
 export async function updateGroup(formData: FormData) {
   const user = await requireUser();
-  const id = formData.get("id");
-  const name = formData.get("name");
-
-  if (!id || typeof id !== "string") {
-    throw new Error("Ogiltig grupp");
-  }
-  if (!name || typeof name !== "string" || name.trim() === "") {
-    throw new Error("Gruppnamn krävs");
-  }
+  const id = readIdField(formData, "id", "Ogiltig grupp");
+  const name = readRequiredString(formData, "name", "Gruppnamn krävs");
 
   const existing = await prisma.group.findFirst({
     where: { id, createdById: user.id },
@@ -139,10 +130,7 @@ export async function updateGroup(formData: FormData) {
 
 export async function deleteGroup(formData: FormData) {
   const user = await requireUser();
-  const id = formData.get("id");
-  if (!id || typeof id !== "string") {
-    throw new Error("Ogiltig grupp");
-  }
+  const id = readIdField(formData, "id", "Ogiltig grupp");
 
   const existing = await prisma.group.findFirst({
     where: { id, createdById: user.id },
@@ -164,19 +152,11 @@ export async function deleteGroup(formData: FormData) {
 }
 
 function readEmail(formData: FormData): string {
-  const raw = formData.get("email");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("E-post krävs");
-  }
-  return raw.trim().toLowerCase();
+  return readRequiredString(formData, "email", "E-post krävs").toLowerCase();
 }
 
 function readGroupSlug(formData: FormData): string {
-  const raw = formData.get("groupSlug");
-  if (!raw || typeof raw !== "string" || raw.trim() === "") {
-    throw new Error("Ogiltig grupp");
-  }
-  return raw.trim();
+  return readGroupSlugInput(formData, "Ogiltig grupp");
 }
 
 async function requireCreatorGroupBySlug(groupSlug: string) {
@@ -255,10 +235,7 @@ export async function addMemberToGroup(formData: FormData) {
 
 export async function removeMemberFromGroup(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
-  const memberUserId = formData.get("memberUserId");
-  if (!memberUserId || typeof memberUserId !== "string") {
-    throw new Error("Ogiltig medlem");
-  }
+  const memberUserId = readIdField(formData, "memberUserId", "Ogiltig medlem");
 
   const { userId, groupId } = await requireCreatorGroupBySlug(groupSlug);
   if (memberUserId === userId) {
