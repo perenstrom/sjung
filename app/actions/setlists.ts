@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import {
   readGroupSlugInput,
   readIdField,
@@ -13,6 +12,10 @@ import {
   requireSetListPieceInGroup,
 } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
+import {
+  revalidateGroupSetListDetailRoutes,
+  revalidateGroupSetListsRoutes,
+} from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 type SetListRow = {
@@ -153,8 +156,7 @@ export async function createSetList(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/setlists`);
+  revalidateGroupSetListsRoutes(groupSlug);
 }
 
 export async function updateSetList(formData: FormData) {
@@ -175,8 +177,7 @@ export async function updateSetList(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/setlists`);
+  revalidateGroupSetListsRoutes(groupSlug);
 }
 
 export async function deleteSetList(formData: FormData) {
@@ -190,8 +191,7 @@ export async function deleteSetList(formData: FormData) {
     where: { id: existing.id },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/setlists`);
+  revalidateGroupSetListsRoutes(groupSlug);
 }
 
 export async function addPieceToSetList(formData: FormData) {
@@ -214,9 +214,7 @@ export async function addPieceToSetList(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/setlists`);
-  revalidatePath(`/app/${groupSlug}/setlists/${setList.id}`);
+  revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
 }
 
 export async function removePieceFromSetList(formData: FormData) {
@@ -232,7 +230,5 @@ export async function removePieceFromSetList(formData: FormData) {
     where: { id: setListPiece.id },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/setlists`);
-  revalidatePath(`/app/${groupSlug}/setlists/${setListPiece.setListId}`);
+  revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
 }

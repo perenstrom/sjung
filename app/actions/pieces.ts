@@ -1,12 +1,12 @@
 "use server";
 
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import { requireLinkInGroup, requirePieceInGroup } from "@/lib/actions/guards";
 import { assertNoDuplicateCredits, diffCredits, parseCreditsFromFormData } from "@/lib/pieces/credits";
 import { getR2Bucket, getR2Client } from "@/lib/r2";
+import { revalidateGroupPieceDetailRoutes, revalidateGroupRoute } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 function readGroupSlug(formData: FormData): string {
@@ -174,7 +174,7 @@ export async function createPiece(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
+  revalidateGroupRoute(groupSlug);
 }
 
 export async function updatePiece(formData: FormData) {
@@ -233,7 +233,7 @@ export async function updatePiece(formData: FormData) {
     });
   });
 
-  revalidatePath(`/app/${groupSlug}`);
+  revalidateGroupRoute(groupSlug);
 }
 
 export async function updatePieceMetadata(formData: FormData) {
@@ -252,8 +252,7 @@ export async function updatePieceMetadata(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
-  revalidatePath(`/app/${groupSlug}/pieces/${piece.id}`);
+  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
 }
 
 export async function addLink(formData: FormData) {
@@ -289,7 +288,7 @@ export async function addLink(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
+  revalidateGroupRoute(groupSlug);
 }
 
 export async function removeLink(formData: FormData) {
@@ -304,7 +303,7 @@ export async function removeLink(formData: FormData) {
     where: { id: link.id },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
+  revalidateGroupRoute(groupSlug);
 }
 
 export async function deletePiece(formData: FormData) {
@@ -340,5 +339,5 @@ export async function deletePiece(formData: FormData) {
     where: { id: piece.id },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
+  revalidateGroupRoute(groupSlug);
 }

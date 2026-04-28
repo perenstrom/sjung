@@ -7,11 +7,11 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
-import { revalidatePath } from "next/cache";
 import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import { requireFileInGroup, requirePieceInGroup } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
 import { getR2Bucket, getR2Client, sanitizeFileName } from "@/lib/r2";
+import { revalidateGroupRoute } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
@@ -111,7 +111,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
     },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
+  revalidateGroupRoute(groupSlug);
 }
 
 export async function createPieceFileDownloadUrl(formData: FormData) {
@@ -167,5 +167,5 @@ export async function deletePieceFile(formData: FormData) {
     where: { id: file.id },
   });
 
-  revalidatePath(`/app/${groupSlug}`);
+  revalidateGroupRoute(groupSlug);
 }
