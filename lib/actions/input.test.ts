@@ -17,43 +17,43 @@ function createFormData(values: Record<string, string>): FormData {
 }
 
 describe("readRequiredString", () => {
-  it("returnerar trimmad sträng för obligatoriskt fält", () => {
+  it("returns a trimmed string for a required field", () => {
     const formData = createFormData({ title: "  Hej  " });
     expect(readRequiredString(formData, "title", "Saknas")).toBe("Hej");
   });
 
-  it("kastar fel när obligatoriskt fält saknas eller är tomt", () => {
+  it("throws when a required field is missing or empty", () => {
     const formData = createFormData({ title: "   " });
     expect(() => readRequiredString(formData, "title", "Saknas")).toThrow("Saknas");
   });
 });
 
 describe("readOptionalString", () => {
-  it("returnerar null för tom optional sträng", () => {
+  it("returns null for an empty optional string", () => {
     const formData = createFormData({ note: "   " });
     expect(readOptionalString(formData, "note")).toBeNull();
   });
 
-  it("returnerar trimmad optional sträng", () => {
+  it("returns a trimmed optional string", () => {
     const formData = createFormData({ note: "  anteckning  " });
     expect(readOptionalString(formData, "note")).toBe("anteckning");
   });
 });
 
 describe("readOptionalDate", () => {
-  it("returnerar null när datumfältet saknas", () => {
+  it("returns null when the date field is missing", () => {
     const formData = createFormData({});
     expect(readOptionalDate(formData, "date", "Ogiltigt datum")).toBeNull();
   });
 
-  it("parsar giltigt datum", () => {
+  it("parses a valid date", () => {
     const formData = createFormData({ date: "2026-04-28" });
     const parsed = readOptionalDate(formData, "date", "Ogiltigt datum");
     expect(parsed).toBeInstanceOf(Date);
     expect(parsed?.toISOString()).toContain("2026-04-28");
   });
 
-  it("kastar fel för ogiltigt datum", () => {
+  it("throws for an invalid date", () => {
     const formData = createFormData({ date: "inte-ett-datum" });
     expect(() => readOptionalDate(formData, "date", "Ogiltigt datum")).toThrow(
       "Ogiltigt datum"
@@ -61,13 +61,13 @@ describe("readOptionalDate", () => {
   });
 });
 
-describe("fält-helpers", () => {
-  it("läser groupSlug med standardfelmeddelande", () => {
+describe("field helpers", () => {
+  it("reads groupSlug with the default error message", () => {
     const formData = createFormData({ groupSlug: "demo-grupp" });
     expect(readGroupSlugInput(formData)).toBe("demo-grupp");
   });
 
-  it("läser id-fält och kastar när det saknas", () => {
+  it("reads an id field and throws when it is missing", () => {
     const formData = createFormData({ pieceId: "piece-1" });
     expect(readIdField(formData, "pieceId", "Saknar id")).toBe("piece-1");
     expect(() => readIdField(formData, "songId", "Saknar id")).toThrow("Saknar id");

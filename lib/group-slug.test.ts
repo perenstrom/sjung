@@ -7,22 +7,22 @@ import {
 } from "@/lib/group-slug";
 
 describe("slugifyGroupName", () => {
-  it("normaliserar svenska tecken och skiljetecken", () => {
+  it("normalizes Swedish characters and punctuation", () => {
     expect(slugifyGroupName("Vår Kör 2026!")).toBe("var-kor-2026");
   });
 
-  it("normaliserar flera separatorer till en bindestreckad slug", () => {
+  it("normalizes multiple separators into a hyphenated slug", () => {
     expect(slugifyGroupName("  kör---rep / test  ")).toBe("kor-rep-test");
   });
 
-  it('använder fallback "grupp" vid tomt eller ogiltigt innehåll', () => {
+  it('uses "grupp" as fallback for empty or invalid input', () => {
     expect(slugifyGroupName("   ")).toBe("grupp");
     expect(slugifyGroupName("!!!")).toBe("grupp");
   });
 });
 
 describe("isReservedGroupSlug", () => {
-  it("identifierar reserverad slug", () => {
+  it("identifies reserved slugs", () => {
     expect(isReservedGroupSlug(RESERVED_GROUP_SLUG)).toBe(true);
     expect(isReservedGroupSlug("annan-grupp")).toBe(false);
   });
