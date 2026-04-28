@@ -4,7 +4,9 @@ import prisma from "@/lib/prisma";
 import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import { requireLinkInGroup, requirePieceInGroup } from "@/lib/actions/guards";
 import { assertNoDuplicateCredits, diffCredits, parseCreditsFromFormData } from "@/lib/pieces/credits";
+import { getPieceDetailForGroup, getPiecesForGroup } from "@/lib/pieces/queries";
 import { deleteR2ObjectsWithConcurrency } from "@/lib/pieces/storage-delete";
+import type { PieceDetail } from "@/lib/pieces/types";
 import { revalidateGroupPieceDetailRoutes, revalidateGroupRoute } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
@@ -14,135 +16,17 @@ function readGroupSlug(formData: FormData): string {
 
 export async function getPieces(groupSlug: string) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  return prisma.piece.findMany({
-    where: { groupId },
-    orderBy: { name: "asc" },
-    include: {
-      credits: {
-        include: {
-          person: { select: { name: true } },
-        },
-      },
-      files: {
-        orderBy: { createdAt: "desc" },
-      },
-      links: {
-        orderBy: { createdAt: "desc" },
-      },
-    },
-  });
+  return getPiecesForGroup(groupId);
 }
 
-export type PieceDetail = {
-  id: string;
-  name: string;
-  credits: Array<{
-    personId: string;
-    role: string;
-    person: { name: string };
-  }>;
-  files: Array<{
-    id: string;
-    createdAt: Date;
-    displayName: string;
-    fileName: string;
-    mimeType: string;
-    size: number;
-  }>;
-  links: Array<{
-    id: string;
-    createdAt: Date;
-    url: string;
-    label: string | null;
-  }>;
-  setListEntries: Array<{
-    id: string;
-    setListId: string;
-    setListName: string;
-  }>;
-};
+export type { PieceDetail };
 
 export async function getPieceDetail(
   groupSlug: string,
   pieceId: string
 ): Promise<PieceDetail | null> {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-
-  const piece = await prisma.piece.findFirst({
-    where: {
-      id: pieceId,
-      groupId,
-    },
-    select: {
-      id: true,
-      name: true,
-      credits: {
-        select: {
-          personId: true,
-          role: true,
-          person: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-      files: {
-        select: {
-          id: true,
-          createdAt: true,
-          displayName: true,
-          fileName: true,
-          mimeType: true,
-          size: true,
-        },
-      },
-      links: {
-        select: {
-          id: true,
-          createdAt: true,
-          url: true,
-          label: true,
-        },
-      },
-      setListEntries: {
-        select: {
-          id: true,
-          setListId: true,
-          setList: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!piece) {
-    return null;
-  }
-
-  return {
-    id: piece.id,
-    name: piece.name,
-    credits: piece.credits.sort((a, b) => {
-      const byName = a.person.name.localeCompare(b.person.name, "sv-SE");
-      if (byName !== 0) {
-        return byName;
-      }
-      return a.role.localeCompare(b.role, "sv-SE");
-    }),
-    files: piece.files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    links: piece.links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
-    setListEntries: piece.setListEntries
-      .map((entry) => ({
-        id: entry.id,
-        setListId: entry.setListId,
-        setListName: entry.setList.name,
-      }))
-      .sort((a, b) => a.setListName.localeCompare(b.setListName, "sv-SE")),
-  };
+  return getPieceDetailForGroup(groupId, pieceId);
 }
 
 function readPieceId(formData: FormData): string {
