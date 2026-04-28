@@ -9,6 +9,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
+import { requireFileInGroup, requirePieceInGroup } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
 import { getR2Bucket, getR2Client, sanitizeFileName } from "@/lib/r2";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
@@ -47,20 +48,6 @@ function readMimeType(formData: FormData): string {
   return mimeType;
 }
 
-async function assertPieceAccess(pieceId: string, groupId: string) {
-  const piece = await prisma.piece.findFirst({
-    where: {
-      id: pieceId,
-      groupId,
-    },
-    select: { id: true },
-  });
-
-  if (!piece) {
-    throw new Error("Stycke hittades inte");
-  }
-}
-
 export async function createPieceFileUploadUrl(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
@@ -69,7 +56,7 @@ export async function createPieceFileUploadUrl(formData: FormData) {
   const mimeType = readMimeType(formData);
   const size = readFileSize(formData);
 
-  await assertPieceAccess(pieceId, groupId);
+  await requirePieceInGroup(pieceId, groupId);
 
   const safeName = sanitizeFileName(fileName) || "fil";
   const storagePath = `groups/${groupId}/pieces/${pieceId}/${randomUUID()}-${safeName}`;
@@ -102,7 +89,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
   const mimeType = readMimeType(formData);
   const size = readFileSize(formData);
 
-  await assertPieceAccess(pieceId, groupId);
+  await requirePieceInGroup(pieceId, groupId);
 
   const expectedPrefix = `groups/${groupId}/pieces/${pieceId}/`;
   if (!storagePath.startsWith(expectedPrefix)) {
@@ -132,21 +119,13 @@ export async function createPieceFileDownloadUrl(formData: FormData) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   const fileId = readIdField(formData, "fileId", "Fil saknas");
 
-  const file = await prisma.file.findFirst({
-    where: {
-      id: fileId,
-      piece: { groupId },
-    },
+  const file = await requireFileInGroup(fileId, groupId, {
     select: {
       storagePath: true,
       fileName: true,
       mimeType: true,
     },
   });
-
-  if (!file) {
-    throw new Error("Fil hittades inte");
-  }
 
   const command = new GetObjectCommand({
     Bucket: getR2Bucket(),
@@ -166,20 +145,12 @@ export async function deletePieceFile(formData: FormData) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   const fileId = readIdField(formData, "fileId", "Fil saknas");
 
-  const file = await prisma.file.findFirst({
-    where: {
-      id: fileId,
-      piece: { groupId },
-    },
+  const file = await requireFileInGroup(fileId, groupId, {
     select: {
       id: true,
       storagePath: true,
     },
   });
-
-  if (!file) {
-    throw new Error("Fil hittades inte");
-  }
 
   try {
     await getR2Client().send(

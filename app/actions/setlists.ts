@@ -7,6 +7,11 @@ import {
   readOptionalDate as readOptionalDateInput,
   readRequiredString,
 } from "@/lib/actions/input";
+import {
+  requirePieceInGroup,
+  requireSetListInGroup,
+  requireSetListPieceInGroup,
+} from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
@@ -159,14 +164,7 @@ export async function updateSetList(formData: FormData) {
   const name = readName(formData);
   const date = readOptionalDate(formData);
 
-  const existing = await prisma.setList.findFirst({
-    where: { id: setListId, groupId },
-    select: { id: true },
-  });
-
-  if (!existing) {
-    throw new Error("Repertoar hittades inte");
-  }
+  const existing = await requireSetListInGroup(setListId, groupId);
 
   await prisma.setList.update({
     where: { id: existing.id },
@@ -186,14 +184,7 @@ export async function deleteSetList(formData: FormData) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   const setListId = readSetListId(formData);
 
-  const existing = await prisma.setList.findFirst({
-    where: { id: setListId, groupId },
-    select: { id: true },
-  });
-
-  if (!existing) {
-    throw new Error("Repertoar hittades inte");
-  }
+  const existing = await requireSetListInGroup(setListId, groupId);
 
   await prisma.setList.delete({
     where: { id: existing.id },
@@ -210,23 +201,9 @@ export async function addPieceToSetList(formData: FormData) {
   const pieceId = readPieceId(formData);
 
   const [setList, piece] = await Promise.all([
-    prisma.setList.findFirst({
-      where: { id: setListId, groupId },
-      select: { id: true },
-    }),
-    prisma.piece.findFirst({
-      where: { id: pieceId, groupId },
-      select: { id: true },
-    }),
+    requireSetListInGroup(setListId, groupId),
+    requirePieceInGroup(pieceId, groupId),
   ]);
-
-  if (!setList) {
-    throw new Error("Repertoar hittades inte");
-  }
-
-  if (!piece) {
-    throw new Error("Stycke hittades inte");
-  }
 
   await prisma.setListPiece.create({
     data: {
@@ -247,17 +224,9 @@ export async function removePieceFromSetList(formData: FormData) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   const setListPieceId = readSetListPieceId(formData);
 
-  const setListPiece = await prisma.setListPiece.findFirst({
-    where: {
-      id: setListPieceId,
-      setList: { groupId },
-    },
+  const setListPiece = await requireSetListPieceInGroup(setListPieceId, groupId, {
     select: { id: true, setListId: true },
   });
-
-  if (!setListPiece) {
-    throw new Error("Repertoarpost hittades inte");
-  }
 
   await prisma.setListPiece.delete({
     where: { id: setListPiece.id },
