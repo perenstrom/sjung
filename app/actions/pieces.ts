@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import { requireLinkInGroup, requirePieceInGroup } from "@/lib/actions/guards";
+import { assertNoDuplicateCredits, diffCredits, parseCreditsFromFormData } from "@/lib/pieces/credits";
 import { getR2Bucket, getR2Client } from "@/lib/r2";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
@@ -145,60 +146,8 @@ export async function getPieceDetail(
   };
 }
 
-type Credit = {
-  personId: string;
-  role: string;
-};
-
 function readPieceId(formData: FormData): string {
   return readIdField(formData, "pieceId", "Stycke saknas");
-}
-
-function parseCredits(formData: FormData): Credit[] {
-  const creditsJson = formData.get("credits");
-  if (!creditsJson) {
-    return [];
-  }
-  if (typeof creditsJson !== "string") {
-    throw new Error("Ogiltigt format för medverkande");
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(creditsJson);
-  } catch {
-    throw new Error("Ogiltigt format för medverkande");
-  }
-
-  if (!Array.isArray(parsed)) {
-    throw new Error("Ogiltigt format för medverkande");
-  }
-
-  return parsed.map((item) => {
-    const candidate = item as Record<string, unknown>;
-    if (
-      !item ||
-      typeof item !== "object" ||
-      typeof candidate.personId !== "string" ||
-      candidate.personId.trim() === "" ||
-      typeof candidate.role !== "string" ||
-      candidate.role.trim() === ""
-    ) {
-      throw new Error("Ogiltigt format för medverkande");
-    }
-    return { personId: candidate.personId.trim(), role: candidate.role.trim() };
-  });
-}
-
-function assertNoDuplicateCredits(credits: Credit[]) {
-  const seen = new Set<string>();
-  for (const credit of credits) {
-    const key = `${credit.personId}::${credit.role}`;
-    if (seen.has(key)) {
-      throw new Error("En person kan inte ha samma roll flera gånger");
-    }
-    seen.add(key);
-  }
 }
 
 export async function createPiece(formData: FormData) {
@@ -207,7 +156,7 @@ export async function createPiece(formData: FormData) {
 
   const name = readRequiredString(formData, "name", "Namn krävs");
 
-  const credits = parseCredits(formData);
+  const credits = parseCreditsFromFormData(formData);
   assertNoDuplicateCredits(credits);
 
   await prisma.piece.create({
@@ -235,7 +184,7 @@ export async function updatePiece(formData: FormData) {
 
   const name = readRequiredString(formData, "name", "Namn krävs");
 
-  const credits = parseCredits(formData);
+  const credits = parseCreditsFromFormData(formData);
   assertNoDuplicateCredits(credits);
 
   const piece = await requirePieceInGroup(pieceId, groupId, {
@@ -250,17 +199,7 @@ export async function updatePiece(formData: FormData) {
     },
   });
 
-  const nextKeys = new Set(credits.map((credit) => `${credit.personId}::${credit.role}`));
-  const currentKeys = new Set(
-    piece.credits.map((credit) => `${credit.personId}::${credit.role}`)
-  );
-
-  const creditsToCreate = credits.filter(
-    (credit) => !currentKeys.has(`${credit.personId}::${credit.role}`)
-  );
-  const creditsToDelete = piece.credits.filter(
-    (credit) => !nextKeys.has(`${credit.personId}::${credit.role}`)
-  );
+  const { creditsToCreate, creditsToDelete } = diffCredits(piece.credits, credits);
 
   await prisma.$transaction(async (tx) => {
     if (creditsToDelete.length > 0) {
