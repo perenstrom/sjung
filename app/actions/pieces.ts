@@ -1,11 +1,10 @@
 "use server";
 
-import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import prisma from "@/lib/prisma";
 import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import { requireLinkInGroup, requirePieceInGroup } from "@/lib/actions/guards";
 import { assertNoDuplicateCredits, diffCredits, parseCreditsFromFormData } from "@/lib/pieces/credits";
-import { getR2Bucket, getR2Client } from "@/lib/r2";
+import { deleteR2ObjectsWithConcurrency } from "@/lib/pieces/storage-delete";
 import { revalidateGroupPieceDetailRoutes, revalidateGroupRoute } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
@@ -322,17 +321,17 @@ export async function deletePiece(formData: FormData) {
     },
   });
 
-  for (const file of piece.files) {
-    try {
-      await getR2Client().send(
-        new DeleteObjectCommand({
-          Bucket: getR2Bucket(),
-          Key: file.storagePath,
-        })
-      );
-    } catch {
-      throw new Error("Kunde inte ta bort en eller flera filer från lagringen");
-    }
+  const deletionResult = await deleteR2ObjectsWithConcurrency(
+    piece.files.map((file) => file.storagePath),
+    5
+  );
+  if (deletionResult.failedCount > 0) {
+    console.error("deletePiece failed to remove one or more R2 objects", {
+      pieceId: piece.id,
+      failedCount: deletionResult.failedCount,
+      totalCount: deletionResult.totalCount,
+    });
+    throw new Error("Kunde inte ta bort en eller flera filer från lagringen");
   }
 
   await prisma.piece.delete({
