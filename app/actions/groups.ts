@@ -6,10 +6,12 @@ import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { requireCreatorGroupById, requireCreatorGroupBySlug } from "@/lib/actions/guards";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
-import { readGroupSlugInput, readIdField, readRequiredString } from "@/lib/actions/input";
 import {
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
+  parseInviteEmailFromFormData,
+  parseMemberUserIdFromFormData,
+  parseMembershipGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
 import {
   revalidateAppAndMyGroupsRoutes,
@@ -152,14 +154,6 @@ export async function deleteGroup(formData: FormData) {
   revalidateAppAndMyGroupsRoutes();
 }
 
-function readEmail(formData: FormData): string {
-  return readRequiredString(formData, "email", "E-post krävs").toLowerCase();
-}
-
-function readGroupSlug(formData: FormData): string {
-  return readGroupSlugInput(formData, "Ogiltig grupp");
-}
-
 export async function listGroupMembers(groupSlug: string) {
   const { groupId } = await requireCreatorGroupBySlug(groupSlug);
 
@@ -185,8 +179,8 @@ export async function listGroupMembers(groupSlug: string) {
 }
 
 export async function addMemberToGroup(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const email = readEmail(formData);
+  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const email = parseInviteEmailFromFormData(formData);
   const { groupId } = await requireCreatorGroupBySlug(groupSlug);
 
   const user = await prisma.user.findUnique({
@@ -221,8 +215,8 @@ export async function addMemberToGroup(formData: FormData) {
 }
 
 export async function removeMemberFromGroup(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const memberUserId = readIdField(formData, "memberUserId", "Ogiltig medlem");
+  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const memberUserId = parseMemberUserIdFromFormData(formData);
 
   const { userId, groupId } = await requireCreatorGroupBySlug(groupSlug);
   if (memberUserId === userId) {
