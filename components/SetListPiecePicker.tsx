@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -28,13 +28,14 @@ export function SetListPiecePicker({ pieces }: SetListPiecePickerProps) {
     );
   }, [pieces, query]);
 
-  useEffect(() => {
+  const resolvedPieceId = useMemo(() => {
     if (filteredPieces.length === 0) {
-      return;
+      return "";
     }
-    if (!filteredPieces.some((piece) => piece.id === selectedPieceId)) {
-      setSelectedPieceId(filteredPieces[0].id);
-    }
+    const stillValid = filteredPieces.some(
+      (piece) => piece.id === selectedPieceId
+    );
+    return stillValid ? selectedPieceId : filteredPieces[0].id;
   }, [filteredPieces, selectedPieceId]);
 
   return (
@@ -49,7 +50,7 @@ export function SetListPiecePicker({ pieces }: SetListPiecePickerProps) {
       />
       <select
         name="pieceId"
-        value={filteredPieces.length === 0 ? "" : selectedPieceId}
+        value={resolvedPieceId}
         onChange={(event) => setSelectedPieceId(event.target.value)}
         required
         className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
