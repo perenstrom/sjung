@@ -6,6 +6,11 @@ import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  parseRedirectPathFromFormData,
+  parseRedirectPathFromValue,
+  parseSignupFormData,
+} from "@/lib/schemas/auth";
 
 type SignupPageProps = {
   searchParams: Promise<{
@@ -20,32 +25,19 @@ function withError(error: string, nextPath: string) {
 
 export default async function SignupPage({ searchParams }: SignupPageProps) {
   const { next, error } = await searchParams;
-  const nextPath =
-    typeof next === "string" && next.startsWith("/") ? next : "/app";
+  const nextPath = parseRedirectPathFromValue(next);
 
   async function signup(formData: FormData) {
     "use server";
 
-    const name = formData.get("name");
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const nextValue = formData.get("next");
-    const redirectTo =
-      typeof nextValue === "string" && nextValue.startsWith("/")
-        ? nextValue
-        : "/app";
-
-    if (
-      typeof name !== "string" ||
-      typeof email !== "string" ||
-      typeof password !== "string"
-    ) {
-      redirect(withError("Ogiltiga formulärdata", redirectTo));
+    const parsed = parseSignupFormData(formData);
+    if (!parsed.ok) {
+      redirect(
+        withError(parsed.error, parseRedirectPathFromFormData(formData))
+      );
     }
 
-    if (password.length < 12) {
-      redirect(withError("Lösenordet måste vara minst 12 tecken", redirectTo));
-    }
+    const { name, email, password, redirectTo } = parsed.data;
 
     const normalizedEmail = email.toLowerCase().trim();
     const existingUser = await prisma.user.findUnique({
@@ -57,10 +49,9 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
     }
 
     const passwordHash = await argon2.hash(password);
-    const trimmedName = name.trim();
     const user = await prisma.user.create({
       data: {
-        name: trimmedName || normalizedEmail,
+        name: name || normalizedEmail,
         email: normalizedEmail,
         passwordHash,
       },

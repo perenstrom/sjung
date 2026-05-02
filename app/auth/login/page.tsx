@@ -5,6 +5,11 @@ import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  parseLoginFormData,
+  parseRedirectPathFromFormData,
+  parseRedirectPathFromValue,
+} from "@/lib/schemas/auth";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -15,27 +20,22 @@ type LoginPageProps = {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { next, error } = await searchParams;
-  const nextPath =
-    typeof next === "string" && next.startsWith("/") ? next : "/app";
+  const nextPath = parseRedirectPathFromValue(next);
 
   async function login(formData: FormData) {
     "use server";
 
-    const email = formData.get("email");
-    const password = formData.get("password");
-    const nextValue = formData.get("next");
-    const redirectTo =
-      typeof nextValue === "string" && nextValue.startsWith("/")
-        ? nextValue
-        : "/app";
-
-    if (typeof email !== "string" || typeof password !== "string") {
+    const parsed = parseLoginFormData(formData);
+    if (!parsed.ok) {
+      const redirectTo = parseRedirectPathFromFormData(formData);
       redirect(
         `/auth/login?error=Ogiltiga inloggningsuppgifter&next=${encodeURIComponent(
           redirectTo
         )}`
       );
     }
+
+    const { email, password, redirectTo } = parsed.data;
 
     try {
       await signIn("credentials", {
