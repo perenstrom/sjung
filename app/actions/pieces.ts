@@ -1,9 +1,17 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { readGroupSlugInput, readIdField, readOptionalString, readRequiredString } from "@/lib/actions/input";
 import { requireLinkInGroup, requirePieceInGroup } from "@/lib/actions/guards";
-import { assertNoDuplicateCredits, diffCredits, parseCreditsFromFormData } from "@/lib/pieces/credits";
+import { assertNoDuplicateCredits, diffCredits } from "@/lib/pieces/credits";
+import {
+  parseLinkIdFromFormData,
+  parseOptionalLinkLabelFromFormData,
+  parsePieceCreditsFromFormData,
+  parsePieceGroupSlugFromFormData,
+  parsePieceIdFromFormData,
+  parsePieceNameFromFormData,
+  parseRequiredHttpUrlFromFormData,
+} from "@/lib/schemas/pieces";
 import { getPieceDetailForGroup, getPiecesForGroup } from "@/lib/pieces/queries";
 import { deleteR2ObjectsWithConcurrency } from "@/lib/pieces/storage-delete";
 import type { PieceDetail } from "@/lib/pieces/types";
@@ -11,10 +19,6 @@ import { revalidateGroupPieceDetailRoutes, revalidateGroupRoute } from "@/lib/re
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 const DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
-
-function readGroupSlug(formData: FormData): string {
-  return readGroupSlugInput(formData);
-}
 
 export async function getPieces(groupSlug: string) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
@@ -29,44 +33,23 @@ export async function getPieceDetail(
   return getPieceDetailForGroup(groupId, pieceId);
 }
 
-function readPieceId(formData: FormData): string {
-  return readIdField(formData, "pieceId", "Stycke saknas");
-}
-
-function parseRequiredHttpUrl(formData: FormData): URL {
-  const urlRaw = readRequiredString(formData, "url", "Länk krävs");
-
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(urlRaw.trim());
-  } catch {
-    throw new Error("Ogiltig länk");
-  }
-
-  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-    throw new Error("Länk måste börja med http eller https");
-  }
-
-  return parsedUrl;
-}
-
 async function requirePieceForLinkMutation(formData: FormData, groupId: string) {
-  const pieceId = readIdField(formData, "pieceId", "Stycke saknas");
+  const pieceId = parsePieceIdFromFormData(formData);
   return requirePieceInGroup(pieceId, groupId);
 }
 
 async function requireLinkForLinkMutation(formData: FormData, groupId: string) {
-  const linkId = readIdField(formData, "linkId", "Länk saknas");
+  const linkId = parseLinkIdFromFormData(formData);
   return requireLinkInGroup(linkId, groupId);
 }
 
 export async function createPiece(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
 
-  const name = readRequiredString(formData, "name", "Namn krävs");
+  const name = parsePieceNameFromFormData(formData);
 
-  const credits = parseCreditsFromFormData(formData);
+  const credits = parsePieceCreditsFromFormData(formData);
   assertNoDuplicateCredits(credits);
 
   await prisma.piece.create({
@@ -88,13 +71,13 @@ export async function createPiece(formData: FormData) {
 }
 
 export async function updatePiece(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const pieceId = readPieceId(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
 
-  const name = readRequiredString(formData, "name", "Namn krävs");
+  const name = parsePieceNameFromFormData(formData);
 
-  const credits = parseCreditsFromFormData(formData);
+  const credits = parsePieceCreditsFromFormData(formData);
   assertNoDuplicateCredits(credits);
 
   const piece = await requirePieceInGroup(pieceId, groupId, {
@@ -147,10 +130,10 @@ export async function updatePiece(formData: FormData) {
 }
 
 export async function updatePieceMetadata(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const pieceId = readPieceId(formData);
-  const name = readRequiredString(formData, "name", "Namn krävs");
+  const pieceId = parsePieceIdFromFormData(formData);
+  const name = parsePieceNameFromFormData(formData);
 
   const piece = await requirePieceInGroup(pieceId, groupId);
 
@@ -166,12 +149,12 @@ export async function updatePieceMetadata(formData: FormData) {
 }
 
 export async function addLink(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const parsedUrl = parseRequiredHttpUrl(formData);
+  const parsedUrl = parseRequiredHttpUrlFromFormData(formData);
   const piece = await requirePieceForLinkMutation(formData, groupId);
 
-  const label = readOptionalString(formData, "label");
+  const label = parseOptionalLinkLabelFromFormData(formData);
 
   await prisma.link.create({
     data: {
@@ -187,7 +170,7 @@ export async function addLink(formData: FormData) {
 }
 
 export async function removeLink(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   const link = await requireLinkForLinkMutation(formData, groupId);
 
@@ -199,9 +182,9 @@ export async function removeLink(formData: FormData) {
 }
 
 export async function deletePiece(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const pieceId = readPieceId(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
 
   const piece = await requirePieceInGroup(pieceId, groupId, {
     select: {
