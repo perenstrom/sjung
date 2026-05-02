@@ -21,8 +21,6 @@ export async function getPieces(groupSlug: string) {
   return getPiecesForGroup(groupId);
 }
 
-export type { PieceDetail };
-
 export async function getPieceDetail(
   groupSlug: string,
   pieceId: string

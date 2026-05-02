@@ -17,30 +17,13 @@ import {
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
+import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
 
 type SetListRow = {
   id: string;
   name: string;
   date: Date | null;
   updatedAt: Date;
-};
-
-export type SetListDetail = {
-  id: string;
-  name: string;
-  date: Date | null;
-  updatedAt: Date;
-  pieces: Array<{
-    id: string;
-    pieceId: string;
-    pieceName: string;
-    createdAt: Date;
-  }>;
-};
-
-export type SetListPieceOption = {
-  id: string;
-  name: string;
 };
 
 function readGroupSlug(formData: FormData): string {
