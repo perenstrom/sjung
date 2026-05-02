@@ -8,6 +8,10 @@ import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { readGroupSlugInput, readIdField, readRequiredString } from "@/lib/actions/input";
 import {
+  parseGroupIdFromFormData,
+  parseGroupNameFromFormData,
+} from "@/lib/schemas/groups";
+import {
   revalidateAppAndMyGroupsRoutes,
   revalidateAppAndMyGroupsWithGroupRoute,
   revalidateGroupMembersRoutes,
@@ -50,9 +54,7 @@ export async function setActiveGroup(groupSlug: string) {
 
 export async function createGroup(formData: FormData) {
   const user = await requireUser();
-  const name = readRequiredString(formData, "name", "Gruppnamn krävs");
-
-  const trimmed = name.trim();
+  const trimmed = parseGroupNameFromFormData(formData);
   const base = slugifyGroupName(trimmed);
   if (isReservedGroupSlug(base)) {
     throw new Error(
@@ -107,8 +109,8 @@ export async function createGroup(formData: FormData) {
 
 export async function updateGroup(formData: FormData) {
   const user = await requireUser();
-  const id = readIdField(formData, "id", "Ogiltig grupp");
-  const name = readRequiredString(formData, "name", "Gruppnamn krävs");
+  const id = parseGroupIdFromFormData(formData);
+  const name = parseGroupNameFromFormData(formData);
 
   const existing = await requireCreatorGroupById(id, user.id, {
     forbiddenMessage: "Du har inte behörighet att redigera den här gruppen",
@@ -118,7 +120,7 @@ export async function updateGroup(formData: FormData) {
   await prisma.group.update({
     where: { id },
     data: {
-      name: name.trim(),
+      name,
       updatedById: user.id,
     },
   });
@@ -132,7 +134,7 @@ export async function updateGroup(formData: FormData) {
 
 export async function deleteGroup(formData: FormData) {
   const user = await requireUser();
-  const id = readIdField(formData, "id", "Ogiltig grupp");
+  const id = parseGroupIdFromFormData(formData);
 
   const existing = await requireCreatorGroupById(id, user.id, {
     forbiddenMessage: "Du har inte behörighet att ta bort den här gruppen",
