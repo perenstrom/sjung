@@ -33,6 +33,25 @@ const pieceIdFieldSchema = z
   .trim()
   .min(1, { error: "Stycke saknas" });
 
+export function parsePieceIdParam(pieceId: string): string {
+  const result = pieceIdFieldSchema.safeParse(pieceId);
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Stycke saknas");
+  }
+  return result.data;
+}
+
+const pieceNoteIdFieldSchema = z
+  .string()
+  .trim()
+  .min(1, { error: "Anteckning saknas" });
+
+const pieceNoteContentSchema = z
+  .string()
+  .trim()
+  .min(1, { error: "Anteckning krävs" })
+  .max(50_000, { error: "Anteckningen är för lång" });
+
 const linkIdFieldSchema = z
   .string()
   .trim()
@@ -54,6 +73,26 @@ export function parseLinkIdFromFormData(formData: FormData): string {
   );
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Länk saknas");
+  }
+  return result.data;
+}
+
+export function parsePieceNoteIdFromFormData(formData: FormData): string {
+  const result = pieceNoteIdFieldSchema.safeParse(
+    formDataString(formData, "pieceNoteId")
+  );
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Anteckning saknas");
+  }
+  return result.data;
+}
+
+export function parsePieceNoteContentFromFormData(formData: FormData): string {
+  const result = pieceNoteContentSchema.safeParse(
+    formDataString(formData, "content")
+  );
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Anteckning krävs");
   }
   return result.data;
 }
