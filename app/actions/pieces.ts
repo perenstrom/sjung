@@ -12,6 +12,7 @@ import {
   parsePieceNameFromFormData,
   parseRequiredHttpUrlFromFormData,
 } from "@/lib/schemas/pieces";
+import { parseWritableGroupSlugParam } from "@/lib/schemas/people";
 import { getPieceDetailForGroup, getPiecesForGroup } from "@/lib/pieces/queries";
 import { deleteR2ObjectsWithConcurrency } from "@/lib/pieces/storage-delete";
 import type { PieceDetail } from "@/lib/pieces/types";
@@ -34,6 +35,27 @@ export async function getPieceDetail(
 ): Promise<PieceDetail | null> {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   return getPieceDetailForGroup(groupId, pieceId);
+}
+
+/** Minimal title read for navigation; returns null when the piece is missing or inaccessible. */
+export async function getPieceTitleForBreadcrumb(
+  groupSlug: string,
+  pieceId: string
+): Promise<{ title: string } | null> {
+  try {
+    const slug = parseWritableGroupSlugParam(groupSlug);
+    const { groupId } = await getWritableGroupIdForSlug(slug);
+    const piece = await prisma.piece.findFirst({
+      where: { id: pieceId, groupId },
+      select: { name: true },
+    });
+    if (!piece) {
+      return null;
+    }
+    return { title: piece.name };
+  } catch {
+    return null;
+  }
 }
 
 async function requirePieceForLinkMutation(formData: FormData, groupId: string) {
