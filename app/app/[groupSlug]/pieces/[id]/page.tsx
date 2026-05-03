@@ -1,5 +1,6 @@
 import { getPieceDetail } from "@/app/actions/pieces";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
+import { formatFileSize } from "@/lib/formatFileSize";
 import {
   Table,
   TableBody,
@@ -20,16 +21,6 @@ function formatDateTime(value: Date): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value);
-}
-
-function formatFileSize(size: number): string {
-  if (size < 1024) {
-    return `${size} B`;
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(1)} KB`;
-  }
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export default async function TenantPieceDetailPage({ params }: PageProps) {
