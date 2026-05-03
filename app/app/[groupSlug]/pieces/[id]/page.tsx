@@ -61,7 +61,12 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
         <h1 className="text-2xl font-semibold">{piece.name}</h1>
       </div>
 
-      <PieceMetadataSection groupSlug={groupSlug} pieceId={piece.id} initialName={piece.name} />
+      <PieceMetadataSection
+        key={piece.id}
+        groupSlug={groupSlug}
+        pieceId={piece.id}
+        initialName={piece.name}
+      />
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

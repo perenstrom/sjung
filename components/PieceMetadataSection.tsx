@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updatePieceMetadata } from "@/app/actions/pieces";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -26,14 +26,6 @@ export function PieceMetadataSection({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (isEditing) {
-      return;
-    }
-    setSavedName(initialName);
-    setDraftName(initialName);
-  }, [initialName, isEditing]);
 
   function handleCancel() {
     setIsEditing(false);
