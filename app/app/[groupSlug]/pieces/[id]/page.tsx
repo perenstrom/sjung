@@ -6,6 +6,7 @@ import { PieceLinksDialog } from "@/components/PieceLinksDialog";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import type { Piece } from "@/components/PieceLinksDialog/types";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -68,8 +69,8 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
         initialName={piece.name}
       />
 
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <Card>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
           <h2 className="text-lg font-medium">Medverkande</h2>
           <EditPieceDialog
             creditsOnly
@@ -84,80 +85,83 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
               })),
             }}
           />
-        </div>
-        {piece.credits.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {piece.credits.map((credit) => (
-              <li key={`${credit.personId}:${credit.role}`}>
-                {credit.person.name} ({credit.role})
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {piece.credits.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {piece.credits.map((credit) => (
+                <li key={`${credit.personId}:${credit.role}`}>
+                  {credit.person.name} ({credit.role})
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <Card>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
           <h2 className="text-lg font-medium">Filer och länkar</h2>
           <PieceLinksDialog
             groupSlug={groupSlug}
             piece={pieceForLinksDialog}
             refreshAfterMutations
           />
-        </div>
-
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">Filer</h3>
-          {piece.files.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Inga filer uppladdade ännu.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Namn</TableHead>
-                  <TableHead>Fil</TableHead>
-                  <TableHead>MIME</TableHead>
-                  <TableHead>Storlek</TableHead>
-                  <TableHead>Uppladdad</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {piece.files.map((file) => (
-                  <TableRow key={file.id}>
-                    <TableCell>{file.displayName}</TableCell>
-                    <TableCell>{file.fileName}</TableCell>
-                    <TableCell>{file.mimeType}</TableCell>
-                    <TableCell>{formatFileSize(file.size)}</TableCell>
-                    <TableCell>{formatDateTime(file.createdAt)}</TableCell>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Filer</h3>
+            {piece.files.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Inga filer uppladdade ännu.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Namn</TableHead>
+                    <TableHead>Fil</TableHead>
+                    <TableHead>MIME</TableHead>
+                    <TableHead>Storlek</TableHead>
+                    <TableHead>Uppladdad</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {piece.files.map((file) => (
+                    <TableRow key={file.id}>
+                      <TableCell>{file.displayName}</TableCell>
+                      <TableCell>{file.fileName}</TableCell>
+                      <TableCell>{file.mimeType}</TableCell>
+                      <TableCell>{formatFileSize(file.size)}</TableCell>
+                      <TableCell>{formatDateTime(file.createdAt)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
 
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">Länkar</h3>
-          {piece.links.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Inga länkar tillagda ännu.</p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {piece.links.map((link) => (
-                <li key={link.id}>
-                  <a className="underline" href={link.url} target="_blank" rel="noreferrer">
-                    {link.label?.trim() ? link.label : link.url}
-                  </a>
-                  <span className="ml-2 text-muted-foreground">
-                    ({formatDateTime(link.createdAt)})
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-muted-foreground">Länkar</h3>
+            {piece.links.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Inga länkar tillagda ännu.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {piece.links.map((link) => (
+                  <li key={link.id}>
+                    <a className="underline" href={link.url} target="_blank" rel="noreferrer">
+                      {link.label?.trim() ? link.label : link.url}
+                    </a>
+                    <span className="ml-2 text-muted-foreground">
+                      ({formatDateTime(link.createdAt)})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <PieceSetListsSection
         groupSlug={groupSlug}

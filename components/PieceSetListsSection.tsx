@@ -3,6 +3,7 @@
 import { addPieceToSetList, removePieceFromSetList } from "@/app/actions/setlists";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -91,80 +92,85 @@ export function PieceSetListsSection({
   }
 
   return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-medium">Setlists</h2>
+    <Card>
+      <CardHeader className="space-y-0">
+        <h2 className="text-lg font-medium">Repertoarer</h2>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {entries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Stycket finns inte i någon repertoar ännu.
+          </p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {entries.map((entry) => (
+              <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2">
+                <Link className="underline" href={`/app/${groupSlug}/setlists/${entry.setListId}`}>
+                  {entry.setListName}
+                </Link>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={isPending}
+                  onClick={() => submitRemove(entry.id)}
+                >
+                  Ta bort från repertoar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
 
-      {entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Stycket finns inte i någon setlist ännu.</p>
-      ) : (
-        <ul className="space-y-2 text-sm">
-          {entries.map((entry) => (
-            <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2">
-              <Link className="underline" href={`/app/${groupSlug}/setlists/${entry.setListId}`}>
-                {entry.setListName}
-              </Link>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
+        <form onSubmit={submitAdd} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="space-y-2 sm:min-w-[14rem] sm:flex-1">
+            <label htmlFor={`add-setlist-${pieceId}`} className="text-sm font-medium">
+              Lägg till i repertoar
+            </label>
+            {allSetLists.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Inga repertoarer finns än. Skapa en under{" "}
+                <Link className="underline" href={`/app/${groupSlug}/setlists`}>
+                  Repertoarer
+                </Link>
+                .
+              </p>
+            ) : available.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Stycket ingår redan i alla repertoarer i gruppen.
+              </p>
+            ) : (
+              <select
+                id={`add-setlist-${pieceId}`}
+                name="setListId"
+                className={cn(
+                  "flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
+                  "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  "disabled:cursor-not-allowed disabled:opacity-50"
+                )}
+                value={selectedSetListId}
+                onChange={(event) => setSelectedSetListId(event.target.value)}
                 disabled={isPending}
-                onClick={() => submitRemove(entry.id)}
+                required
               >
-                Ta bort från repertoar
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
+                <option value="">Välj repertoar…</option>
+                {available.map((sl) => (
+                  <option key={sl.id} value={sl.id}>
+                    {sl.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {allSetLists.length > 0 && available.length > 0 ? (
+            <Button type="submit" disabled={isPending || !selectedSetListId}>
+              {isPending ? "Sparar..." : "Lägg till"}
+            </Button>
+          ) : null}
+        </form>
 
-      <form onSubmit={submitAdd} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="space-y-2 sm:min-w-[14rem] sm:flex-1">
-          <label htmlFor={`add-setlist-${pieceId}`} className="text-sm font-medium">
-            Lägg till i repertoar
-          </label>
-          {allSetLists.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Inga repertoarer finns än. Skapa en under{" "}
-              <Link className="underline" href={`/app/${groupSlug}/setlists`}>
-                Setlists
-              </Link>
-              .
-            </p>
-          ) : available.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Stycket ingår redan i alla repertoarer i gruppen.
-            </p>
-          ) : (
-            <select
-              id={`add-setlist-${pieceId}`}
-              name="setListId"
-              className={cn(
-                "flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
-                "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                "disabled:cursor-not-allowed disabled:opacity-50"
-              )}
-              value={selectedSetListId}
-              onChange={(event) => setSelectedSetListId(event.target.value)}
-              disabled={isPending}
-              required
-            >
-              <option value="">Välj repertoar…</option>
-              {available.map((sl) => (
-                <option key={sl.id} value={sl.id}>
-                  {sl.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-        {allSetLists.length > 0 && available.length > 0 ? (
-          <Button type="submit" disabled={isPending || !selectedSetListId}>
-            {isPending ? "Sparar..." : "Lägg till"}
-          </Button>
-        ) : null}
-      </form>
-
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-    </section>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </CardContent>
+    </Card>
   );
 }
