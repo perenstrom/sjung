@@ -7,6 +7,7 @@ const DEFAULT_SET_LIST_SELECT = { id: true } satisfies Prisma.SetListSelect;
 const DEFAULT_SET_LIST_PIECE_SELECT = { id: true } satisfies Prisma.SetListPieceSelect;
 const DEFAULT_FILE_SELECT = { id: true } satisfies Prisma.FileSelect;
 const DEFAULT_LINK_SELECT = { id: true } satisfies Prisma.LinkSelect;
+const DEFAULT_PIECE_NOTE_SELECT = { id: true, pieceId: true } satisfies Prisma.PieceNoteSelect;
 const DEFAULT_GROUP_SELECT = { slug: true } satisfies Prisma.GroupSelect;
 
 type PieceGuardOptions<TSelect extends Prisma.PieceSelect> = {
@@ -30,6 +31,11 @@ type FileGuardOptions<TSelect extends Prisma.FileSelect> = {
 };
 
 type LinkGuardOptions<TSelect extends Prisma.LinkSelect> = {
+  notFoundMessage?: string;
+  select?: TSelect;
+};
+
+type PieceNoteGuardOptions<TSelect extends Prisma.PieceNoteSelect> = {
   notFoundMessage?: string;
   select?: TSelect;
 };
@@ -140,6 +146,26 @@ export async function requireLinkInGroup<TSelect extends Prisma.LinkSelect = typ
   }
 
   return link;
+}
+
+export async function requirePieceNoteInGroup<
+  TSelect extends Prisma.PieceNoteSelect = typeof DEFAULT_PIECE_NOTE_SELECT,
+>(
+  pieceNoteId: string,
+  groupId: string,
+  options?: PieceNoteGuardOptions<TSelect>
+): Promise<Prisma.PieceNoteGetPayload<{ select: TSelect }>> {
+  const select = (options?.select ?? DEFAULT_PIECE_NOTE_SELECT) as TSelect;
+  const note = await prisma.pieceNote.findFirst({
+    where: { id: pieceNoteId, groupId, piece: { groupId } },
+    select,
+  });
+
+  if (!note) {
+    throw new Error(options?.notFoundMessage ?? "Anteckning hittades inte");
+  }
+
+  return note;
 }
 
 export async function requireCreatorGroupBySlug(

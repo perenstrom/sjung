@@ -1,7 +1,11 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { requireLinkInGroup, requirePieceInGroup } from "@/lib/actions/guards";
+import {
+  requireLinkInGroup,
+  requirePieceInGroup,
+  requirePieceNoteInGroup,
+} from "@/lib/actions/guards";
 import { assertNoDuplicateCredits, diffCredits } from "@/lib/pieces/credits";
 import {
   parseLinkIdFromFormData,
@@ -9,7 +13,10 @@ import {
   parsePieceCreditsFromFormData,
   parsePieceGroupSlugFromFormData,
   parsePieceIdFromFormData,
+  parsePieceIdParam,
   parsePieceNameFromFormData,
+  parsePieceNoteContentFromFormData,
+  parsePieceNoteIdFromFormData,
   parseRequiredHttpUrlFromFormData,
 } from "@/lib/schemas/pieces";
 import { parseWritableGroupSlugParam } from "@/lib/schemas/people";
@@ -21,6 +28,15 @@ import {
   revalidateGroupRoute,
 } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
+
+export type PieceNoteListItem = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdById: string;
+  updatedById: string;
+};
 
 const DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
 
@@ -212,6 +228,86 @@ export async function removeLink(formData: FormData) {
 
   revalidateGroupRoute(groupSlug);
   revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+}
+
+export async function listPieceNotes(
+  groupSlug: string,
+  pieceId: string
+): Promise<PieceNoteListItem[]> {
+  const slug = parseWritableGroupSlugParam(groupSlug);
+  const { groupId } = await getWritableGroupIdForSlug(slug);
+  const parsedPieceId = parsePieceIdParam(pieceId);
+  await requirePieceInGroup(parsedPieceId, groupId);
+
+  return prisma.pieceNote.findMany({
+    where: { pieceId: parsedPieceId, groupId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      createdById: true,
+      updatedById: true,
+    },
+  });
+}
+
+export async function createPieceNote(formData: FormData) {
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const pieceId = parsePieceIdFromFormData(formData);
+  const content = parsePieceNoteContentFromFormData(formData);
+
+  const piece = await requirePieceInGroup(pieceId, groupId);
+
+  await prisma.pieceNote.create({
+    data: {
+      content,
+      pieceId: piece.id,
+      groupId,
+      createdById: userId,
+      updatedById: userId,
+    },
+  });
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+}
+
+export async function updatePieceNote(formData: FormData) {
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const pieceNoteId = parsePieceNoteIdFromFormData(formData);
+  const content = parsePieceNoteContentFromFormData(formData);
+
+  const note = await requirePieceNoteInGroup(pieceNoteId, groupId);
+
+  await prisma.pieceNote.update({
+    where: { id: note.id },
+    data: {
+      content,
+      updatedById: userId,
+    },
+  });
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
+}
+
+export async function deletePieceNote(formData: FormData) {
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const pieceNoteId = parsePieceNoteIdFromFormData(formData);
+
+  const note = await requirePieceNoteInGroup(pieceNoteId, groupId);
+
+  await prisma.pieceNote.delete({
+    where: { id: note.id },
+  });
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
 }
 
 export async function deletePiece(formData: FormData) {

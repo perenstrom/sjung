@@ -16,30 +16,32 @@ model User {
   updatedById String?  @map("updated_by_id")
 
   name         String
-  email        String   @unique
-  passwordHash String   @map("password_hash")
+  email        String @unique
+  passwordHash String @map("password_hash")
 
-  createdBy User?  @relation("UserCreatedBy", fields: [createdById], references: [id])
-  updatedBy User?  @relation("UserUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User? @relation("UserCreatedBy", fields: [createdById], references: [id])
+  updatedBy User? @relation("UserUpdatedBy", fields: [updatedById], references: [id])
 
   // Audit back-relations
-  createdUsers              User[]               @relation("UserCreatedBy")
-  updatedUsers              User[]               @relation("UserUpdatedBy")
-  createdGroups             Group[]              @relation("GroupCreatedBy")
-  updatedGroups             Group[]              @relation("GroupUpdatedBy")
-  createdPieces             Piece[]              @relation("PieceCreatedBy")
-  updatedPieces             Piece[]              @relation("PieceUpdatedBy")
-  createdFiles              File[]               @relation("FileCreatedBy")
-  updatedFiles              File[]               @relation("FileUpdatedBy")
-  createdPeople             Person[]             @relation("PersonCreatedBy")
-  updatedPeople             Person[]             @relation("PersonUpdatedBy")
-  createdLinks              Link[]               @relation("LinkCreatedBy")
-  updatedLinks              Link[]               @relation("LinkUpdatedBy")
-  createdSetLists           SetList[]            @relation("SetListCreatedBy")
-  updatedSetLists           SetList[]            @relation("SetListUpdatedBy")
-  createdSetListPieces      SetListPiece[]       @relation("SetListPieceCreatedBy")
-  updatedSetListPieces      SetListPiece[]       @relation("SetListPieceUpdatedBy")
-  groups UsersToGroups[]
+  createdUsers         User[]          @relation("UserCreatedBy")
+  updatedUsers         User[]          @relation("UserUpdatedBy")
+  createdGroups        Group[]         @relation("GroupCreatedBy")
+  updatedGroups        Group[]         @relation("GroupUpdatedBy")
+  createdPieces        Piece[]         @relation("PieceCreatedBy")
+  updatedPieces        Piece[]         @relation("PieceUpdatedBy")
+  createdFiles         File[]          @relation("FileCreatedBy")
+  updatedFiles         File[]          @relation("FileUpdatedBy")
+  createdPeople        Person[]        @relation("PersonCreatedBy")
+  updatedPeople        Person[]        @relation("PersonUpdatedBy")
+  createdLinks         Link[]          @relation("LinkCreatedBy")
+  updatedLinks         Link[]          @relation("LinkUpdatedBy")
+  createdSetLists      SetList[]       @relation("SetListCreatedBy")
+  updatedSetLists      SetList[]       @relation("SetListUpdatedBy")
+  createdSetListPieces SetListPiece[]  @relation("SetListPieceCreatedBy")
+  updatedSetListPieces SetListPiece[]  @relation("SetListPieceUpdatedBy")
+  createdPieceNotes    PieceNote[]     @relation("PieceNoteCreatedBy")
+  updatedPieceNotes    PieceNote[]     @relation("PieceNoteUpdatedBy")
+  groups               UsersToGroups[]
 
   @@map("users")
 }
@@ -57,10 +59,11 @@ model Group {
   createdBy User @relation("GroupCreatedBy", fields: [createdById], references: [id])
   updatedBy User @relation("GroupUpdatedBy", fields: [updatedById], references: [id])
 
-  users  UsersToGroups[]
-  pieces Piece[]
-  people Person[]
-  setLists SetList[]
+  users      UsersToGroups[]
+  pieces     Piece[]
+  people     Person[]
+  setLists   SetList[]
+  pieceNotes PieceNote[]
 
   @@map("groups")
 }
@@ -86,13 +89,14 @@ model Piece {
   name    String
   groupId String @map("group_id")
 
-  createdBy User          @relation("PieceCreatedBy", fields: [createdById], references: [id])
-  updatedBy User          @relation("PieceUpdatedBy", fields: [updatedById], references: [id])
-  group     Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  files     File[]
-  credits   PersonToPiece[]
-  links     Link[]
+  createdBy      User            @relation("PieceCreatedBy", fields: [createdById], references: [id])
+  updatedBy      User            @relation("PieceUpdatedBy", fields: [updatedById], references: [id])
+  group          Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  files          File[]
+  credits        PersonToPiece[]
+  links          Link[]
   setListEntries SetListPiece[]
+  notes          PieceNote[]
 
   @@map("pieces")
 }
@@ -176,11 +180,11 @@ model SetList {
 
   name    String
   date    DateTime?
-  groupId String @map("group_id")
+  groupId String    @map("group_id")
 
-  createdBy User  @relation("SetListCreatedBy", fields: [createdById], references: [id])
-  updatedBy User  @relation("SetListUpdatedBy", fields: [updatedById], references: [id])
-  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User           @relation("SetListCreatedBy", fields: [createdById], references: [id])
+  updatedBy User           @relation("SetListUpdatedBy", fields: [updatedById], references: [id])
+  group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   pieces    SetListPiece[]
 
   @@map("set_lists")
@@ -203,4 +207,24 @@ model SetListPiece {
   piece     Piece   @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
   @@map("set_list_pieces")
+}
+
+model PieceNote {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  content String @db.Text
+  pieceId String @map("piece_id")
+  groupId String @map("group_id")
+
+  createdBy User  @relation("PieceNoteCreatedBy", fields: [createdById], references: [id])
+  updatedBy User  @relation("PieceNoteUpdatedBy", fields: [updatedById], references: [id])
+  piece     Piece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, pieceId])
+  @@map("piece_notes")
 }
