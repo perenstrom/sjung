@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   Sidebar,
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { setActiveGroup } from "@/app/actions/groups";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 
 type GroupOption = {
   id: string;
@@ -47,6 +48,7 @@ type AppSidebarProps = {
 export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [groupSwitchError, setGroupSwitchError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const tenantSlug = tenantSlugFromPathname(pathname);
   const currentGroupSlug =
@@ -68,11 +70,12 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
     }
 
     startTransition(async () => {
+      setGroupSwitchError(null);
       try {
         await setActiveGroup(nextGroupSlug);
         router.push(`/app/${nextGroupSlug}`);
-      } catch {
-        // Keep UX stable if the server action rejects (e.g. stale membership).
+      } catch (err) {
+        setGroupSwitchError(getThrownMessage(err, "Kunde inte byta grupp"));
       }
     });
   }
@@ -199,22 +202,33 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         {groups.length > 1 ? (
-          <Select
-            value={currentGroupSlug}
-            onValueChange={handleGroupChange}
-            disabled={isPending}
-          >
-            <SelectTrigger size="sm" className="w-full">
-              <SelectValue placeholder="Välj grupp" />
-            </SelectTrigger>
-            <SelectContent>
-              {groups.map((group) => (
-                <SelectItem key={group.id} value={group.slug}>
-                  {group.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1">
+            <Select
+              value={currentGroupSlug}
+              onValueChange={handleGroupChange}
+              disabled={isPending}
+            >
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue placeholder="Välj grupp" />
+              </SelectTrigger>
+              <SelectContent>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.slug}>
+                    {group.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {groupSwitchError ? (
+              <p
+                role="status"
+                aria-live="polite"
+                className="text-sm text-destructive"
+              >
+                {groupSwitchError}
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </SidebarFooter>
     </Sidebar>
