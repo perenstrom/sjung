@@ -8,6 +8,7 @@ import {
   finalizePieceFileUpload,
 } from "@/app/actions/files";
 import { addLink, removeLink } from "@/app/actions/pieces";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -88,7 +89,7 @@ export function PieceLinksDialog({
       await addLink(formData);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte lägga till länk");
+      setError(getThrownMessage(err, "Kunde inte lägga till länk"));
     }
   }
 
@@ -97,7 +98,7 @@ export function PieceLinksDialog({
       await removeLink(formData);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte ta bort länk");
+      setError(getThrownMessage(err, "Kunde inte ta bort länk"));
     }
   }
 
@@ -150,7 +151,7 @@ export function PieceLinksDialog({
       finalizeData.set("displayName", selectedFile.name);
       await finalizePieceFileUpload(finalizeData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte ladda upp fil");
+      setError(getThrownMessage(err, "Kunde inte ladda upp fil"));
     } finally {
       setIsUploading(false);
     }
@@ -167,7 +168,7 @@ export function PieceLinksDialog({
       const { downloadUrl } = await createPieceFileDownloadUrl(formData);
       window.open(downloadUrl, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte ladda ner fil");
+      setError(getThrownMessage(err, "Kunde inte ladda ner fil"));
     } finally {
       setDownloadingFileId(null);
     }
@@ -188,8 +189,7 @@ export function PieceLinksDialog({
       formData.set("fileId", fileId);
       await deletePieceFile(formData);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Kunde inte ta bort fil";
+      const message = getThrownMessage(err, "Kunde inte ta bort fil");
       setDeleteErrors((prev) => ({ ...prev, [fileId]: message }));
     } finally {
       setDeletingFileId(null);
@@ -197,7 +197,16 @@ export function PieceLinksDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setError(null);
+          setDeleteErrors({});
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Länkar

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deletePiece } from "@/app/actions/pieces";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,12 +33,20 @@ export function DeletePieceDialog({
       setError(null);
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte ta bort not");
+      setError(getThrownMessage(err, "Kunde inte ta bort not"));
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setError(null);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="destructive" size="sm">
           Ta bort

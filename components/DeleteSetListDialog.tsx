@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deleteSetList } from "@/app/actions/setlists";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,7 +35,7 @@ export function DeleteSetListDialog({
       setError(null);
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte ta bort repertoar");
+      setError(getThrownMessage(err, "Kunde inte ta bort repertoar"));
     }
   }
 

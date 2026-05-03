@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { updatePieceMetadata } from "@/app/actions/pieces";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +45,7 @@ export function PieceMetadataSection({
         setIsEditing(false);
         setSuccessMessage("Metadata sparades.");
       } catch (submitError) {
-        setError(submitError instanceof Error ? submitError.message : "Kunde inte spara metadata");
+        setError(getThrownMessage(submitError, "Kunde inte spara metadata"));
       }
     });
   }

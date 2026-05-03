@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { removeMemberFromGroup } from "@/app/actions/groups";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,14 +36,20 @@ export function RemoveGroupMemberDialog({
       setError(null);
       setOpen(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Kunde inte ta bort medlem";
-      setError(message);
+      setError(getThrownMessage(err, "Kunde inte ta bort medlem"));
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setError(null);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="destructive" size="sm">
           Ta bort
@@ -58,6 +65,7 @@ export function RemoveGroupMemberDialog({
         <form action={handleSubmit}>
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="memberUserId" value={member.id} />
+          {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Avbryt
@@ -66,7 +74,6 @@ export function RemoveGroupMemberDialog({
               Ta bort
             </Button>
           </DialogFooter>
-          {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
         </form>
       </DialogContent>
     </Dialog>

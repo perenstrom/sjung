@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { updatePiece } from "@/app/actions/pieces";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { ROLES } from "@/lib/roles";
 import type { CreditRow, PieceCredit, Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
@@ -70,10 +71,12 @@ export function EditPieceDialog({
     );
   }
 
-  function resetDialogState(nextOpen: boolean) {
+  function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
     if (nextOpen) {
       setCredits(mapPersistedCreditsToRows(piece.credits));
+      setError(null);
+    } else {
       setError(null);
     }
   }
@@ -98,12 +101,12 @@ export function EditPieceDialog({
       setOpen(false);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte spara ändringar");
+      setError(getThrownMessage(err, "Kunde inte spara ändringar"));
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={resetDialogState}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Redigera

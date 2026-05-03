@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { addMemberToGroup } from "@/app/actions/groups";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -13,9 +14,7 @@ export function AddGroupMemberForm({ groupSlug }: { groupSlug: string }) {
       await addMemberToGroup(formData);
       setError(null);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Kunde inte lägga till medlem";
-      setError(message);
+      setError(getThrownMessage(err, "Kunde inte lägga till medlem"));
     }
   }
 

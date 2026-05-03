@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { updateGroup } from "@/app/actions/groups";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,16 +21,30 @@ type GroupRow = {
 
 export function EditGroupDialog({ group }: { group: GroupRow }) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(formData: FormData) {
-    await updateGroup(formData);
-    setOpen(false);
-    formRef.current?.reset();
+    try {
+      await updateGroup(formData);
+      setError(null);
+      setOpen(false);
+      formRef.current?.reset();
+    } catch (err) {
+      setError(getThrownMessage(err, "Kunde inte spara gruppen"));
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setError(null);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Redigera
@@ -56,6 +71,7 @@ export function EditGroupDialog({ group }: { group: GroupRow }) {
               defaultValue={group.name}
             />
           </div>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <div className="flex justify-end">
             <Button type="submit">Spara</Button>
           </div>
