@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { updatePieceMetadata } from "@/app/actions/pieces";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
@@ -18,12 +19,21 @@ export function PieceMetadataSection({
   pieceId,
   initialName,
 }: PieceMetadataSectionProps) {
+  const router = useRouter();
   const [savedName, setSavedName] = useState(initialName);
   const [draftName, setDraftName] = useState(initialName);
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (isEditing) {
+      return;
+    }
+    setSavedName(initialName);
+    setDraftName(initialName);
+  }, [initialName, isEditing]);
 
   function handleCancel() {
     setIsEditing(false);
@@ -44,6 +54,7 @@ export function PieceMetadataSection({
         setDraftName(nextName);
         setIsEditing(false);
         setSuccessMessage("Metadata sparades.");
+        router.refresh();
       } catch (submitError) {
         setError(getThrownMessage(submitError, "Kunde inte spara metadata"));
       }
@@ -65,8 +76,6 @@ export function PieceMetadataSection({
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
           <dt className="text-muted-foreground">ID</dt>
           <dd>{pieceId}</dd>
-          <dt className="text-muted-foreground">Namn</dt>
-          <dd>{savedName}</dd>
         </dl>
       ) : (
         <form action={handleSubmit} className="space-y-3">
