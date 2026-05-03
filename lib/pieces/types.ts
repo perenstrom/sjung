@@ -37,8 +37,6 @@ export const pieceDetailSelect = {
       id: true,
       createdAt: true,
       displayName: true,
-      fileName: true,
-      mimeType: true,
       size: true,
     },
   },
