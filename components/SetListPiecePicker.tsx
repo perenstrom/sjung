@@ -3,6 +3,13 @@
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type PieceOption = {
   id: string;
@@ -38,6 +45,10 @@ export function SetListPiecePicker({ pieces }: SetListPiecePickerProps) {
     return stillValid ? selectedPieceId : filteredPieces[0].id;
   }, [filteredPieces, selectedPieceId]);
 
+  const noFilteredMatches = filteredPieces.length === 0;
+  const selectValue =
+    noFilteredMatches || !resolvedPieceId ? undefined : resolvedPieceId;
+
   return (
     <div className="space-y-1">
       <Label htmlFor="piece-search">Stycke</Label>
@@ -48,26 +59,32 @@ export function SetListPiecePicker({ pieces }: SetListPiecePickerProps) {
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Sök stycke..."
       />
-      <select
-        name="pieceId"
-        value={resolvedPieceId}
-        onChange={(event) => setSelectedPieceId(event.target.value)}
-        required
-        className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      <input type="hidden" name="pieceId" value={resolvedPieceId} />
+      <Select
+        disabled={noFilteredMatches}
+        value={selectValue}
+        onValueChange={setSelectedPieceId}
       >
-        {filteredPieces.length === 0 ? (
-          <option value="" disabled>
-            Inga stycken matchar
-          </option>
-        ) : (
-          filteredPieces.map((piece) => (
-            <option key={piece.id} value={piece.id}>
+        <SelectTrigger
+          className="w-full min-w-0"
+          aria-describedby="setlist-piece-picker-hint"
+        >
+          <SelectValue placeholder="Inga stycken matchar" />
+        </SelectTrigger>
+        <SelectContent>
+          {filteredPieces.map((piece) => (
+            <SelectItem key={piece.id} value={piece.id}>
               {piece.name}
-            </option>
-          ))
-        )}
-      </select>
-      <p className="text-xs text-muted-foreground">Filtrera och valj sedan stycke i listan.</p>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p
+        id="setlist-piece-picker-hint"
+        className="text-xs text-muted-foreground"
+      >
+        Filtrera och välj sedan stycke i listan.
+      </p>
     </div>
   );
 }
