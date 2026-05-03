@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { updatePiece } from "@/app/actions/pieces";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -28,6 +29,7 @@ export function EditPieceDialog({
   groupSlug,
   people,
   piece,
+  creditsOnly = false,
 }: {
   groupSlug: string;
   people: Person[];
@@ -36,7 +38,9 @@ export function EditPieceDialog({
     name: string;
     credits: PieceCredit[];
   };
+  creditsOnly?: boolean;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [credits, setCredits] = useState<CreditRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +104,7 @@ export function EditPieceDialog({
       await updatePiece(formData);
       setOpen(false);
       setError(null);
+      router.refresh();
     } catch (err) {
       setError(getThrownMessage(err, "Kunde inte spara ändringar"));
     }
@@ -114,15 +119,19 @@ export function EditPieceDialog({
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Redigera not</DialogTitle>
+          <DialogTitle>{creditsOnly ? "Medverkande" : "Redigera not"}</DialogTitle>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-5">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="pieceId" value={piece.id} />
-          <div className="space-y-2">
-            <Label htmlFor={`name-${piece.id}`}>Namn</Label>
-            <Input id={`name-${piece.id}`} name="name" defaultValue={piece.name} required />
-          </div>
+          {creditsOnly ? (
+            <input type="hidden" name="name" value={piece.name} />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor={`name-${piece.id}`}>Namn</Label>
+              <Input id={`name-${piece.id}`} name="name" defaultValue={piece.name} required />
+            </div>
+          )}
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">

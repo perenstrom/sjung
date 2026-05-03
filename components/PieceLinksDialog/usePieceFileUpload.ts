@@ -16,6 +16,7 @@ type UsePieceFileUploadArgs = {
   onError: (message: string) => void;
   onClearError?: () => void;
   onUploadingChange?: (uploading: boolean) => void;
+  onUploadSuccess?: () => void;
 };
 
 export function usePieceFileUpload({
@@ -24,6 +25,7 @@ export function usePieceFileUpload({
   onError,
   onClearError,
   onUploadingChange,
+  onUploadSuccess,
 }: UsePieceFileUploadArgs) {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -80,6 +82,7 @@ export function usePieceFileUpload({
       finalizeData.set("size", String(selectedFile.size));
       finalizeData.set("displayName", selectedFile.name);
       await finalizePieceFileUpload(finalizeData);
+      onUploadSuccess?.();
     } catch (err) {
       onError(getThrownMessage(err, "Kunde inte ladda upp fil"));
     } finally {

@@ -15,17 +15,20 @@ export function PieceLinksDialogLinks({
   uploadsInProgress,
   onAggregateError,
   onClearAggregateError,
+  onMutationSuccess,
 }: {
   groupSlug: string;
   piece: Pick<Piece, "id" | "links">;
   uploadsInProgress: boolean;
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
+  onMutationSuccess?: () => void;
 }) {
   async function handleAdd(formData: FormData) {
     try {
       await addLink(formData);
       onClearAggregateError();
+      onMutationSuccess?.();
     } catch (err) {
       onAggregateError(getThrownMessage(err, "Kunde inte lägga till länk"));
     }
@@ -35,6 +38,7 @@ export function PieceLinksDialogLinks({
     try {
       await removeLink(formData);
       onClearAggregateError();
+      onMutationSuccess?.();
     } catch (err) {
       onAggregateError(getThrownMessage(err, "Kunde inte ta bort länk"));
     }
