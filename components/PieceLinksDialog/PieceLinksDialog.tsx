@@ -43,6 +43,7 @@ export function PieceLinksDialog({
         setOpen(nextOpen);
         if (!nextOpen) {
           setError(null);
+          setUploading(false);
         }
       }}
     >

@@ -2,20 +2,12 @@ import { getPeople } from "@/app/actions/people";
 import { getPieceDetail } from "@/app/actions/pieces";
 import { getSetLists } from "@/app/actions/setlists";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
+import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
 import { PieceLinksDialog } from "@/components/PieceLinksDialog";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import type { Piece } from "@/components/PieceLinksDialog/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatFileSize } from "@/lib/formatFileSize";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -113,32 +105,15 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
         <CardContent className="space-y-3">
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Filer</h3>
-            {piece.files.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Inga filer uppladdade ännu.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Namn</TableHead>
-                    <TableHead>Fil</TableHead>
-                    <TableHead>MIME</TableHead>
-                    <TableHead>Storlek</TableHead>
-                    <TableHead>Uppladdad</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {piece.files.map((file) => (
-                    <TableRow key={file.id}>
-                      <TableCell>{file.displayName}</TableCell>
-                      <TableCell>{file.fileName}</TableCell>
-                      <TableCell>{file.mimeType}</TableCell>
-                      <TableCell>{formatFileSize(file.size)}</TableCell>
-                      <TableCell>{formatDateTime(file.createdAt)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <PieceDetailFilesSection
+              groupSlug={groupSlug}
+              files={piece.files.map((file) => ({
+                id: file.id,
+                displayName: file.displayName,
+                size: file.size,
+                createdAt: file.createdAt,
+              }))}
+            />
           </div>
 
           <div className="space-y-2">
