@@ -4,7 +4,7 @@ import { getToken } from "next-auth/jwt";
 
 const authPages = new Set(["/auth/login", "/auth/signup"]);
 
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const { nextUrl } = req;
   const token = await getToken({ req, secret: process.env.AUTH_SECRET });
   const isAuthenticated = Boolean(token?.sub);
