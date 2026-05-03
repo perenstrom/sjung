@@ -114,6 +114,27 @@ export async function getSetListDetail(
   };
 }
 
+/** Minimal title read for navigation; returns null when the set list is missing or inaccessible. */
+export async function getSetListTitleForBreadcrumb(
+  groupSlug: string,
+  setListId: string
+): Promise<{ title: string } | null> {
+  try {
+    const slug = parseWritableGroupSlugParam(groupSlug);
+    const { groupId } = await getWritableGroupIdForSlug(slug);
+    const setList = await prisma.setList.findFirst({
+      where: { id: setListId, groupId },
+      select: { name: true },
+    });
+    if (!setList) {
+      return null;
+    }
+    return { title: setList.name };
+  } catch {
+    return null;
+  }
+}
+
 export async function getSetListPieceOptions(groupSlug: string): Promise<SetListPieceOption[]> {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   return prisma.piece.findMany({
