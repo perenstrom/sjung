@@ -22,6 +22,7 @@ export function PieceLinksDialogFiles({
   onAggregateError,
   onClearAggregateError,
   onUploadingChange,
+  onMutationSuccess,
 }: {
   groupSlug: string;
   piece: Pick<Piece, "id" | "name" | "files">;
@@ -29,6 +30,7 @@ export function PieceLinksDialogFiles({
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
   onUploadingChange?: (uploading: boolean) => void;
+  onMutationSuccess?: () => void;
 }) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(
     null,
@@ -42,6 +44,7 @@ export function PieceLinksDialogFiles({
     onError: onAggregateError,
     onClearError: onClearAggregateError,
     onUploadingChange,
+    onUploadSuccess: onMutationSuccess,
   });
 
   useEffect(() => {
@@ -83,6 +86,7 @@ export function PieceLinksDialogFiles({
       formData.set("groupSlug", groupSlug);
       formData.set("fileId", fileId);
       await deletePieceFile(formData);
+      onMutationSuccess?.();
     } catch (err) {
       const message = getThrownMessage(err, "Kunde inte ta bort fil");
       setDeleteErrors((prev) => ({ ...prev, [fileId]: message }));

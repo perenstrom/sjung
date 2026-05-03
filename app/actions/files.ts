@@ -16,7 +16,10 @@ import {
   parseFileIdFromFormData,
   parseFinalizePieceFileUploadFromFormData,
 } from "@/lib/schemas/files";
-import { revalidateGroupRoute } from "@/lib/revalidate/group-routes";
+import {
+  revalidateGroupPieceDetailRoutes,
+  revalidateGroupRoute,
+} from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 const UPLOAD_URL_EXPIRES_SECONDS = 60 * 10;
@@ -81,6 +84,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
   });
 
   revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, pieceId);
 }
 
 export async function createPieceFileDownloadUrl(formData: FormData) {
@@ -118,6 +122,7 @@ export async function deletePieceFile(formData: FormData) {
     select: {
       id: true,
       storagePath: true,
+      pieceId: true,
     },
   });
 
@@ -137,4 +142,5 @@ export async function deletePieceFile(formData: FormData) {
   });
 
   revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, file.pieceId);
 }

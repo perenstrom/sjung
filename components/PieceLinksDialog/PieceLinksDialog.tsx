@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,13 +19,22 @@ import type { Piece } from "./types";
 export function PieceLinksDialog({
   groupSlug,
   piece,
+  refreshAfterMutations = false,
 }: {
   groupSlug: string;
   piece: Piece;
+  refreshAfterMutations?: boolean;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  const handleMutationSuccess = useCallback(() => {
+    if (refreshAfterMutations) {
+      router.refresh();
+    }
+  }, [refreshAfterMutations, router]);
 
   return (
     <Dialog
@@ -54,6 +64,7 @@ export function PieceLinksDialog({
             onAggregateError={setError}
             onClearAggregateError={() => setError(null)}
             onUploadingChange={setUploading}
+            onMutationSuccess={handleMutationSuccess}
           />
 
           <PieceLinksDialogLinks
@@ -62,6 +73,7 @@ export function PieceLinksDialog({
             uploadsInProgress={uploading}
             onAggregateError={setError}
             onClearAggregateError={() => setError(null)}
+            onMutationSuccess={handleMutationSuccess}
           />
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
