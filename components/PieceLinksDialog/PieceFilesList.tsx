@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   createPieceFileDownloadUrl,
@@ -28,7 +28,6 @@ export function PieceFilesList({
   groupSlug,
   files,
   showUploadedAt,
-  dialogOpen,
   onAggregateError,
   onClearAggregateError,
   onMutationSuccess,
@@ -36,8 +35,6 @@ export function PieceFilesList({
   groupSlug: string;
   files: PieceFileListItem[];
   showUploadedAt: boolean;
-  /** When `false` (e.g. dialog closed), clears row spinners and delete errors */
-  dialogOpen?: boolean;
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
   onMutationSuccess?: () => void;
@@ -47,14 +44,6 @@ export function PieceFilesList({
   );
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (dialogOpen === false) {
-      setDeleteErrors({});
-      setDownloadingFileId(null);
-      setDeletingFileId(null);
-    }
-  }, [dialogOpen]);
 
   async function handleDownload(fileId: string) {
     setDownloadingFileId(fileId);

@@ -59,10 +59,10 @@ export function PieceLinksDialogFiles({
       </form>
 
       <PieceFilesList
+        key={String(dialogOpen)}
         groupSlug={groupSlug}
         files={piece.files}
         showUploadedAt={false}
-        dialogOpen={dialogOpen}
         onAggregateError={onAggregateError}
         onClearAggregateError={onClearAggregateError}
         onMutationSuccess={onMutationSuccess}
