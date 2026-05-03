@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
 import { updatePiece } from "@/app/actions/pieces";
 import { ROLES } from "@/lib/roles";
+import type { CreditRow, PieceCredit, Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,24 +23,6 @@ import {
 } from "@/components/ui/select";
 import { X } from "lucide-react";
 
-type Person = {
-  id: string;
-  name: string;
-};
-
-type PieceCredit = {
-  personId: string;
-  role: string;
-};
-
-type CreditRow = {
-  id: number;
-  personId: string;
-  role: string;
-};
-
-let nextId = 0;
-
 export function EditPieceDialog({
   groupSlug,
   people,
@@ -56,19 +39,23 @@ export function EditPieceDialog({
   const [open, setOpen] = useState(false);
   const [credits, setCredits] = useState<CreditRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const rowIdRef = useRef(0);
 
-  const initialCredits = useMemo(
-    () =>
-      piece.credits.map((credit) => ({
-        id: nextId++,
-        personId: credit.personId,
-        role: credit.role,
-      })),
-    [piece.credits]
-  );
+  function nextRowId() {
+    return rowIdRef.current++;
+  }
+
+  function mapPersistedCreditsToRows(creds: PieceCredit[]): CreditRow[] {
+    rowIdRef.current = 0;
+    return creds.map((credit) => ({
+      id: nextRowId(),
+      personId: credit.personId,
+      role: credit.role,
+    }));
+  }
 
   function addCredit() {
-    setCredits((prev) => [...prev, { id: nextId++, personId: "", role: "" }]);
+    setCredits((prev) => [...prev, { id: nextRowId(), personId: "", role: "" }]);
   }
 
   function removeCredit(id: number) {
@@ -86,7 +73,7 @@ export function EditPieceDialog({
   function resetDialogState(nextOpen: boolean) {
     setOpen(nextOpen);
     if (nextOpen) {
-      setCredits(initialCredits);
+      setCredits(mapPersistedCreditsToRows(piece.credits));
       setError(null);
     }
   }

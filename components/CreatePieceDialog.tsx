@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { createPiece } from "@/app/actions/pieces";
 import { ROLES } from "@/lib/roles";
+import type { CreditRow, Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,19 +24,6 @@ import {
 } from "@/components/ui/select";
 import { X } from "lucide-react";
 
-type Person = {
-  id: string;
-  name: string;
-};
-
-type CreditRow = {
-  id: number;
-  personId: string;
-  role: string;
-};
-
-let nextId = 0;
-
 export function CreatePieceDialog({
   people,
   groupSlug,
@@ -46,11 +34,16 @@ export function CreatePieceDialog({
   const [open, setOpen] = useState(false);
   const [credits, setCredits] = useState<CreditRow[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
+  const rowIdRef = useRef(0);
+
+  function nextRowId() {
+    return rowIdRef.current++;
+  }
 
   function addCredit() {
     setCredits((prev) => [
       ...prev,
-      { id: nextId++, personId: "", role: "" },
+      { id: nextRowId(), personId: "", role: "" },
     ]);
   }
 
@@ -75,6 +68,7 @@ export function CreatePieceDialog({
     await createPiece(formData);
     setOpen(false);
     setCredits([]);
+    rowIdRef.current = 0;
     formRef.current?.reset();
   }
 
