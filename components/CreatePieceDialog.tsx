@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { createPiece } from "@/app/actions/pieces";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { ROLES } from "@/lib/roles";
 import type { CreditRow, Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function CreatePieceDialog({
   groupSlug: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [credits, setCredits] = useState<CreditRow[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const rowIdRef = useRef(0);
@@ -65,15 +67,28 @@ export function CreatePieceDialog({
       "credits",
       JSON.stringify(validCredits.map(({ personId, role }) => ({ personId, role })))
     );
-    await createPiece(formData);
-    setOpen(false);
-    setCredits([]);
-    rowIdRef.current = 0;
-    formRef.current?.reset();
+    try {
+      await createPiece(formData);
+      setError(null);
+      setOpen(false);
+      setCredits([]);
+      rowIdRef.current = 0;
+      formRef.current?.reset();
+    } catch (err) {
+      setError(getThrownMessage(err, "Kunde inte skapa not"));
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setError(null);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button>Lägg till</Button>
       </DialogTrigger>
@@ -169,6 +184,7 @@ export function CreatePieceDialog({
             )}
           </div>
 
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <div className="flex justify-end">
             <Button type="submit">Spara</Button>
           </div>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { createSetList } from "@/app/actions/setlists";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,7 +26,7 @@ export function CreateSetListDialog({ groupSlug }: { groupSlug: string }) {
       setError(null);
       formRef.current?.reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte skapa repertoar");
+      setError(getThrownMessage(err, "Kunde inte skapa repertoar"));
     }
   }
 

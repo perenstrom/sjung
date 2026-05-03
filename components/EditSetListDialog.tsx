@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateSetList } from "@/app/actions/setlists";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,7 +43,7 @@ export function EditSetListDialog({
       setError(null);
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kunde inte spara repertoar");
+      setError(getThrownMessage(err, "Kunde inte spara repertoar"));
     }
   }
 
