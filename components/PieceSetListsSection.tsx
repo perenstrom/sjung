@@ -3,16 +3,10 @@
 import { addPieceToSetList, removePieceFromSetList } from "@/app/actions/setlists";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 export type PieceSetListEntry = {
   id: string;
@@ -41,8 +35,23 @@ export function PieceSetListsSection({
   const [isPending, startTransition] = useTransition();
   const [selectedSetListId, setSelectedSetListId] = useState("");
 
-  const memberSetIds = new Set(entries.map((e) => e.setListId));
-  const available = allSetLists.filter((sl) => !memberSetIds.has(sl.id));
+  const memberSetIds = useMemo(
+    () => new Set(entries.map((e) => e.setListId)),
+    [entries]
+  );
+  const available = useMemo(
+    () => allSetLists.filter((sl) => !memberSetIds.has(sl.id)),
+    [allSetLists, memberSetIds]
+  );
+
+  useEffect(() => {
+    if (
+      selectedSetListId &&
+      !available.some((sl) => sl.id === selectedSetListId)
+    ) {
+      setSelectedSetListId("");
+    }
+  }, [available, selectedSetListId]);
 
   function submitAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,29 +119,45 @@ export function PieceSetListsSection({
 
       <form onSubmit={submitAdd} className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="space-y-2 sm:min-w-[14rem] sm:flex-1">
-          <span className="text-sm font-medium">Lägg till i repertoar</span>
-          {available.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Inga fler repertoarer att välja.</p>
+          <label htmlFor={`add-setlist-${pieceId}`} className="text-sm font-medium">
+            Lägg till i repertoar
+          </label>
+          {allSetLists.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Inga repertoarer finns än. Skapa en under{" "}
+              <Link className="underline" href={`/app/${groupSlug}/setlists`}>
+                Setlists
+              </Link>
+              .
+            </p>
+          ) : available.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Stycket ingår redan i alla repertoarer i gruppen.
+            </p>
           ) : (
-            <Select
-              value={selectedSetListId || undefined}
-              onValueChange={setSelectedSetListId}
+            <select
+              id={`add-setlist-${pieceId}`}
+              name="setListId"
+              className={cn(
+                "flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
+                "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                "disabled:cursor-not-allowed disabled:opacity-50"
+              )}
+              value={selectedSetListId}
+              onChange={(event) => setSelectedSetListId(event.target.value)}
               disabled={isPending}
+              required
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Välj repertoar" />
-              </SelectTrigger>
-              <SelectContent>
-                {available.map((sl) => (
-                  <SelectItem key={sl.id} value={sl.id}>
-                    {sl.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="">Välj repertoar…</option>
+              {available.map((sl) => (
+                <option key={sl.id} value={sl.id}>
+                  {sl.name}
+                </option>
+              ))}
+            </select>
           )}
         </div>
-        {available.length > 0 ? (
+        {allSetLists.length > 0 && available.length > 0 ? (
           <Button type="submit" disabled={isPending || !selectedSetListId}>
             {isPending ? "Sparar..." : "Lägg till"}
           </Button>

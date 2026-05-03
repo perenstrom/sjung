@@ -12,6 +12,7 @@ import {
   requireSetListPieceInGroup,
 } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
+import { parseWritableGroupSlugParam } from "@/lib/schemas/people";
 import {
   revalidateGroupPieceDetailRoutes,
   revalidateGroupSetListDetailRoutes,
@@ -52,7 +53,8 @@ function readOptionalDate(formData: FormData): Date | null {
 }
 
 export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const slug = parseWritableGroupSlugParam(groupSlug);
+  const { groupId } = await getWritableGroupIdForSlug(slug);
   return prisma.setList.findMany({
     where: { groupId },
     orderBy: { updatedAt: "desc" },
