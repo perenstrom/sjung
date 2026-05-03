@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -143,6 +143,20 @@ function trailForPathname(pathname: string, groups: GroupOption[]): BreadcrumbTr
   };
 }
 
+function detailFetchKeyFromTrail(trail: BreadcrumbTrail): string | null {
+  if (trail.visibility !== "visible") {
+    return null;
+  }
+  const { tail } = trail;
+  if (tail.kind === "piece") {
+    return `piece:${tail.groupSlug}:${tail.pieceId}`;
+  }
+  if (tail.kind === "setlist") {
+    return `setlist:${tail.groupSlug}:${tail.setListId}`;
+  }
+  return null;
+}
+
 export function AppBreadcrumb({ groups }: AppBreadcrumbProps) {
   const pathname = usePathname() ?? "";
   const groupDataKey = [...groups]
@@ -151,52 +165,59 @@ export function AppBreadcrumb({ groups }: AppBreadcrumbProps) {
     .join("|");
   const trail = useMemo(
     () => trailForPathname(pathname, groups),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `groupDataKey` summarizes `groups` for stable memoization
     [pathname, groupDataKey],
   );
 
-  const [resolvedDetailTitle, setResolvedDetailTitle] = useState<string | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const fetchKey = useMemo(() => detailFetchKeyFromTrail(trail), [trail]);
+
+  const [completedDetail, setCompletedDetail] = useState<{
+    key: string;
+    title: string | null;
+  } | null>(null);
+
+  const latestFetchKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (trail.visibility === "hidden") {
-      setResolvedDetailTitle(null);
-      setDetailLoading(false);
+    latestFetchKeyRef.current = fetchKey;
+    if (!fetchKey) {
       return;
     }
-
-    const { tail } = trail;
-    if (tail.kind !== "piece" && tail.kind !== "setlist") {
-      setResolvedDetailTitle(null);
-      setDetailLoading(false);
+    const match = fetchKey.match(/^(piece|setlist):([^:]+):(.+)$/);
+    if (!match) {
       return;
     }
-
+    const [, kind, groupSlug, id] = match;
     let cancelled = false;
-    setDetailLoading(true);
-    setResolvedDetailTitle(null);
+    const startedFor = fetchKey;
 
-    (async () => {
+    void (async () => {
       const res =
-        tail.kind === "piece"
-          ? await getPieceTitleForBreadcrumb(tail.groupSlug, tail.pieceId)
-          : await getSetListTitleForBreadcrumb(tail.groupSlug, tail.setListId);
+        kind === "piece"
+          ? await getPieceTitleForBreadcrumb(groupSlug, id)
+          : await getSetListTitleForBreadcrumb(groupSlug, id);
       if (cancelled) {
         return;
       }
-      setResolvedDetailTitle(res?.title ?? null);
-      setDetailLoading(false);
+      if (latestFetchKeyRef.current !== startedFor) {
+        return;
+      }
+      setCompletedDetail({ key: startedFor, title: res?.title ?? null });
     })();
 
     return () => {
       cancelled = true;
-      setDetailLoading(false);
     };
-  }, [trail]);
+  }, [fetchKey]);
 
   if (trail.visibility === "hidden") {
     return null;
   }
 
+  const detailLoading =
+    trail.tail.kind !== "static" && fetchKey != null && completedDetail?.key !== fetchKey;
+  const resolvedDetailTitle =
+    fetchKey != null && completedDetail?.key === fetchKey ? completedDetail.title : null;
   const showTailSkeleton = trail.tail.kind !== "static" && detailLoading;
 
   return (
