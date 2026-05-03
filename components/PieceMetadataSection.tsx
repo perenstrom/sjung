@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { updatePieceMetadata } from "@/app/actions/pieces";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
@@ -18,12 +18,48 @@ export function PieceMetadataSection({
   pieceId,
   initialName,
 }: PieceMetadataSectionProps) {
+  const pieceIdRef = useRef(pieceId);
+  const groupSlugRef = useRef(groupSlug);
+  pieceIdRef.current = pieceId;
+  groupSlugRef.current = groupSlug;
+
+  const prevPieceIdRef = useRef(pieceId);
+  const prevGroupSlugRef = useRef(groupSlug);
+
   const [savedName, setSavedName] = useState(initialName);
   const [draftName, setDraftName] = useState(initialName);
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // If client navigation swaps `pieceId` while the user is editing, hidden inputs jump to the new
+  // row before controlled `draftName` does — syncing here clears edit mode and avoids saving the
+  // old draft against a new id.
+  useEffect(() => {
+    const identityChanged =
+      prevPieceIdRef.current !== pieceId || prevGroupSlugRef.current !== groupSlug;
+
+    if (identityChanged) {
+      prevPieceIdRef.current = pieceId;
+      prevGroupSlugRef.current = groupSlug;
+      setIsEditing(false);
+      setSavedName(initialName);
+      setDraftName(initialName);
+      setError(null);
+      setSuccessMessage(null);
+      return;
+    }
+
+    prevPieceIdRef.current = pieceId;
+    prevGroupSlugRef.current = groupSlug;
+
+    setSavedName(initialName);
+    if (!isEditing) {
+      setDraftName(initialName);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `isEditing` is read deliberately when identity is stable without listing it here; edits do not mutate identity props alone.
+  }, [pieceId, groupSlug, initialName]);
 
   function handleCancel() {
     setIsEditing(false);
@@ -33,18 +69,33 @@ export function PieceMetadataSection({
   }
 
   function handleSubmit(formData: FormData) {
+    const submittedPieceId = String(formData.get("pieceId") ?? "");
+    const submittedGroupSlug = String(formData.get("groupSlug") ?? "");
+
     setError(null);
     setSuccessMessage(null);
 
     startTransition(async () => {
       try {
         await updatePieceMetadata(formData);
+        if (
+          submittedPieceId !== pieceIdRef.current ||
+          submittedGroupSlug !== groupSlugRef.current
+        ) {
+          return;
+        }
         const nextName = String(formData.get("name") ?? "").trim();
         setSavedName(nextName);
         setDraftName(nextName);
         setIsEditing(false);
         setSuccessMessage("Metadata sparades.");
       } catch (submitError) {
+        if (
+          submittedPieceId !== pieceIdRef.current ||
+          submittedGroupSlug !== groupSlugRef.current
+        ) {
+          return;
+        }
         setError(getThrownMessage(submitError, "Kunde inte spara metadata"));
       }
     });
