@@ -1,0 +1,22 @@
+import { describe, expect, it } from "vitest";
+
+import { formatFileSize } from "@/lib/formatFileSize";
+
+describe("formatFileSize", () => {
+  it("formats bytes below the kilobyte boundary", () => {
+    expect(formatFileSize(0)).toBe("0 B");
+    expect(formatFileSize(500)).toBe("500 B");
+    expect(formatFileSize(1023)).toBe("1023 B");
+  });
+
+  it("formats kilobytes from 1024 up to just below one megabyte", () => {
+    expect(formatFileSize(1024)).toBe("1.0 KB");
+    expect(formatFileSize(1536)).toBe("1.5 KB");
+    expect(formatFileSize(512 * 1024)).toBe("512.0 KB");
+  });
+
+  it("formats megabytes at and above the megabyte boundary", () => {
+    expect(formatFileSize(1024 * 1024)).toBe("1.0 MB");
+    expect(formatFileSize(5 * 1024 * 1024)).toBe("5.0 MB");
+  });
+});
