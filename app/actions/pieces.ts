@@ -15,7 +15,10 @@ import {
 import { getPieceDetailForGroup, getPiecesForGroup } from "@/lib/pieces/queries";
 import { deleteR2ObjectsWithConcurrency } from "@/lib/pieces/storage-delete";
 import type { PieceDetail } from "@/lib/pieces/types";
-import { revalidateGroupPieceDetailRoutes, revalidateGroupRoute } from "@/lib/revalidate/group-routes";
+import {
+  revalidateGroupPieceDetailRoutes,
+  revalidateGroupRoute,
+} from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 const DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
@@ -40,7 +43,9 @@ async function requirePieceForLinkMutation(formData: FormData, groupId: string) 
 
 async function requireLinkForLinkMutation(formData: FormData, groupId: string) {
   const linkId = parseLinkIdFromFormData(formData);
-  return requireLinkInGroup(linkId, groupId);
+  return requireLinkInGroup(linkId, groupId, {
+    select: { id: true, pieceId: true },
+  });
 }
 
 export async function createPiece(formData: FormData) {
@@ -52,7 +57,7 @@ export async function createPiece(formData: FormData) {
   const credits = parsePieceCreditsFromFormData(formData);
   assertNoDuplicateCredits(credits);
 
-  await prisma.piece.create({
+  const created = await prisma.piece.create({
     data: {
       name: name.trim(),
       groupId,
@@ -65,9 +70,11 @@ export async function createPiece(formData: FormData) {
         })),
       },
     },
+    select: { id: true },
   });
 
   revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, created.id);
 }
 
 export async function updatePiece(formData: FormData) {
@@ -127,6 +134,7 @@ export async function updatePiece(formData: FormData) {
   });
 
   revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
 }
 
 export async function updatePieceMetadata(formData: FormData) {
@@ -145,6 +153,7 @@ export async function updatePieceMetadata(formData: FormData) {
     },
   });
 
+  revalidateGroupRoute(groupSlug);
   revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
 }
 
@@ -167,6 +176,7 @@ export async function addLink(formData: FormData) {
   });
 
   revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
 }
 
 export async function removeLink(formData: FormData) {
@@ -179,6 +189,7 @@ export async function removeLink(formData: FormData) {
   });
 
   revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
 }
 
 export async function deletePiece(formData: FormData) {

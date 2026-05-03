@@ -13,6 +13,7 @@ import {
 } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
 import {
+  revalidateGroupPieceDetailRoutes,
   revalidateGroupSetListDetailRoutes,
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
@@ -198,6 +199,7 @@ export async function addPieceToSetList(formData: FormData) {
   });
 
   revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
 }
 
 export async function removePieceFromSetList(formData: FormData) {
@@ -206,7 +208,7 @@ export async function removePieceFromSetList(formData: FormData) {
   const setListPieceId = readSetListPieceId(formData);
 
   const setListPiece = await requireSetListPieceInGroup(setListPieceId, groupId, {
-    select: { id: true, setListId: true },
+    select: { id: true, setListId: true, pieceId: true },
   });
 
   await prisma.setListPiece.delete({
@@ -214,4 +216,5 @@ export async function removePieceFromSetList(formData: FormData) {
   });
 
   revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
+  revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
 }
