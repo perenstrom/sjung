@@ -3,6 +3,7 @@ import { getPieceDetail } from "@/app/actions/pieces";
 import { getSetLists } from "@/app/actions/setlists";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
+import { PieceDetailLinksList } from "@/components/PieceDetailLinksList";
 import { PieceLinksDialog } from "@/components/PieceLinksDialog";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
@@ -13,13 +14,6 @@ import { notFound } from "next/navigation";
 type PageProps = {
   params: Promise<{ groupSlug: string; id: string }>;
 };
-
-function formatDateTime(value: Date): string {
-  return new Intl.DateTimeFormat("sv-SE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value);
-}
 
 export default async function TenantPieceDetailPage({ params }: PageProps) {
   const { groupSlug, id } = await params;
@@ -118,22 +112,13 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
 
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-muted-foreground">Länkar</h3>
-            {piece.links.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Inga länkar tillagda ännu.</p>
-            ) : (
-              <ul className="space-y-2 text-sm">
-                {piece.links.map((link) => (
-                  <li key={link.id}>
-                    <a className="underline" href={link.url} target="_blank" rel="noreferrer">
-                      {link.label?.trim() ? link.label : link.url}
-                    </a>
-                    <span className="ml-2 text-muted-foreground">
-                      ({formatDateTime(link.createdAt)})
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <PieceDetailLinksList
+              links={piece.links.map((link) => ({
+                id: link.id,
+                url: link.url,
+                label: link.label,
+              }))}
+            />
           </div>
         </CardContent>
       </Card>
