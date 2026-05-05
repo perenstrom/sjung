@@ -9,6 +9,7 @@ import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import type { Piece } from "@/components/PieceLinksDialog/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ROLES } from "@/lib/roles";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -41,6 +42,35 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
       label: link.label,
     })),
   };
+
+  const sortedCredits = (() => {
+    const roleBuckets = new Map<string, (typeof piece.credits)[number][]>();
+
+    for (const credit of piece.credits) {
+      const role = credit.role;
+      const bucket = roleBuckets.get(role);
+      if (bucket) bucket.push(credit);
+      else roleBuckets.set(role, [credit]);
+    }
+
+    // Widen the set type so `roleBuckets` (string keys) can be checked safely.
+    const knownRoleSet = new Set<string>(ROLES as unknown as string[]);
+    const compareSv = (a: string, b: string) =>
+      a.localeCompare(b, "sv-SE", { sensitivity: "base" });
+
+    const knownRoles = ROLES.filter((role) => roleBuckets.has(role));
+    const unknownRoles = [...roleBuckets.keys()]
+      .filter((role) => !knownRoleSet.has(role))
+      .sort(compareSv);
+
+    const orderedRoles = [...knownRoles, ...unknownRoles];
+
+    return orderedRoles.flatMap((role) => {
+      const bucket = roleBuckets.get(role) ?? [];
+      bucket.sort((a, b) => compareSv(a.person.name, b.person.name));
+      return bucket;
+    });
+  })();
 
   return (
     <div className="space-y-6">
@@ -77,9 +107,15 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
             <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
           ) : (
             <ul className="space-y-2 text-sm">
-              {piece.credits.map((credit) => (
-                <li key={`${credit.personId}:${credit.role}`}>
-                  {credit.person.name} ({credit.role})
+              {sortedCredits.map((credit) => (
+                <li
+                  key={`${credit.personId}:${credit.role}`}
+                  className="flex items-center gap-3"
+                >
+                  <span className="font-medium">{credit.person.name}</span>
+                  <span className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
+                    {credit.role}
+                  </span>
                 </li>
               ))}
             </ul>
