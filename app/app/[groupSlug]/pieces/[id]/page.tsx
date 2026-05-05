@@ -1,6 +1,8 @@
 import { getPeople } from "@/app/actions/people";
 import { getPieceDetail } from "@/app/actions/pieces";
 import { getSetLists } from "@/app/actions/setlists";
+import { getGroups } from "@/app/actions/groups";
+import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
 import { PieceDetailLinksList } from "@/components/PieceDetailLinksList";
@@ -9,6 +11,7 @@ import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import type { Piece } from "@/components/PieceLinksDialog/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { ROLES } from "@/lib/roles";
 import { notFound } from "next/navigation";
 
@@ -18,15 +21,17 @@ type PageProps = {
 
 export default async function TenantPieceDetailPage({ params }: PageProps) {
   const { groupSlug, id } = await params;
-  const [piece, people, setLists] = await Promise.all([
+  const [piece, people, setLists, groups] = await Promise.all([
     getPieceDetail(groupSlug, id),
     getPeople(groupSlug),
     getSetLists(groupSlug),
+    getGroups(),
   ]);
 
   if (!piece) {
     notFound();
   }
+  const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   const pieceForLinksDialog: Piece = {
     id: piece.id,
@@ -74,6 +79,16 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
+      <BreadcrumbRegistrar
+        trail={{
+          visibility: "visible",
+          ancestors: [
+            createGroupAncestor(groupSlug, groupName),
+            { label: "Noter", href: `/app/${groupSlug}` },
+          ],
+          tail: { kind: "static", label: piece.name || "Notstycke" },
+        }}
+      />
       <PieceMetadataSection
         key={piece.id}
         groupSlug={groupSlug}
