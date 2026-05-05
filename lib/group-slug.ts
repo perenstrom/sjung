@@ -8,6 +8,7 @@ export function slugifyGroupName(raw: string): string {
   const candidate = slugify(raw.trim(), {
     separator: "-",
     lowercase: true,
+    locale: "sv",
   });
   return candidate.length > 0 ? candidate : "grupp";
 }
