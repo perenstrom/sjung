@@ -8,7 +8,7 @@ import {
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Table,
@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
+import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { notFound } from "next/navigation";
 
@@ -119,7 +120,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
                     <TableCell className="font-mono text-xs">{index + 1}</TableCell>
                     <TableCell>{entry.pieceName}</TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap items-center gap-1">
+                      <div className="flex flex-nowrap items-center gap-1">
                         <Tooltip>
                           <form action={reorderSetListPieces}>
                             <input type="hidden" name="groupSlug" value={groupSlug} />
@@ -129,11 +130,13 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
                               name="orderedSetListPieceIds"
                               value={JSON.stringify(moveUpOrder)}
                             />
-                            <TooltipTrigger asChild>
-                              <Button type="submit" variant="ghost" size="icon" disabled={index === 0}>
-                                <ChevronUp className="size-4" aria-hidden="true" />
-                                <span className="sr-only">Flytta upp</span>
-                              </Button>
+                            <TooltipTrigger
+                              type="submit"
+                              disabled={index === 0}
+                              className={buttonVariants({ variant: "ghost", size: "icon" })}
+                            >
+                              <ChevronUp className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Flytta upp</span>
                             </TooltipTrigger>
                           </form>
                           <TooltipContent side="top">Flytta upp</TooltipContent>
@@ -147,16 +150,13 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
                               name="orderedSetListPieceIds"
                               value={JSON.stringify(moveDownOrder)}
                             />
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="submit"
-                                variant="ghost"
-                                size="icon"
-                                disabled={index === setList.pieces.length - 1}
-                              >
-                                <ChevronDown className="size-4" aria-hidden="true" />
-                                <span className="sr-only">Flytta ner</span>
-                              </Button>
+                            <TooltipTrigger
+                              type="submit"
+                              disabled={index === setList.pieces.length - 1}
+                              className={buttonVariants({ variant: "ghost", size: "icon" })}
+                            >
+                              <ChevronDown className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Flytta ner</span>
                             </TooltipTrigger>
                           </form>
                           <TooltipContent side="top">Flytta ner</TooltipContent>
@@ -165,16 +165,15 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
                           <form action={removePieceFromSetList}>
                             <input type="hidden" name="groupSlug" value={groupSlug} />
                             <input type="hidden" name="setListPieceId" value={entry.id} />
-                            <TooltipTrigger asChild>
-                              <Button
-                                type="submit"
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="size-4" aria-hidden="true" />
-                                <span className="sr-only">Ta bort</span>
-                              </Button>
+                            <TooltipTrigger
+                              type="submit"
+                              className={cn(
+                                buttonVariants({ variant: "ghost", size: "icon" }),
+                                "text-destructive hover:text-destructive"
+                              )}
+                            >
+                              <Trash2 className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Ta bort</span>
                             </TooltipTrigger>
                           </form>
                           <TooltipContent side="top">Ta bort</TooltipContent>
