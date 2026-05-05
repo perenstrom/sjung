@@ -74,10 +74,6 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">{piece.name}</h1>
-      </div>
-
       <PieceMetadataSection
         key={piece.id}
         groupSlug={groupSlug}
@@ -104,7 +100,9 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           {piece.credits.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+            <p className="text-sm text-muted-foreground">
+              Inga medverkande tillagda ännu. Använd Redigera ovan för att lägga till medverkande.
+            </p>
           ) : (
             <ul className="space-y-2 text-sm">
               {sortedCredits.map((credit) => (
@@ -154,6 +152,7 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
                 url: link.url,
                 label: link.label,
               }))}
+              emptyStateHint="Använd Länkar ovan för att lägga till länkar."
             />
           </div>
         </CardContent>
