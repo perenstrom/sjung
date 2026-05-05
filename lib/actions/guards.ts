@@ -5,6 +5,10 @@ import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 const DEFAULT_PIECE_SELECT = { id: true } satisfies Prisma.PieceSelect;
 const DEFAULT_SET_LIST_SELECT = { id: true } satisfies Prisma.SetListSelect;
 const DEFAULT_SET_LIST_PIECE_SELECT = { id: true } satisfies Prisma.SetListPieceSelect;
+const DEFAULT_SET_LIST_PIECE_NOTE_SELECT = {
+  id: true,
+  setListPieceId: true,
+} satisfies Prisma.SetListPieceNoteSelect;
 const DEFAULT_FILE_SELECT = { id: true } satisfies Prisma.FileSelect;
 const DEFAULT_LINK_SELECT = { id: true } satisfies Prisma.LinkSelect;
 const DEFAULT_PIECE_NOTE_SELECT = { id: true, pieceId: true } satisfies Prisma.PieceNoteSelect;
@@ -21,6 +25,11 @@ type SetListGuardOptions<TSelect extends Prisma.SetListSelect> = {
 };
 
 type SetListPieceGuardOptions<TSelect extends Prisma.SetListPieceSelect> = {
+  notFoundMessage?: string;
+  select?: TSelect;
+};
+
+type SetListPieceNoteGuardOptions<TSelect extends Prisma.SetListPieceNoteSelect> = {
   notFoundMessage?: string;
   select?: TSelect;
 };
@@ -104,6 +113,30 @@ export async function requireSetListPieceInGroup<
   }
 
   return setListPiece;
+}
+
+export async function requireSetListPieceNoteInGroup<
+  TSelect extends Prisma.SetListPieceNoteSelect = typeof DEFAULT_SET_LIST_PIECE_NOTE_SELECT,
+>(
+  setListPieceNoteId: string,
+  groupId: string,
+  options?: SetListPieceNoteGuardOptions<TSelect>
+): Promise<Prisma.SetListPieceNoteGetPayload<{ select: TSelect }>> {
+  const select = (options?.select ?? DEFAULT_SET_LIST_PIECE_NOTE_SELECT) as TSelect;
+  const note = await prisma.setListPieceNote.findFirst({
+    where: {
+      id: setListPieceNoteId,
+      groupId,
+      setListPiece: { setList: { groupId } },
+    },
+    select,
+  });
+
+  if (!note) {
+    throw new Error(options?.notFoundMessage ?? "Anteckning hittades inte");
+  }
+
+  return note;
 }
 
 export async function requireFileInGroup<TSelect extends Prisma.FileSelect = typeof DEFAULT_FILE_SELECT>(

@@ -10,6 +10,7 @@ import {
   requirePieceInGroup,
   requireSetListInGroup,
   requireSetListPieceInGroup,
+  requireSetListPieceNoteInGroup,
 } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
 import { parseWritableGroupSlugParam } from "@/lib/schemas/people";
@@ -28,6 +29,15 @@ type SetListRow = {
   updatedAt: Date;
 };
 
+export type SetListPieceNoteListItem = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  createdById: string;
+  updatedById: string;
+};
+
 function readGroupSlug(formData: FormData): string {
   return readGroupSlugInput(formData);
 }
@@ -40,12 +50,20 @@ function readSetListPieceId(formData: FormData): string {
   return readIdField(formData, "setListPieceId", "Repertoarpost saknas");
 }
 
+function readSetListPieceNoteId(formData: FormData): string {
+  return readIdField(formData, "setListPieceNoteId", "Anteckning saknas");
+}
+
 function readPieceId(formData: FormData): string {
   return readIdField(formData, "pieceId", "Stycke saknas");
 }
 
 function readName(formData: FormData): string {
   return readRequiredString(formData, "name", "Namn krävs");
+}
+
+function readSetListPieceNoteContent(formData: FormData): string {
+  return readRequiredString(formData, "content", "Anteckning krävs");
 }
 
 function readOptionalDate(formData: FormData): Date | null {
@@ -240,4 +258,86 @@ export async function removePieceFromSetList(formData: FormData) {
 
   revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
   revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
+}
+
+export async function listSetListPieceNotes(
+  groupSlug: string,
+  setListPieceId: string
+): Promise<SetListPieceNoteListItem[]> {
+  const slug = parseWritableGroupSlugParam(groupSlug);
+  const { groupId } = await getWritableGroupIdForSlug(slug);
+  const setListPiece = await requireSetListPieceInGroup(setListPieceId, groupId);
+
+  return prisma.setListPieceNote.findMany({
+    where: { setListPieceId: setListPiece.id, groupId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      createdById: true,
+      updatedById: true,
+    },
+  });
+}
+
+export async function createSetListPieceNote(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setListPieceId = readSetListPieceId(formData);
+  const content = readSetListPieceNoteContent(formData);
+
+  const setListPiece = await requireSetListPieceInGroup(setListPieceId, groupId, {
+    select: { id: true, setListId: true },
+  });
+
+  await prisma.setListPieceNote.create({
+    data: {
+      content,
+      setListPieceId: setListPiece.id,
+      groupId,
+      createdById: userId,
+      updatedById: userId,
+    },
+  });
+
+  revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
+}
+
+export async function updateSetListPieceNote(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setListPieceNoteId = readSetListPieceNoteId(formData);
+  const content = readSetListPieceNoteContent(formData);
+
+  const note = await requireSetListPieceNoteInGroup(setListPieceNoteId, groupId, {
+    select: { id: true, setListPiece: { select: { setListId: true } } },
+  });
+
+  await prisma.setListPieceNote.update({
+    where: { id: note.id },
+    data: {
+      content,
+      updatedById: userId,
+    },
+  });
+
+  revalidateGroupSetListDetailRoutes(groupSlug, note.setListPiece.setListId);
+}
+
+export async function deleteSetListPieceNote(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setListPieceNoteId = readSetListPieceNoteId(formData);
+
+  const note = await requireSetListPieceNoteInGroup(setListPieceNoteId, groupId, {
+    select: { id: true, setListPiece: { select: { setListId: true } } },
+  });
+
+  await prisma.setListPieceNote.delete({
+    where: { id: note.id },
+  });
+
+  revalidateGroupSetListDetailRoutes(groupSlug, note.setListPiece.setListId);
 }
