@@ -5,6 +5,9 @@ import {
   reorderSetListPieces,
   removePieceFromSetList,
 } from "@/app/actions/setlists";
+import { getGroups } from "@/app/actions/groups";
+import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
+import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -45,17 +48,29 @@ function movePieceIds(
 
 export default async function TenantSetListDetailPage({ params }: PageProps) {
   const { groupSlug, id } = await params;
-  const [setList, pieces] = await Promise.all([
+  const [setList, pieces, groups] = await Promise.all([
     getSetListDetail(groupSlug, id),
     getSetListPieceOptions(groupSlug),
+    getGroups(),
   ]);
 
   if (!setList) {
     notFound();
   }
+  const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
     <div className="space-y-6">
+      <BreadcrumbRegistrar
+        trail={{
+          visibility: "visible",
+          ancestors: [
+            createGroupAncestor(groupSlug, groupName),
+            { label: "Repertoarer", href: `/app/${groupSlug}/setlists` },
+          ],
+          tail: { kind: "static", label: setList.name || "Repertoar" },
+        }}
+      />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">{setList.name}</h1>
         <p className="text-sm text-muted-foreground">Datum: {formatSetListDate(setList.date)}</p>
