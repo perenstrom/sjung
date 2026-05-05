@@ -8,7 +8,8 @@ import {
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -18,6 +19,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
+import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -117,43 +120,64 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
                     <TableCell className="font-mono text-xs">{index + 1}</TableCell>
                     <TableCell>{entry.pieceName}</TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <form action={reorderSetListPieces}>
-                          <input type="hidden" name="groupSlug" value={groupSlug} />
-                          <input type="hidden" name="setListId" value={setList.id} />
-                          <input
-                            type="hidden"
-                            name="orderedSetListPieceIds"
-                            value={JSON.stringify(moveUpOrder)}
-                          />
-                          <Button type="submit" variant="outline" size="sm" disabled={index === 0}>
-                            Upp
-                          </Button>
-                        </form>
-                        <form action={reorderSetListPieces}>
-                          <input type="hidden" name="groupSlug" value={groupSlug} />
-                          <input type="hidden" name="setListId" value={setList.id} />
-                          <input
-                            type="hidden"
-                            name="orderedSetListPieceIds"
-                            value={JSON.stringify(moveDownOrder)}
-                          />
-                          <Button
-                            type="submit"
-                            variant="outline"
-                            size="sm"
-                            disabled={index === setList.pieces.length - 1}
-                          >
-                            Ner
-                          </Button>
-                        </form>
-                        <form action={removePieceFromSetList}>
-                          <input type="hidden" name="groupSlug" value={groupSlug} />
-                          <input type="hidden" name="setListPieceId" value={entry.id} />
-                          <Button type="submit" variant="destructive" size="sm">
-                            Ta bort
-                          </Button>
-                        </form>
+                      <div className="flex flex-nowrap items-center gap-1">
+                        <Tooltip>
+                          <form action={reorderSetListPieces}>
+                            <input type="hidden" name="groupSlug" value={groupSlug} />
+                            <input type="hidden" name="setListId" value={setList.id} />
+                            <input
+                              type="hidden"
+                              name="orderedSetListPieceIds"
+                              value={JSON.stringify(moveUpOrder)}
+                            />
+                            <TooltipTrigger
+                              type="submit"
+                              disabled={index === 0}
+                              className={buttonVariants({ variant: "ghost", size: "icon" })}
+                            >
+                              <ChevronUp className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Flytta upp</span>
+                            </TooltipTrigger>
+                          </form>
+                          <TooltipContent side="top">Flytta upp</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <form action={reorderSetListPieces}>
+                            <input type="hidden" name="groupSlug" value={groupSlug} />
+                            <input type="hidden" name="setListId" value={setList.id} />
+                            <input
+                              type="hidden"
+                              name="orderedSetListPieceIds"
+                              value={JSON.stringify(moveDownOrder)}
+                            />
+                            <TooltipTrigger
+                              type="submit"
+                              disabled={index === setList.pieces.length - 1}
+                              className={buttonVariants({ variant: "ghost", size: "icon" })}
+                            >
+                              <ChevronDown className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Flytta ner</span>
+                            </TooltipTrigger>
+                          </form>
+                          <TooltipContent side="top">Flytta ner</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <form action={removePieceFromSetList}>
+                            <input type="hidden" name="groupSlug" value={groupSlug} />
+                            <input type="hidden" name="setListPieceId" value={entry.id} />
+                            <TooltipTrigger
+                              type="submit"
+                              className={cn(
+                                buttonVariants({ variant: "ghost", size: "icon" }),
+                                "text-destructive hover:text-destructive"
+                              )}
+                            >
+                              <Trash2 className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Ta bort</span>
+                            </TooltipTrigger>
+                          </form>
+                          <TooltipContent side="top">Ta bort</TooltipContent>
+                        </Tooltip>
                       </div>
                     </TableCell>
                   </TableRow>
