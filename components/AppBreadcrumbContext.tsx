@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { type AppBreadcrumbStaticTrail } from "@/lib/breadcrumbs";
 
 type AppBreadcrumbContextValue = {
@@ -19,22 +19,35 @@ export function AppBreadcrumbProvider({
     trail: AppBreadcrumbStaticTrail;
   } | null>(null);
 
+  const registerTrail = useCallback((sourceId: string, trail: AppBreadcrumbStaticTrail) => {
+    setState((current) => {
+      if (
+        current &&
+        current.sourceId === sourceId &&
+        JSON.stringify(current.trail) === JSON.stringify(trail)
+      ) {
+        return current;
+      }
+      return { sourceId, trail };
+    });
+  }, []);
+
+  const unregisterTrail = useCallback((sourceId: string) => {
+    setState((current) => {
+      if (!current || current.sourceId !== sourceId) {
+        return current;
+      }
+      return null;
+    });
+  }, []);
+
   const value = useMemo<AppBreadcrumbContextValue>(
     () => ({
       registeredTrail: state?.trail ?? null,
-      registerTrail: (sourceId, trail) => {
-        setState({ sourceId, trail });
-      },
-      unregisterTrail: (sourceId) => {
-        setState((current) => {
-          if (!current || current.sourceId !== sourceId) {
-            return current;
-          }
-          return null;
-        });
-      },
+      registerTrail,
+      unregisterTrail,
     }),
-    [state]
+    [registerTrail, state, unregisterTrail]
   );
 
   return <AppBreadcrumbContext.Provider value={value}>{children}</AppBreadcrumbContext.Provider>;
