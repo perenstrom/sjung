@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+
 import { updatePieceMetadata } from "@/app/actions/pieces";
-import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 
 type PieceMetadataSectionProps = {
   groupSlug: string;
@@ -46,59 +45,47 @@ export function PieceMetadataSection({
         setSavedName(nextName);
         setDraftName(nextName);
         setIsEditing(false);
-        setSuccessMessage("Metadata sparades.");
+        setSuccessMessage("Namn sparat.");
         router.refresh();
       } catch (submitError) {
-        setError(getThrownMessage(submitError, "Kunde inte spara metadata"));
+        setError(getThrownMessage(submitError, "Kunde inte spara namn"));
       }
     });
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-        <h2 className="text-lg font-medium">Metadata</h2>
-        {!isEditing ? (
+    <section className="space-y-2">
+      {!isEditing ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold">{savedName}</h1>
           <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(true)}>
             Redigera
           </Button>
-        ) : null}
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {!isEditing ? (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
-            <dt className="text-muted-foreground">ID</dt>
-            <dd>{pieceId}</dd>
-          </dl>
-        ) : (
-          <form action={handleSubmit} className="space-y-3">
-            <input type="hidden" name="groupSlug" value={groupSlug} />
-            <input type="hidden" name="pieceId" value={pieceId} />
-            <div className="space-y-2">
-              <Label htmlFor="piece-name">Namn</Label>
-              <Input
-                id="piece-name"
-                name="name"
-                value={draftName}
-                required
-                disabled={isPending}
-                onChange={(event) => setDraftName(event.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Sparar..." : "Spara"}
-              </Button>
-              <Button type="button" variant="ghost" onClick={handleCancel} disabled={isPending}>
-                Avbryt
-              </Button>
-            </div>
-          </form>
-        )}
+        </div>
+      ) : (
+        <form action={handleSubmit} className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="groupSlug" value={groupSlug} />
+          <input type="hidden" name="pieceId" value={pieceId} />
+          <Input
+            id="piece-name"
+            name="name"
+            value={draftName}
+            required
+            disabled={isPending}
+            onChange={(event) => setDraftName(event.target.value)}
+            className="h-10 max-w-md text-lg font-semibold"
+          />
+          <Button type="submit" size="sm" disabled={isPending}>
+            {isPending ? "Sparar..." : "Spara"}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={handleCancel} disabled={isPending}>
+            Avbryt
+          </Button>
+        </form>
+      )}
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        {successMessage ? <p className="text-sm text-emerald-600">{successMessage}</p> : null}
-      </CardContent>
-    </Card>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {successMessage ? <p className="text-sm text-emerald-600">{successMessage}</p> : null}
+    </section>
   );
 }

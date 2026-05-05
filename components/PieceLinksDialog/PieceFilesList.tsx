@@ -28,6 +28,7 @@ export function PieceFilesList({
   groupSlug,
   files,
   showUploadedAt,
+  emptyStateHint,
   onAggregateError,
   onClearAggregateError,
   onMutationSuccess,
@@ -35,6 +36,7 @@ export function PieceFilesList({
   groupSlug: string;
   files: PieceFileListItem[];
   showUploadedAt: boolean;
+  emptyStateHint?: string;
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
   onMutationSuccess?: () => void;
@@ -89,6 +91,7 @@ export function PieceFilesList({
     return (
       <p className="text-sm text-muted-foreground">
         Inga filer uppladdade ännu.
+        {emptyStateHint ? ` ${emptyStateHint}` : ""}
       </p>
     );
   }

@@ -24,6 +24,7 @@ export function PieceDetailFilesSection({
         groupSlug={groupSlug}
         files={files}
         showUploadedAt
+        emptyStateHint="Använd Länkar ovan för att ladda upp filer."
         onAggregateError={setError}
         onClearAggregateError={() => setError(null)}
         onMutationSuccess={() => router.refresh()}
