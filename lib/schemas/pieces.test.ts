@@ -120,20 +120,29 @@ describe("parseOptionalLinkLabelFromFormData", () => {
 });
 
 describe("parsePieceCreditsFromFormData", () => {
+  const validPersonIdA = "11111111-1111-4111-8111-111111111111";
+  const validPersonIdB = "22222222-2222-4222-8222-222222222222";
+
   it("returns empty array when credits field absent", () => {
     expect(parsePieceCreditsFromFormData(createFormData({}))).toEqual([]);
+  });
+
+  it("returns empty array when credits is whitespace-only", () => {
+    expect(
+      parsePieceCreditsFromFormData(createFormData({ credits: "   " }))
+    ).toEqual([]);
   });
 
   it("parses valid JSON array", () => {
     const fd = createFormData({
       credits: JSON.stringify([
-        { personId: "p1", role: "Kompositör" },
-        { personId: "p2", role: "  Text  " },
+        { personId: validPersonIdA, role: "Kompositör" },
+        { personId: validPersonIdB, role: "Textförfattare" },
       ]),
     });
     expect(parsePieceCreditsFromFormData(fd)).toEqual([
-      { personId: "p1", role: "Kompositör" },
-      { personId: "p2", role: "Text" },
+      { personId: validPersonIdA, role: "Kompositör" },
+      { personId: validPersonIdB, role: "Textförfattare" },
     ]);
   });
 
@@ -151,9 +160,22 @@ describe("parsePieceCreditsFromFormData", () => {
     );
   });
 
-  it("throws Ogiltigt format för medverkande when personId or role empty after trim", () => {
+  it("throws Ogiltigt format för medverkande when personId is not a UUID", () => {
     const fd = createFormData({
-      credits: JSON.stringify([{ personId: " ", role: "x" }]),
+      credits: JSON.stringify([
+        { personId: "not-a-uuid", role: "Kompositör" },
+      ]),
+    });
+    expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
+      "Ogiltigt format för medverkande"
+    );
+  });
+
+  it("throws Ogiltigt format för medverkande when role is invalid", () => {
+    const fd = createFormData({
+      credits: JSON.stringify([
+        { personId: validPersonIdA, role: "Producent" },
+      ]),
     });
     expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
       "Ogiltigt format för medverkande"

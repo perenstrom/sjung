@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ROLES } from "@/lib/roles";
 import type { PieceCredit } from "@/lib/pieces/credits";
 import { personNameSchema, writableGroupSlugSchema } from "@/lib/schemas/people";
 
@@ -140,8 +141,8 @@ export function parseRequiredHttpUrlFromFormData(formData: FormData): URL {
 }
 
 const pieceCreditItemSchema = z.object({
-  personId: z.string(),
-  role: z.string(),
+  personId: z.uuid(),
+  role: z.enum(ROLES),
 });
 
 export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[] {
@@ -151,6 +152,9 @@ export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[]
   }
   if (typeof creditsJson !== "string") {
     throw new Error(INVALID_CREDITS_ERROR);
+  }
+  if (creditsJson.trim() === "") {
+    return [];
   }
 
   let parsed: unknown;
@@ -165,16 +169,5 @@ export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[]
     throw new Error(INVALID_CREDITS_ERROR);
   }
 
-  const credits = arrayResult.data.map((item) => ({
-    personId: item.personId.trim(),
-    role: item.role.trim(),
-  }));
-
-  for (const c of credits) {
-    if (c.personId === "" || c.role === "") {
-      throw new Error(INVALID_CREDITS_ERROR);
-    }
-  }
-
-  return credits;
+  return arrayResult.data;
 }
