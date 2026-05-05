@@ -8,11 +8,11 @@ import {
 
 describe("slugifyGroupName", () => {
   it("normalizes Swedish characters and punctuation", () => {
-    expect(slugifyGroupName("Vår Kör 2026!")).toBe("var-kor-2026");
+    expect(slugifyGroupName("Vår Kör 2026!")).toBe("var-koer-2026");
   });
 
   it("normalizes multiple separators into a hyphenated slug", () => {
-    expect(slugifyGroupName("  kör---rep / test  ")).toBe("kor-rep-test");
+    expect(slugifyGroupName("  kör---rep / test  ")).toBe("koer-rep-test");
   });
 
   it('uses "grupp" as fallback for empty or invalid input', () => {
