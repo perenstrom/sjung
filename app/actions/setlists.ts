@@ -58,6 +58,25 @@ function readPieceId(formData: FormData): string {
   return readIdField(formData, "pieceId", "Stycke saknas");
 }
 
+function readOrderedSetListPieceIds(formData: FormData): string[] {
+  const raw = readRequiredString(formData, "orderedSetListPieceIds", "Ny ordning saknas");
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      throw new Error("Ogiltig ordning");
+    }
+    const ids = parsed
+      .map((value) => (typeof value === "string" ? value.trim() : ""))
+      .filter((value) => value.length > 0);
+    if (ids.length === 0) {
+      throw new Error("Ogiltig ordning");
+    }
+    return ids;
+  } catch {
+    throw new Error("Ogiltig ordning");
+  }
+}
+
 function readName(formData: FormData): string {
   return readRequiredString(formData, "name", "Namn krävs");
 }
@@ -98,9 +117,11 @@ export async function getSetListDetail(
       date: true,
       updatedAt: true,
       pieces: {
+        orderBy: [{ position: "asc" }, { createdAt: "asc" }],
         select: {
           id: true,
           pieceId: true,
+          position: true,
           createdAt: true,
           piece: {
             select: {
@@ -126,9 +147,24 @@ export async function getSetListDetail(
         id: entry.id,
         pieceId: entry.pieceId,
         pieceName: entry.piece.name,
+        position: entry.position,
         createdAt: entry.createdAt,
       }))
-      .sort((a, b) => a.pieceName.localeCompare(b.pieceName, "sv-SE")),
+      .sort((a, b) => {
+        if (a.position === null && b.position === null) {
+          return a.createdAt.getTime() - b.createdAt.getTime();
+        }
+        if (a.position === null) {
+          return 1;
+        }
+        if (b.position === null) {
+          return -1;
+        }
+        if (a.position !== b.position) {
+          return a.position - b.position;
+        }
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      }),
   };
 }
 
@@ -229,11 +265,21 @@ export async function addPieceToSetList(formData: FormData) {
     requireSetListInGroup(setListId, groupId),
     requirePieceInGroup(pieceId, groupId),
   ]);
+  const highestPositionEntry = await prisma.setListPiece.findFirst({
+    where: { setListId: setList.id },
+    select: { position: true },
+    orderBy: [{ position: "desc" }, { createdAt: "desc" }],
+  });
+  const nextPosition =
+    highestPositionEntry?.position !== null && highestPositionEntry?.position !== undefined
+      ? highestPositionEntry.position + 1
+      : 0;
 
   await prisma.setListPiece.create({
     data: {
       setListId: setList.id,
       pieceId: piece.id,
+      position: nextPosition,
       createdById: userId,
       updatedById: userId,
     },
@@ -245,7 +291,7 @@ export async function addPieceToSetList(formData: FormData) {
 
 export async function removePieceFromSetList(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
   const setListPieceId = readSetListPieceId(formData);
 
   const setListPiece = await requireSetListPieceInGroup(setListPieceId, groupId, {
@@ -255,9 +301,59 @@ export async function removePieceFromSetList(formData: FormData) {
   await prisma.setListPiece.delete({
     where: { id: setListPiece.id },
   });
+  const remainingPieces = await prisma.setListPiece.findMany({
+    where: { setListId: setListPiece.setListId },
+    select: { id: true },
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+  });
+  await prisma.$transaction(
+    remainingPieces.map((entry, index) =>
+      prisma.setListPiece.update({
+        where: { id: entry.id },
+        data: { position: index, updatedById: userId },
+      })
+    )
+  );
 
   revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
   revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
+}
+
+export async function reorderSetListPieces(formData: FormData) {
+  const groupSlug = readGroupSlug(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setListId = readSetListId(formData);
+  const orderedSetListPieceIds = readOrderedSetListPieceIds(formData);
+  const orderedSet = new Set(orderedSetListPieceIds);
+  if (orderedSet.size !== orderedSetListPieceIds.length) {
+    throw new Error("Ogiltig ordning");
+  }
+
+  const setList = await requireSetListInGroup(setListId, groupId);
+  const existingPieces = await prisma.setListPiece.findMany({
+    where: { setListId: setList.id },
+    select: { id: true },
+  });
+  if (existingPieces.length !== orderedSetListPieceIds.length) {
+    throw new Error("Ogiltig ordning");
+  }
+  const existingSet = new Set(existingPieces.map((entry) => entry.id));
+  for (const id of orderedSetListPieceIds) {
+    if (!existingSet.has(id)) {
+      throw new Error("Ogiltig ordning");
+    }
+  }
+
+  await prisma.$transaction(
+    orderedSetListPieceIds.map((setListPieceId, index) =>
+      prisma.setListPiece.update({
+        where: { id: setListPieceId },
+        data: { position: index, updatedById: userId },
+      })
+    )
+  );
+
+  revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
 }
 
 export async function listSetListPieceNotes(

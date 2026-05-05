@@ -8,6 +8,7 @@ export type SetListDetail = {
     pieceId: string;
     pieceName: string;
     createdAt: Date;
+    position: number | null;
   }>;
 };
 
