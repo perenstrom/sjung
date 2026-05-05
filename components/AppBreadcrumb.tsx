@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getPieceTitleForBreadcrumb } from "@/app/actions/pieces";
 import { getSetListTitleForBreadcrumb } from "@/app/actions/setlists";
+import { useAppBreadcrumbContext } from "@/components/AppBreadcrumbContext";
+import { type AppBreadcrumbAncestor } from "@/lib/breadcrumbs";
 
 type GroupOption = {
   id: string;
@@ -30,8 +32,6 @@ const UUID_RE =
 const PIECE_TITLE_FALLBACK = "Notstycke";
 const SET_LIST_TITLE_FALLBACK = "Repertoar";
 
-type BreadcrumbAncestor = { label: string; href: string };
-
 type BreadcrumbTail =
   | { kind: "static"; label: string }
   | { kind: "piece"; groupSlug: string; pieceId: string }
@@ -41,7 +41,7 @@ type BreadcrumbTrail =
   | { visibility: "hidden" }
   | {
       visibility: "visible";
-      ancestors: BreadcrumbAncestor[];
+      ancestors: AppBreadcrumbAncestor[];
       tail: BreadcrumbTail;
     };
 
@@ -159,15 +159,29 @@ function detailFetchKeyFromTrail(trail: BreadcrumbTrail): string | null {
 
 export function AppBreadcrumb({ groups }: AppBreadcrumbProps) {
   const pathname = usePathname() ?? "";
+  const { registeredTrail } = useAppBreadcrumbContext();
   const groupDataKey = [...groups]
     .sort((a, b) => a.slug.localeCompare(b.slug, "sv-SE"))
     .map((g) => `${g.slug}:${g.name}`)
     .join("|");
-  const trail = useMemo(
+  const fallbackTrail = useMemo(
     () => trailForPathname(pathname, groups),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `groupDataKey` summarizes `groups` for stable memoization
     [pathname, groupDataKey],
   );
+  const trail = useMemo<BreadcrumbTrail>(() => {
+    if (registeredTrail == null) {
+      return fallbackTrail;
+    }
+    if (registeredTrail.visibility === "hidden") {
+      return { visibility: "hidden" };
+    }
+    return {
+      visibility: "visible",
+      ancestors: registeredTrail.ancestors,
+      tail: registeredTrail.tail,
+    };
+  }, [fallbackTrail, registeredTrail]);
 
   const fetchKey = useMemo(() => detailFetchKeyFromTrail(trail), [trail]);
 
