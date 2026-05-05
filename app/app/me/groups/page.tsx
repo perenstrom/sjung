@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getGroups } from "@/app/actions/groups";
+import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { DeleteGroupDialog } from "@/components/DeleteGroupDialog";
 import { EditGroupDialog } from "@/components/EditGroupDialog";
@@ -18,6 +19,13 @@ export default async function GroupsPage() {
 
   return (
     <div className="space-y-6">
+      <BreadcrumbRegistrar
+        trail={{
+          visibility: "visible",
+          ancestors: [],
+          tail: { kind: "static", label: "Grupphantering" },
+        }}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Grupper</h1>
         <CreateGroupDialog />

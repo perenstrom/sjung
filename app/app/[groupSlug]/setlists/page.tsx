@@ -1,4 +1,6 @@
 import { getSetLists } from "@/app/actions/setlists";
+import { getGroups } from "@/app/actions/groups";
+import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreateSetListDialog } from "@/components/CreateSetListDialog";
 import { DeleteSetListDialog } from "@/components/DeleteSetListDialog";
 import { EditSetListDialog } from "@/components/EditSetListDialog";
@@ -11,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { createGroupAncestor } from "@/lib/breadcrumbs";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;
@@ -25,10 +28,18 @@ function formatSetListDate(date: Date | null): string {
 
 export default async function TenantSetListsPage({ params }: PageProps) {
   const { groupSlug } = await params;
-  const setLists = await getSetLists(groupSlug);
+  const [setLists, groups] = await Promise.all([getSetLists(groupSlug), getGroups()]);
+  const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
     <div className="space-y-6">
+      <BreadcrumbRegistrar
+        trail={{
+          visibility: "visible",
+          ancestors: [createGroupAncestor(groupSlug, groupName)],
+          tail: { kind: "static", label: "Repertoarer" },
+        }}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Repertoarer</h1>
         <CreateSetListDialog groupSlug={groupSlug} />
