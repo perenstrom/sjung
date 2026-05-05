@@ -2,6 +2,7 @@ import {
   addPieceToSetList,
   getSetListDetail,
   getSetListPieceOptions,
+  reorderSetListPieces,
   removePieceFromSetList,
 } from "@/app/actions/setlists";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,21 @@ function formatSetListDate(date: Date | null): string {
     return "–";
   }
   return new Intl.DateTimeFormat("sv-SE").format(date);
+}
+
+function movePieceIds(
+  setListPieceIds: string[],
+  fromIndex: number,
+  direction: "up" | "down"
+): string[] {
+  const toIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
+  if (toIndex < 0 || toIndex >= setListPieceIds.length) {
+    return setListPieceIds;
+  }
+  const next = [...setListPieceIds];
+  const [moved] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
 }
 
 export default async function TenantSetListDetailPage({ params }: PageProps) {
@@ -64,6 +80,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[1%] whitespace-nowrap">#</TableHead>
               <TableHead>Namn</TableHead>
               <TableHead className="w-[1%] whitespace-nowrap">Åtgärder</TableHead>
             </TableRow>
@@ -71,25 +88,62 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
           <TableBody>
             {setList.pieces.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2} className="text-muted-foreground">
+                <TableCell colSpan={3} className="text-muted-foreground">
                   Inga stycken i repertoaren ännu.
                 </TableCell>
               </TableRow>
             ) : (
-              setList.pieces.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell>{entry.pieceName}</TableCell>
-                  <TableCell>
-                    <form action={removePieceFromSetList}>
-                      <input type="hidden" name="groupSlug" value={groupSlug} />
-                      <input type="hidden" name="setListPieceId" value={entry.id} />
-                      <Button type="submit" variant="destructive" size="sm">
-                        Ta bort
-                      </Button>
-                    </form>
-                  </TableCell>
-                </TableRow>
-              ))
+              setList.pieces.map((entry, index) => {
+                const orderedIds = setList.pieces.map((pieceEntry) => pieceEntry.id);
+                const moveUpOrder = movePieceIds(orderedIds, index, "up");
+                const moveDownOrder = movePieceIds(orderedIds, index, "down");
+                return (
+                  <TableRow key={entry.id}>
+                    <TableCell className="font-mono text-xs">{index + 1}</TableCell>
+                    <TableCell>{entry.pieceName}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <form action={reorderSetListPieces}>
+                          <input type="hidden" name="groupSlug" value={groupSlug} />
+                          <input type="hidden" name="setListId" value={setList.id} />
+                          <input
+                            type="hidden"
+                            name="orderedSetListPieceIds"
+                            value={JSON.stringify(moveUpOrder)}
+                          />
+                          <Button type="submit" variant="outline" size="sm" disabled={index === 0}>
+                            Upp
+                          </Button>
+                        </form>
+                        <form action={reorderSetListPieces}>
+                          <input type="hidden" name="groupSlug" value={groupSlug} />
+                          <input type="hidden" name="setListId" value={setList.id} />
+                          <input
+                            type="hidden"
+                            name="orderedSetListPieceIds"
+                            value={JSON.stringify(moveDownOrder)}
+                          />
+                          <Button
+                            type="submit"
+                            variant="outline"
+                            size="sm"
+                            disabled={index === setList.pieces.length - 1}
+                          >
+                            Ner
+                          </Button>
+                        </form>
+                        <form action={removePieceFromSetList}>
+                          <input type="hidden" name="groupSlug" value={groupSlug} />
+                          <input type="hidden" name="setListPieceId" value={entry.id} />
+                          <Button type="submit" variant="destructive" size="sm">
+                            Ta bort
+                          </Button>
+                        </form>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
