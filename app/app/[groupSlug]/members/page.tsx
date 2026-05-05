@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { listGroupMembers } from "@/app/actions/groups";
+import { getGroups, listGroupMembers } from "@/app/actions/groups";
+import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { AddGroupMemberForm } from "@/components/AddGroupMemberForm";
 import { RemoveGroupMemberDialog } from "@/components/RemoveGroupMemberDialog";
 import {
@@ -11,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import prisma from "@/lib/prisma";
+import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { requireTenantGroup } from "@/lib/tenant-group";
 
 type PageProps = {
@@ -29,10 +31,18 @@ export default async function GroupMembersPage({ params }: PageProps) {
     notFound();
   }
 
-  const members = await listGroupMembers(groupSlug);
+  const [members, groups] = await Promise.all([listGroupMembers(groupSlug), getGroups()]);
+  const groupName = groups.find((groupOption) => groupOption.slug === groupSlug)?.name ?? groupSlug;
 
   return (
     <div className="space-y-6">
+      <BreadcrumbRegistrar
+        trail={{
+          visibility: "visible",
+          ancestors: [createGroupAncestor(groupSlug, groupName)],
+          tail: { kind: "static", label: "Medlemmar" },
+        }}
+      />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Medlemmar</h1>
         <p className="text-sm text-muted-foreground">
