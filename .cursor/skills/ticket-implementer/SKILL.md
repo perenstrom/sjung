@@ -7,8 +7,10 @@ description: Picks a Todo ticket from the Sjung Linear project and implements it
 
 ## Step 1: Discover Linear context
 
+Read MCP tool descriptors under `mcps/plugin-linear-linear/tools/` before calling any Linear tool.
+
 Use the `plugin-linear-linear` MCP server to look up:
-- The team: `list_teams`
+- The team: `list_teams` (expect **Per Enström** for Sjung)
 - Status IDs for "Todo", "In Progress", and "In Review": `list_issue_statuses` (requires `team`)
 - Confirm project "Sjung" exists: `list_projects`
 
@@ -36,35 +38,16 @@ Run these lookups upfront; reuse the results for the rest of the session.
 
 ## Step 5: Explore the codebase
 
-Before writing any code, read all files referenced in the ticket hints and explore related areas using the codebase reference below. Understanding the context is essential for correct, convention-following code.
+Before writing any code:
+
+1. Read `.cursor/skills/_shared/codebase-reference.md`.
+2. Read all files referenced in the ticket hints, implementation plan, and key decisions.
 
 ## Step 6: Implement the ticket
 
 Work through the ticket's implementation plan and key decisions. Check off each acceptance criterion as you go.
 
-Follow these project conventions:
-
-**Server actions** (`app/actions/*.ts`):
-- Top-of-file `"use server"` directive
-- Prisma via `@/lib/prisma`; scope reads with `where: { groupId: DEFAULT_GROUP_ID }` from `@/lib/context`
-- Mutations take `FormData`, validate required fields, throw Swedish errors on bad input
-- Call `revalidatePath` after writes
-
-**Pages** (`app/<segment>/page.tsx`):
-- Async server components by default
-- Data loading via functions from `app/actions/`
-- Register new routes in `components/AppSidebar.tsx` if the page needs sidebar nav
-
-**Interactive UI** (`components/*.tsx`):
-- `"use client"` directive
-- Radix/shadcn `Dialog` wrapping a `form` with `action={async (formData) => ...}` forwarding to a server action
-- UI strings in Swedish
-- Use roles from `lib/roles.ts` (`ROLES` constant, `Role` type) for credit-related features
-
-**Schema changes** (when required):
-- Edit `prisma/schema.prisma`
-- Run `npx prisma migrate dev --name <descriptive-name>`
-- Client is regenerated automatically (output: `app/generated/prisma`)
+Follow project conventions in `.cursor/skills/_shared/codebase-reference.md` (server actions, group scoping, Zod validation, guards, revalidation helpers, UI patterns, schema migrations).
 
 ## Step 7: Verify
 
@@ -95,18 +78,9 @@ Follow these project conventions:
 
 ---
 
-## Codebase Reference
+## Codebase reference
 
-Key files:
-- `app/actions/sheetMusic.ts`, `app/actions/people.ts` — server actions
-- `app/page.tsx` — sheet music listing (Noter)
-- `app/people/page.tsx` — people listing (Personer)
-- `components/AppSidebar.tsx` — sidebar nav
-- `components/` — feature dialogs; `components/ui/` — shadcn primitives
-- `lib/roles.ts` — credit roles (`ROLES`, `Role`)
-- `lib/context.ts` — `DEFAULT_GROUP_ID`, `SYSTEM_USER_ID`
-- `lib/prisma.ts` — Prisma client singleton
-- `prisma/schema.prisma` — data model
+See `.cursor/skills/_shared/codebase-reference.md`.
 
 ## MCP Tools Reference
 

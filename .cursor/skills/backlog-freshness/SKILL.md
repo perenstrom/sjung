@@ -9,8 +9,10 @@ Audits every Backlog and Todo ticket in the Sjung project and updates any that h
 
 ## Step 1: Discover Linear context
 
+Read MCP tool descriptors under `mcps/plugin-linear-linear/tools/` before calling any Linear tool.
+
 Use the `plugin-linear-linear` MCP server to look up:
-- The team: `list_teams`
+- The team: `list_teams` (expect **Per Enström** for Sjung)
 - The Backlog, Todo, and Done status IDs: `list_issue_statuses` (requires `team`)
 - Confirm the project "Sjung" exists: `list_projects`
 
@@ -115,13 +117,6 @@ Key `save_issue` fields for this skill:
 - `description` — full updated description (literal newlines)
 - `removeBlockedBy` — array of blocker IDs to remove
 
-## Codebase Reference
+## Codebase reference
 
-Key files for assumption checking:
-- `app/actions/sheetMusic.ts`, `app/actions/people.ts` — server actions
-- `app/page.tsx` — sheet music listing (Noter)
-- `app/people/page.tsx` — people listing (Personer)
-- `components/` — UI components including dialogs and `ui/` shadcn primitives
-- `lib/roles.ts` — credit roles (Kompositör, Arrangör, Textförfattare)
-- `lib/prisma.ts`, `lib/context.ts` — DB client and bootstrap IDs
-- `prisma/schema.prisma` — data model (users, groups, sheetMusic, files, people, credits)
+Read `.cursor/skills/_shared/codebase-reference.md` when checking whether done work invalidates assumptions in pending tickets.

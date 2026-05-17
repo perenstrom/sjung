@@ -25,6 +25,8 @@ If `list_issue_labels` no longer returns all five names (rename or deletion), st
 
 ### Step 1: Discover Linear context
 
+Read MCP tool descriptors under `mcps/plugin-linear-linear/tools/` before calling any Linear tool.
+
 Use the `plugin-linear-linear` MCP server to look up:
 - The team: `list_teams` (expect **Per Enström** for Sjung)
 - The "Backlog" status ID for that team: `list_issue_statuses` (requires `team`)
@@ -72,8 +74,8 @@ For **each** ticket, choose **one** of `XS` / `S` / `M` / `L` / `XL` per **Sjung
 
 ## Hints
 
-- Relevant files: [e.g. `app/actions/sheetMusic.ts`, `components/SheetMusicTable.tsx`]
-- Related patterns: [e.g. follows the same pattern as the people page]
+- Relevant files: [e.g. `app/actions/pieces.ts`, `app/app/[groupSlug]/page.tsx`]
+- Related patterns: [e.g. follows `EntityFormDialog` like `CreatePersonDialog`]
 ```
 
 ### Step 5: Present for approval
@@ -100,16 +102,9 @@ Optional: if the team also uses Linear numeric **estimates** (`estimate` on `sav
 
 Create tickets one at a time. Report each created issue identifier as you go.
 
-## Sjung Codebase Reference
+## Codebase reference
 
-Key files for hints:
-- `app/actions/sheetMusic.ts`, `app/actions/people.ts` — server actions
-- `app/page.tsx` — sheet music listing (Noter)
-- `app/people/page.tsx` — people listing (Personer)
-- `components/` — UI components including dialogs and `ui/` shadcn primitives
-- `lib/roles.ts` — credit roles (Kompositör, Arrangör, Textförfattare)
-- `lib/prisma.ts`, `lib/context.ts` — DB client and bootstrap IDs
-- `prisma/schema.prisma` — data model (users, groups, sheetMusic, files, people, credits)
+Read `.cursor/skills/_shared/codebase-reference.md` when drafting hints or exploring the repo.
 
 ## MCP Tools Reference
 
