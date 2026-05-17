@@ -2,6 +2,8 @@
 
 Shared context for Linear skills, ticket grilling, and implementation. Read this file when exploring the codebase or writing ticket hints.
 
+When this file may be stale (new routes, actions, or conventions), run the **codebase-reference-freshness** skill to audit and update it.
+
 ## Architecture
 
 - **Stack:** Next.js App Router, React Server Components, Prisma (PostgreSQL), NextAuth (credentials), Cloudflare R2 for file storage, Vitest for unit tests.
