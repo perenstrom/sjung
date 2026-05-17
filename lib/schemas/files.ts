@@ -60,6 +60,19 @@ const optionalDisplayNameSchema = z.preprocess(
   ])
 );
 
+const requiredDisplayNameSchema = z.preprocess(
+  (v: unknown) => (typeof v === "string" ? v : ""),
+  z
+    .string()
+    .transform((s) => s.trim())
+    .pipe(z.string().min(1, { error: "Visningsnamn saknas" }))
+);
+
+const updatePieceFileDisplayNameFormSchema = z.object({
+  fileId: fileIdSchema,
+  displayName: requiredDisplayNameSchema,
+});
+
 const createPieceFileUploadFormSchema = z.object({
   pieceId: pieceIdSchema,
   fileName: fileNameSchema,
@@ -120,6 +133,21 @@ export function parseFinalizePieceFileUploadFromFormData(formData: FormData): {
 
 export function parseFileIdFromFormData(formData: FormData): string {
   const result = fileIdSchema.safeParse(formDataString(formData, "fileId"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
+  }
+  return result.data;
+}
+
+export function parseUpdatePieceFileDisplayNameFromFormData(formData: FormData): {
+  fileId: string;
+  displayName: string;
+} {
+  const raw = {
+    fileId: formDataString(formData, "fileId"),
+    displayName: formData.get("displayName"),
+  };
+  const result = updatePieceFileDisplayNameFormSchema.safeParse(raw);
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
   }
