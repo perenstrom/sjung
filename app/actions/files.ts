@@ -12,8 +12,10 @@ import { requireFileInGroup, requirePieceInGroup } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
 import { getR2Bucket, getR2Client, sanitizeFileName } from "@/lib/r2";
 import {
+  parseCreatePieceFileReplaceUploadFromFormData,
   parseCreatePieceFileUploadFromFormData,
   parseFileIdFromFormData,
+  parseFinalizePieceFileReplaceFromFormData,
   parseFinalizePieceFileUploadFromFormData,
   parseUpdatePieceFileDisplayNameFromFormData,
 } from "@/lib/schemas/files";
@@ -86,6 +88,101 @@ export async function finalizePieceFileUpload(formData: FormData) {
 
   revalidateGroupRoute(groupSlug);
   revalidateGroupPieceDetailRoutes(groupSlug, pieceId);
+}
+
+export async function createPieceFileReplaceUploadUrl(formData: FormData) {
+  const groupSlug = readGroupSlugInput(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const { fileId, fileName, mimeType, size } =
+    parseCreatePieceFileReplaceUploadFromFormData(formData);
+
+  const file = await requireFileInGroup(fileId, groupId, {
+    select: { pieceId: true },
+  });
+
+  const safeName = sanitizeFileName(fileName) || "fil";
+  const storagePath = `groups/${groupId}/pieces/${file.pieceId}/${randomUUID()}-${safeName}`;
+  const command = new PutObjectCommand({
+    Bucket: getR2Bucket(),
+    Key: storagePath,
+    ContentType: mimeType,
+    ContentLength: size,
+  });
+  const uploadUrl = await getSignedUrl(getR2Client(), command, {
+    expiresIn: UPLOAD_URL_EXPIRES_SECONDS,
+  });
+
+  return {
+    uploadUrl,
+    storagePath,
+    headers: {
+      "content-type": mimeType,
+    },
+    expiresInSeconds: UPLOAD_URL_EXPIRES_SECONDS,
+  };
+}
+
+export async function finalizePieceFileReplace(formData: FormData) {
+  const groupSlug = readGroupSlugInput(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const { fileId, fileName, storagePath, mimeType, size } =
+    parseFinalizePieceFileReplaceFromFormData(formData);
+
+  const file = await requireFileInGroup(fileId, groupId, {
+    select: {
+      id: true,
+      pieceId: true,
+      fileName: true,
+      mimeType: true,
+      size: true,
+      storagePath: true,
+    },
+  });
+
+  const expectedPrefix = `groups/${groupId}/pieces/${file.pieceId}/`;
+  if (!storagePath.startsWith(expectedPrefix)) {
+    throw new Error("Ogiltig filsökväg");
+  }
+
+  const oldStoragePath = file.storagePath;
+  const previousValues = {
+    fileName: file.fileName,
+    mimeType: file.mimeType,
+    size: file.size,
+    storagePath: file.storagePath,
+  };
+
+  await prisma.file.update({
+    where: { id: file.id },
+    data: {
+      fileName,
+      mimeType,
+      size,
+      storagePath,
+      updatedById: userId,
+    },
+  });
+
+  try {
+    await getR2Client().send(
+      new DeleteObjectCommand({
+        Bucket: getR2Bucket(),
+        Key: oldStoragePath,
+      })
+    );
+  } catch {
+    await prisma.file.update({
+      where: { id: file.id },
+      data: {
+        ...previousValues,
+        updatedById: userId,
+      },
+    });
+    throw new Error("Kunde inte ta bort den gamla filen från lagringen");
+  }
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, file.pieceId);
 }
 
 export async function createPieceFileDownloadUrl(formData: FormData) {

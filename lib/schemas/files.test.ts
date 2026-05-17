@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   MAX_FILE_SIZE_BYTES,
+  parseCreatePieceFileReplaceUploadFromFormData,
   parseCreatePieceFileUploadFromFormData,
   parseFileIdFromFormData,
+  parseFinalizePieceFileReplaceFromFormData,
   parseFinalizePieceFileUploadFromFormData,
   parseUpdatePieceFileDisplayNameFromFormData,
 } from "@/lib/schemas/files";
@@ -157,6 +159,91 @@ describe("parseFinalizePieceFileUploadFromFormData", () => {
     expect(() =>
       parseFinalizePieceFileUploadFromFormData(
         createFormData({ ...validFinalize, storagePath: "" })
+      )
+    ).toThrow("Sökväg saknas");
+  });
+});
+
+const validReplaceBase = {
+  fileId: "file-1",
+  fileName: "not.pdf",
+  mimeType: "application/pdf",
+  size: "1024",
+};
+
+describe("parseCreatePieceFileReplaceUploadFromFormData", () => {
+  it("parses trimmed fields", () => {
+    const fd = createFormData({
+      fileId: "  file-1  ",
+      fileName: "  doc.pdf  ",
+      mimeType: "  application/pdf  ",
+      size: "  2048  ",
+    });
+    expect(parseCreatePieceFileReplaceUploadFromFormData(fd)).toEqual({
+      fileId: "file-1",
+      fileName: "doc.pdf",
+      mimeType: "application/pdf",
+      size: 2048,
+    });
+  });
+
+  it("throws Fil saknas when fileId is empty", () => {
+    expect(() =>
+      parseCreatePieceFileReplaceUploadFromFormData(
+        createFormData({ ...validReplaceBase, fileId: "" })
+      )
+    ).toThrow("Fil saknas");
+  });
+
+  it("throws Filtypen stöds inte for disallowed mime", () => {
+    expect(() =>
+      parseCreatePieceFileReplaceUploadFromFormData(
+        createFormData({ ...validReplaceBase, mimeType: "text/plain" })
+      )
+    ).toThrow("Filtypen stöds inte");
+  });
+
+  it("throws Filen är för stor (max 50 MB) when size exceeds cap", () => {
+    expect(() =>
+      parseCreatePieceFileReplaceUploadFromFormData(
+        createFormData({
+          ...validReplaceBase,
+          size: String(MAX_FILE_SIZE_BYTES + 1),
+        })
+      )
+    ).toThrow("Filen är för stor (max 50 MB)");
+  });
+});
+
+describe("parseFinalizePieceFileReplaceFromFormData", () => {
+  const validFinalizeReplace = {
+    fileId: "file-1",
+    fileName: "f.pdf",
+    storagePath: "groups/g1/pieces/p1/key-f.pdf",
+    mimeType: "application/pdf",
+    size: "100",
+  };
+
+  it("parses all fields", () => {
+    const fd = createFormData(validFinalizeReplace);
+    expect(parseFinalizePieceFileReplaceFromFormData(fd)).toEqual({
+      ...validFinalizeReplace,
+      size: 100,
+    });
+  });
+
+  it("throws Fil saknas when fileId is empty", () => {
+    expect(() =>
+      parseFinalizePieceFileReplaceFromFormData(
+        createFormData({ ...validFinalizeReplace, fileId: "" })
+      )
+    ).toThrow("Fil saknas");
+  });
+
+  it("throws Sökväg saknas when storagePath is empty", () => {
+    expect(() =>
+      parseFinalizePieceFileReplaceFromFormData(
+        createFormData({ ...validFinalizeReplace, storagePath: "" })
       )
     ).toThrow("Sökväg saknas");
   });
