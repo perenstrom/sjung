@@ -11,6 +11,7 @@ import {
   DataTableColumnHeader,
 } from "@/components/data-table";
 import { PieceLinksDialog } from "@/components/PieceLinksDialog";
+import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { Person } from "@/types/piece-credit-dialog";
 
@@ -35,6 +36,7 @@ export function PiecesTable({
     () => [
       {
         accessorKey: "name",
+        sortingFn: caseInsensitiveSortingFn,
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Namn" />
         ),
@@ -49,10 +51,8 @@ export function PiecesTable({
       },
       {
         id: "credits",
-        accessorFn: formatCreditsText,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Medverkande" />
-        ),
+        enableSorting: false,
+        header: () => "Medverkande",
         cell: ({ row }) => formatCreditsText(row.original),
       },
       {
