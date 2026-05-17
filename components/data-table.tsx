@@ -9,6 +9,7 @@
  * const columns: ColumnDef<MyRow>[] = [
  *   {
  *     accessorKey: "name",
+ *     sortingFn: caseInsensitiveSortingFn,
  *     header: ({ column }) => (
  *       <DataTableColumnHeader column={column} title="Namn" />
  *     ),
@@ -47,6 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { caseInsensitiveSortingFns } from "@/lib/data-table/sorting";
 import { cn } from "@/lib/utils";
 
 export type { ColumnDef };
@@ -77,6 +79,7 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
     enableSorting,
+    sortingFns: caseInsensitiveSortingFns,
   });
 
   return (
