@@ -6,6 +6,7 @@ import {
   createPieceFileDownloadUrl,
   deletePieceFile,
 } from "@/app/actions/files";
+import { ReplacePieceFilePopover } from "@/components/pieces/ReplacePieceFilePopover";
 import { Button } from "@/components/ui/button";
 import { formatFileSize } from "@/lib/formatFileSize";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -129,6 +130,13 @@ export function PieceFilesList({
                 >
                   {downloadingFileId === file.id ? "Hämtar..." : "Ladda ner"}
                 </Button>
+                <ReplacePieceFilePopover
+                  groupSlug={groupSlug}
+                  fileId={file.id}
+                  displayName={file.displayName}
+                  disabled={deletingFileId === file.id}
+                  onReplaceSuccess={onMutationSuccess}
+                />
                 <Button
                   type="button"
                   variant={deleteError ? "destructive" : "ghost"}
