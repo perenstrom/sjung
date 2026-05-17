@@ -167,7 +167,7 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
                 url: link.url,
                 label: link.label,
               }))}
-              emptyStateHint="Använd Länkar ovan för att lägga till länkar."
+              emptyStateHint="Lägg till länkar från Noter-listan."
             />
           </div>
         </CardContent>

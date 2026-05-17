@@ -61,10 +61,39 @@ describe("parsePieceIdFromFormData", () => {
 });
 
 describe("parseLinkIdFromFormData", () => {
+  it("returns trimmed link id", () => {
+    const fd = createFormData({ linkId: "  link-1  " });
+    expect(parseLinkIdFromFormData(fd)).toBe("link-1");
+  });
+
   it("throws Länk saknas when empty", () => {
     expect(() =>
       parseLinkIdFromFormData(createFormData({ linkId: "" }))
     ).toThrow("Länk saknas");
+  });
+});
+
+describe("updateLink input parsing", () => {
+  it("parses linkId, url, and optional label from FormData", () => {
+    const fd = createFormData({
+      linkId: "link-1",
+      url: "https://example.com/sheet",
+      label: "  Partitur  ",
+    });
+    expect(parseLinkIdFromFormData(fd)).toBe("link-1");
+    expect(parseRequiredHttpUrlFromFormData(fd).href).toBe(
+      "https://example.com/sheet"
+    );
+    expect(parseOptionalLinkLabelFromFormData(fd)).toBe("Partitur");
+  });
+
+  it("parses updateLink url without label as null", () => {
+    const fd = createFormData({
+      linkId: "link-1",
+      url: "http://example.com",
+      label: "",
+    });
+    expect(parseOptionalLinkLabelFromFormData(fd)).toBe(null);
   });
 });
 

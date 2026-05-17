@@ -230,6 +230,26 @@ export async function removeLink(formData: FormData) {
   revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
 }
 
+export async function updateLink(formData: FormData) {
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const link = await requireLinkForLinkMutation(formData, groupId);
+  const parsedUrl = parseRequiredHttpUrlFromFormData(formData);
+  const label = parseOptionalLinkLabelFromFormData(formData);
+
+  await prisma.link.update({
+    where: { id: link.id },
+    data: {
+      url: parsedUrl.toString(),
+      label,
+      updatedById: userId,
+    },
+  });
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+}
+
 export async function listPieceNotes(
   groupSlug: string,
   pieceId: string
