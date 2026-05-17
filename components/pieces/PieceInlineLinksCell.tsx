@@ -1,121 +1,69 @@
 "use client";
 
-import { ExternalLink, Pencil } from "lucide-react";
+import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { addLink, removeLink, updateLink } from "@/app/actions/pieces";
+import { removeLink, updateLink } from "@/app/actions/pieces";
+import { AddPieceLinkPopover } from "@/components/pieces/AddPieceLinkPopover";
 import { labelForLink } from "@/components/PieceLinksDialog/linkLabel";
 import type { PieceLink } from "@/components/PieceLinksDialog/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 export function PieceInlineLinksCell({
   groupSlug,
   pieceId,
+  pieceName,
   links,
 }: {
   groupSlug: string;
   pieceId: string;
+  pieceName: string;
   links: PieceLink[];
 }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [addPopoverOpen, setAddPopoverOpen] = useState(false);
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
-
-  async function refreshAfterMutation() {
-    setError(null);
-    router.refresh();
-  }
-
-  async function handleAdd(formData: FormData) {
-    try {
-      await addLink(formData);
-      setShowAddForm(false);
-      await refreshAfterMutation();
-    } catch (err) {
-      setError(getThrownMessage(err, "Kunde inte lägga till länk"));
-    }
-  }
+  const [editError, setEditError] = useState<string | null>(null);
 
   async function handleUpdate(formData: FormData) {
     try {
       await updateLink(formData);
       setEditingLinkId(null);
-      await refreshAfterMutation();
+      setEditError(null);
+      router.refresh();
     } catch (err) {
-      setError(getThrownMessage(err, "Kunde inte spara länk"));
+      setEditError(getThrownMessage(err, "Kunde inte spara länk"));
     }
   }
 
   async function handleRemove(formData: FormData) {
     try {
       await removeLink(formData);
-      if (editingLinkId === formData.get("linkId")) {
-        setEditingLinkId(null);
-      }
-      await refreshAfterMutation();
+      setRemoveError(null);
+      router.refresh();
     } catch (err) {
-      setError(getThrownMessage(err, "Kunde inte ta bort länk"));
+      setRemoveError(getThrownMessage(err, "Kunde inte ta bort länk"));
     }
   }
 
   return (
-    <div className="min-w-0 flex-1 space-y-2">
-      {links.length === 0 && !showAddForm ? (
-        <p className="text-sm text-muted-foreground">Inga länkar tillagda ännu.</p>
-      ) : (
-        <ul className="space-y-2 text-sm">
-          {links.map((link) =>
-            editingLinkId === link.id ? (
-              <li key={link.id}>
-                <form action={handleUpdate} className="space-y-2 rounded border p-2">
-                  <input type="hidden" name="groupSlug" value={groupSlug} />
-                  <input type="hidden" name="linkId" value={link.id} />
-                  <div className="space-y-1">
-                    <Label htmlFor={`edit-url-${link.id}`} className="text-xs">
-                      Länk
-                    </Label>
-                    <Input
-                      id={`edit-url-${link.id}`}
-                      name="url"
-                      type="url"
-                      defaultValue={link.url}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor={`edit-label-${link.id}`} className="text-xs">
-                      Etikett (valfritt)
-                    </Label>
-                    <Input
-                      id={`edit-label-${link.id}`}
-                      name="label"
-                      defaultValue={link.label ?? ""}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" size="sm">
-                      Spara
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingLinkId(null);
-                        setError(null);
-                      }}
-                    >
-                      Avbryt
-                    </Button>
-                  </div>
-                </form>
-              </li>
-            ) : (
+    <div className="flex min-w-0 flex-1 items-start gap-2">
+      <div className="min-w-0 flex-1 space-y-2">
+        {links.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Inga länkar tillagda ännu.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {links.map((link) => (
               <li key={link.id} className="flex min-w-0 items-center gap-1">
                 <ExternalLink
                   className="size-3.5 shrink-0 text-muted-foreground"
@@ -130,91 +78,119 @@ export function PieceInlineLinksCell({
                   {labelForLink(link)}
                   <span className="sr-only">, öppnas i ny flik</span>
                 </a>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 shrink-0"
-                  disabled={editingLinkId !== null}
-                  aria-label={`Redigera länk ${labelForLink(link)}`}
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setEditingLinkId(link.id);
-                    setError(null);
+                <Popover
+                  open={editingLinkId === link.id}
+                  onOpenChange={(nextOpen) => {
+                    if (nextOpen) {
+                      setAddPopoverOpen(false);
+                      setEditingLinkId(link.id);
+                      setEditError(null);
+                    } else if (editingLinkId === link.id) {
+                      setEditingLinkId(null);
+                      setEditError(null);
+                    }
                   }}
                 >
-                  <Pencil className="size-3.5" />
-                </Button>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 shrink-0"
+                      disabled={addPopoverOpen}
+                      aria-label={`Redigera länk ${labelForLink(link)}`}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-80 space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Redigera länk</p>
+                      <p className="text-sm text-muted-foreground">{pieceName}</p>
+                    </div>
+
+                    <form action={handleUpdate} className="space-y-4">
+                      <input type="hidden" name="groupSlug" value={groupSlug} />
+                      <input type="hidden" name="linkId" value={link.id} />
+
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor={`edit-url-${link.id}`}>Länk</Label>
+                          <Input
+                            id={`edit-url-${link.id}`}
+                            name="url"
+                            type="url"
+                            defaultValue={link.url}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`edit-label-${link.id}`}>
+                            Etikett (valfritt)
+                          </Label>
+                          <Input
+                            id={`edit-label-${link.id}`}
+                            name="label"
+                            defaultValue={link.label ?? ""}
+                          />
+                        </div>
+                      </div>
+
+                      {editError && editingLinkId === link.id ? (
+                        <p className="text-sm text-destructive">{editError}</p>
+                      ) : null}
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setEditingLinkId(null)}
+                        >
+                          Avbryt
+                        </Button>
+                        <Button type="submit">Spara</Button>
+                      </div>
+                    </form>
+                  </PopoverContent>
+                </Popover>
                 <form action={handleRemove}>
                   <input type="hidden" name="groupSlug" value={groupSlug} />
                   <input type="hidden" name="linkId" value={link.id} />
                   <Button
                     type="submit"
                     variant="ghost"
-                    size="sm"
-                    className="h-7 shrink-0 px-2"
-                    disabled={editingLinkId !== null}
+                    size="icon"
+                    className="size-7 shrink-0"
+                    disabled={addPopoverOpen || editingLinkId !== null}
+                    aria-label={`Ta bort länk ${labelForLink(link)}`}
                   >
-                    Ta bort
+                    <Trash2 className="size-3.5" aria-hidden="true" />
                   </Button>
                 </form>
               </li>
-            )
-          )}
-        </ul>
-      )}
+            ))}
+          </ul>
+        )}
 
-      {showAddForm ? (
-        <form action={handleAdd} className="space-y-2 rounded border p-2">
-          <input type="hidden" name="groupSlug" value={groupSlug} />
-          <input type="hidden" name="pieceId" value={pieceId} />
-          <div className="space-y-1">
-            <Label htmlFor={`add-url-${pieceId}`} className="text-xs">
-              Länk
-            </Label>
-            <Input id={`add-url-${pieceId}`} name="url" type="url" required />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`add-label-${pieceId}`} className="text-xs">
-              Etikett (valfritt)
-            </Label>
-            <Input id={`add-label-${pieceId}`} name="label" />
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" size="sm">
-              Lägg till
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setShowAddForm(false);
-                setError(null);
-              }}
-            >
-              Avbryt
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2"
-          disabled={editingLinkId !== null}
-          onClick={() => {
-            setShowAddForm(true);
+        {removeError ? (
+          <p className="text-sm text-destructive">{removeError}</p>
+        ) : null}
+      </div>
+
+      <AddPieceLinkPopover
+        groupSlug={groupSlug}
+        pieceId={pieceId}
+        pieceName={pieceName}
+        open={addPopoverOpen}
+        disabled={editingLinkId !== null}
+        onOpenChange={(nextOpen) => {
+          setAddPopoverOpen(nextOpen);
+          if (nextOpen) {
             setEditingLinkId(null);
-            setError(null);
-          }}
-        >
-          + Lägg till länk
-        </Button>
-      )}
-
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+            setEditError(null);
+          }
+        }}
+      />
     </div>
   );
 }

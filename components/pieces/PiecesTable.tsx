@@ -89,6 +89,7 @@ export function PiecesTable({
               <PieceInlineLinksCell
                 groupSlug={groupSlug}
                 pieceId={piece.id}
+                pieceName={piece.name}
                 links={piece.links.map((link) => ({
                   id: link.id,
                   url: link.url,
