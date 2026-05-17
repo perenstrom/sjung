@@ -6,6 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
+import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
 import {
   DataTable,
   DataTableColumnHeader,
@@ -53,7 +54,26 @@ export function PiecesTable({
         id: "credits",
         enableSorting: false,
         header: () => "Medverkande",
-        cell: ({ row }) => formatCreditsText(row.original),
+        cell: ({ row }) => {
+          const piece = row.original;
+          return (
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1">{formatCreditsText(piece)}</span>
+              <AddPieceCreditPopover
+                groupSlug={groupSlug}
+                people={people}
+                piece={{
+                  id: piece.id,
+                  name: piece.name,
+                  credits: piece.credits.map((credit) => ({
+                    personId: credit.personId,
+                    role: credit.role,
+                  })),
+                }}
+              />
+            </div>
+          );
+        },
       },
       {
         id: "links",
