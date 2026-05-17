@@ -41,6 +41,8 @@ model User {
   updatedSetListPieces SetListPiece[]  @relation("SetListPieceUpdatedBy")
   createdSetListPieceNotes SetListPieceNote[] @relation("SetListPieceNoteCreatedBy")
   updatedSetListPieceNotes SetListPieceNote[] @relation("SetListPieceNoteUpdatedBy")
+  createdSetListNotes    SetListNote[]   @relation("SetListNoteCreatedBy")
+  updatedSetListNotes    SetListNote[]   @relation("SetListNoteUpdatedBy")
   createdPieceNotes    PieceNote[]     @relation("PieceNoteCreatedBy")
   updatedPieceNotes    PieceNote[]     @relation("PieceNoteUpdatedBy")
   groups               UsersToGroups[]
@@ -189,6 +191,7 @@ model SetList {
   updatedBy User           @relation("SetListUpdatedBy", fields: [updatedById], references: [id])
   group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   pieces    SetListPiece[]
+  notes     SetListNote[]
 
   @@map("set_lists")
 }
@@ -202,7 +205,7 @@ model SetListPiece {
 
   setListId String @map("set_list_id")
   pieceId   String @map("piece_id")
-  position  Int?
+  position  Int
 
   createdBy User    @relation("SetListPieceCreatedBy", fields: [createdById], references: [id])
   updatedBy User    @relation("SetListPieceUpdatedBy", fields: [updatedById], references: [id])
@@ -251,4 +254,22 @@ model SetListPieceNote {
 
   @@index([groupId, setListPieceId])
   @@map("set_list_piece_notes")
+}
+
+model SetListNote {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+
+  content   String @db.Text
+  setListId String @map("set_list_id")
+  position  Int
+
+  createdBy User    @relation("SetListNoteCreatedBy", fields: [createdById], references: [id])
+  updatedBy User    @relation("SetListNoteUpdatedBy", fields: [updatedById], references: [id])
+  setList   SetList @relation(fields: [setListId], references: [id], onDelete: Cascade)
+
+  @@map("set_list_notes")
 }
