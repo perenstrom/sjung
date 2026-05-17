@@ -11,7 +11,7 @@ import {
   DataTable,
   DataTableColumnHeader,
 } from "@/components/data-table";
-import { PieceLinksDialog } from "@/components/PieceLinksDialog";
+import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
@@ -85,30 +85,37 @@ export function PiecesTable({
         cell: ({ row }) => {
           const piece = row.original;
           return (
-            <div className="flex min-w-[12rem] items-start gap-2">
-              <PieceInlineLinksCell
+            <PieceInlineLinksCell
+              groupSlug={groupSlug}
+              pieceId={piece.id}
+              pieceName={piece.name}
+              links={piece.links.map((link) => ({
+                id: link.id,
+                url: link.url,
+                label: link.label,
+              }))}
+            />
+          );
+        },
+      },
+      {
+        id: "files",
+        enableSorting: false,
+        header: () => (
+          <span className="w-[1%] whitespace-nowrap">Filer</span>
+        ),
+        cell: ({ row }) => {
+          const piece = row.original;
+          return (
+            <div className="flex min-w-[12rem] items-start">
+              <PieceInlineFilesCell
                 groupSlug={groupSlug}
                 pieceId={piece.id}
                 pieceName={piece.name}
-                links={piece.links.map((link) => ({
-                  id: link.id,
-                  url: link.url,
-                  label: link.label,
+                files={piece.files.map((file) => ({
+                  id: file.id,
+                  displayName: file.displayName,
                 }))}
-              />
-              <PieceLinksDialog
-                groupSlug={groupSlug}
-                piece={{
-                  id: piece.id,
-                  name: piece.name,
-                  files: piece.files.map((file) => ({
-                    id: file.id,
-                    displayName: file.displayName,
-                    size: file.size,
-                  })),
-                  links: [],
-                }}
-                refreshAfterMutations
               />
             </div>
           );

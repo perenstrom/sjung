@@ -5,6 +5,7 @@ import {
   parseCreatePieceFileUploadFromFormData,
   parseFileIdFromFormData,
   parseFinalizePieceFileUploadFromFormData,
+  parseUpdatePieceFileDisplayNameFromFormData,
 } from "@/lib/schemas/files";
 
 function createFormData(values: Record<string, string | File | undefined>): FormData {
@@ -170,5 +171,42 @@ describe("parseFileIdFromFormData", () => {
   it("throws Fil saknas when fileId is empty", () => {
     expect(() => parseFileIdFromFormData(createFormData({ fileId: "" }))).toThrow("Fil saknas");
     expect(() => parseFileIdFromFormData(createFormData({}))).toThrow("Fil saknas");
+  });
+});
+
+describe("parseUpdatePieceFileDisplayNameFromFormData", () => {
+  it("parses trimmed fileId and displayName", () => {
+    const fd = createFormData({
+      fileId: "  file-1  ",
+      displayName: "  Mitt namn  ",
+    });
+    expect(parseUpdatePieceFileDisplayNameFromFormData(fd)).toEqual({
+      fileId: "file-1",
+      displayName: "Mitt namn",
+    });
+  });
+
+  it("throws Fil saknas when fileId is empty", () => {
+    expect(() =>
+      parseUpdatePieceFileDisplayNameFromFormData(
+        createFormData({ fileId: "", displayName: "Namn" })
+      )
+    ).toThrow("Fil saknas");
+  });
+
+  it("throws Visningsnamn saknas when displayName is empty or whitespace", () => {
+    expect(() =>
+      parseUpdatePieceFileDisplayNameFromFormData(
+        createFormData({ fileId: "file-1", displayName: "" })
+      )
+    ).toThrow("Visningsnamn saknas");
+    expect(() =>
+      parseUpdatePieceFileDisplayNameFromFormData(
+        createFormData({ fileId: "file-1", displayName: "   " })
+      )
+    ).toThrow("Visningsnamn saknas");
+    expect(() =>
+      parseUpdatePieceFileDisplayNameFromFormData(createFormData({ fileId: "file-1" }))
+    ).toThrow("Visningsnamn saknas");
   });
 });

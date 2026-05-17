@@ -15,6 +15,7 @@ import {
   parseCreatePieceFileUploadFromFormData,
   parseFileIdFromFormData,
   parseFinalizePieceFileUploadFromFormData,
+  parseUpdatePieceFileDisplayNameFromFormData,
 } from "@/lib/schemas/files";
 import {
   revalidateGroupPieceDetailRoutes,
@@ -111,6 +112,28 @@ export async function createPieceFileDownloadUrl(formData: FormData) {
   });
 
   return { downloadUrl };
+}
+
+export async function updatePieceFileDisplayName(formData: FormData) {
+  const groupSlug = readGroupSlugInput(formData);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const { fileId, displayName } =
+    parseUpdatePieceFileDisplayNameFromFormData(formData);
+
+  const file = await requireFileInGroup(fileId, groupId, {
+    select: { id: true, pieceId: true },
+  });
+
+  await prisma.file.update({
+    where: { id: file.id },
+    data: {
+      displayName,
+      updatedById: userId,
+    },
+  });
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, file.pieceId);
 }
 
 export async function deletePieceFile(formData: FormData) {
