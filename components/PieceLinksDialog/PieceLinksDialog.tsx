@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 
 import { PieceLinksDialogFiles } from "./PieceLinksDialogFiles";
-import { PieceLinksDialogLinks } from "./PieceLinksDialogLinks";
 import type { Piece } from "./types";
 
 export function PieceLinksDialog({
@@ -28,7 +27,6 @@ export function PieceLinksDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
 
   const handleMutationSuccess = useCallback(() => {
     if (refreshAfterMutations) {
@@ -43,18 +41,17 @@ export function PieceLinksDialog({
         setOpen(nextOpen);
         if (!nextOpen) {
           setError(null);
-          setUploading(false);
         }
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Länkar
+        <Button variant="outline" size="sm" className="shrink-0">
+          Filer
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Länkar och filer för {piece.name}</DialogTitle>
+          <DialogTitle>Filer för {piece.name}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -62,16 +59,6 @@ export function PieceLinksDialog({
             groupSlug={groupSlug}
             piece={piece}
             dialogOpen={open}
-            onAggregateError={setError}
-            onClearAggregateError={() => setError(null)}
-            onUploadingChange={setUploading}
-            onMutationSuccess={handleMutationSuccess}
-          />
-
-          <PieceLinksDialogLinks
-            groupSlug={groupSlug}
-            piece={piece}
-            uploadsInProgress={uploading}
             onAggregateError={setError}
             onClearAggregateError={() => setError(null)}
             onMutationSuccess={handleMutationSuccess}
