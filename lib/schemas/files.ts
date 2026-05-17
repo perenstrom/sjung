@@ -89,6 +89,21 @@ const finalizePieceFileUploadFormSchema = z.object({
   displayName: optionalDisplayNameSchema,
 });
 
+const createPieceFileReplaceUploadFormSchema = z.object({
+  fileId: fileIdSchema,
+  fileName: fileNameSchema,
+  mimeType: mimeTypeFieldSchema,
+  size: sizeFieldSchema,
+});
+
+const finalizePieceFileReplaceFormSchema = z.object({
+  fileId: fileIdSchema,
+  fileName: fileNameSchema,
+  storagePath: storagePathSchema,
+  mimeType: mimeTypeFieldSchema,
+  size: sizeFieldSchema,
+});
+
 export function parseCreatePieceFileUploadFromFormData(formData: FormData): {
   pieceId: string;
   fileName: string;
@@ -125,6 +140,48 @@ export function parseFinalizePieceFileUploadFromFormData(formData: FormData): {
     displayName: formData.get("displayName"),
   };
   const result = finalizePieceFileUploadFormSchema.safeParse(raw);
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
+  }
+  return result.data;
+}
+
+export function parseCreatePieceFileReplaceUploadFromFormData(
+  formData: FormData
+): {
+  fileId: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+} {
+  const raw = {
+    fileId: formDataString(formData, "fileId"),
+    fileName: formDataString(formData, "fileName"),
+    mimeType: formDataString(formData, "mimeType"),
+    size: formDataString(formData, "size"),
+  };
+  const result = createPieceFileReplaceUploadFormSchema.safeParse(raw);
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
+  }
+  return result.data;
+}
+
+export function parseFinalizePieceFileReplaceFromFormData(formData: FormData): {
+  fileId: string;
+  fileName: string;
+  storagePath: string;
+  mimeType: string;
+  size: number;
+} {
+  const raw = {
+    fileId: formDataString(formData, "fileId"),
+    fileName: formDataString(formData, "fileName"),
+    storagePath: formDataString(formData, "storagePath"),
+    mimeType: formDataString(formData, "mimeType"),
+    size: formDataString(formData, "size"),
+  };
+  const result = finalizePieceFileReplaceFormSchema.safeParse(raw);
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
   }
