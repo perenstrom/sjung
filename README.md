@@ -58,6 +58,30 @@ App runs at `http://localhost:3000`.
 - `npm run db:seed` - seed database
 - `npm run db:studio` - open Prisma Studio
 
+## Commits
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+- **type** — one of `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- **scope** — optional, the area touched (e.g. `feat(auth): ...`).
+- **description** — imperative, lower case, no trailing period.
+- **Linear ticket** — Linear's GitHub integration auto-completes an issue whenever a PR whose branch name or commit references that issue's ID gets merged, regardless of whether that PR actually implements the fix. So the bare `(PER-XXX)` suffix, and that ticket's Linear-suggested branch name, are reserved for the commit/PR that actually finishes the work:
+  - **Closing commit** (implements/finishes the ticket) — use the ticket's Linear-suggested branch name and append its ID in parentheses, e.g. `fix(auth): correct token refresh (PER-42)`.
+  - **Non-closing commit** (docs, ADRs, research, triage notes that relate to a ticket without finishing it) — do not use that ticket's Linear-suggested branch name. Reference the ticket in the commit body as `Refs PER-XXX` instead of the parenthetical suffix, so merging it doesn't auto-complete the issue.
+- **Breaking changes** — mark with `!` after the type/scope (`feat(api)!: ...`) and explain in a `BREAKING CHANGE:` footer.
+
+## Pull requests
+
+Write PR descriptions in plain paragraphs and standard Markdown lists — don't insert manual line breaks inside a paragraph (e.g. one sentence or clause per line). GitHub's mobile app wraps each hard-broken line as its own block, so a paragraph written with mid-sentence breaks reads as a staircase of fragments on a phone. Let paragraphs wrap naturally; only start a new line for an actual new paragraph or list item. The same applies to this README and other Markdown docs in the repo — don't hard-wrap prose at a fixed column, let each paragraph/list item be one line in the source.
+
 ## Testing Strategy
 
 Unit tests in Sjung focus on deterministic logic first: pure helpers, parsing, transformations,
