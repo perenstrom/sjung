@@ -30,6 +30,9 @@ jobs:
           --health-retries 5
 
     env:
+      # `prisma generate` (run via postinstall) loads prisma.config.ts, which
+      # resolves DATABASE_URL even though generation doesn't touch the DB.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_test?schema=public
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_test?schema=public
 
     steps:
