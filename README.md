@@ -20,6 +20,7 @@ cp .env.example .env
 Required variables (from `.env.example`):
 
 - `DATABASE_URL`
+- `TEST_DATABASE_URL` (only needed for `npm run test:integration` — see "Testing Strategy" below)
 - `AUTH_SECRET`
 - `R2_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
@@ -51,6 +52,8 @@ App runs at `http://localhost:3000`.
 - `npm run lint` - run linting
 - `npm run test:unit` - run unit tests once
 - `npm run test:unit:watch` - run unit tests in watch mode
+- `npm run test:integration` - apply migrations to `TEST_DATABASE_URL` and run the DB-backed integration suite once
+- `npm run test:integration:watch` - run the integration suite in watch mode (run `test:integration` at least once first)
 - `npm run db:migrate:dev` - create/apply development migration
 - `npm run db:migrate:deploy` - apply migrations in deploy environments
 - `npm run db:migrate:reset` - reset database and re-apply migrations
@@ -92,3 +95,9 @@ and domain rules that do not require network, database, or framework runtime.
 - Keep tests co-located as `*.test.ts` next to the implementation file.
 - Use the canonical CI/local command: `npm run test:unit`.
 - Use watch mode while developing: `npm run test:unit:watch`.
+
+Integration tests cover DB-backed access-rights/authz logic against a real, disposable Postgres database. See `docs/testing-access-rights.md` for the full strategy and DB lifecycle (migrations, per-test reset, and shared fixture builders).
+
+- Keep tests under `__tests__/integration/**/*.test.ts`; shared support code (test DB client, fixtures) lives in `__tests__/support/`.
+- Set `TEST_DATABASE_URL` in `.env` before running them.
+- Use `npm run test:integration`.

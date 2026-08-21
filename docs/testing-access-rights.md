@@ -118,21 +118,21 @@ Suggested first assertions:
 
 ## Tooling and scripts
 
-Add and document a separate integration test command:
-
 - `npm run test:unit` for pure unit tests (fast, always required).
 - `npm run test:integration` for DB-backed integration/authz tests.
+- `npm run test:integration:watch` for the integration suite in watch mode (skips the migration step below — run `test:integration` at least once first).
 
 Environment expectations:
 
-- Use `TEST_DATABASE_URL` for integration tests.
-- Local:
-  - developer provides a disposable Postgres DB
-  - migrations are applied before running tests
-  - seed helpers establish deterministic users/groups/resources
-- CI (optional at first, recommended once stable):
-  - run integration suite only when DB env is configured
-  - keep unit suite mandatory on every PR
+- Set `TEST_DATABASE_URL` in `.env`, pointing at a disposable local Postgres database (for example `sjung_test`, created once with `createdb sjung_test`). Integration tests fail fast with a clear error if it's unset.
+- Unit and integration suites are configured separately (`vitest.config.ts` and `vitest.integration.config.ts`) so `test:unit` never picks up DB-backed tests and vice versa.
+- CI (optional at first, recommended once stable): run the integration suite only when a DB env is configured; keep the unit suite mandatory on every PR.
+
+## DB lifecycle for integration tests
+
+- **Migrations**: `npm run test:integration` runs `db:migrate:deploy:test` first, which applies `prisma migrate deploy` against `TEST_DATABASE_URL` (via `scripts/migrate-test-db.ts`) before the suite runs. This keeps the test DB's schema current without a separate manual step.
+- **Reset strategy**: a global Vitest `setupFiles` hook (`__tests__/support/setup.ts`) truncates every app table (`RESTART IDENTITY CASCADE`) before each test, so every test starts against an empty database regardless of what earlier tests left behind. There is no per-suite seed step — tests build exactly the rows they need via fixtures.
+- **Fixtures**: shared, hand-rolled builder functions live in `__tests__/support/fixtures.ts` (no fishery/faker — see PER-299's resolution). Builders are persist-only (`createUser`, `createGroup`, `createPiece` each insert and return the row) and auto-create any missing parent chain (for example `createPiece()` with no `groupId` creates a user, then a group, then the piece), while accepting overrides for tests that care about a specific chain. `User.email` and `Group.slug` are generated from deterministic module-level counters, not random data. `createGroup()` mirrors the app's creator⇒member invariant (`app/actions/groups.ts`) by giving the creator a `UsersToGroups` row too. `createAccessScenario()` composes a group with a creator, a distinct member, and a non-member (zero `UsersToGroups` rows) in one call, for the four-role matrix used across PER-191–193.
 
 ## Playwright first slice
 
@@ -147,8 +147,7 @@ This validates session cookies + routing + layout protection in one high-value c
 
 ## Follow-up ticket titles (implementation-ready)
 
-1. `PER-XXX: Scaffold Vitest integration harness with TEST_DATABASE_URL and DB lifecycle`
-   - Scope: integration test script, setup/teardown hooks, migration/seed strategy, docs updates in README/testing docs.
+1. `PER-190: Scaffold Vitest integration harness with TEST_DATABASE_URL and DB lifecycle` — done, see "DB lifecycle for integration tests" above.
 2. `PER-XXX: Add tenant-membership integration tests for requireTenantGroup and getWritableGroupIdForSlug`
    - Scope: member vs non-member cases, deterministic auth mock/seam, fixture helpers.
 3. `PER-XXX: Add guard-level integration tests for resource-in-group helpers`
