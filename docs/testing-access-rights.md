@@ -9,6 +9,10 @@ This document defines a practical, phased strategy to test authentication and ac
 - Add browser-level confidence where unit/integration tests cannot fully simulate real navigation and session behavior.
 - Keep setup and CI cost proportional to value.
 
+## Seam agreement
+
+Sjung has no static seam catalog — per the `tdd` skill, seams are agreed live per session before writing any test, not read off a fixed list.
+
 ## Current architecture notes
 
 - There is no `middleware.ts` route guard layer today.
