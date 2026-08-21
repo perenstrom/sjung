@@ -126,7 +126,7 @@ Environment expectations:
 
 - Set `TEST_DATABASE_URL` in `.env`, pointing at a disposable local Postgres database (for example `sjung_test`, created once with `createdb sjung_test`). Integration tests fail fast with a clear error if it's unset.
 - Unit and integration suites are configured separately (`vitest.config.ts` and `vitest.integration.config.ts`) so `test:unit` never picks up DB-backed tests and vice versa.
-- CI (optional at first, recommended once stable): run the integration suite only when a DB env is configured; keep the unit suite mandatory on every PR.
+- CI: `.github/workflows/pr-integration-tests.yml` runs the integration suite on every PR against `main`, against a Postgres service container provisioned per job (no external DB, no secrets). It is a required, merge-blocking check from day one, separate from the unit-test workflow.
 
 ## DB lifecycle for integration tests
 
