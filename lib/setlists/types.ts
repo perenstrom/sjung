@@ -27,3 +27,10 @@ export type SetListPieceOption = {
   id: string;
   name: string;
 };
+
+/** A step's identity and position, stripped of display fields — the unit `SetListSequence` operates on. */
+export type SetListSequenceStep = {
+  kind: "piece" | "note";
+  id: string;
+  position: number;
+};

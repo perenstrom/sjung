@@ -20,10 +20,12 @@ import {
   revalidateGroupSetListDetailRoutes,
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
+import { SetListSequence } from "@/lib/setlists/sequence";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import type {
   SetListDetail,
   SetListPieceOption,
+  SetListSequenceStep,
   SetListStep,
 } from "@/lib/setlists/types";
 
@@ -67,8 +69,8 @@ function readPieceId(formData: FormData): string {
   return readIdField(formData, "pieceId", "Stycke saknas");
 }
 
-function readOrderedSetListPieceIds(formData: FormData): string[] {
-  const raw = readRequiredString(formData, "orderedSetListPieceIds", "Ny ordning saknas");
+function readOrderedSetListStepIds(formData: FormData): string[] {
+  const raw = readRequiredString(formData, "orderedSetListStepIds", "Ny ordning saknas");
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) {
@@ -110,11 +112,42 @@ async function getNextSetListStepPosition(setListId: string): Promise<number> {
     }),
   ]);
 
-  const maxPosition = Math.max(
-    maxPiecePosition._max.position ?? 0,
-    maxNotePosition._max.position ?? 0
+  return SetListSequence.nextPosition(
+    maxPiecePosition._max.position,
+    maxNotePosition._max.position
   );
-  return maxPosition + 1;
+}
+
+async function getSetListSteps(setListId: string): Promise<SetListSequenceStep[]> {
+  const [pieces, notes] = await Promise.all([
+    prisma.setListPiece.findMany({
+      where: { setListId },
+      select: { id: true, position: true },
+    }),
+    prisma.setListNote.findMany({
+      where: { setListId },
+      select: { id: true, position: true },
+    }),
+  ]);
+
+  return [
+    ...pieces.map((entry) => ({ kind: "piece" as const, id: entry.id, position: entry.position })),
+    ...notes.map((entry) => ({ kind: "note" as const, id: entry.id, position: entry.position })),
+  ];
+}
+
+function applySetListStepPositionUpdates(updates: SetListSequenceStep[], userId: string) {
+  return updates.map((update) =>
+    update.kind === "piece"
+      ? prisma.setListPiece.update({
+          where: { id: update.id },
+          data: { position: update.position, updatedById: userId },
+        })
+      : prisma.setListNote.update({
+          where: { id: update.id },
+          data: { position: update.position, updatedById: userId },
+        })
+  );
 }
 
 function readOptionalDate(formData: FormData): Date | null {
@@ -326,57 +359,25 @@ export async function removePieceFromSetList(formData: FormData) {
   await prisma.setListPiece.delete({
     where: { id: setListPiece.id },
   });
-  const remainingPieces = await prisma.setListPiece.findMany({
-    where: { setListId: setListPiece.setListId },
-    select: { id: true },
-    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
-  });
-  await prisma.$transaction(
-    remainingPieces.map((entry, index) =>
-      prisma.setListPiece.update({
-        where: { id: entry.id },
-        data: { position: index + 1, updatedById: userId },
-      })
-    )
-  );
+  const remainingSteps = await getSetListSteps(setListPiece.setListId);
+  const updates = SetListSequence.positionsAfterRemoval(remainingSteps);
+  await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
 
   revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
   revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
 }
 
-export async function reorderSetListPieces(formData: FormData) {
+export async function reorderSetListSteps(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
   const setListId = readSetListId(formData);
-  const orderedSetListPieceIds = readOrderedSetListPieceIds(formData);
-  const orderedSet = new Set(orderedSetListPieceIds);
-  if (orderedSet.size !== orderedSetListPieceIds.length) {
-    throw new Error("Ogiltig ordning");
-  }
+  const orderedSetListStepIds = readOrderedSetListStepIds(formData);
 
   const setList = await requireSetListInGroup(setListId, groupId);
-  const existingPieces = await prisma.setListPiece.findMany({
-    where: { setListId: setList.id },
-    select: { id: true },
-  });
-  if (existingPieces.length !== orderedSetListPieceIds.length) {
-    throw new Error("Ogiltig ordning");
-  }
-  const existingSet = new Set(existingPieces.map((entry) => entry.id));
-  for (const id of orderedSetListPieceIds) {
-    if (!existingSet.has(id)) {
-      throw new Error("Ogiltig ordning");
-    }
-  }
+  const steps = await getSetListSteps(setList.id);
+  const updates = SetListSequence.positionsAfterReorder(steps, orderedSetListStepIds);
 
-  await prisma.$transaction(
-    orderedSetListPieceIds.map((setListPieceId, index) =>
-      prisma.setListPiece.update({
-        where: { id: setListPieceId },
-        data: { position: index + 1, updatedById: userId },
-      })
-    )
-  );
+  await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
 
   revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
 }
@@ -487,7 +488,7 @@ export async function appendSetListNote(formData: FormData) {
 
 export async function deleteSetListNote(formData: FormData) {
   const groupSlug = readGroupSlug(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
   const setListNoteId = readSetListNoteId(formData);
 
   const note = await requireSetListNoteInGroup(setListNoteId, groupId, {
@@ -497,6 +498,9 @@ export async function deleteSetListNote(formData: FormData) {
   await prisma.setListNote.delete({
     where: { id: note.id },
   });
+  const remainingSteps = await getSetListSteps(note.setListId);
+  const updates = SetListSequence.positionsAfterRemoval(remainingSteps);
+  await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
 
   revalidateGroupSetListDetailRoutes(groupSlug, note.setListId);
 }
