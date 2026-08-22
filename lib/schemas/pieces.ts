@@ -171,3 +171,23 @@ export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[]
 
   return arrayResult.data;
 }
+
+export function parseCreditPersonIdFromFormData(formData: FormData): string {
+  const result = pieceCreditItemSchema.shape.personId.safeParse(
+    formDataString(formData, "personId")
+  );
+  if (!result.success) {
+    throw new Error(INVALID_CREDITS_ERROR);
+  }
+  return result.data;
+}
+
+export function parseCreditRoleFromFormData(formData: FormData): string {
+  const result = pieceCreditItemSchema.shape.role.safeParse(
+    formDataString(formData, "role")
+  );
+  if (!result.success) {
+    throw new Error(INVALID_CREDITS_ERROR);
+  }
+  return result.data;
+}

@@ -3,7 +3,7 @@ export type PieceCredit = {
   role: string;
 };
 
-const DUPLICATE_CREDITS_ERROR = "En person kan inte ha samma roll flera gånger";
+export const DUPLICATE_CREDITS_ERROR = "En person kan inte ha samma roll flera gånger";
 
 export function assertNoDuplicateCredits(credits: PieceCredit[]) {
   const seen = new Set<string>();

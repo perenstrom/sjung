@@ -63,14 +63,7 @@ export function PiecesTable({
               <AddPieceCreditPopover
                 groupSlug={groupSlug}
                 people={people}
-                piece={{
-                  id: piece.id,
-                  name: piece.name,
-                  credits: piece.credits.map((credit) => ({
-                    personId: credit.personId,
-                    role: credit.role,
-                  })),
-                }}
+                piece={{ id: piece.id, name: piece.name }}
               />
             </div>
           );

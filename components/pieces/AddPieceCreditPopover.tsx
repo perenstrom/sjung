@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { updatePiece } from "@/app/actions/pieces";
+import { addCredit } from "@/app/actions/pieces";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { ROLES } from "@/lib/roles";
-import type { PieceCredit, Person } from "@/types/piece-credit-dialog";
+import type { Person } from "@/types/piece-credit-dialog";
 
 const NO_PEOPLE_TOOLTIP =
   "Inga personer tillagda ännu. Lägg till personer under Personer först.";
@@ -41,7 +41,6 @@ export function AddPieceCreditPopover({
   piece: {
     id: string;
     name: string;
-    credits: PieceCredit[];
   };
 }) {
   const router = useRouter();
@@ -71,12 +70,8 @@ export function AddPieceCreditPopover({
       return;
     }
 
-    const nextCredits = [...piece.credits, { personId, role }];
-
-    formData.set("credits", JSON.stringify(nextCredits));
-
     try {
-      await updatePiece(formData);
+      await addCredit(formData);
       setOpen(false);
       resetForm();
       router.refresh();
@@ -119,7 +114,8 @@ export function AddPieceCreditPopover({
         <form action={handleSubmit} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="pieceId" value={piece.id} />
-          <input type="hidden" name="name" value={piece.name} />
+          <input type="hidden" name="personId" value={personId} />
+          <input type="hidden" name="role" value={role} />
 
           <div className="space-y-3">
             <div className="space-y-2">
