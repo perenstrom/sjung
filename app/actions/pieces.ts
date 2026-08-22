@@ -1,13 +1,16 @@
 "use server";
 
+import { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import {
   requireLinkInGroup,
   requirePieceInGroup,
   requirePieceNoteInGroup,
 } from "@/lib/actions/guards";
-import { assertNoDuplicateCredits, diffCredits } from "@/lib/pieces/credits";
+import { assertNoDuplicateCredits, DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
 import {
+  parseCreditPersonIdFromFormData,
+  parseCreditRoleFromFormData,
   parseLinkIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
@@ -86,6 +89,11 @@ async function requireLinkForLinkMutation(formData: FormData, groupId: string) {
   });
 }
 
+async function requirePieceForCreditMutation(formData: FormData, groupId: string) {
+  const pieceId = parsePieceIdFromFormData(formData);
+  return requirePieceInGroup(pieceId, groupId);
+}
+
 export async function createPiece(formData: FormData) {
   const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
@@ -119,56 +127,16 @@ export async function updatePiece(formData: FormData) {
   const groupSlug = parsePieceGroupSlugFromFormData(formData);
   const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
   const pieceId = parsePieceIdFromFormData(formData);
-
   const name = parsePieceNameFromFormData(formData);
 
-  const credits = parsePieceCreditsFromFormData(formData);
-  assertNoDuplicateCredits(credits);
+  const piece = await requirePieceInGroup(pieceId, groupId);
 
-  const piece = await requirePieceInGroup(pieceId, groupId, {
-    select: {
-      id: true,
-      credits: {
-        select: {
-          personId: true,
-          role: true,
-        },
-      },
+  await prisma.piece.update({
+    where: { id: piece.id },
+    data: {
+      name: name.trim(),
+      updatedById: userId,
     },
-  });
-
-  const { creditsToCreate, creditsToDelete } = diffCredits(piece.credits, credits);
-
-  await prisma.$transaction(async (tx) => {
-    if (creditsToDelete.length > 0) {
-      await tx.personToPiece.deleteMany({
-        where: {
-          pieceId: piece.id,
-          OR: creditsToDelete.map((credit) => ({
-            personId: credit.personId,
-            role: credit.role,
-          })),
-        },
-      });
-    }
-
-    if (creditsToCreate.length > 0) {
-      await tx.personToPiece.createMany({
-        data: creditsToCreate.map((credit) => ({
-          pieceId: piece.id,
-          personId: credit.personId,
-          role: credit.role,
-        })),
-      });
-    }
-
-    await tx.piece.update({
-      where: { id: piece.id },
-      data: {
-        name: name.trim(),
-        updatedById: userId,
-      },
-    });
   });
 
   revalidateGroupRoute(groupSlug);
@@ -248,6 +216,55 @@ export async function updateLink(formData: FormData) {
 
   revalidateGroupRoute(groupSlug);
   revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+}
+
+export async function addCredit(formData: FormData) {
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const piece = await requirePieceForCreditMutation(formData, groupId);
+  const personId = parseCreditPersonIdFromFormData(formData);
+  const role = parseCreditRoleFromFormData(formData);
+
+  try {
+    await prisma.personToPiece.create({
+      data: {
+        pieceId: piece.id,
+        personId,
+        role,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new Error(DUPLICATE_CREDITS_ERROR);
+    }
+    throw err;
+  }
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+}
+
+export async function removeCredit(formData: FormData) {
+  const groupSlug = parsePieceGroupSlugFromFormData(formData);
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const piece = await requirePieceForCreditMutation(formData, groupId);
+  const personId = parseCreditPersonIdFromFormData(formData);
+  const role = parseCreditRoleFromFormData(formData);
+
+  const { count } = await prisma.personToPiece.deleteMany({
+    where: {
+      pieceId: piece.id,
+      personId,
+      role,
+    },
+  });
+
+  if (count === 0) {
+    throw new Error("Medverkande hittades inte");
+  }
+
+  revalidateGroupRoute(groupSlug);
+  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
 }
 
 export async function listPieceNotes(

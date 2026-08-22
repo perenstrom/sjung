@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseCreditPersonIdFromFormData,
+  parseCreditRoleFromFormData,
   parseLinkIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
@@ -209,5 +211,45 @@ describe("parsePieceCreditsFromFormData", () => {
     expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
       "Ogiltigt format för medverkande"
     );
+  });
+});
+
+describe("parseCreditPersonIdFromFormData", () => {
+  const validPersonId = "11111111-1111-4111-8111-111111111111";
+
+  it("returns the personId when it is a valid UUID", () => {
+    const fd = createFormData({ personId: validPersonId });
+    expect(parseCreditPersonIdFromFormData(fd)).toBe(validPersonId);
+  });
+
+  it("throws Ogiltigt format för medverkande when missing", () => {
+    expect(() =>
+      parseCreditPersonIdFromFormData(createFormData({}))
+    ).toThrow("Ogiltigt format för medverkande");
+  });
+
+  it("throws Ogiltigt format för medverkande when not a UUID", () => {
+    expect(() =>
+      parseCreditPersonIdFromFormData(createFormData({ personId: "not-a-uuid" }))
+    ).toThrow("Ogiltigt format för medverkande");
+  });
+});
+
+describe("parseCreditRoleFromFormData", () => {
+  it("returns the role when it is a known role", () => {
+    const fd = createFormData({ role: "Kompositör" });
+    expect(parseCreditRoleFromFormData(fd)).toBe("Kompositör");
+  });
+
+  it("throws Ogiltigt format för medverkande when missing", () => {
+    expect(() => parseCreditRoleFromFormData(createFormData({}))).toThrow(
+      "Ogiltigt format för medverkande"
+    );
+  });
+
+  it("throws Ogiltigt format för medverkande when role is not a known role", () => {
+    expect(() =>
+      parseCreditRoleFromFormData(createFormData({ role: "Producent" }))
+    ).toThrow("Ogiltigt format för medverkande");
   });
 });

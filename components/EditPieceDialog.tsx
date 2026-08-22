@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import { updatePiece } from "@/app/actions/pieces";
+import { useState } from "react";
+import { removeCredit, updatePiece } from "@/app/actions/pieces";
+import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import { ROLES } from "@/lib/roles";
-import type { CreditRow, PieceCredit, Person } from "@/types/piece-credit-dialog";
+import type { PieceCredit, Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,14 +16,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { X } from "lucide-react";
+
+function creditKey(credit: PieceCredit): string {
+  return `${credit.personId}::${credit.role}`;
+}
+
+function personName(people: Person[], personId: string): string {
+  return people.find((person) => person.id === personId)?.name ?? "Okänd person";
+}
 
 export function EditPieceDialog({
   groupSlug,
@@ -42,64 +43,35 @@ export function EditPieceDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [credits, setCredits] = useState<CreditRow[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const rowIdRef = useRef(0);
-
-  function nextRowId() {
-    return rowIdRef.current++;
-  }
-
-  function mapPersistedCreditsToRows(creds: PieceCredit[]): CreditRow[] {
-    rowIdRef.current = 0;
-    return creds.map((credit) => ({
-      id: nextRowId(),
-      personId: credit.personId,
-      role: credit.role,
-    }));
-  }
-
-  function addCredit() {
-    setCredits((prev) => [...prev, { id: nextRowId(), personId: "", role: "" }]);
-  }
-
-  function removeCredit(id: number) {
-    setCredits((prev) => prev.filter((credit) => credit.id !== id));
-  }
-
-  function updateCredit(id: number, field: "personId" | "role", value: string) {
-    setCredits((prev) =>
-      prev.map((credit) =>
-        credit.id === id ? { ...credit, [field]: value } : credit
-      )
-    );
-  }
+  const [removingKey, setRemovingKey] = useState<string | null>(null);
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
-    if (nextOpen) {
-      setCredits(mapPersistedCreditsToRows(piece.credits));
-      setError(null);
-    } else {
-      setError(null);
+    setError(null);
+  }
+
+  async function handleRemoveCredit(credit: PieceCredit) {
+    setError(null);
+    setRemovingKey(creditKey(credit));
+
+    const formData = new FormData();
+    formData.set("groupSlug", groupSlug);
+    formData.set("pieceId", piece.id);
+    formData.set("personId", credit.personId);
+    formData.set("role", credit.role);
+
+    try {
+      await removeCredit(formData);
+      router.refresh();
+    } catch (err) {
+      setError(getThrownMessage(err, "Kunde inte ta bort medverkande"));
+    } finally {
+      setRemovingKey(null);
     }
   }
 
-  async function handleSubmit(formData: FormData) {
-    const validCredits = credits.filter(
-      (credit) => credit.personId !== "" && credit.role !== ""
-    );
-
-    formData.set(
-      "credits",
-      JSON.stringify(
-        validCredits.map((credit) => ({
-          personId: credit.personId,
-          role: credit.role,
-        }))
-      )
-    );
-
+  async function handleSaveName(formData: FormData) {
     try {
       await updatePiece(formData);
       setOpen(false);
@@ -121,92 +93,74 @@ export function EditPieceDialog({
         <DialogHeader>
           <DialogTitle>{creditsOnly ? "Medverkande" : "Redigera not"}</DialogTitle>
         </DialogHeader>
-        <form action={handleSubmit} className="space-y-5">
-          <input type="hidden" name="groupSlug" value={groupSlug} />
-          <input type="hidden" name="pieceId" value={piece.id} />
-          {creditsOnly ? (
-            <input type="hidden" name="name" value={piece.name} />
+
+        {creditsOnly ? null : (
+          <form action={handleSaveName} className="space-y-2">
+            <input type="hidden" name="groupSlug" value={groupSlug} />
+            <input type="hidden" name="pieceId" value={piece.id} />
+            <Label htmlFor={`name-${piece.id}`}>Namn</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id={`name-${piece.id}`}
+                name="name"
+                defaultValue={piece.name}
+                required
+              />
+              <Button type="submit">Spara</Button>
+            </div>
+          </form>
+        )}
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Medverkande</Label>
+            <AddPieceCreditPopover
+              groupSlug={groupSlug}
+              people={people}
+              piece={{ id: piece.id, name: piece.name }}
+            />
+          </div>
+
+          {piece.credits.length > 0 ? (
+            <ul className="space-y-2">
+              {piece.credits.map((credit) => (
+                <li
+                  key={creditKey(credit)}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {personName(people, credit.personId)}
+                  </span>
+                  <span className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
+                    {credit.role}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={removingKey === creditKey(credit)}
+                    onClick={() => handleRemoveCredit(credit)}
+                    aria-label={`Ta bort ${personName(people, credit.personId)} som ${credit.role}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <div className="space-y-2">
-              <Label htmlFor={`name-${piece.id}`}>Namn</Label>
-              <Input id={`name-${piece.id}`} name="name" defaultValue={piece.name} required />
-            </div>
+            <p className="text-sm text-muted-foreground">Inga medverkande tillagda.</p>
           )}
+        </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Medverkande</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addCredit}
-                disabled={people.length === 0}
-              >
-                Lägg till
-              </Button>
-            </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-            {credits.length > 0 ? (
-              <div className="space-y-2">
-                {credits.map((credit) => (
-                  <div key={credit.id} className="flex items-center gap-2">
-                    <Select
-                      value={credit.personId}
-                      onValueChange={(value) =>
-                        updateCredit(credit.id, "personId", value)
-                      }
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Person" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {people.map((person) => (
-                          <SelectItem key={person.id} value={person.id}>
-                            {person.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={credit.role}
-                      onValueChange={(value) => updateCredit(credit.id, "role", value)}
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Roll" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLES.map((role) => (
-                          <SelectItem key={role} value={role}>
-                            {role}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeCredit(credit.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Inga medverkande tillagda.</p>
-            )}
-          </div>
-
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
+        {creditsOnly ? (
           <div className="flex justify-end">
-            <Button type="submit">Spara</Button>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Stäng
+            </Button>
           </div>
-        </form>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
