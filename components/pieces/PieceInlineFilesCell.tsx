@@ -37,6 +37,7 @@ export function PieceInlineFilesCell({
   const [error, setError] = useState<string | null>(null);
   const [addPopoverOpen, setAddPopoverOpen] = useState(false);
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [replacingFileId, setReplacingFileId] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
   async function handleUpdate(formData: FormData) {
@@ -60,7 +61,18 @@ export function PieceInlineFilesCell({
           onAggregateError={setError}
           onClearAggregateError={() => setError(null)}
           onMutationSuccess={() => router.refresh()}
-          disabled={addPopoverOpen || editingFileId !== null}
+          disabled={
+            addPopoverOpen || editingFileId !== null || replacingFileId !== null
+          }
+          replacingFileId={replacingFileId}
+          onReplacingFileIdChange={(fileId) => {
+            setReplacingFileId(fileId);
+            if (fileId !== null) {
+              setAddPopoverOpen(false);
+              setEditingFileId(null);
+              setEditError(null);
+            }
+          }}
           renderFileActions={(file) => (
             <Popover
               key={file.id}
@@ -68,6 +80,7 @@ export function PieceInlineFilesCell({
               onOpenChange={(nextOpen) => {
                 if (nextOpen) {
                   setAddPopoverOpen(false);
+                  setReplacingFileId(null);
                   setEditingFileId(file.id);
                   setEditError(null);
                 } else if (editingFileId === file.id) {
@@ -81,7 +94,7 @@ export function PieceInlineFilesCell({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  disabled={addPopoverOpen}
+                  disabled={addPopoverOpen || replacingFileId !== null}
                   aria-label={`Redigera filnamn ${file.displayName}`}
                 >
                   <Pencil className="size-3.5" aria-hidden="true" />
@@ -137,11 +150,12 @@ export function PieceInlineFilesCell({
         pieceId={pieceId}
         pieceName={pieceName}
         open={addPopoverOpen}
-        disabled={editingFileId !== null}
+        disabled={editingFileId !== null || replacingFileId !== null}
         onOpenChange={(nextOpen) => {
           setAddPopoverOpen(nextOpen);
           if (nextOpen) {
             setEditingFileId(null);
+            setReplacingFileId(null);
             setEditError(null);
           }
         }}

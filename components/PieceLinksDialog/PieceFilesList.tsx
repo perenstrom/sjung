@@ -35,6 +35,8 @@ export function PieceFilesList({
   onMutationSuccess,
   disabled = false,
   renderFileActions,
+  replacingFileId,
+  onReplacingFileIdChange,
 }: {
   groupSlug: string;
   files: PieceFileListItem[];
@@ -45,6 +47,8 @@ export function PieceFilesList({
   onMutationSuccess?: () => void;
   disabled?: boolean;
   renderFileActions?: (file: PieceFileListItem) => ReactNode;
+  replacingFileId?: string | null;
+  onReplacingFileIdChange?: (fileId: string | null) => void;
 }) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(
     null,
@@ -141,7 +145,18 @@ export function PieceFilesList({
                   groupSlug={groupSlug}
                   fileId={file.id}
                   displayName={file.displayName}
+                  open={
+                    replacingFileId !== undefined
+                      ? replacingFileId === file.id
+                      : undefined
+                  }
                   disabled={deletingFileId === file.id || disabled}
+                  onOpenChange={
+                    onReplacingFileIdChange
+                      ? (nextOpen) =>
+                          onReplacingFileIdChange(nextOpen ? file.id : null)
+                      : undefined
+                  }
                   onReplaceSuccess={onMutationSuccess}
                 />
                 <Button
