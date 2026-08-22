@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { usePieceFileUpload } from "@/components/PieceLinksDialog/usePieceFileUpload";
+import { usePieceFileTransfer } from "@/components/PieceLinksDialog/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
 export function AddPieceFilePopover({
   groupSlug,
@@ -45,12 +46,11 @@ export function AddPieceFilePopover({
     }
   }
 
-  const { handleUpload, isUploading } = usePieceFileUpload({
-    groupSlug,
-    pieceId,
+  const { handleTransfer, isTransferring } = usePieceFileTransfer({
+    target: { kind: "upload", groupSlug, pieceId },
     onError: (message) => setError(message),
     onClearError: () => setError(null),
-    onUploadSuccess: () => {
+    onTransferSuccess: () => {
       handleOpenChange(false);
       router.refresh();
     },
@@ -76,7 +76,7 @@ export function AddPieceFilePopover({
           <p className="text-sm text-muted-foreground">{pieceName}</p>
         </div>
 
-        <form action={handleUpload} className="space-y-4">
+        <form action={handleTransfer} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="pieceId" value={pieceId} />
 
@@ -86,9 +86,9 @@ export function AddPieceFilePopover({
               id={`add-file-${pieceId}`}
               name="file"
               type="file"
-              accept=".pdf,image/jpeg,image/png,image/webp,image/gif"
+              accept={PIECE_FILE_ACCEPT_ATTR}
               required
-              disabled={isUploading}
+              disabled={isTransferring}
             />
           </div>
 
@@ -99,12 +99,12 @@ export function AddPieceFilePopover({
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              disabled={isUploading}
+              disabled={isTransferring}
             >
               Avbryt
             </Button>
-            <Button type="submit" disabled={isUploading}>
-              {isUploading ? "Laddar upp..." : "Ladda upp"}
+            <Button type="submit" disabled={isTransferring}>
+              {isTransferring ? "Laddar upp..." : "Ladda upp"}
             </Button>
           </div>
         </form>

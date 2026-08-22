@@ -3,10 +3,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
 import { PieceFilesList } from "./PieceFilesList";
 import type { Piece } from "./types";
-import { usePieceFileUpload } from "./usePieceFileUpload";
+import { usePieceFileTransfer } from "./usePieceFileTransfer";
 
 export function PieceLinksDialogFiles({
   groupSlug,
@@ -25,19 +26,18 @@ export function PieceLinksDialogFiles({
   onUploadingChange?: (uploading: boolean) => void;
   onMutationSuccess?: () => void;
 }) {
-  const { handleUpload, isUploading } = usePieceFileUpload({
-    groupSlug,
-    pieceId: piece.id,
+  const { handleTransfer, isTransferring } = usePieceFileTransfer({
+    target: { kind: "upload", groupSlug, pieceId: piece.id },
     onError: onAggregateError,
     onClearError: onClearAggregateError,
-    onUploadingChange,
-    onUploadSuccess: onMutationSuccess,
+    onTransferringChange: onUploadingChange,
+    onTransferSuccess: onMutationSuccess,
   });
 
   return (
     <div className="space-y-3 rounded border p-3">
       <h3 className="text-sm font-medium">Filer</h3>
-      <form action={handleUpload} className="space-y-3">
+      <form action={handleTransfer} className="space-y-3">
         <input type="hidden" name="groupSlug" value={groupSlug} />
         <input type="hidden" name="pieceId" value={piece.id} />
         <div className="space-y-2">
@@ -46,14 +46,14 @@ export function PieceLinksDialogFiles({
             id={`file-${piece.id}`}
             name="file"
             type="file"
-            accept=".pdf,image/jpeg,image/png,image/webp,image/gif"
+            accept={PIECE_FILE_ACCEPT_ATTR}
             required
-            disabled={isUploading}
+            disabled={isTransferring}
           />
         </div>
         <div className="flex justify-end">
-          <Button type="submit" disabled={isUploading}>
-            {isUploading ? "Laddar upp..." : "Ladda upp fil"}
+          <Button type="submit" disabled={isTransferring}>
+            {isTransferring ? "Laddar upp..." : "Ladda upp fil"}
           </Button>
         </div>
       </form>
