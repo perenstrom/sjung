@@ -1,0 +1,52 @@
+name: PR Integration Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: pr-integration-tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sjung_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # `prisma generate` (run via postinstall) loads prisma.config.ts, which
+      # resolves DATABASE_URL even though generation doesn't touch the DB.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_test?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_test?schema=public
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run integration tests
+        run: npm run test:integration
