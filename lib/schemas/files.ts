@@ -10,6 +10,14 @@ export const ALLOWED_MIME_TYPES = new Set([
   "image/gif",
 ]);
 
+const ACCEPT_ATTR_EXTENSION_OVERRIDES: Partial<Record<string, string>> = {
+  "application/pdf": ".pdf",
+};
+
+export const PIECE_FILE_ACCEPT_ATTR = Array.from(ALLOWED_MIME_TYPES)
+  .map((mimeType) => ACCEPT_ATTR_EXTENSION_OVERRIDES[mimeType] ?? mimeType)
+  .join(",");
+
 function formDataString(formData: FormData, field: string): string {
   const raw = formData.get(field);
   return typeof raw === "string" ? raw : "";

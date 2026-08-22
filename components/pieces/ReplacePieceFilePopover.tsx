@@ -3,7 +3,7 @@
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 
-import { usePieceFileReplace } from "@/components/PieceLinksDialog/usePieceFileReplace";
+import { usePieceFileTransfer } from "@/components/PieceLinksDialog/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
 export function ReplacePieceFilePopover({
   groupSlug,
@@ -51,12 +52,11 @@ export function ReplacePieceFilePopover({
     }
   }
 
-  const { handleReplace, isReplacing } = usePieceFileReplace({
-    groupSlug,
-    fileId,
+  const { handleTransfer, isTransferring } = usePieceFileTransfer({
+    target: { kind: "replace", groupSlug, fileId },
     onError: (message) => setError(message),
     onClearError: () => setError(null),
-    onReplaceSuccess: () => {
+    onTransferSuccess: () => {
       handleOpenChange(false);
       onReplaceSuccess?.();
     },
@@ -86,7 +86,7 @@ export function ReplacePieceFilePopover({
           )}
         </div>
 
-        <form action={handleReplace} className="space-y-4">
+        <form action={handleTransfer} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="fileId" value={fileId} />
 
@@ -96,9 +96,9 @@ export function ReplacePieceFilePopover({
               id={`replace-file-${fileId}`}
               name="file"
               type="file"
-              accept=".pdf,image/jpeg,image/png,image/webp,image/gif"
+              accept={PIECE_FILE_ACCEPT_ATTR}
               required
-              disabled={isReplacing}
+              disabled={isTransferring}
             />
           </div>
 
@@ -109,12 +109,12 @@ export function ReplacePieceFilePopover({
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              disabled={isReplacing}
+              disabled={isTransferring}
             >
               Avbryt
             </Button>
-            <Button type="submit" disabled={isReplacing}>
-              {isReplacing ? "Ersätter..." : "Ersätt"}
+            <Button type="submit" disabled={isTransferring}>
+              {isTransferring ? "Ersätter..." : "Ersätt"}
             </Button>
           </div>
         </form>
