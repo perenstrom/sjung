@@ -11,9 +11,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
-import { PieceLinksDialogFiles } from "./PieceLinksDialogFiles";
+import { PieceFilesList } from "./PieceFilesList";
 import type { Piece } from "./types";
+import { usePieceFileTransfer } from "./usePieceFileTransfer";
 
 export function PieceLinksDialog({
   groupSlug,
@@ -33,6 +37,13 @@ export function PieceLinksDialog({
       router.refresh();
     }
   }, [refreshAfterMutations, router]);
+
+  const { handleTransfer, isTransferring } = usePieceFileTransfer({
+    target: { kind: "upload", groupSlug, pieceId: piece.id },
+    onError: setError,
+    onClearError: () => setError(null),
+    onTransferSuccess: handleMutationSuccess,
+  });
 
   return (
     <Dialog
@@ -55,14 +66,39 @@ export function PieceLinksDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <PieceLinksDialogFiles
-            groupSlug={groupSlug}
-            piece={piece}
-            dialogOpen={open}
-            onAggregateError={setError}
-            onClearAggregateError={() => setError(null)}
-            onMutationSuccess={handleMutationSuccess}
-          />
+          <div className="space-y-3 rounded border p-3">
+            <h3 className="text-sm font-medium">Filer</h3>
+            <form action={handleTransfer} className="space-y-3">
+              <input type="hidden" name="groupSlug" value={groupSlug} />
+              <input type="hidden" name="pieceId" value={piece.id} />
+              <div className="space-y-2">
+                <Label htmlFor={`file-${piece.id}`}>Välj fil</Label>
+                <Input
+                  id={`file-${piece.id}`}
+                  name="file"
+                  type="file"
+                  accept={PIECE_FILE_ACCEPT_ATTR}
+                  required
+                  disabled={isTransferring}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isTransferring}>
+                  {isTransferring ? "Laddar upp..." : "Ladda upp fil"}
+                </Button>
+              </div>
+            </form>
+
+            <PieceFilesList
+              key={String(open)}
+              groupSlug={groupSlug}
+              files={piece.files}
+              showUploadedAt={false}
+              onAggregateError={setError}
+              onClearAggregateError={() => setError(null)}
+              onMutationSuccess={handleMutationSuccess}
+            />
+          </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>

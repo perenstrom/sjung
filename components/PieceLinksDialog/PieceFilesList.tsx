@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   createPieceFileDownloadUrl,
@@ -33,6 +33,8 @@ export function PieceFilesList({
   onAggregateError,
   onClearAggregateError,
   onMutationSuccess,
+  disabled = false,
+  renderFileActions,
 }: {
   groupSlug: string;
   files: PieceFileListItem[];
@@ -41,6 +43,8 @@ export function PieceFilesList({
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
   onMutationSuccess?: () => void;
+  disabled?: boolean;
+  renderFileActions?: (file: PieceFileListItem) => ReactNode;
 }) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(
     null,
@@ -125,16 +129,19 @@ export function PieceFilesList({
                   size="sm"
                   onClick={() => handleDownload(file.id)}
                   disabled={
-                    downloadingFileId === file.id || deletingFileId === file.id
+                    downloadingFileId === file.id ||
+                    deletingFileId === file.id ||
+                    disabled
                   }
                 >
                   {downloadingFileId === file.id ? "Hämtar..." : "Ladda ner"}
                 </Button>
+                {renderFileActions?.(file)}
                 <ReplacePieceFilePopover
                   groupSlug={groupSlug}
                   fileId={file.id}
                   displayName={file.displayName}
-                  disabled={deletingFileId === file.id}
+                  disabled={deletingFileId === file.id || disabled}
                   onReplaceSuccess={onMutationSuccess}
                 />
                 <Button
@@ -142,7 +149,7 @@ export function PieceFilesList({
                   variant={deleteError ? "destructive" : "ghost"}
                   size="sm"
                   onClick={() => handleDeleteFile(file.id)}
-                  disabled={deletingFileId === file.id}
+                  disabled={deletingFileId === file.id || disabled}
                 >
                   {deletingFileId === file.id
                     ? "Tar bort..."
