@@ -108,6 +108,7 @@ export function PiecesTable({
                 files={piece.files.map((file) => ({
                   id: file.id,
                   displayName: file.displayName,
+                  size: file.size,
                 }))}
               />
             </div>
