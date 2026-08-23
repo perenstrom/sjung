@@ -1,12 +1,7 @@
 "use server";
 
 import {
-  readGroupSlugInput,
-  readIdField,
-  readOptionalDate as readOptionalDateInput,
-  readRequiredString,
-} from "@/lib/actions/input";
-import {
+  noGuard,
   requirePieceInGroup,
   requireSetListInGroup,
   requireSetListNoteInGroup,
@@ -14,14 +9,28 @@ import {
   requireSetListPieceNoteInGroup,
 } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
-import { parseWritableGroupSlugParam } from "@/lib/schemas/people";
+import { parsePieceIdFromFormData } from "@/lib/schemas/pieces";
+import {
+  parseWritableGroupSlugFromFormData,
+  parseWritableGroupSlugParam,
+} from "@/lib/schemas/people";
+import {
+  parseOptionalSetListDateFromFormData,
+  parseOrderedSetListStepIdsFromFormData,
+  parseSetListIdFromFormData,
+  parseSetListNameFromFormData,
+  parseSetListNoteContentFromFormData,
+  parseSetListNoteIdFromFormData,
+  parseSetListPieceIdFromFormData,
+  parseSetListPieceNoteIdFromFormData,
+} from "@/lib/schemas/setlists";
 import {
   revalidateGroupPieceDetailRoutes,
   revalidateGroupSetListDetailRoutes,
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
+import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { SetListSequence } from "@/lib/setlists/sequence";
-import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import type {
   SetListDetail,
   SetListPieceOption,
@@ -44,61 +53,6 @@ export type SetListPieceNoteListItem = {
   createdById: string;
   updatedById: string;
 };
-
-function readGroupSlug(formData: FormData): string {
-  return readGroupSlugInput(formData);
-}
-
-function readSetListId(formData: FormData): string {
-  return readIdField(formData, "setListId", "Repertoar saknas");
-}
-
-function readSetListPieceId(formData: FormData): string {
-  return readIdField(formData, "setListPieceId", "Repertoarpost saknas");
-}
-
-function readSetListPieceNoteId(formData: FormData): string {
-  return readIdField(formData, "setListPieceNoteId", "Anteckning saknas");
-}
-
-function readSetListNoteId(formData: FormData): string {
-  return readIdField(formData, "setListNoteId", "Anteckning saknas");
-}
-
-function readPieceId(formData: FormData): string {
-  return readIdField(formData, "pieceId", "Stycke saknas");
-}
-
-function readOrderedSetListStepIds(formData: FormData): string[] {
-  const raw = readRequiredString(formData, "orderedSetListStepIds", "Ny ordning saknas");
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      throw new Error("Ogiltig ordning");
-    }
-    const ids = parsed
-      .map((value) => (typeof value === "string" ? value.trim() : ""))
-      .filter((value) => value.length > 0);
-    if (ids.length === 0) {
-      throw new Error("Ogiltig ordning");
-    }
-    return ids;
-  } catch {
-    throw new Error("Ogiltig ordning");
-  }
-}
-
-function readName(formData: FormData): string {
-  return readRequiredString(formData, "name", "Namn krävs");
-}
-
-function readSetListPieceNoteContent(formData: FormData): string {
-  return readRequiredString(formData, "content", "Anteckning krävs");
-}
-
-function readSetListNoteContent(formData: FormData): string {
-  return readRequiredString(formData, "content", "Anteckning krävs");
-}
 
 async function getNextSetListStepPosition(setListId: string): Promise<number> {
   const [maxPiecePosition, maxNotePosition] = await Promise.all([
@@ -148,10 +102,6 @@ function applySetListStepPositionUpdates(updates: SetListSequenceStep[], userId:
           data: { position: update.position, updatedById: userId },
         })
   );
-}
-
-function readOptionalDate(formData: FormData): Date | null {
-  return readOptionalDateInput(formData, "date", "Ogiltigt datum");
 }
 
 export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
@@ -268,118 +218,138 @@ export async function getSetListPieceOptions(groupSlug: string): Promise<SetList
 }
 
 export async function createSetList(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const name = readName(formData);
-  const date = readOptionalDate(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const name = parseSetListNameFromFormData(formData);
+  const date = parseOptionalSetListDateFromFormData(formData);
 
-  await prisma.setList.create({
-    data: {
-      name,
-      date,
-      groupId,
-      createdById: userId,
-      updatedById: userId,
-    },
+  await runGroupMutation(groupSlug, noGuard, async ({ userId, groupId }) => {
+    await prisma.setList.create({
+      data: {
+        name,
+        date,
+        groupId,
+        createdById: userId,
+        updatedById: userId,
+      },
+    });
+
+    revalidateGroupSetListsRoutes(groupSlug);
   });
-
-  revalidateGroupSetListsRoutes(groupSlug);
 }
 
 export async function updateSetList(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListId = readSetListId(formData);
-  const name = readName(formData);
-  const date = readOptionalDate(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListId = parseSetListIdFromFormData(formData);
+  const name = parseSetListNameFromFormData(formData);
+  const date = parseOptionalSetListDateFromFormData(formData);
 
-  const existing = await requireSetListInGroup(setListId, groupId);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requireSetListInGroup(setListId, groupId),
+    async ({ userId }, existing) => {
+      await prisma.setList.update({
+        where: { id: existing.id },
+        data: {
+          name,
+          date,
+          updatedById: userId,
+        },
+      });
 
-  await prisma.setList.update({
-    where: { id: existing.id },
-    data: {
-      name,
-      date,
-      updatedById: userId,
-    },
-  });
-
-  revalidateGroupSetListsRoutes(groupSlug);
+      revalidateGroupSetListsRoutes(groupSlug);
+    }
+  );
 }
 
 export async function deleteSetList(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListId = readSetListId(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListId = parseSetListIdFromFormData(formData);
 
-  const existing = await requireSetListInGroup(setListId, groupId);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requireSetListInGroup(setListId, groupId),
+    async (_ctx, existing) => {
+      await prisma.setList.delete({
+        where: { id: existing.id },
+      });
 
-  await prisma.setList.delete({
-    where: { id: existing.id },
-  });
-
-  revalidateGroupSetListsRoutes(groupSlug);
+      revalidateGroupSetListsRoutes(groupSlug);
+    }
+  );
 }
 
 export async function addPieceToSetList(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListId = readSetListId(formData);
-  const pieceId = readPieceId(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListId = parseSetListIdFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
 
-  const [setList, piece] = await Promise.all([
-    requireSetListInGroup(setListId, groupId),
-    requirePieceInGroup(pieceId, groupId),
-  ]);
-  const nextPosition = await getNextSetListStepPosition(setList.id);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) =>
+      Promise.all([
+        requireSetListInGroup(setListId, groupId),
+        requirePieceInGroup(pieceId, groupId),
+      ]),
+    async ({ userId }, [setList, piece]) => {
+      const nextPosition = await getNextSetListStepPosition(setList.id);
 
-  await prisma.setListPiece.create({
-    data: {
-      setListId: setList.id,
-      pieceId: piece.id,
-      position: nextPosition,
-      createdById: userId,
-      updatedById: userId,
-    },
-  });
+      await prisma.setListPiece.create({
+        data: {
+          setListId: setList.id,
+          pieceId: piece.id,
+          position: nextPosition,
+          createdById: userId,
+          updatedById: userId,
+        },
+      });
 
-  revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
-  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    }
+  );
 }
 
 export async function removePieceFromSetList(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListPieceId = readSetListPieceId(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListPieceId = parseSetListPieceIdFromFormData(formData);
 
-  const setListPiece = await requireSetListPieceInGroup(setListPieceId, groupId, {
-    select: { id: true, setListId: true, pieceId: true },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) =>
+      requireSetListPieceInGroup(setListPieceId, groupId, {
+        select: { id: true, setListId: true, pieceId: true },
+      }),
+    async ({ userId }, setListPiece) => {
+      await prisma.setListPiece.delete({
+        where: { id: setListPiece.id },
+      });
+      const remainingSteps = await getSetListSteps(setListPiece.setListId);
+      const updates = SetListSequence.positionsAfterRemoval(remainingSteps);
+      await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
 
-  await prisma.setListPiece.delete({
-    where: { id: setListPiece.id },
-  });
-  const remainingSteps = await getSetListSteps(setListPiece.setListId);
-  const updates = SetListSequence.positionsAfterRemoval(remainingSteps);
-  await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
-
-  revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
-  revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
+      revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
+      revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
+    }
+  );
 }
 
 export async function reorderSetListSteps(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListId = readSetListId(formData);
-  const orderedSetListStepIds = readOrderedSetListStepIds(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListId = parseSetListIdFromFormData(formData);
+  const orderedSetListStepIds = parseOrderedSetListStepIdsFromFormData(formData);
 
-  const setList = await requireSetListInGroup(setListId, groupId);
-  const steps = await getSetListSteps(setList.id);
-  const updates = SetListSequence.positionsAfterReorder(steps, orderedSetListStepIds);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requireSetListInGroup(setListId, groupId),
+    async ({ userId }, setList) => {
+      const steps = await getSetListSteps(setList.id);
+      const updates = SetListSequence.positionsAfterReorder(steps, orderedSetListStepIds);
 
-  await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
+      await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
 
-  revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+      revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+    }
+  );
 }
 
 export async function listSetListPieceNotes(
@@ -405,102 +375,122 @@ export async function listSetListPieceNotes(
 }
 
 export async function createSetListPieceNote(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListPieceId = readSetListPieceId(formData);
-  const content = readSetListPieceNoteContent(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListPieceId = parseSetListPieceIdFromFormData(formData);
+  const content = parseSetListNoteContentFromFormData(formData);
 
-  const setListPiece = await requireSetListPieceInGroup(setListPieceId, groupId, {
-    select: { id: true, setListId: true },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) =>
+      requireSetListPieceInGroup(setListPieceId, groupId, {
+        select: { id: true, setListId: true },
+      }),
+    async ({ userId, groupId }, setListPiece) => {
+      await prisma.setListPieceNote.create({
+        data: {
+          content,
+          setListPieceId: setListPiece.id,
+          groupId,
+          createdById: userId,
+          updatedById: userId,
+        },
+      });
 
-  await prisma.setListPieceNote.create({
-    data: {
-      content,
-      setListPieceId: setListPiece.id,
-      groupId,
-      createdById: userId,
-      updatedById: userId,
-    },
-  });
-
-  revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
+      revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
+    }
+  );
 }
 
 export async function updateSetListPieceNote(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListPieceNoteId = readSetListPieceNoteId(formData);
-  const content = readSetListPieceNoteContent(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListPieceNoteId = parseSetListPieceNoteIdFromFormData(formData);
+  const content = parseSetListNoteContentFromFormData(formData);
 
-  const note = await requireSetListPieceNoteInGroup(setListPieceNoteId, groupId, {
-    select: { id: true, setListPiece: { select: { setListId: true } } },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) =>
+      requireSetListPieceNoteInGroup(setListPieceNoteId, groupId, {
+        select: { id: true, setListPiece: { select: { setListId: true } } },
+      }),
+    async ({ userId }, note) => {
+      await prisma.setListPieceNote.update({
+        where: { id: note.id },
+        data: {
+          content,
+          updatedById: userId,
+        },
+      });
 
-  await prisma.setListPieceNote.update({
-    where: { id: note.id },
-    data: {
-      content,
-      updatedById: userId,
-    },
-  });
-
-  revalidateGroupSetListDetailRoutes(groupSlug, note.setListPiece.setListId);
+      revalidateGroupSetListDetailRoutes(groupSlug, note.setListPiece.setListId);
+    }
+  );
 }
 
 export async function deleteSetListPieceNote(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListPieceNoteId = readSetListPieceNoteId(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListPieceNoteId = parseSetListPieceNoteIdFromFormData(formData);
 
-  const note = await requireSetListPieceNoteInGroup(setListPieceNoteId, groupId, {
-    select: { id: true, setListPiece: { select: { setListId: true } } },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) =>
+      requireSetListPieceNoteInGroup(setListPieceNoteId, groupId, {
+        select: { id: true, setListPiece: { select: { setListId: true } } },
+      }),
+    async (_ctx, note) => {
+      await prisma.setListPieceNote.delete({
+        where: { id: note.id },
+      });
 
-  await prisma.setListPieceNote.delete({
-    where: { id: note.id },
-  });
-
-  revalidateGroupSetListDetailRoutes(groupSlug, note.setListPiece.setListId);
+      revalidateGroupSetListDetailRoutes(groupSlug, note.setListPiece.setListId);
+    }
+  );
 }
 
 export async function appendSetListNote(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListId = readSetListId(formData);
-  const content = readSetListNoteContent(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListId = parseSetListIdFromFormData(formData);
+  const content = parseSetListNoteContentFromFormData(formData);
 
-  const setList = await requireSetListInGroup(setListId, groupId);
-  const nextPosition = await getNextSetListStepPosition(setList.id);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requireSetListInGroup(setListId, groupId),
+    async ({ userId }, setList) => {
+      const nextPosition = await getNextSetListStepPosition(setList.id);
 
-  await prisma.setListNote.create({
-    data: {
-      content,
-      setListId: setList.id,
-      position: nextPosition,
-      createdById: userId,
-      updatedById: userId,
-    },
-  });
+      await prisma.setListNote.create({
+        data: {
+          content,
+          setListId: setList.id,
+          position: nextPosition,
+          createdById: userId,
+          updatedById: userId,
+        },
+      });
 
-  revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+      revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+    }
+  );
 }
 
 export async function deleteSetListNote(formData: FormData) {
-  const groupSlug = readGroupSlug(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const setListNoteId = readSetListNoteId(formData);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListNoteId = parseSetListNoteIdFromFormData(formData);
 
-  const note = await requireSetListNoteInGroup(setListNoteId, groupId, {
-    select: { id: true, setListId: true },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) =>
+      requireSetListNoteInGroup(setListNoteId, groupId, {
+        select: { id: true, setListId: true },
+      }),
+    async ({ userId }, note) => {
+      await prisma.setListNote.delete({
+        where: { id: note.id },
+      });
+      const remainingSteps = await getSetListSteps(note.setListId);
+      const updates = SetListSequence.positionsAfterRemoval(remainingSteps);
+      await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
 
-  await prisma.setListNote.delete({
-    where: { id: note.id },
-  });
-  const remainingSteps = await getSetListSteps(note.setListId);
-  const updates = SetListSequence.positionsAfterRemoval(remainingSteps);
-  await prisma.$transaction(applySetListStepPositionUpdates(updates, userId));
-
-  revalidateGroupSetListDetailRoutes(groupSlug, note.setListId);
+      revalidateGroupSetListDetailRoutes(groupSlug, note.setListId);
+    }
+  );
 }

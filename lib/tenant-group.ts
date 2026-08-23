@@ -41,3 +41,26 @@ export async function getWritableGroupIdForSlug(groupSlug: string) {
   }
   return { userId: user.id, groupId: group.id };
 }
+
+export type GroupMutationContext = {
+  userId: string;
+  groupId: string;
+  groupSlug: string;
+};
+
+/**
+ * Shared server-action prelude: resolve tenant membership, run a guard against
+ * the resolved group, then run the mutation against the guarded resource.
+ * Callers that need no guard pass `noGuard` from `@/lib/actions/guards`;
+ * callers that need to revalidate do so as the last step of `mutation`.
+ */
+export async function runGroupMutation<TGuard, TResult>(
+  groupSlug: string,
+  guard: (ctx: GroupMutationContext) => Promise<TGuard>,
+  mutation: (ctx: GroupMutationContext, guarded: TGuard) => Promise<TResult>
+): Promise<TResult> {
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const ctx: GroupMutationContext = { userId, groupId, groupSlug };
+  const guarded = await guard(ctx);
+  return mutation(ctx, guarded);
+}
