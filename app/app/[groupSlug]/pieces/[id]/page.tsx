@@ -12,7 +12,7 @@ import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import type { Piece } from "@/components/PieceLinksDialog/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import { ROLES } from "@/lib/roles";
+import { sortCreditsForDisplay } from "@/lib/pieces/credits";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -48,34 +48,7 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
     })),
   };
 
-  const sortedCredits = (() => {
-    const roleBuckets = new Map<string, (typeof piece.credits)[number][]>();
-
-    for (const credit of piece.credits) {
-      const role = credit.role;
-      const bucket = roleBuckets.get(role);
-      if (bucket) bucket.push(credit);
-      else roleBuckets.set(role, [credit]);
-    }
-
-    // Widen the set type so `roleBuckets` (string keys) can be checked safely.
-    const knownRoleSet = new Set<string>(ROLES as unknown as string[]);
-    const compareSv = (a: string, b: string) =>
-      a.localeCompare(b, "sv-SE", { sensitivity: "base" });
-
-    const knownRoles = ROLES.filter((role) => roleBuckets.has(role));
-    const unknownRoles = [...roleBuckets.keys()]
-      .filter((role) => !knownRoleSet.has(role))
-      .sort(compareSv);
-
-    const orderedRoles = [...knownRoles, ...unknownRoles];
-
-    return orderedRoles.flatMap((role) => {
-      const bucket = roleBuckets.get(role) ?? [];
-      bucket.sort((a, b) => compareSv(a.person.name, b.person.name));
-      return bucket;
-    });
-  })();
+  const sortedCredits = sortCreditsForDisplay(piece.credits);
 
   return (
     <div className="space-y-6">
