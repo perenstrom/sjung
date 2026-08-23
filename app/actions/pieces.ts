@@ -24,7 +24,7 @@ import {
 } from "@/lib/schemas/pieces";
 import { parseWritableGroupSlugParam } from "@/lib/schemas/people";
 import { getPieceDetailForGroup, getPiecesForGroup } from "@/lib/pieces/queries";
-import { deleteR2ObjectsWithConcurrency } from "@/lib/pieces/storage-delete";
+import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
 import type { PieceDetail } from "@/lib/pieces/types";
 import {
   revalidateGroupPieceDetailRoutes,
@@ -363,20 +363,22 @@ export async function deletePiece(formData: FormData) {
     },
   });
 
-  const deletionResult = await deleteR2ObjectsWithConcurrency(
+  await deleteR2ObjectsOrThrow(
     piece.files.map((file) => file.storagePath),
-    5
+    "Kunde inte ta bort en eller flera filer från lagringen",
+    {
+      concurrency: 5,
+      onFailure: (result) => {
+        const failedKeySample = result.failedKeys.slice(0, DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE);
+        console.error("deletePiece failed to remove one or more R2 objects", {
+          pieceId: piece.id,
+          failedCount: result.failedCount,
+          totalCount: result.totalCount,
+          failedKeysSample: failedKeySample,
+        });
+      },
+    }
   );
-  if (deletionResult.failedCount > 0) {
-    const failedKeySample = deletionResult.failedKeys.slice(0, DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE);
-    console.error("deletePiece failed to remove one or more R2 objects", {
-      pieceId: piece.id,
-      failedCount: deletionResult.failedCount,
-      totalCount: deletionResult.totalCount,
-      failedKeysSample: failedKeySample,
-    });
-    throw new Error("Kunde inte ta bort en eller flera filer från lagringen");
-  }
 
   await prisma.piece.delete({
     where: { id: piece.id },

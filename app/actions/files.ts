@@ -9,6 +9,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import { readGroupSlugInput } from "@/lib/actions/input";
 import { requireFileInGroup, requirePieceInGroup } from "@/lib/actions/guards";
+import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
 import prisma from "@/lib/prisma";
 import { getR2Bucket, getR2Client, sanitizeFileName } from "@/lib/r2";
 import {
@@ -132,9 +133,6 @@ export async function finalizePieceFileReplace(formData: FormData) {
     select: {
       id: true,
       pieceId: true,
-      fileName: true,
-      mimeType: true,
-      size: true,
       storagePath: true,
     },
   });
@@ -144,13 +142,10 @@ export async function finalizePieceFileReplace(formData: FormData) {
     throw new Error("Ogiltig filsökväg");
   }
 
-  const oldStoragePath = file.storagePath;
-  const previousValues = {
-    fileName: file.fileName,
-    mimeType: file.mimeType,
-    size: file.size,
-    storagePath: file.storagePath,
-  };
+  await deleteR2ObjectsOrThrow(
+    [file.storagePath],
+    "Kunde inte ta bort den gamla filen från lagringen"
+  );
 
   await prisma.file.update({
     where: { id: file.id },
@@ -162,24 +157,6 @@ export async function finalizePieceFileReplace(formData: FormData) {
       updatedById: userId,
     },
   });
-
-  try {
-    await getR2Client().send(
-      new DeleteObjectCommand({
-        Bucket: getR2Bucket(),
-        Key: oldStoragePath,
-      })
-    );
-  } catch {
-    await prisma.file.update({
-      where: { id: file.id },
-      data: {
-        ...previousValues,
-        updatedById: userId,
-      },
-    });
-    throw new Error("Kunde inte ta bort den gamla filen från lagringen");
-  }
 
   revalidateGroupRoute(groupSlug);
   revalidateGroupPieceDetailRoutes(groupSlug, file.pieceId);
