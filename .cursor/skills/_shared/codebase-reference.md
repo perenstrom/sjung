@@ -46,10 +46,10 @@ Files in `app/actions/`:
 - `"use server"` at top of file.
 - Prisma via `@/lib/prisma` (singleton).
 - Resolve `groupId` with `getWritableGroupIdForSlug(groupSlug)` from `lib/tenant-group.ts` — never hard-code group IDs.
-- Validate input with Zod parsers in `lib/schemas/*` (e.g. `lib/schemas/pieces.ts`, `people.ts`, `groups.ts`, `files.ts`, `auth.ts`).
-- Use entity guards from `lib/actions/guards.ts` (`requirePieceInGroup`, `requireSetListInGroup`, etc.) before reads/writes.
-- Shared FormData parsing helpers: `lib/actions/input.ts`.
-- After mutations, revalidate via helpers in `lib/revalidate/group-routes.ts` (not raw paths scattered in actions).
+- Validate input with Zod parsers in `lib/schemas/*` (e.g. `lib/schemas/pieces.ts`, `people.ts`, `groups.ts`, `files.ts`, `setlists.ts`, `auth.ts`) — the one FormData-reading convention; there is no separate non-Zod helper module.
+- Use entity guards from `lib/actions/guards.ts` (`requirePieceInGroup`, `requireSetListInGroup`, etc.) before reads/writes; `noGuard` is the no-op guard for mutations that need none.
+- Mutations in `pieces.ts`, `files.ts`, and `setlists.ts` sequence resolve → guard → mutate through `runGroupMutation(groupSlug, guard, mutation)` from `lib/tenant-group.ts` instead of hand-rolling the prelude.
+- After mutations, revalidate via helpers in `lib/revalidate/group-routes.ts` (not raw paths scattered in actions) — called as the last step inside the `mutation` callback.
 - Throw Swedish `Error` messages on invalid input or forbidden access.
 
 **Query modules:** Heavy read logic often lives in `lib/pieces/queries.ts` (and similar), called from actions or pages.
@@ -80,11 +80,10 @@ When adding interactive UI:
 
 | Path | Purpose |
 |------|---------|
-| `lib/tenant-group.ts` | `requireTenantGroup`, `getWritableGroupIdForSlug` |
+| `lib/tenant-group.ts` | `requireTenantGroup`, `getWritableGroupIdForSlug`, `runGroupMutation` |
 | `lib/auth/require-user.ts` | `requireUser()` for authenticated server code |
-| `lib/actions/guards.ts` | Entity-in-group authorization guards |
-| `lib/actions/input.ts` | Shared FormData parsing |
-| `lib/schemas/*.ts` | Zod validation per domain |
+| `lib/actions/guards.ts` | Entity-in-group authorization guards, `noGuard` |
+| `lib/schemas/*.ts` | Zod validation per domain (the one FormData-reading convention) |
 | `lib/pieces/queries.ts`, `credits.ts`, `types.ts` | Piece reads and credit logic |
 | `lib/setlists/types.ts` | Set list types |
 | `lib/r2.ts` | R2 object storage |

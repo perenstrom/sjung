@@ -2,23 +2,13 @@ import { z } from "zod";
 
 import { ROLES } from "@/lib/roles";
 import type { PieceCredit } from "@/lib/pieces/credits";
-import { personNameSchema, writableGroupSlugSchema } from "@/lib/schemas/people";
+import { personNameSchema } from "@/lib/schemas/people";
 
 const INVALID_CREDITS_ERROR = "Ogiltigt format för medverkande";
 
 function formDataString(formData: FormData, field: string): string {
   const raw = formData.get(field);
   return typeof raw === "string" ? raw : "";
-}
-
-export function parsePieceGroupSlugFromFormData(formData: FormData): string {
-  const result = writableGroupSlugSchema.safeParse(
-    formDataString(formData, "groupSlug")
-  );
-  if (!result.success) {
-    throw new Error(result.error.issues[0]?.message ?? "Saknar grupp");
-  }
-  return result.data;
 }
 
 export function parsePieceNameFromFormData(formData: FormData): string {

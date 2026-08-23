@@ -6,7 +6,6 @@ import {
   parseLinkIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
-  parsePieceGroupSlugFromFormData,
   parsePieceIdFromFormData,
   parsePieceNameFromFormData,
   parseRequiredHttpUrlFromFormData,
@@ -19,22 +18,6 @@ function createFormData(values: Record<string, string>): FormData {
   }
   return formData;
 }
-
-describe("parsePieceGroupSlugFromFormData", () => {
-  it("returns trimmed slug", () => {
-    const fd = createFormData({ groupSlug: "  my-group  " });
-    expect(parsePieceGroupSlugFromFormData(fd)).toBe("my-group");
-  });
-
-  it("throws Saknar grupp when missing or empty", () => {
-    expect(() => parsePieceGroupSlugFromFormData(createFormData({}))).toThrow(
-      "Saknar grupp"
-    );
-    expect(() =>
-      parsePieceGroupSlugFromFormData(createFormData({ groupSlug: "   " }))
-    ).toThrow("Saknar grupp");
-  });
-});
 
 describe("parsePieceNameFromFormData", () => {
   it("returns trimmed name", () => {

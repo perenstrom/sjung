@@ -2,6 +2,11 @@ import type { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
+/** For `runGroupMutation` callers whose mutation needs no guarded resource. */
+export async function noGuard(): Promise<undefined> {
+  return undefined;
+}
+
 const DEFAULT_PIECE_SELECT = { id: true } satisfies Prisma.PieceSelect;
 const DEFAULT_SET_LIST_SELECT = { id: true } satisfies Prisma.SetListSelect;
 const DEFAULT_SET_LIST_PIECE_SELECT = { id: true } satisfies Prisma.SetListPieceSelect;

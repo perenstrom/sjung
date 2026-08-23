@@ -3,6 +3,7 @@
 import { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import {
+  noGuard,
   requireLinkInGroup,
   requirePieceInGroup,
   requirePieceNoteInGroup,
@@ -14,7 +15,6 @@ import {
   parseLinkIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
-  parsePieceGroupSlugFromFormData,
   parsePieceIdFromFormData,
   parsePieceIdParam,
   parsePieceNameFromFormData,
@@ -22,7 +22,10 @@ import {
   parsePieceNoteIdFromFormData,
   parseRequiredHttpUrlFromFormData,
 } from "@/lib/schemas/pieces";
-import { parseWritableGroupSlugParam } from "@/lib/schemas/people";
+import {
+  parseWritableGroupSlugFromFormData,
+  parseWritableGroupSlugParam,
+} from "@/lib/schemas/people";
 import { getPieceDetailForGroup, getPiecesForGroup } from "@/lib/pieces/queries";
 import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
 import type { PieceDetail } from "@/lib/pieces/types";
@@ -30,7 +33,7 @@ import {
   revalidateGroupPieceDetailRoutes,
   revalidateGroupRoute,
 } from "@/lib/revalidate/group-routes";
-import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
+import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 
 export type PieceNoteListItem = {
   id: string;
@@ -77,194 +80,206 @@ export async function getPieceTitleForBreadcrumb(
   }
 }
 
-async function requirePieceForLinkMutation(formData: FormData, groupId: string) {
-  const pieceId = parsePieceIdFromFormData(formData);
-  return requirePieceInGroup(pieceId, groupId);
-}
-
-async function requireLinkForLinkMutation(formData: FormData, groupId: string) {
-  const linkId = parseLinkIdFromFormData(formData);
-  return requireLinkInGroup(linkId, groupId, {
-    select: { id: true, pieceId: true },
-  });
-}
-
-async function requirePieceForCreditMutation(formData: FormData, groupId: string) {
-  const pieceId = parsePieceIdFromFormData(formData);
-  return requirePieceInGroup(pieceId, groupId);
-}
-
 export async function createPiece(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const name = parsePieceNameFromFormData(formData);
-
   const credits = parsePieceCreditsFromFormData(formData);
   assertNoDuplicateCredits(credits);
 
-  const created = await prisma.piece.create({
-    data: {
-      name: name.trim(),
-      groupId,
-      createdById: userId,
-      updatedById: userId,
-      credits: {
-        create: credits.map((c) => ({
-          personId: c.personId,
-          role: c.role,
-        })),
+  await runGroupMutation(groupSlug, noGuard, async ({ userId, groupId }) => {
+    const created = await prisma.piece.create({
+      data: {
+        name: name.trim(),
+        groupId,
+        createdById: userId,
+        updatedById: userId,
+        credits: {
+          create: credits.map((c) => ({
+            personId: c.personId,
+            role: c.role,
+          })),
+        },
       },
-    },
-    select: { id: true },
-  });
+      select: { id: true },
+    });
 
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, created.id);
+    revalidateGroupRoute(groupSlug);
+    revalidateGroupPieceDetailRoutes(groupSlug, created.id);
+  });
 }
 
 export async function updatePiece(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const name = parsePieceNameFromFormData(formData);
 
-  const piece = await requirePieceInGroup(pieceId, groupId);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceInGroup(pieceId, groupId),
+    async ({ userId }, piece) => {
+      await prisma.piece.update({
+        where: { id: piece.id },
+        data: {
+          name: name.trim(),
+          updatedById: userId,
+        },
+      });
 
-  await prisma.piece.update({
-    where: { id: piece.id },
-    data: {
-      name: name.trim(),
-      updatedById: userId,
-    },
-  });
-
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    }
+  );
 }
 
 export async function updatePieceMetadata(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const name = parsePieceNameFromFormData(formData);
 
-  const piece = await requirePieceInGroup(pieceId, groupId);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceInGroup(pieceId, groupId),
+    async ({ userId }, piece) => {
+      await prisma.piece.update({
+        where: { id: piece.id },
+        data: {
+          name: name.trim(),
+          updatedById: userId,
+        },
+      });
 
-  await prisma.piece.update({
-    where: { id: piece.id },
-    data: {
-      name: name.trim(),
-      updatedById: userId,
-    },
-  });
-
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    }
+  );
 }
 
 export async function addLink(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
   const parsedUrl = parseRequiredHttpUrlFromFormData(formData);
-  const piece = await requirePieceForLinkMutation(formData, groupId);
-
   const label = parseOptionalLinkLabelFromFormData(formData);
 
-  await prisma.link.create({
-    data: {
-      pieceId: piece.id,
-      url: parsedUrl.toString(),
-      label,
-      createdById: userId,
-      updatedById: userId,
-    },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceInGroup(pieceId, groupId),
+    async ({ userId }, piece) => {
+      await prisma.link.create({
+        data: {
+          pieceId: piece.id,
+          url: parsedUrl.toString(),
+          label,
+          createdById: userId,
+          updatedById: userId,
+        },
+      });
 
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    }
+  );
 }
 
 export async function removeLink(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const link = await requireLinkForLinkMutation(formData, groupId);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const linkId = parseLinkIdFromFormData(formData);
 
-  await prisma.link.delete({
-    where: { id: link.id },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requireLinkInGroup(linkId, groupId, { select: { id: true, pieceId: true } }),
+    async (_ctx, link) => {
+      await prisma.link.delete({
+        where: { id: link.id },
+      });
 
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+    }
+  );
 }
 
 export async function updateLink(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const link = await requireLinkForLinkMutation(formData, groupId);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const linkId = parseLinkIdFromFormData(formData);
   const parsedUrl = parseRequiredHttpUrlFromFormData(formData);
   const label = parseOptionalLinkLabelFromFormData(formData);
 
-  await prisma.link.update({
-    where: { id: link.id },
-    data: {
-      url: parsedUrl.toString(),
-      label,
-      updatedById: userId,
-    },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requireLinkInGroup(linkId, groupId, { select: { id: true, pieceId: true } }),
+    async ({ userId }, link) => {
+      await prisma.link.update({
+        where: { id: link.id },
+        data: {
+          url: parsedUrl.toString(),
+          label,
+          updatedById: userId,
+        },
+      });
 
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+    }
+  );
 }
 
 export async function addCredit(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const piece = await requirePieceForCreditMutation(formData, groupId);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
   const personId = parseCreditPersonIdFromFormData(formData);
   const role = parseCreditRoleFromFormData(formData);
 
-  try {
-    await prisma.personToPiece.create({
-      data: {
-        pieceId: piece.id,
-        personId,
-        role,
-      },
-    });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      throw new Error(DUPLICATE_CREDITS_ERROR);
-    }
-    throw err;
-  }
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceInGroup(pieceId, groupId),
+    async (_ctx, piece) => {
+      try {
+        await prisma.personToPiece.create({
+          data: {
+            pieceId: piece.id,
+            personId,
+            role,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+          throw new Error(DUPLICATE_CREDITS_ERROR);
+        }
+        throw err;
+      }
 
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    }
+  );
 }
 
 export async function removeCredit(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const piece = await requirePieceForCreditMutation(formData, groupId);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
   const personId = parseCreditPersonIdFromFormData(formData);
   const role = parseCreditRoleFromFormData(formData);
 
-  const { count } = await prisma.personToPiece.deleteMany({
-    where: {
-      pieceId: piece.id,
-      personId,
-      role,
-    },
-  });
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceInGroup(pieceId, groupId),
+    async (_ctx, piece) => {
+      const { count } = await prisma.personToPiece.deleteMany({
+        where: {
+          pieceId: piece.id,
+          personId,
+          role,
+        },
+      });
 
-  if (count === 0) {
-    throw new Error("Medverkande hittades inte");
-  }
+      if (count === 0) {
+        throw new Error("Medverkande hittades inte");
+      }
 
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    }
+  );
 }
 
 export async function listPieceNotes(
@@ -291,98 +306,114 @@ export async function listPieceNotes(
 }
 
 export async function createPieceNote(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const content = parsePieceNoteContentFromFormData(formData);
 
-  const piece = await requirePieceInGroup(pieceId, groupId);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceInGroup(pieceId, groupId),
+    async ({ userId, groupId }, piece) => {
+      await prisma.pieceNote.create({
+        data: {
+          content,
+          pieceId: piece.id,
+          groupId,
+          createdById: userId,
+          updatedById: userId,
+        },
+      });
 
-  await prisma.pieceNote.create({
-    data: {
-      content,
-      pieceId: piece.id,
-      groupId,
-      createdById: userId,
-      updatedById: userId,
-    },
-  });
-
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    }
+  );
 }
 
 export async function updatePieceNote(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceNoteId = parsePieceNoteIdFromFormData(formData);
   const content = parsePieceNoteContentFromFormData(formData);
 
-  const note = await requirePieceNoteInGroup(pieceNoteId, groupId);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceNoteInGroup(pieceNoteId, groupId),
+    async ({ userId }, note) => {
+      await prisma.pieceNote.update({
+        where: { id: note.id },
+        data: {
+          content,
+          updatedById: userId,
+        },
+      });
 
-  await prisma.pieceNote.update({
-    where: { id: note.id },
-    data: {
-      content,
-      updatedById: userId,
-    },
-  });
-
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
+    }
+  );
 }
 
 export async function deletePieceNote(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceNoteId = parsePieceNoteIdFromFormData(formData);
 
-  const note = await requirePieceNoteInGroup(pieceNoteId, groupId);
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) => requirePieceNoteInGroup(pieceNoteId, groupId),
+    async (_ctx, note) => {
+      await prisma.pieceNote.delete({
+        where: { id: note.id },
+      });
 
-  await prisma.pieceNote.delete({
-    where: { id: note.id },
-  });
-
-  revalidateGroupRoute(groupSlug);
-  revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
+      revalidateGroupRoute(groupSlug);
+      revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
+    }
+  );
 }
 
 export async function deletePiece(formData: FormData) {
-  const groupSlug = parsePieceGroupSlugFromFormData(formData);
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
 
-  const piece = await requirePieceInGroup(pieceId, groupId, {
-    select: {
-      id: true,
-      files: {
+  await runGroupMutation(
+    groupSlug,
+    ({ groupId }) =>
+      requirePieceInGroup(pieceId, groupId, {
         select: {
-          storagePath: true,
+          id: true,
+          files: {
+            select: {
+              storagePath: true,
+            },
+          },
         },
-      },
-    },
-  });
+      }),
+    async (_ctx, piece) => {
+      await deleteR2ObjectsOrThrow(
+        piece.files.map((file) => file.storagePath),
+        "Kunde inte ta bort en eller flera filer från lagringen",
+        {
+          concurrency: 5,
+          onFailure: (result) => {
+            const failedKeySample = result.failedKeys.slice(
+              0,
+              DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE
+            );
+            console.error("deletePiece failed to remove one or more R2 objects", {
+              pieceId: piece.id,
+              failedCount: result.failedCount,
+              totalCount: result.totalCount,
+              failedKeysSample: failedKeySample,
+            });
+          },
+        }
+      );
 
-  await deleteR2ObjectsOrThrow(
-    piece.files.map((file) => file.storagePath),
-    "Kunde inte ta bort en eller flera filer från lagringen",
-    {
-      concurrency: 5,
-      onFailure: (result) => {
-        const failedKeySample = result.failedKeys.slice(0, DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE);
-        console.error("deletePiece failed to remove one or more R2 objects", {
-          pieceId: piece.id,
-          failedCount: result.failedCount,
-          totalCount: result.totalCount,
-          failedKeysSample: failedKeySample,
-        });
-      },
+      await prisma.piece.delete({
+        where: { id: piece.id },
+      });
+
+      revalidateGroupRoute(groupSlug);
     }
   );
-
-  await prisma.piece.delete({
-    where: { id: piece.id },
-  });
-
-  revalidateGroupRoute(groupSlug);
 }
