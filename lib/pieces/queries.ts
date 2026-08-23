@@ -30,13 +30,7 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
   return {
     id: piece.id,
     name: piece.name,
-    credits: piece.credits.sort((a, b) => {
-      const byName = a.person.name.localeCompare(b.person.name, "sv-SE");
-      if (byName !== 0) {
-        return byName;
-      }
-      return a.role.localeCompare(b.role, "sv-SE");
-    }),
+    credits: piece.credits,
     files: piece.files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     links: piece.links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     setListEntries: piece.setListEntries
