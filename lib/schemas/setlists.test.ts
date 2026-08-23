@@ -8,7 +8,6 @@ import {
   parseSetListNoteContentFromFormData,
   parseSetListNoteIdFromFormData,
   parseSetListPieceIdFromFormData,
-  parseSetListPieceNoteContentFromFormData,
   parseSetListPieceNoteIdFromFormData,
 } from "@/lib/schemas/setlists";
 
@@ -74,30 +73,16 @@ describe("id field parsers", () => {
   });
 });
 
-describe("note content parsers", () => {
-  it("returns trimmed content for a set list piece note", () => {
+describe("parseSetListNoteContentFromFormData", () => {
+  it("returns trimmed content, shared by piece notes and set list notes", () => {
     expect(
-      parseSetListPieceNoteContentFromFormData(
-        createFormData({ content: "  Kom ihåg tempot  " })
-      )
+      parseSetListNoteContentFromFormData(createFormData({ content: "  Kom ihåg tempot  " }))
     ).toBe("Kom ihåg tempot");
   });
 
   it("throws Anteckning krävs when empty", () => {
     expect(() =>
-      parseSetListPieceNoteContentFromFormData(createFormData({ content: "  " }))
-    ).toThrow("Anteckning krävs");
-  });
-
-  it("returns trimmed content for a set list note", () => {
-    expect(
-      parseSetListNoteContentFromFormData(createFormData({ content: "  Paus  " }))
-    ).toBe("Paus");
-  });
-
-  it("throws Anteckning krävs when empty", () => {
-    expect(() =>
-      parseSetListNoteContentFromFormData(createFormData({ content: "" }))
+      parseSetListNoteContentFromFormData(createFormData({ content: "  " }))
     ).toThrow("Anteckning krävs");
   });
 });

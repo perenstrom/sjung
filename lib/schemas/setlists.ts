@@ -73,14 +73,7 @@ export function parseSetListNoteIdFromFormData(formData: FormData): string {
   return result.data;
 }
 
-export function parseSetListPieceNoteContentFromFormData(formData: FormData): string {
-  const result = setListNoteContentSchema.safeParse(formDataString(formData, "content"));
-  if (!result.success) {
-    throw new Error(result.error.issues[0]?.message ?? "Anteckning krävs");
-  }
-  return result.data;
-}
-
+/** Shared by both set list piece notes (performance notes) and set list notes (running-order notes) — same content rules. */
 export function parseSetListNoteContentFromFormData(formData: FormData): string {
   const result = setListNoteContentSchema.safeParse(formDataString(formData, "content"));
   if (!result.success) {

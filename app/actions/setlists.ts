@@ -22,7 +22,6 @@ import {
   parseSetListNoteContentFromFormData,
   parseSetListNoteIdFromFormData,
   parseSetListPieceIdFromFormData,
-  parseSetListPieceNoteContentFromFormData,
   parseSetListPieceNoteIdFromFormData,
 } from "@/lib/schemas/setlists";
 import {
@@ -378,7 +377,7 @@ export async function listSetListPieceNotes(
 export async function createSetListPieceNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListPieceId = parseSetListPieceIdFromFormData(formData);
-  const content = parseSetListPieceNoteContentFromFormData(formData);
+  const content = parseSetListNoteContentFromFormData(formData);
 
   await runGroupMutation(
     groupSlug,
@@ -405,7 +404,7 @@ export async function createSetListPieceNote(formData: FormData) {
 export async function updateSetListPieceNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListPieceNoteId = parseSetListPieceNoteIdFromFormData(formData);
-  const content = parseSetListPieceNoteContentFromFormData(formData);
+  const content = parseSetListNoteContentFromFormData(formData);
 
   await runGroupMutation(
     groupSlug,
