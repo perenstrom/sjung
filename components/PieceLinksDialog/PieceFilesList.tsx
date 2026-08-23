@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import {
@@ -37,6 +38,7 @@ export function PieceFilesList({
   renderFileActions,
   replacingFileId,
   onReplacingFileIdChange,
+  compact = false,
 }: {
   groupSlug: string;
   files: PieceFileListItem[];
@@ -49,6 +51,7 @@ export function PieceFilesList({
   renderFileActions?: (file: PieceFileListItem) => ReactNode;
   replacingFileId?: string | null;
   onReplacingFileIdChange?: (fileId: string | null) => void;
+  compact?: boolean;
 }) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(
     null,
@@ -105,6 +108,77 @@ export function PieceFilesList({
     );
   }
 
+  function replacePopoverProps(file: PieceFileListItem) {
+    return {
+      groupSlug,
+      fileId: file.id,
+      displayName: file.displayName,
+      open:
+        replacingFileId !== undefined
+          ? replacingFileId === file.id
+          : undefined,
+      disabled: deletingFileId === file.id || disabled,
+      onOpenChange: onReplacingFileIdChange
+        ? (nextOpen: boolean) =>
+            onReplacingFileIdChange(nextOpen ? file.id : null)
+        : undefined,
+      onReplaceSuccess: onMutationSuccess,
+    };
+  }
+
+  if (compact) {
+    return (
+      <ul className="space-y-2 text-sm">
+        {files.map((file) => {
+          const deleteError = deleteErrors[file.id];
+          return (
+            <li key={file.id} className="space-y-1">
+              <div className="flex min-w-0 items-center gap-1">
+                <FileText
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDownload(file.id)}
+                  disabled={
+                    downloadingFileId === file.id ||
+                    deletingFileId === file.id ||
+                    disabled
+                  }
+                  className="min-w-0 flex-1 truncate text-left text-primary underline-offset-4 hover:underline disabled:opacity-50"
+                >
+                  {downloadingFileId === file.id
+                    ? "Hämtar..."
+                    : file.displayName}
+                </button>
+                {renderFileActions?.(file)}
+                <ReplacePieceFilePopover
+                  {...replacePopoverProps(file)}
+                  triggerClassName="size-7 shrink-0"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0"
+                  onClick={() => handleDeleteFile(file.id)}
+                  disabled={deletingFileId === file.id || disabled}
+                  aria-label={`Ta bort fil ${file.displayName}`}
+                >
+                  <Trash2 className="size-3.5" aria-hidden="true" />
+                </Button>
+              </div>
+              {deleteError ? (
+                <p className="text-xs text-destructive">{deleteError}</p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
   return (
     <ul className="space-y-2">
       {files.map((file) => {
@@ -141,24 +215,7 @@ export function PieceFilesList({
                   {downloadingFileId === file.id ? "Hämtar..." : "Ladda ner"}
                 </Button>
                 {renderFileActions?.(file)}
-                <ReplacePieceFilePopover
-                  groupSlug={groupSlug}
-                  fileId={file.id}
-                  displayName={file.displayName}
-                  open={
-                    replacingFileId !== undefined
-                      ? replacingFileId === file.id
-                      : undefined
-                  }
-                  disabled={deletingFileId === file.id || disabled}
-                  onOpenChange={
-                    onReplacingFileIdChange
-                      ? (nextOpen) =>
-                          onReplacingFileIdChange(nextOpen ? file.id : null)
-                      : undefined
-                  }
-                  onReplaceSuccess={onMutationSuccess}
-                />
+                <ReplacePieceFilePopover {...replacePopoverProps(file)} />
                 <Button
                   type="button"
                   variant={deleteError ? "destructive" : "ghost"}

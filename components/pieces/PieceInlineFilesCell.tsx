@@ -58,6 +58,7 @@ export function PieceInlineFilesCell({
           groupSlug={groupSlug}
           files={files}
           showUploadedAt={false}
+          compact
           onAggregateError={setError}
           onClearAggregateError={() => setError(null)}
           onMutationSuccess={() => router.refresh()}
@@ -94,6 +95,7 @@ export function PieceInlineFilesCell({
                   type="button"
                   variant="ghost"
                   size="icon"
+                  className="size-7 shrink-0"
                   disabled={addPopoverOpen || replacingFileId !== null}
                   aria-label={`Redigera filnamn ${file.displayName}`}
                 >
