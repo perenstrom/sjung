@@ -85,6 +85,8 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 Write PR descriptions in plain paragraphs and standard Markdown lists — don't insert manual line breaks inside a paragraph (e.g. one sentence or clause per line). GitHub's mobile app wraps each hard-broken line as its own block, so a paragraph written with mid-sentence breaks reads as a staircase of fragments on a phone. Let paragraphs wrap naturally; only start a new line for an actual new paragraph or list item. The same applies to this README and other Markdown docs in the repo — don't hard-wrap prose at a fixed column, let each paragraph/list item be one line in the source.
 
+Don't attribute PRs to Claude and don't link the session that produced them — no "Generated with Claude Code" footer, no `Co-Authored-By: Claude` trailer, and no session/transcript links in the PR title, body, or commit messages.
+
 ## Testing Strategy
 
 Unit tests in Sjung focus on deterministic logic first: pure helpers, parsing, transformations,
