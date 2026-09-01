@@ -15,12 +15,16 @@ A login account. A User can belong to multiple Groups.
 _Avoid_: Member (a User's relationship to one specific Group), Person (a different concept entirely — see below).
 
 **Member**:
-A User's association with one Group. Membership carries no role of its own — see Creator.
+A User's association with one Group. May additionally hold one or more Claims granting elevated capabilities — see Claim, Creator.
 _Avoid_: User (the account itself, group-independent).
 
 **Creator**:
-The single User who created a Group, and that Group's sole privileged member (can manage membership; will own future Group-wide features like announcements). Not a role on the membership record — determined structurally, by matching the Group's stored creator id. See ADR-0001.
-_Avoid_: Admin, Owner, Role — there is no roles table.
+The single User who created a Group. Structurally special, not a Claim: the only privilege that can never be granted or revoked by anyone, including the holder — determined by matching the Group's stored creator id, not by a membership record. Creator implicitly holds every Claim and is the only member who can rename or delete the Group itself. See ADR-0001 (superseded), ADR-0002.
+_Avoid_: Admin, Owner, Role.
+
+**Claim**:
+A specific elevated capability a Member can hold within a Group, independent of Creator status. Today: `MANAGE_MEMBERS` (invite/remove members, grant/revoke Claims on other members) and `MANAGE_CONTENT` (write access to all of the Group's content, bypassing the default that a Member may only edit/delete content they created). A Member may hold neither, either, or both. See ADR-0002.
+_Avoid_: Role, Permission, Admin — "Claim" is this model's term.
 
 **Person**:
 A credited contributor (composer, arranger, lyricist, …) scoped to a Group — deliberately not a login account. A Person may be credited on Pieces without ever holding a Sjung account, and a User is not automatically a Person.
