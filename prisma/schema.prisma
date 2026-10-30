@@ -169,7 +169,7 @@ model PersonToPiece {
   pieceId  String @map("piece_id")
   role     String
 
-  person Person @relation(fields: [personId], references: [id], onDelete: Restrict)
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
   piece  Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
   @@id([personId, pieceId, role])
