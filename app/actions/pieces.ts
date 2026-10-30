@@ -42,6 +42,7 @@ export type PieceNoteListItem = {
   updatedAt: Date;
   createdById: string;
   updatedById: string;
+  createdByName: string;
 };
 
 const DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
@@ -291,7 +292,7 @@ export async function listPieceNotes(
   const parsedPieceId = parsePieceIdParam(pieceId);
   await requirePieceInGroup(parsedPieceId, groupId);
 
-  return prisma.pieceNote.findMany({
+  const notes = await prisma.pieceNote.findMany({
     where: { pieceId: parsedPieceId, groupId },
     orderBy: { updatedAt: "desc" },
     select: {
@@ -301,10 +302,20 @@ export async function listPieceNotes(
       updatedAt: true,
       createdById: true,
       updatedById: true,
+      createdBy: { select: { name: true } },
     },
   });
+
+  return notes.map(({ createdBy, ...note }) => ({
+    ...note,
+    createdByName: createdBy.name,
+  }));
 }
 
+// createPieceNote/updatePieceNote/deletePieceNote intentionally skip revalidateGroupRoute/
+// revalidateGroupPieceDetailRoutes: no page selects PieceNote data server-side (see
+// pieceWithRelationsInclude, pieceDetailSelect), so there's no SSR cache to refresh, and
+// revalidating the current route here resets client-side dialog state on every mutation.
 export async function createPieceNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
@@ -323,9 +334,6 @@ export async function createPieceNote(formData: FormData) {
           updatedById: userId,
         },
       });
-
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
     }
   );
 }
@@ -346,9 +354,6 @@ export async function updatePieceNote(formData: FormData) {
           updatedById: userId,
         },
       });
-
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
     }
   );
 }
@@ -364,9 +369,6 @@ export async function deletePieceNote(formData: FormData) {
       await prisma.pieceNote.delete({
         where: { id: note.id },
       });
-
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, note.pieceId);
     }
   );
 }
