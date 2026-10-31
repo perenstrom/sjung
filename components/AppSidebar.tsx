@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { Boxes, ListMusic, Music, UserPlus, Users } from "lucide-react";
+import { Boxes, ListMusic, LogOut, Music, UserPlus, Users } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { setActiveGroup } from "@/app/actions/groups";
+import { logOut } from "@/app/actions/auth";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 type GroupOption = {
@@ -50,6 +51,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const router = useRouter();
   const [groupSwitchError, setGroupSwitchError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isLoggingOut, startLogOutTransition] = useTransition();
   const tenantSlug = tenantSlugFromPathname(pathname);
   const currentGroupSlug =
     tenantSlug ?? activeGroupSlug ?? groups[0]?.slug ?? "";
@@ -77,6 +79,12 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
       } catch (err) {
         setGroupSwitchError(getThrownMessage(err, "Kunde inte byta grupp"));
       }
+    });
+  }
+
+  function handleLogOut() {
+    startLogOutTransition(async () => {
+      await logOut();
     });
   }
 
@@ -194,6 +202,16 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
                     <Boxes />
                     <span>Grupphantering</span>
                   </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Logga ut"
+                  onClick={handleLogOut}
+                  disabled={isLoggingOut}
+                >
+                  <LogOut />
+                  <span>Logga ut</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
