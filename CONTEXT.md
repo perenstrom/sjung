@@ -18,6 +18,10 @@ _Avoid_: Member (a User's relationship to one specific Group), Person (a differe
 A User's association with one Group. May additionally hold one or more Claims granting elevated capabilities — see Claim, Creator.
 _Avoid_: User (the account itself, group-independent).
 
+**Default group**:
+The Group a User lands in when opening the app — whichever Group they last switched to. Belongs to the User, not to the browser or the login session, so it survives logging out.
+_Avoid_: Active group, Current group.
+
 **Creator**:
 The single User who created a Group. Structurally special, not a Claim: the only privilege that can never be granted or revoked by anyone, including the holder — determined by matching the Group's stored creator id, not by a membership record. Creator implicitly holds every Claim and is the only member who can rename or delete the Group itself. See ADR-0001 (superseded), ADR-0002.
 _Avoid_: Admin, Owner, Role.
