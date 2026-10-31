@@ -24,14 +24,16 @@ export async function createPerson(formData: FormData) {
 
   const name = parsePersonNameFromFormData(formData);
 
-  await prisma.person.create({
+  const person = await prisma.person.create({
     data: {
       name,
       groupId,
       createdById: userId,
       updatedById: userId,
     },
+    select: { id: true, name: true },
   });
 
   revalidateGroupPeopleRoutes(groupSlug);
+  return person;
 }
