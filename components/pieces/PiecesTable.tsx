@@ -13,6 +13,7 @@ import {
 } from "@/components/data-table";
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
+import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { Person } from "@/types/piece-credit-dialog";
@@ -136,6 +137,10 @@ export function PiecesTable({
                     role: credit.role,
                   })),
                 }}
+              />
+              <PieceNotesDialog
+                groupSlug={groupSlug}
+                piece={{ id: piece.id, name: piece.name }}
               />
               <DeletePieceDialog
                 groupSlug={groupSlug}
