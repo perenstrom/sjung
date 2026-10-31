@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Link from "next/link";
+import { createPerson } from "@/app/actions/people";
 import { createPiece } from "@/app/actions/pieces";
+import { PersonCombobox } from "@/components/PersonCombobox";
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import { mergePeople } from "@/lib/people/person-options";
 import { ROLES } from "@/lib/roles";
 import type { CreditRow, Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
@@ -35,8 +37,11 @@ export function CreatePieceDialog({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [credits, setCredits] = useState<CreditRow[]>([]);
+  const [createdPeople, setCreatedPeople] = useState<Person[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const rowIdRef = useRef(0);
+
+  const allPeople = mergePeople(people, createdPeople);
 
   function nextRowId() {
     return rowIdRef.current++;
@@ -57,6 +62,15 @@ export function CreatePieceDialog({
     setCredits((prev) =>
       prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
     );
+  }
+
+  async function createPersonForCredit(id: number, name: string) {
+    const formData = new FormData();
+    formData.set("groupSlug", groupSlug);
+    formData.set("name", name);
+    const person = await createPerson(formData);
+    setCreatedPeople((prev) => [...prev, person]);
+    updateCredit(id, "personId", person.id);
   }
 
   async function handleSubmit(formData: FormData) {
@@ -111,46 +125,26 @@ export function CreatePieceDialog({
                 variant="outline"
                 size="sm"
                 onClick={addCredit}
-                disabled={people.length === 0}
               >
                 Lägg till
               </Button>
             </div>
 
-            {people.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Inga personer tillagda ännu. Lägg till personer under{" "}
-                <Link
-                  href={`/app/${groupSlug}/people`}
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  Personer
-                </Link>{" "}
-                först.
-              </p>
-            )}
-
             {credits.length > 0 && (
               <div className="space-y-2">
                 {credits.map((credit) => (
                   <div key={credit.id} className="flex items-center gap-2">
-                    <Select
+                    <PersonCombobox
+                      people={allPeople}
                       value={credit.personId}
                       onValueChange={(v) =>
                         updateCredit(credit.id, "personId", v)
                       }
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Person" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {people.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onCreate={(name) =>
+                        createPersonForCredit(credit.id, name)
+                      }
+                      className="min-w-0 flex-1"
+                    />
 
                     <Select
                       value={credit.role}
