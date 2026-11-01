@@ -80,7 +80,7 @@ function PieceNameEditor({
           <h1 className="text-2xl font-semibold">{savedName}</h1>
           <EditModeToggle />
           <Button type="button" variant="outline" size="sm" onClick={() => setIsRenaming(true)}>
-            Redigera
+            Byt namn
           </Button>
         </div>
       ) : (
