@@ -52,6 +52,7 @@ App runs at `http://localhost:3000`.
 - `npm run build` - production build
 - `npm run start` - run production server
 - `npm run lint` - run linting
+- `npm run typecheck` - type-check the project with `tsc --noEmit`
 - `npm run test:unit` - run unit tests once
 - `npm run test:unit:watch` - run unit tests in watch mode
 - `npm run test:integration` - apply migrations to `TEST_DATABASE_URL` and run the DB-backed integration suite once
