@@ -7,7 +7,7 @@ import {
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
-import { EditModeToggle } from "@/components/EditModeToggle";
+import { PageHeader } from "@/components/PageHeader";
 import { SetListStepsTable } from "@/components/setlists/SetListStepsTable";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
@@ -53,10 +53,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
           }}
         />
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold">{setList.name}</h1>
-            <EditModeToggle />
-          </div>
+          <PageHeader title={setList.name} />
           <p className="text-sm text-muted-foreground">Datum: {formatSetListDate(setList.date)}</p>
         </div>
 

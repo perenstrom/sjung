@@ -22,7 +22,7 @@ export function PieceMetadataSection(props: PieceMetadataSectionProps) {
   if (!isEditing) {
     return (
       <section className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">{props.initialName}</h1>
           <EditModeToggle />
         </div>
@@ -75,36 +75,37 @@ function PieceNameEditor({
 
   return (
     <section className="space-y-2">
-      {!isRenaming ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{savedName}</h1>
-          <EditModeToggle />
-          <Button type="button" variant="outline" size="sm" onClick={() => setIsRenaming(true)}>
-            Byt namn
-          </Button>
-        </div>
-      ) : (
-        <form action={handleSubmit} className="flex flex-wrap items-center gap-2">
-          <input type="hidden" name="groupSlug" value={groupSlug} />
-          <input type="hidden" name="pieceId" value={pieceId} />
-          <Input
-            id="piece-name"
-            name="name"
-            value={draftName}
-            required
-            disabled={isPending}
-            onChange={(event) => setDraftName(event.target.value)}
-            className="h-10 max-w-md text-lg font-semibold"
-          />
-          <Button type="submit" size="sm" disabled={isPending}>
-            {isPending ? "Sparar..." : "Spara"}
-          </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={handleCancel} disabled={isPending}>
-            Avbryt
-          </Button>
-          <EditModeToggle />
-        </form>
-      )}
+      <div className="flex items-center justify-between gap-3">
+        {!isRenaming ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold">{savedName}</h1>
+            <Button type="button" variant="outline" size="sm" onClick={() => setIsRenaming(true)}>
+              Byt namn
+            </Button>
+          </div>
+        ) : (
+          <form action={handleSubmit} className="flex flex-1 flex-wrap items-center gap-2">
+            <input type="hidden" name="groupSlug" value={groupSlug} />
+            <input type="hidden" name="pieceId" value={pieceId} />
+            <Input
+              id="piece-name"
+              name="name"
+              value={draftName}
+              required
+              disabled={isPending}
+              onChange={(event) => setDraftName(event.target.value)}
+              className="h-10 max-w-md text-lg font-semibold"
+            />
+            <Button type="submit" size="sm" disabled={isPending}>
+              {isPending ? "Sparar..." : "Spara"}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={handleCancel} disabled={isPending}>
+              Avbryt
+            </Button>
+          </form>
+        )}
+        <EditModeToggle />
+      </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {successMessage ? <p className="text-sm text-emerald-600">{successMessage}</p> : null}

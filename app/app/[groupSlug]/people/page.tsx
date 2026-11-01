@@ -2,8 +2,8 @@ import { getPeople } from "@/app/actions/people";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreatePersonDialog } from "@/components/CreatePersonDialog";
-import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
-import { EditModeToggle } from "@/components/EditModeToggle";
+import { EditModeProvider } from "@/components/EditModeContext";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Table,
   TableBody,
@@ -33,15 +33,10 @@ export default async function TenantPeoplePage({ params }: PageProps) {
             tail: { kind: "static", label: "Personer" },
           }}
         />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold">Personer</h1>
-            <EditModeToggle />
-          </div>
-          <EditOnly>
-            <CreatePersonDialog groupSlug={groupSlug} />
-          </EditOnly>
-        </div>
+        <PageHeader
+          title="Personer"
+          editActions={<CreatePersonDialog groupSlug={groupSlug} />}
+        />
 
         <Table>
           <TableHeader>

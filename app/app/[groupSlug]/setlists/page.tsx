@@ -2,8 +2,8 @@ import { getSetLists } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreateSetListDialog } from "@/components/CreateSetListDialog";
-import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
-import { EditModeToggle } from "@/components/EditModeToggle";
+import { EditModeProvider } from "@/components/EditModeContext";
+import { PageHeader } from "@/components/PageHeader";
 import { SetListsTable } from "@/components/setlists/SetListsTable";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 
@@ -33,15 +33,10 @@ export default async function TenantSetListsPage({ params }: PageProps) {
             tail: { kind: "static", label: "Repertoarer" },
           }}
         />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold">Repertoarer</h1>
-            <EditModeToggle />
-          </div>
-          <EditOnly>
-            <CreateSetListDialog groupSlug={groupSlug} />
-          </EditOnly>
-        </div>
+        <PageHeader
+          title="Repertoarer"
+          editActions={<CreateSetListDialog groupSlug={groupSlug} />}
+        />
 
         <SetListsTable
           groupSlug={groupSlug}

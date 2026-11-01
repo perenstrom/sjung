@@ -73,7 +73,7 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
 
         <Card>
           <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-            <h2 className="text-lg font-medium">Medverkande</h2>
+            <h2 className="text-lg leading-8 font-medium">Medverkande</h2>
             <EditOnly>
               <EditPieceDialog
                 creditsOnly
@@ -113,7 +113,7 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
 
         <Card>
           <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-            <h2 className="text-lg font-medium">Filer och länkar</h2>
+            <h2 className="text-lg leading-8 font-medium">Filer och länkar</h2>
             <EditOnly>
               <PieceLinksDialog
                 groupSlug={groupSlug}
