@@ -183,6 +183,30 @@ describe("parseSignupFormData", () => {
     }
   });
 
+  it("carries trimmed name and email back on failure, but not the password", () => {
+    const fd = createFormData({
+      name: " Ada ",
+      email: " ada@example.com ",
+      password: "short",
+      next: "/app",
+    });
+    const result = parseSignupFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.values).toEqual({ name: "Ada", email: "ada@example.com" });
+    }
+  });
+
+  it("falls back to empty values when fields are missing", () => {
+    const fd = createFormData({ email: "ada@example.com" });
+    const result = parseSignupFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("Ogiltiga formulärdata");
+      expect(result.values).toEqual({ name: "", email: "ada@example.com" });
+    }
+  });
+
   it("returns ok with redirectTo for valid payload", () => {
     const fd = createFormData({
       name: "",

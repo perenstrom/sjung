@@ -43,10 +43,12 @@ export function parseLoginFormData(formData: FormData): LoginFormParseResult {
   return { ok: true, data: { ...parsed.data, redirectTo } };
 }
 
+export const SIGNUP_PASSWORD_MIN_LENGTH = 12;
+
 export const signupCredentialsSchema = z.object({
   name: z.string().trim(),
   email: z.string().trim().pipe(z.email()),
-  password: z.string().min(12),
+  password: z.string().min(SIGNUP_PASSWORD_MIN_LENGTH),
 });
 
 export type SignupCredentials = z.infer<typeof signupCredentialsSchema>;
@@ -55,9 +57,12 @@ export type SignupFormParseError =
   | "Ogiltiga formulärdata"
   | "Lösenordet måste vara minst 12 tecken";
 
+/** The submitted non-secret fields, trimmed, echoed back after a failed submit. Never the password. */
+export type SignupFormValues = { name: string; email: string };
+
 export type SignupFormParseResult =
   | { ok: true; data: SignupCredentials & { redirectTo: string } }
-  | { ok: false; error: SignupFormParseError };
+  | { ok: false; error: SignupFormParseError; values: SignupFormValues };
 
 function mapSignupSchemaFailure(error: z.ZodError): SignupFormParseError {
   for (const issue of error.issues) {
@@ -73,12 +78,16 @@ export function parseSignupFormData(formData: FormData): SignupFormParseResult {
   const nameRaw = formData.get("name");
   const emailRaw = formData.get("email");
   const passwordRaw = formData.get("password");
+  const values: SignupFormValues = {
+    name: typeof nameRaw === "string" ? nameRaw.trim() : "",
+    email: typeof emailRaw === "string" ? emailRaw.trim() : "",
+  };
   if (
     typeof nameRaw !== "string" ||
     typeof emailRaw !== "string" ||
     typeof passwordRaw !== "string"
   ) {
-    return { ok: false, error: "Ogiltiga formulärdata" };
+    return { ok: false, error: "Ogiltiga formulärdata", values };
   }
   const parsed = signupCredentialsSchema.safeParse({
     name: nameRaw,
@@ -86,7 +95,7 @@ export function parseSignupFormData(formData: FormData): SignupFormParseResult {
     password: passwordRaw,
   });
   if (!parsed.success) {
-    return { ok: false, error: mapSignupSchemaFailure(parsed.error) };
+    return { ok: false, error: mapSignupSchemaFailure(parsed.error), values };
   }
   return { ok: true, data: { ...parsed.data, redirectTo } };
 }
