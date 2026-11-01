@@ -134,6 +134,14 @@ Environment expectations:
 - **Reset strategy**: a global Vitest `setupFiles` hook (`__tests__/support/setup.ts`) truncates every app table (`RESTART IDENTITY CASCADE`) before each test, so every test starts against an empty database regardless of what earlier tests left behind. There is no per-suite seed step — tests build exactly the rows they need via fixtures.
 - **Fixtures**: shared, hand-rolled builder functions live in `__tests__/support/fixtures.ts` (no fishery/faker — see PER-299's resolution). Builders are persist-only (`createUser`, `createGroup`, `createPiece` each insert and return the row) and auto-create any missing parent chain (for example `createPiece()` with no `groupId` creates a user, then a group, then the piece), while accepting overrides for tests that care about a specific chain. `User.email` and `Group.slug` are generated from deterministic module-level counters, not random data. `createGroup()` mirrors the app's creator⇒member invariant (`app/actions/groups.ts`) by giving the creator a `UsersToGroups` row too. `createAccessScenario()` composes a group with a creator, a distinct member, and a non-member (zero `UsersToGroups` rows) in one call, for the four-role matrix used across PER-191–193.
 
+## Email in tests
+
+- **Wrapper**: features send email through `sendEmail({ to, subject, react })` in `lib/email.ts`, one recipient per send. It throws on failure. Its own unit test (`lib/email.test.ts`) mocks `resend` in that file only.
+- **Fake**: `__tests__/support/fake-email.ts` replaces `@/lib/email` for every integration test through `vi.mock` in `__tests__/support/setup.ts`, so no integration test can send real email, even with `RESEND_API_KEY` in `.env`. It is reset in the same `beforeEach` as the database.
+- **Reading what was sent**: `sentEmails()` returns `{ to, subject, react, text }` for each send, in order. `text` is the template rendered as plain text with React Email's `render(react, { plainText: true })`, so a template that crashes while rendering fails the test. Assert on `text` by default (for example, to pull out a verification link) and on `react.props` only when the rendered text isn't enough.
+- **Failure injection**: `failEmailsTo(address)` makes every later send to that recipient throw, like a real Resend error. Sends to other recipients still go through.
+- **Unit tests** that reach `sendEmail` mock `@/lib/email` per file, the same way they mock `@/auth`.
+
 ## Playwright first slice
 
 After the Vitest pilot lands, add one browser smoke scenario:
