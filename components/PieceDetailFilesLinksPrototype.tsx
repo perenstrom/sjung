@@ -103,7 +103,7 @@ export function PieceDetailFilesLinksPrototype({
 
   const [files, setFiles] = useState(initialFiles);
   const [links, setLinks] = useState(initialLinks);
-  const [fileAddMode, setFileAddMode] = useState<FileAddMode>("pick");
+  const [fileAddMode, setFileAddMode] = useState<FileAddMode>("drop");
   const [errorPlacement, setErrorPlacement] = useState<ErrorPlacement>("list");
   const [failRemoves, setFailRemoves] = useState(false);
   const [failAdds, setFailAdds] = useState(false);
@@ -781,15 +781,18 @@ function VariantB({ store, options, readOnly }: VariantProps) {
             {store.files.map((file) => (
               <li key={file.id}>
                 <div className="flex min-h-7 flex-wrap items-center gap-x-2">
-                  <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                  <button
-                    type="button"
-                    onClick={() => fileMut.run(file.id, () => store.downloadFile(file.id))}
-                    disabled={fileMut.busyId === file.id}
-                    className="min-w-0 truncate text-left font-medium text-primary underline-offset-4 hover:underline disabled:opacity-50"
-                  >
-                    {fileMut.busyId === file.id ? "Hämtar..." : file.displayName}
-                  </button>
+                  {/* Icon and name stay on one line; the name truncates instead. */}
+                  <span className="inline-flex min-w-0 max-w-full items-center gap-2">
+                    <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                    <button
+                      type="button"
+                      onClick={() => fileMut.run(file.id, () => store.downloadFile(file.id))}
+                      disabled={fileMut.busyId === file.id}
+                      className="min-w-0 truncate text-left font-medium text-primary underline-offset-4 hover:underline disabled:opacity-50"
+                    >
+                      {fileMut.busyId === file.id ? "Hämtar..." : file.displayName}
+                    </button>
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {formatFileSize(file.size)} · {formatUploadedAt(file.createdAt, false)}
                   </span>
@@ -825,15 +828,17 @@ function VariantB({ store, options, readOnly }: VariantProps) {
             {store.links.map((link) => (
               <li key={link.id}>
                 <div className="flex min-h-7 flex-wrap items-center gap-x-2">
-                  <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="min-w-0 truncate font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {labelForLink(link)}
-                  </a>
+                  <span className="inline-flex min-w-0 max-w-full items-center gap-2">
+                    <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-w-0 truncate font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {labelForLink(link)}
+                    </a>
+                  </span>
                   {link.label ? (
                     <span className="text-xs text-muted-foreground">{hostnameOf(link.url)}</span>
                   ) : null}
