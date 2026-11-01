@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useEditMode } from "@/components/EditModeContext";
 import {
   PieceFilesList,
   type PieceFileListItem,
@@ -16,6 +17,7 @@ export function PieceDetailFilesSection({
   files: PieceFileListItem[];
 }) {
   const router = useRouter();
+  const { isEditing } = useEditMode();
   const [error, setError] = useState<string | null>(null);
 
   return (
@@ -24,7 +26,7 @@ export function PieceDetailFilesSection({
         groupSlug={groupSlug}
         files={files}
         showUploadedAt
-        emptyStateHint="Använd Länkar ovan för att ladda upp filer."
+        readOnly={!isEditing}
         onAggregateError={setError}
         onClearAggregateError={() => setError(null)}
         onMutationSuccess={() => router.refresh()}

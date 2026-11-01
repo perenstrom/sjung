@@ -19,11 +19,13 @@ import {
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 export function PieceInlineLinksCell({
+  readOnly = false,
   groupSlug,
   pieceId,
   pieceName,
   links,
 }: {
+  readOnly?: boolean;
   groupSlug: string;
   pieceId: string;
   pieceName: string;
@@ -78,95 +80,99 @@ export function PieceInlineLinksCell({
                   {labelForLink(link)}
                   <span className="sr-only">, öppnas i ny flik</span>
                 </a>
-                <Popover
-                  open={editingLinkId === link.id}
-                  onOpenChange={(nextOpen) => {
-                    if (nextOpen) {
-                      setAddPopoverOpen(false);
-                      setEditingLinkId(link.id);
-                      setEditError(null);
-                    } else if (editingLinkId === link.id) {
-                      setEditingLinkId(null);
-                      setEditError(null);
-                    }
-                  }}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 shrink-0"
-                      disabled={addPopoverOpen}
-                      aria-label={`Redigera länk ${labelForLink(link)}`}
+                {readOnly ? null : (
+                  <>
+                    <Popover
+                      open={editingLinkId === link.id}
+                      onOpenChange={(nextOpen) => {
+                        if (nextOpen) {
+                          setAddPopoverOpen(false);
+                          setEditingLinkId(link.id);
+                          setEditError(null);
+                        } else if (editingLinkId === link.id) {
+                          setEditingLinkId(null);
+                          setEditError(null);
+                        }
+                      }}
                     >
-                      <Pencil className="size-3.5" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-80 space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Redigera länk</p>
-                      <p className="text-sm text-muted-foreground">{pieceName}</p>
-                    </div>
-
-                    <form action={handleUpdate} className="space-y-4">
-                      <input type="hidden" name="groupSlug" value={groupSlug} />
-                      <input type="hidden" name="linkId" value={link.id} />
-
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <Label htmlFor={`edit-url-${link.id}`}>Länk</Label>
-                          <Input
-                            id={`edit-url-${link.id}`}
-                            name="url"
-                            type="url"
-                            defaultValue={link.url}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor={`edit-label-${link.id}`}>
-                            Etikett (valfritt)
-                          </Label>
-                          <Input
-                            id={`edit-label-${link.id}`}
-                            name="label"
-                            defaultValue={link.label ?? ""}
-                          />
-                        </div>
-                      </div>
-
-                      {editError && editingLinkId === link.id ? (
-                        <p className="text-sm text-destructive">{editError}</p>
-                      ) : null}
-
-                      <div className="flex justify-end gap-2">
+                      <PopoverTrigger asChild>
                         <Button
                           type="button"
-                          variant="outline"
-                          onClick={() => setEditingLinkId(null)}
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 shrink-0"
+                          disabled={addPopoverOpen}
+                          aria-label={`Redigera länk ${labelForLink(link)}`}
                         >
-                          Avbryt
+                          <Pencil className="size-3.5" />
                         </Button>
-                        <Button type="submit">Spara</Button>
-                      </div>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="w-80 space-y-4">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">Redigera länk</p>
+                          <p className="text-sm text-muted-foreground">{pieceName}</p>
+                        </div>
+
+                        <form action={handleUpdate} className="space-y-4">
+                          <input type="hidden" name="groupSlug" value={groupSlug} />
+                          <input type="hidden" name="linkId" value={link.id} />
+
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-url-${link.id}`}>Länk</Label>
+                              <Input
+                                id={`edit-url-${link.id}`}
+                                name="url"
+                                type="url"
+                                defaultValue={link.url}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-label-${link.id}`}>
+                                Etikett (valfritt)
+                              </Label>
+                              <Input
+                                id={`edit-label-${link.id}`}
+                                name="label"
+                                defaultValue={link.label ?? ""}
+                              />
+                            </div>
+                          </div>
+
+                          {editError && editingLinkId === link.id ? (
+                            <p className="text-sm text-destructive">{editError}</p>
+                          ) : null}
+
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setEditingLinkId(null)}
+                            >
+                              Avbryt
+                            </Button>
+                            <Button type="submit">Spara</Button>
+                          </div>
+                        </form>
+                      </PopoverContent>
+                    </Popover>
+                    <form action={handleRemove}>
+                      <input type="hidden" name="groupSlug" value={groupSlug} />
+                      <input type="hidden" name="linkId" value={link.id} />
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 shrink-0"
+                        disabled={addPopoverOpen || editingLinkId !== null}
+                        aria-label={`Ta bort länk ${labelForLink(link)}`}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                      </Button>
                     </form>
-                  </PopoverContent>
-                </Popover>
-                <form action={handleRemove}>
-                  <input type="hidden" name="groupSlug" value={groupSlug} />
-                  <input type="hidden" name="linkId" value={link.id} />
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 shrink-0"
-                    disabled={addPopoverOpen || editingLinkId !== null}
-                    aria-label={`Ta bort länk ${labelForLink(link)}`}
-                  >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
-                  </Button>
-                </form>
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -177,20 +183,22 @@ export function PieceInlineLinksCell({
         ) : null}
       </div>
 
-      <AddPieceLinkPopover
-        groupSlug={groupSlug}
-        pieceId={pieceId}
-        pieceName={pieceName}
-        open={addPopoverOpen}
-        disabled={editingLinkId !== null}
-        onOpenChange={(nextOpen) => {
-          setAddPopoverOpen(nextOpen);
-          if (nextOpen) {
-            setEditingLinkId(null);
-            setEditError(null);
-          }
-        }}
-      />
+      {readOnly ? null : (
+        <AddPieceLinkPopover
+          groupSlug={groupSlug}
+          pieceId={pieceId}
+          pieceName={pieceName}
+          open={addPopoverOpen}
+          disabled={editingLinkId !== null}
+          onOpenChange={(nextOpen) => {
+            setAddPopoverOpen(nextOpen);
+            if (nextOpen) {
+              setEditingLinkId(null);
+              setEditError(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

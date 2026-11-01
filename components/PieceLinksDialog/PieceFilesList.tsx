@@ -30,7 +30,7 @@ export function PieceFilesList({
   groupSlug,
   files,
   showUploadedAt,
-  emptyStateHint,
+  readOnly = false,
   onAggregateError,
   onClearAggregateError,
   onMutationSuccess,
@@ -43,7 +43,8 @@ export function PieceFilesList({
   groupSlug: string;
   files: PieceFileListItem[];
   showUploadedAt: boolean;
-  emptyStateHint?: string;
+  /** Keep only downloading; hide rename, replace and delete. */
+  readOnly?: boolean;
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
   onMutationSuccess?: () => void;
@@ -101,10 +102,7 @@ export function PieceFilesList({
 
   if (files.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Inga filer uppladdade ännu.
-        {emptyStateHint ? ` ${emptyStateHint}` : ""}
-      </p>
+      <p className="text-sm text-muted-foreground">Inga filer uppladdade ännu.</p>
     );
   }
 
@@ -152,22 +150,26 @@ export function PieceFilesList({
                     ? "Hämtar..."
                     : file.displayName}
                 </button>
-                {renderFileActions?.(file)}
-                <ReplacePieceFilePopover
-                  {...replacePopoverProps(file)}
-                  triggerClassName="size-7 shrink-0"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 shrink-0"
-                  onClick={() => handleDeleteFile(file.id)}
-                  disabled={deletingFileId === file.id || disabled}
-                  aria-label={`Ta bort fil ${file.displayName}`}
-                >
-                  <Trash2 className="size-3.5" aria-hidden="true" />
-                </Button>
+                {readOnly ? null : (
+                  <>
+                    {renderFileActions?.(file)}
+                    <ReplacePieceFilePopover
+                      {...replacePopoverProps(file)}
+                      triggerClassName="size-7 shrink-0"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 shrink-0"
+                      onClick={() => handleDeleteFile(file.id)}
+                      disabled={deletingFileId === file.id || disabled}
+                      aria-label={`Ta bort fil ${file.displayName}`}
+                    >
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  </>
+                )}
               </div>
               {deleteError ? (
                 <p className="text-xs text-destructive">{deleteError}</p>
@@ -214,21 +216,25 @@ export function PieceFilesList({
                 >
                   {downloadingFileId === file.id ? "Hämtar..." : "Ladda ner"}
                 </Button>
-                {renderFileActions?.(file)}
-                <ReplacePieceFilePopover {...replacePopoverProps(file)} />
-                <Button
-                  type="button"
-                  variant={deleteError ? "destructive" : "ghost"}
-                  size="sm"
-                  onClick={() => handleDeleteFile(file.id)}
-                  disabled={deletingFileId === file.id || disabled}
-                >
-                  {deletingFileId === file.id
-                    ? "Tar bort..."
-                    : deleteError
-                      ? "Försök igen"
-                      : "Ta bort"}
-                </Button>
+                {readOnly ? null : (
+                  <>
+                    {renderFileActions?.(file)}
+                    <ReplacePieceFilePopover {...replacePopoverProps(file)} />
+                    <Button
+                      type="button"
+                      variant={deleteError ? "destructive" : "ghost"}
+                      size="sm"
+                      onClick={() => handleDeleteFile(file.id)}
+                      disabled={deletingFileId === file.id || disabled}
+                    >
+                      {deletingFileId === file.id
+                        ? "Tar bort..."
+                        : deleteError
+                          ? "Försök igen"
+                          : "Ta bort"}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
             {deleteError ? (
