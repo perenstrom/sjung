@@ -45,9 +45,12 @@ function validateNoteContent(trimmed: string): string | null {
 }
 
 export function PieceNotesDialog({
+  readOnly = false,
   groupSlug,
   piece,
 }: {
+  /** Notes can still be read, but not added, edited or deleted. */
+  readOnly?: boolean;
   groupSlug: string;
   piece: { id: string; name: string };
 }) {
@@ -216,31 +219,33 @@ export function PieceNotesDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <form onSubmit={handleCreate} className="space-y-2">
-            <Textarea
-              value={newContent}
-              onChange={(event) => setNewContent(event.target.value)}
-              placeholder="Skriv en ny anteckning…"
-              disabled={isCreating}
-              aria-invalid={Boolean(createError)}
-            />
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className={cn(
-                  "text-xs text-muted-foreground",
-                  newContentTooLong && "text-destructive"
-                )}
-              >
-                {noteLengthHint(trimmedNewContent.length)}
-              </span>
-              <Button type="submit" size="sm" disabled={isCreating}>
-                {isCreating ? "Sparar..." : "Lägg till anteckning"}
-              </Button>
-            </div>
-            {createError ? (
-              <p className="text-sm text-destructive">{createError}</p>
-            ) : null}
-          </form>
+          {readOnly ? null : (
+            <form onSubmit={handleCreate} className="space-y-2">
+              <Textarea
+                value={newContent}
+                onChange={(event) => setNewContent(event.target.value)}
+                placeholder="Skriv en ny anteckning…"
+                disabled={isCreating}
+                aria-invalid={Boolean(createError)}
+              />
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={cn(
+                    "text-xs text-muted-foreground",
+                    newContentTooLong && "text-destructive"
+                  )}
+                >
+                  {noteLengthHint(trimmedNewContent.length)}
+                </span>
+                <Button type="submit" size="sm" disabled={isCreating}>
+                  {isCreating ? "Sparar..." : "Lägg till anteckning"}
+                </Button>
+              </div>
+              {createError ? (
+                <p className="text-sm text-destructive">{createError}</p>
+              ) : null}
+            </form>
+          )}
 
           <div className="max-h-[50vh] space-y-3 overflow-y-auto">
             {isLoading ? (
@@ -332,30 +337,32 @@ export function PieceNotesDialog({
                               {note.createdByName} · uppdaterad{" "}
                               {formatNoteTimestamp(note.updatedAt)}
                             </p>
-                            <div className="flex gap-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => startEditing(note)}
-                                disabled={isDeleting}
-                              >
-                                Redigera
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={deleteError ? "destructive" : "ghost"}
-                                size="sm"
-                                onClick={() => handleDelete(note.id)}
-                                disabled={isDeleting}
-                              >
-                                {isDeleting
-                                  ? "Tar bort..."
-                                  : deleteError
-                                    ? "Försök igen"
-                                    : "Ta bort"}
-                              </Button>
-                            </div>
+                            {readOnly ? null : (
+                              <div className="flex gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => startEditing(note)}
+                                  disabled={isDeleting}
+                                >
+                                  Redigera
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant={deleteError ? "destructive" : "ghost"}
+                                  size="sm"
+                                  onClick={() => handleDelete(note.id)}
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting
+                                    ? "Tar bort..."
+                                    : deleteError
+                                      ? "Försök igen"
+                                      : "Ta bort"}
+                                </Button>
+                              </div>
+                            )}
                           </div>
                           {deleteError ? (
                             <p className="text-sm text-destructive">
