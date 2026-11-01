@@ -35,6 +35,13 @@ export function diffCredits(current: PieceCredit[], next: PieceCredit[]) {
   };
 }
 
+/** The Credit roles a Person already holds, so they can't be picked again. */
+export function creditRolesHeldBy(credits: PieceCredit[], personId: string): Set<string> {
+  return new Set(
+    credits.filter((credit) => credit.personId === personId).map((credit) => credit.role)
+  );
+}
+
 type CreditForDisplay = {
   role: string;
   person: { name: string };

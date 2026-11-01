@@ -30,7 +30,6 @@ export function EditPieceDialog({
   groupSlug,
   people,
   piece,
-  creditsOnly = false,
 }: {
   groupSlug: string;
   people: Person[];
@@ -39,7 +38,6 @@ export function EditPieceDialog({
     name: string;
     credits: PieceCredit[];
   };
-  creditsOnly?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -91,25 +89,23 @@ export function EditPieceDialog({
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{creditsOnly ? "Medverkande" : "Redigera not"}</DialogTitle>
+          <DialogTitle>Redigera not</DialogTitle>
         </DialogHeader>
 
-        {creditsOnly ? null : (
-          <form action={handleSaveName} className="space-y-2">
-            <input type="hidden" name="groupSlug" value={groupSlug} />
-            <input type="hidden" name="pieceId" value={piece.id} />
-            <Label htmlFor={`name-${piece.id}`}>Namn</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id={`name-${piece.id}`}
-                name="name"
-                defaultValue={piece.name}
-                required
-              />
-              <Button type="submit">Spara</Button>
-            </div>
-          </form>
-        )}
+        <form action={handleSaveName} className="space-y-2">
+          <input type="hidden" name="groupSlug" value={groupSlug} />
+          <input type="hidden" name="pieceId" value={piece.id} />
+          <Label htmlFor={`name-${piece.id}`}>Namn</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id={`name-${piece.id}`}
+              name="name"
+              defaultValue={piece.name}
+              required
+            />
+            <Button type="submit">Spara</Button>
+          </div>
+        </form>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -153,14 +149,6 @@ export function EditPieceDialog({
         </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-        {creditsOnly ? (
-          <div className="flex justify-end">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Stäng
-            </Button>
-          </div>
-        ) : null}
       </DialogContent>
     </Dialog>
   );

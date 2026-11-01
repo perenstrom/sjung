@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assertNoDuplicateCredits,
+  creditRolesHeldBy,
   diffCredits,
   DUPLICATE_CREDITS_ERROR,
   sortCreditsForDisplay,
@@ -135,5 +136,27 @@ describe("sortCreditsForDisplay", () => {
     const credits = [{ role: "Arrangör", person: { name: "Anna" } }];
 
     expect(sortCreditsForDisplay(credits).map((c) => c.role)).toEqual(["Arrangör"]);
+  });
+});
+
+describe("creditRolesHeldBy", () => {
+  const credits = [
+    { personId: "person-1", role: "Kompositör" },
+    { personId: "person-2", role: "Arrangör" },
+    { personId: "person-1", role: "Textförfattare" },
+  ];
+
+  it("returns every Credit role the Person holds", () => {
+    expect(creditRolesHeldBy(credits, "person-1")).toEqual(
+      new Set(["Kompositör", "Textförfattare"])
+    );
+  });
+
+  it("returns an empty set for a Person without Credits", () => {
+    expect(creditRolesHeldBy(credits, "person-3")).toEqual(new Set());
+  });
+
+  it("returns an empty set when no Person is chosen", () => {
+    expect(creditRolesHeldBy(credits, "")).toEqual(new Set());
   });
 });
