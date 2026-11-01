@@ -115,6 +115,24 @@ describe("parseLoginFormData", () => {
     });
     expect(parseLoginFormData(fd).ok).toBe(false);
   });
+
+  it("carries the trimmed email back on failure, but not the password", () => {
+    const fd = createFormData({ email: " oops ", password: "x" });
+    const result = parseLoginFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.values).toEqual({ email: "oops" });
+    }
+  });
+
+  it("falls back to an empty email when the field is missing", () => {
+    const fd = createFormData({ password: "x" });
+    const result = parseLoginFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.values).toEqual({ email: "" });
+    }
+  });
 });
 
 describe("signupCredentialsSchema", () => {
@@ -180,6 +198,30 @@ describe("parseSignupFormData", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toBe("Ogiltiga formulärdata");
+    }
+  });
+
+  it("carries trimmed name and email back on failure, but not the password", () => {
+    const fd = createFormData({
+      name: " Ada ",
+      email: " ada@example.com ",
+      password: "short",
+      next: "/app",
+    });
+    const result = parseSignupFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.values).toEqual({ name: "Ada", email: "ada@example.com" });
+    }
+  });
+
+  it("falls back to empty values when fields are missing", () => {
+    const fd = createFormData({ email: "ada@example.com" });
+    const result = parseSignupFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("Ogiltiga formulärdata");
+      expect(result.values).toEqual({ name: "", email: "ada@example.com" });
     }
   });
 
