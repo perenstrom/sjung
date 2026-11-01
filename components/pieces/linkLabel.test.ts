@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { labelForLink } from "./linkLabel";
+import { labelForLink, metadataForLink } from "./linkLabel";
 
 describe("labelForLink", () => {
   it("uses the label when one is set", () => {
@@ -22,5 +22,22 @@ describe("labelForLink", () => {
     expect(labelForLink({ id: "1", url: "not a url", label: null })).toBe(
       "not a url",
     );
+  });
+});
+
+describe("metadataForLink", () => {
+  it("shows the hostname when the link has a label", () => {
+    expect(
+      metadataForLink({ id: "1", url: "https://www.example.com/a", label: "Stämma" }),
+    ).toBe("www.example.com");
+  });
+
+  it("shows nothing when the hostname is already the visible name", () => {
+    expect(
+      metadataForLink({ id: "1", url: "https://example.com/a", label: null }),
+    ).toBeNull();
+    expect(
+      metadataForLink({ id: "1", url: "https://example.com/a", label: "  " }),
+    ).toBeNull();
   });
 });

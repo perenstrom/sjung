@@ -6,8 +6,9 @@ import { useState } from "react";
 
 import { removeLink } from "@/app/actions/pieces";
 import { EditPieceLinkPopover } from "@/components/pieces/EditPieceLinkPopover";
-import { labelForLink } from "@/components/pieces/linkLabel";
+import { labelForLink, metadataForLink } from "@/components/pieces/linkLabel";
 import type { PieceLink } from "@/components/pieces/types";
+import { TruncatedTooltip } from "@/components/TruncatedTooltip";
 import { Button } from "@/components/ui/button";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
@@ -119,50 +120,61 @@ export function PieceLinksList({
           ))}
         </ul>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2 text-sm">
           {links.map((link) => {
             const label = labelForLink(link);
+            const metadata = metadataForLink(link);
             return (
               <li
                 key={link.id}
-                className="flex flex-col gap-2 rounded border p-2 sm:flex-row sm:items-center sm:justify-between"
+                className="flex min-h-7 flex-wrap items-center gap-x-2"
               >
-                <div className="flex min-w-0 items-center gap-2">
+                {/* The icon and label never wrap apart; the label truncates instead. */}
+                <span className="inline-flex max-w-full min-w-0 items-center gap-2">
                   <ExternalLink
-                    className="size-4 shrink-0 text-muted-foreground"
+                    className="size-3.5 shrink-0 text-muted-foreground"
                     aria-hidden
                   />
-                  <div className="min-w-0">
+                  <TruncatedTooltip content={label}>
                     <a
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block truncate text-sm font-medium text-primary underline-offset-4 hover:underline"
+                      className="min-w-0 truncate font-medium text-primary underline-offset-4 hover:underline"
                     >
                       {label}
                       <span className="sr-only">, öppnas i ny flik</span>
                     </a>
-                    {label !== link.url ? (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {link.url}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-                {readOnly ? null : (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <EditPieceLinkPopover {...editPopoverProps(link)} />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemove(link.id)}
-                      disabled={isRemoveDisabled(link)}
-                      aria-label={`Ta bort länk ${label}`}
-                    >
-                      {removingLinkId === link.id ? "Tar bort..." : "Ta bort"}
-                    </Button>
-                  </div>
+                  </TruncatedTooltip>
+                </span>
+                {/* Metadata and actions wrap onto the next line together. */}
+                {metadata === null && readOnly ? null : (
+                  <span className="inline-flex items-center gap-2">
+                    {metadata === null ? null : (
+                      <span className="text-xs text-muted-foreground">
+                        {metadata}
+                      </span>
+                    )}
+                    {readOnly ? null : (
+                      <span className="inline-flex items-center">
+                        <EditPieceLinkPopover
+                          {...editPopoverProps(link)}
+                          triggerClassName="size-7 shrink-0"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 shrink-0"
+                          onClick={() => handleRemove(link.id)}
+                          disabled={removingLinkId === link.id}
+                          aria-label={`Ta bort länk ${label}`}
+                        >
+                          <Trash2 className="size-3.5" aria-hidden="true" />
+                        </Button>
+                      </span>
+                    )}
+                  </span>
                 )}
               </li>
             );
