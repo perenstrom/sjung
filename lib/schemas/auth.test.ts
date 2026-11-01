@@ -115,6 +115,24 @@ describe("parseLoginFormData", () => {
     });
     expect(parseLoginFormData(fd).ok).toBe(false);
   });
+
+  it("carries the trimmed email back on failure, but not the password", () => {
+    const fd = createFormData({ email: " oops ", password: "x" });
+    const result = parseLoginFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.values).toEqual({ email: "oops" });
+    }
+  });
+
+  it("falls back to an empty email when the field is missing", () => {
+    const fd = createFormData({ password: "x" });
+    const result = parseLoginFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.values).toEqual({ email: "" });
+    }
+  });
 });
 
 describe("signupCredentialsSchema", () => {

@@ -22,23 +22,29 @@ export const loginCredentialsSchema = z.object({
 
 export type LoginCredentials = z.infer<typeof loginCredentialsSchema>;
 
+/** The submitted email, trimmed, echoed back after a failed submit. Never the password. */
+export type LoginFormValues = { email: string };
+
 export type LoginFormParseResult =
   | { ok: true; data: LoginCredentials & { redirectTo: string } }
-  | { ok: false };
+  | { ok: false; values: LoginFormValues };
 
 export function parseLoginFormData(formData: FormData): LoginFormParseResult {
   const redirectTo = parseRedirectPathFromFormData(formData);
   const emailRaw = formData.get("email");
   const passwordRaw = formData.get("password");
+  const values: LoginFormValues = {
+    email: typeof emailRaw === "string" ? emailRaw.trim() : "",
+  };
   if (typeof emailRaw !== "string" || typeof passwordRaw !== "string") {
-    return { ok: false };
+    return { ok: false, values };
   }
   const parsed = loginCredentialsSchema.safeParse({
     email: emailRaw,
     password: passwordRaw,
   });
   if (!parsed.success) {
-    return { ok: false };
+    return { ok: false, values };
   }
   return { ok: true, data: { ...parsed.data, redirectTo } };
 }

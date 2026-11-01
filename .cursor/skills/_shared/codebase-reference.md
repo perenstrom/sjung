@@ -40,7 +40,7 @@ Files in `app/actions/`:
 | `setlists.ts` | Set lists and set-list pieces |
 | `groups.ts` | Groups and membership |
 | `files.ts` | File upload/delete (R2) |
-| `auth.ts` | Sign up (`useActionState` form state), log out |
+| `auth.ts` | Sign up and log in (`useActionState` form state), log out |
 
 **Conventions:**
 
