@@ -5,8 +5,7 @@ import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { PieceDetailCreditsSection } from "@/components/PieceDetailCreditsSection";
-import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
-import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
+import { PieceDetailFilesLinksPrototype } from "@/components/PieceDetailFilesLinksPrototype";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
@@ -62,22 +61,14 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
           people={people}
         />
 
-        <PieceDetailFilesSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
+        {/* PROTOTYPE (PER-349): variants of the Filer and Länkar cards, ?variant=A|B|C|D */}
+        <PieceDetailFilesLinksPrototype
           files={piece.files.map((file) => ({
             id: file.id,
             displayName: file.displayName,
             size: file.size,
             createdAt: file.createdAt,
           }))}
-        />
-
-        <PieceDetailLinksSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
           links={piece.links.map((link) => ({
             id: link.id,
             url: link.url,
