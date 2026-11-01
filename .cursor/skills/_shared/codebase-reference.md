@@ -95,7 +95,7 @@ When adding interactive UI:
 ## Testing
 
 - Vitest: `*.test.ts` next to sources (e.g. `lib/schemas/pieces.test.ts`).
-- CI: `.github/workflows/pr-unit-tests.yml` runs on PRs.
+- CI: `.github/workflows/ci.yml` runs lint, typecheck, unit tests, build and integration tests on PRs and pushes to `main`.
 - Prefer unit tests for schemas, guards, and pure lib functions; manual verification for full UI flows unless the ticket specifies otherwise.
 
 ## Hints for tickets

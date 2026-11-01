@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # Required status checks must report on every commit, even docs-only ones,
+  # or branch protection waits forever for a check that never runs. So nothing
+  # is skipped via paths-ignore; instead this job detects whether any non-doc
+  # file changed, and the jobs below gate their steps (not the job itself) on
+  # its output so they still report success when only docs changed.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect code changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          # Without "every", a filter matches if ANY pattern matches, and every
+          # file matches "**", so the negated patterns would exclude nothing.
+          predicate-quantifier: every
+          filters: |
+            code:
+              - "**"
+              - "!**/*.md"
+              - "!docs/**"
+
+  build:
+    needs: changes
+    runs-on: ubuntu-latest
+
+    env:
+      # `prisma generate` (run via postinstall and `npm run build`) loads
+      # prisma.config.ts, which resolves DATABASE_URL. Nothing connects to it,
+      # so a syntactically valid placeholder is enough.
+      DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        if: needs.changes.outputs.code == 'true'
+        run: npm ci
+
+      - name: Lint
+        if: needs.changes.outputs.code == 'true'
+        run: npm run lint
+
+      - name: Typecheck
+        if: needs.changes.outputs.code == 'true'
+        run: npm run typecheck
+
+      - name: Run unit tests
+        if: needs.changes.outputs.code == 'true'
+        run: npm run test:unit
+
+      - name: Build
+        if: needs.changes.outputs.code == 'true'
+        run: npm run build
+
+  integration-tests:
+    # Branch protection on main requires a check with exactly this name.
+    name: Integration Tests
+    needs: changes
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sjung_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # `prisma generate` (run via postinstall) loads prisma.config.ts, which
+      # resolves DATABASE_URL even though generation doesn't touch the DB.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_test?schema=public
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_test?schema=public
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        if: needs.changes.outputs.code == 'true'
+        run: npm ci
+
+      - name: Run integration tests
+        if: needs.changes.outputs.code == 'true'
+        run: npm run test:integration
