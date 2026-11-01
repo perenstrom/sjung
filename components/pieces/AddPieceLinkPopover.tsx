@@ -22,7 +22,6 @@ export function AddPieceLinkPopover({
   open: openControlled,
   disabled = false,
   onOpenChange: onOpenChangeExternal,
-  triggerLabel,
 }: {
   groupSlug: string;
   pieceId: string;
@@ -30,8 +29,6 @@ export function AddPieceLinkPopover({
   open?: boolean;
   disabled?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** Show a labelled outline button instead of the bare plus icon. */
-  triggerLabel?: string;
 }) {
   const router = useRouter();
   const [openInternal, setOpenInternal] = useState(false);
@@ -62,29 +59,16 @@ export function AddPieceLinkPopover({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        {triggerLabel ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-            disabled={disabled}
-          >
-            <Plus className="size-4" aria-hidden="true" />
-            {triggerLabel}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7 shrink-0"
-            disabled={disabled}
-            aria-label="Lägg till länk"
-          >
-            <Plus className="size-4" aria-hidden="true" />
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0"
+          disabled={disabled}
+          aria-label="Lägg till länk"
+        >
+          <Plus className="size-4" aria-hidden="true" />
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80 space-y-4">
         <div className="space-y-1">

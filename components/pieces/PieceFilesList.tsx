@@ -7,29 +7,16 @@ import {
   createPieceFileDownloadUrl,
   deletePieceFile,
 } from "@/app/actions/files";
+import { metadataForFile } from "@/components/pieces/fileMetadata";
 import { ReplacePieceFilePopover } from "@/components/pieces/ReplacePieceFilePopover";
+import type { PieceFileListItem } from "@/components/pieces/types";
+import { TruncatedTooltip } from "@/components/TruncatedTooltip";
 import { Button } from "@/components/ui/button";
-import { formatFileSize } from "@/lib/formatFileSize";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-
-export type PieceFileListItem = {
-  id: string;
-  displayName: string;
-  size: number;
-  createdAt?: Date | string;
-};
-
-function formatUploadedAt(value: Date | string): string {
-  return new Intl.DateTimeFormat("sv-SE", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export function PieceFilesList({
   groupSlug,
   files,
-  showUploadedAt,
   readOnly = false,
   onAggregateError,
   onClearAggregateError,
@@ -42,9 +29,9 @@ export function PieceFilesList({
 }: {
   groupSlug: string;
   files: PieceFileListItem[];
-  showUploadedAt: boolean;
   /** Keep only downloading; hide rename, replace and delete. */
   readOnly?: boolean;
+  /** Download errors, and remove errors in the non-compact list. */
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
   onMutationSuccess?: () => void;
@@ -94,7 +81,11 @@ export function PieceFilesList({
       onMutationSuccess?.();
     } catch (err) {
       const message = getThrownMessage(err, "Kunde inte ta bort fil");
-      setDeleteErrors((prev) => ({ ...prev, [fileId]: message }));
+      if (compact) {
+        setDeleteErrors((prev) => ({ ...prev, [fileId]: message }));
+      } else {
+        onAggregateError(message);
+      }
     } finally {
       setDeletingFileId(null);
     }
@@ -182,67 +173,59 @@ export function PieceFilesList({
   }
 
   return (
-    <ul className="space-y-2">
-      {files.map((file) => {
-        const deleteError = deleteErrors[file.id];
-        return (
-          <li key={file.id} className="space-y-2 rounded border p-2">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">
-                  {file.displayName}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(file.size)}
-                  {showUploadedAt && file.createdAt != null ? (
-                    <>
-                      {" · "}
-                      {formatUploadedAt(file.createdAt)}
-                    </>
-                  ) : null}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
+    <ul className="space-y-2 text-sm">
+      {files.map((file) => (
+        <li
+          key={file.id}
+          className="flex min-h-7 flex-wrap items-center gap-x-2"
+        >
+          {/* The icon and name never wrap apart; the name truncates instead. */}
+          <span className="inline-flex max-w-full min-w-0 items-center gap-2">
+            <FileText
+              className="size-3.5 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            <TruncatedTooltip content={file.displayName}>
+              <button
+                type="button"
+                onClick={() => handleDownload(file.id)}
+                disabled={
+                  downloadingFileId === file.id || deletingFileId === file.id
+                }
+                className="min-w-0 truncate text-left font-medium text-primary underline-offset-4 hover:underline disabled:opacity-50"
+              >
+                {downloadingFileId === file.id ? "Hämtar..." : file.displayName}
+              </button>
+            </TruncatedTooltip>
+          </span>
+          {/* Metadata and actions wrap onto the next line together. */}
+          <span className="inline-flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {metadataForFile(file)}
+            </span>
+            {readOnly ? null : (
+              <span className="inline-flex items-center">
+                {renderFileActions?.(file)}
+                <ReplacePieceFilePopover
+                  {...replacePopoverProps(file)}
+                  triggerClassName="size-7 shrink-0"
+                />
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownload(file.id)}
-                  disabled={
-                    downloadingFileId === file.id ||
-                    deletingFileId === file.id ||
-                    disabled
-                  }
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0"
+                  onClick={() => handleDeleteFile(file.id)}
+                  disabled={deletingFileId === file.id}
+                  aria-label={`Ta bort fil ${file.displayName}`}
                 >
-                  {downloadingFileId === file.id ? "Hämtar..." : "Ladda ner"}
+                  <Trash2 className="size-3.5" aria-hidden="true" />
                 </Button>
-                {readOnly ? null : (
-                  <>
-                    {renderFileActions?.(file)}
-                    <ReplacePieceFilePopover {...replacePopoverProps(file)} />
-                    <Button
-                      type="button"
-                      variant={deleteError ? "destructive" : "ghost"}
-                      size="sm"
-                      onClick={() => handleDeleteFile(file.id)}
-                      disabled={deletingFileId === file.id || disabled}
-                    >
-                      {deletingFileId === file.id
-                        ? "Tar bort..."
-                        : deleteError
-                          ? "Försök igen"
-                          : "Ta bort"}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-            {deleteError ? (
-              <p className="text-xs text-destructive">{deleteError}</p>
-            ) : null}
-          </li>
-        );
-      })}
+              </span>
+            )}
+          </span>
+        </li>
+      ))}
     </ul>
   );
 }

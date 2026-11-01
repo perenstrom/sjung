@@ -4,11 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AddPieceFilePopover } from "@/components/pieces/AddPieceFilePopover";
-import {
-  PieceFilesList,
-  type PieceFileListItem,
-} from "@/components/pieces/PieceFilesList";
+import { PieceFilesList } from "@/components/pieces/PieceFilesList";
 import { RenamePieceFilePopover } from "@/components/pieces/RenamePieceFilePopover";
+import type { PieceFileListItem } from "@/components/pieces/types";
 
 export type PieceInlineFile = PieceFileListItem;
 
@@ -37,7 +35,6 @@ export function PieceInlineFilesCell({
         <PieceFilesList
           groupSlug={groupSlug}
           files={files}
-          showUploadedAt={false}
           compact
           readOnly={readOnly}
           onAggregateError={setError}
