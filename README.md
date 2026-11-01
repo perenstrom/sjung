@@ -64,6 +64,19 @@ App runs at `http://localhost:3000`.
 - `npm run db:seed` - seed database
 - `npm run db:studio` - open Prisma Studio
 
+## Deploying
+
+Sjung runs as two Coolify apps, `sjung-staging` ([staging.sjung.app](https://staging.sjung.app)) and `sjung-production` ([sjung.app](https://sjung.app)). Coolify's own auto-deploy is off for both; GitHub Actions is the only thing that triggers a deploy. Coolify runs `npx prisma migrate deploy` after each deploy.
+
+- **Staging** deploys automatically when a push to `main` passes CI (the `deploy-staging` job in `.github/workflows/ci.yml`). Docs-only pushes don't deploy.
+- **Production** deploys only when someone runs the "Deploy to production" workflow (`.github/workflows/deploy-production.yml`) against `main`. It refuses any other ref, checks that `build` and `Integration Tests` are green on that exact commit, triggers the deploy and waits for Coolify to report it finished. Tick `force` for a clean rebuild without the image cache.
+
+```bash
+gh workflow run deploy-production.yml --ref main
+```
+
+Config lives in the `staging` and `production` GitHub environments: variables `COOLIFY_URL` and `COOLIFY_STAGING_APP_UUID` / `COOLIFY_PROD_APP_UUID`, and secrets `COOLIFY_STAGING_TOKEN` / `COOLIFY_PROD_TOKEN`.
+
 ## Commits
 
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
