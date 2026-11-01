@@ -142,6 +142,7 @@ describe("signupCredentialsSchema", () => {
         name: "  Ada  ",
         email: " Ada@Example.com ",
         password: "123456789012",
+        passwordConfirmation: "123456789012",
       })
     ).toEqual({
       name: "Ada",
@@ -155,6 +156,7 @@ describe("signupCredentialsSchema", () => {
       name: "   ",
       email: "a@b.com",
       password: "1234567890123456",
+      passwordConfirmation: "1234567890123456",
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -167,6 +169,27 @@ describe("signupCredentialsSchema", () => {
       name: "x",
       email: "a@b.com",
       password: "12345678901",
+      passwordConfirmation: "12345678901",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a password confirmation that does not match", () => {
+    const result = signupCredentialsSchema.safeParse({
+      name: "x",
+      email: "a@b.com",
+      password: "123456789012",
+      passwordConfirmation: "123456789013",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("compares passwords exactly, without trimming", () => {
+    const result = signupCredentialsSchema.safeParse({
+      name: "x",
+      email: "a@b.com",
+      password: "123456789012",
+      passwordConfirmation: "123456789012 ",
     });
     expect(result.success).toBe(false);
   });
@@ -178,6 +201,7 @@ describe("parseSignupFormData", () => {
       name: "Test",
       email: "t@t.com",
       password: "short",
+      passwordConfirmation: "short",
       next: "/app",
     });
     const result = parseSignupFormData(fd);
@@ -187,11 +211,57 @@ describe("parseSignupFormData", () => {
     }
   });
 
+  it("maps mismatched passwords to Swedish mismatch message", () => {
+    const fd = createFormData({
+      name: "Test",
+      email: "t@t.com",
+      password: "123456789012",
+      passwordConfirmation: "210987654321",
+      next: "/app",
+    });
+    const result = parseSignupFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("Lösenorden matchar inte");
+      expect(result.values).toEqual({ name: "Test", email: "t@t.com" });
+    }
+  });
+
+  it("reports the min-length message when the password is short and mismatched", () => {
+    const fd = createFormData({
+      name: "Test",
+      email: "t@t.com",
+      password: "short",
+      passwordConfirmation: "other",
+      next: "/app",
+    });
+    const result = parseSignupFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("Lösenordet måste vara minst 12 tecken");
+    }
+  });
+
+  it("fails when the password confirmation field is missing", () => {
+    const fd = createFormData({
+      name: "Test",
+      email: "t@t.com",
+      password: "123456789012",
+      next: "/app",
+    });
+    const result = parseSignupFormData(fd);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("Ogiltiga formulärdata");
+    }
+  });
+
   it("maps invalid email to Ogiltiga formulärdata", () => {
     const fd = createFormData({
       name: "Test",
       email: "not-email",
       password: "123456789012",
+      passwordConfirmation: "123456789012",
       next: "/app",
     });
     const result = parseSignupFormData(fd);
@@ -206,6 +276,7 @@ describe("parseSignupFormData", () => {
       name: " Ada ",
       email: " ada@example.com ",
       password: "short",
+      passwordConfirmation: "short",
       next: "/app",
     });
     const result = parseSignupFormData(fd);
@@ -230,6 +301,7 @@ describe("parseSignupFormData", () => {
       name: "",
       email: "u@u.com",
       password: "123456789012",
+      passwordConfirmation: "123456789012",
       next: "/app",
     });
     const result = parseSignupFormData(fd);
