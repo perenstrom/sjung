@@ -13,20 +13,9 @@ function linkTitle(link: Pick<PieceLink, "url" | "label">): string {
   return link.url;
 }
 
-export function PieceDetailLinksList({
-  links,
-  emptyStateHint,
-}: {
-  links: PieceDetailLink[];
-  emptyStateHint?: string;
-}) {
+export function PieceDetailLinksList({ links }: { links: PieceDetailLink[] }) {
   if (links.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Inga länkar tillagda ännu.
-        {emptyStateHint ? ` ${emptyStateHint}` : ""}
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">Inga länkar tillagda ännu.</p>;
   }
 
   return (

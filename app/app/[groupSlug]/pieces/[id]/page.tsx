@@ -4,6 +4,7 @@ import { getSetLists } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
+import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
 import { PieceDetailLinksList } from "@/components/PieceDetailLinksList";
 import { PieceLinksDialog } from "@/components/PieceLinksDialog";
@@ -51,107 +52,110 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
   const sortedCredits = sortCreditsForDisplay(piece.credits);
 
   return (
-    <div className="space-y-6">
-      <BreadcrumbRegistrar
-        trail={{
-          visibility: "visible",
-          ancestors: [
-            createGroupAncestor(groupSlug, groupName),
-            { label: "Noter", href: `/app/${groupSlug}` },
-          ],
-          tail: { kind: "static", label: piece.name || "Notstycke" },
-        }}
-      />
-      <PieceMetadataSection
-        key={piece.id}
-        groupSlug={groupSlug}
-        pieceId={piece.id}
-        initialName={piece.name}
-      />
+    <EditModeProvider>
+      <div className="space-y-6">
+        <BreadcrumbRegistrar
+          trail={{
+            visibility: "visible",
+            ancestors: [
+              createGroupAncestor(groupSlug, groupName),
+              { label: "Noter", href: `/app/${groupSlug}` },
+            ],
+            tail: { kind: "static", label: piece.name || "Notstycke" },
+          }}
+        />
+        <PieceMetadataSection
+          key={piece.id}
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          initialName={piece.name}
+        />
 
-      <Card>
-        <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-          <h2 className="text-lg font-medium">Medverkande</h2>
-          <EditPieceDialog
-            creditsOnly
-            groupSlug={groupSlug}
-            people={people}
-            piece={{
-              id: piece.id,
-              name: piece.name,
-              credits: piece.credits.map((credit) => ({
-                personId: credit.personId,
-                role: credit.role,
-              })),
-            }}
-          />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {piece.credits.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Inga medverkande tillagda ännu. Använd Redigera ovan för att lägga till medverkande.
-            </p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {sortedCredits.map((credit) => (
-                <li
-                  key={`${credit.personId}:${credit.role}`}
-                  className="flex items-center gap-3"
-                >
-                  <span className="font-medium">{credit.person.name}</span>
-                  <span className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
-                    {credit.role}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
+            <h2 className="text-lg font-medium">Medverkande</h2>
+            <EditOnly>
+              <EditPieceDialog
+                creditsOnly
+                groupSlug={groupSlug}
+                people={people}
+                piece={{
+                  id: piece.id,
+                  name: piece.name,
+                  credits: piece.credits.map((credit) => ({
+                    personId: credit.personId,
+                    role: credit.role,
+                  })),
+                }}
+              />
+            </EditOnly>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {piece.credits.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {sortedCredits.map((credit) => (
+                  <li
+                    key={`${credit.personId}:${credit.role}`}
+                    className="flex items-center gap-3"
+                  >
+                    <span className="font-medium">{credit.person.name}</span>
+                    <span className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
+                      {credit.role}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-          <h2 className="text-lg font-medium">Filer och länkar</h2>
-          <PieceLinksDialog
-            groupSlug={groupSlug}
-            piece={pieceForLinksDialog}
-            refreshAfterMutations
-          />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Filer</h3>
-            <PieceDetailFilesSection
-              groupSlug={groupSlug}
-              files={piece.files.map((file) => ({
-                id: file.id,
-                displayName: file.displayName,
-                size: file.size,
-                createdAt: file.createdAt,
-              }))}
-            />
-          </div>
+        <Card>
+          <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
+            <h2 className="text-lg font-medium">Filer och länkar</h2>
+            <EditOnly>
+              <PieceLinksDialog
+                groupSlug={groupSlug}
+                piece={pieceForLinksDialog}
+                refreshAfterMutations
+              />
+            </EditOnly>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Filer</h3>
+              <PieceDetailFilesSection
+                groupSlug={groupSlug}
+                files={piece.files.map((file) => ({
+                  id: file.id,
+                  displayName: file.displayName,
+                  size: file.size,
+                  createdAt: file.createdAt,
+                }))}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Länkar</h3>
-            <PieceDetailLinksList
-              links={piece.links.map((link) => ({
-                id: link.id,
-                url: link.url,
-                label: link.label,
-              }))}
-              emptyStateHint="Lägg till länkar från Noter-listan."
-            />
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Länkar</h3>
+              <PieceDetailLinksList
+                links={piece.links.map((link) => ({
+                  id: link.id,
+                  url: link.url,
+                  label: link.label,
+                }))}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <PieceSetListsSection
-        groupSlug={groupSlug}
-        pieceId={piece.id}
-        entries={piece.setListEntries}
-        allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
-      />
-    </div>
+        <PieceSetListsSection
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          entries={piece.setListEntries}
+          allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
+        />
+      </div>
+    </EditModeProvider>
   );
 }

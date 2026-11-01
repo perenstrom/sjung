@@ -23,11 +23,13 @@ import { getThrownMessage } from "@/lib/getThrownMessage";
 export type PieceInlineFile = PieceFileListItem;
 
 export function PieceInlineFilesCell({
+  readOnly = false,
   groupSlug,
   pieceId,
   pieceName,
   files,
 }: {
+  readOnly?: boolean;
   groupSlug: string;
   pieceId: string;
   pieceName: string;
@@ -59,6 +61,7 @@ export function PieceInlineFilesCell({
           files={files}
           showUploadedAt={false}
           compact
+          readOnly={readOnly}
           onAggregateError={setError}
           onClearAggregateError={() => setError(null)}
           onMutationSuccess={() => router.refresh()}
@@ -147,21 +150,23 @@ export function PieceInlineFilesCell({
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
 
-      <AddPieceFilePopover
-        groupSlug={groupSlug}
-        pieceId={pieceId}
-        pieceName={pieceName}
-        open={addPopoverOpen}
-        disabled={editingFileId !== null || replacingFileId !== null}
-        onOpenChange={(nextOpen) => {
-          setAddPopoverOpen(nextOpen);
-          if (nextOpen) {
-            setEditingFileId(null);
-            setReplacingFileId(null);
-            setEditError(null);
-          }
-        }}
-      />
+      {readOnly ? null : (
+        <AddPieceFilePopover
+          groupSlug={groupSlug}
+          pieceId={pieceId}
+          pieceName={pieceName}
+          open={addPopoverOpen}
+          disabled={editingFileId !== null || replacingFileId !== null}
+          onOpenChange={(nextOpen) => {
+            setAddPopoverOpen(nextOpen);
+            if (nextOpen) {
+              setEditingFileId(null);
+              setReplacingFileId(null);
+              setEditError(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

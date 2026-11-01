@@ -10,6 +10,7 @@ import {
   removePieceFromSetList,
 } from "@/app/actions/setlists";
 import { DataTable } from "@/components/data-table";
+import { useEditMode } from "@/components/EditModeContext";
 import { buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SetListStep } from "@/lib/setlists/types";
@@ -39,6 +40,7 @@ export function SetListStepsTable({
   groupSlug: string;
   setListId: string;
 }) {
+  const { isEditing } = useEditMode();
   const orderedStepIds = useMemo(() => steps.map((step) => step.id), [steps]);
 
   const columns = useMemo<ColumnDef<SetListStep>[]>(
@@ -149,10 +151,14 @@ export function SetListStepsTable({
     ],
     [groupSlug, orderedStepIds, setListId]
   );
+  const visibleColumns = useMemo(
+    () => (isEditing ? columns : columns.filter((column) => column.id !== "actions")),
+    [columns, isEditing]
+  );
 
   return (
     <DataTable
-      columns={columns}
+      columns={visibleColumns}
       data={steps}
       enableSorting={false}
       emptyMessage="Inga steg i repertoaren ännu."

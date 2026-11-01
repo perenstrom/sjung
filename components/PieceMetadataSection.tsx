@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { updatePieceMetadata } from "@/app/actions/pieces";
+import { useEditMode } from "@/components/EditModeContext";
+import { EditModeToggle } from "@/components/EditModeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -14,7 +16,25 @@ type PieceMetadataSectionProps = {
   initialName: string;
 };
 
-export function PieceMetadataSection({
+export function PieceMetadataSection(props: PieceMetadataSectionProps) {
+  const { isEditing } = useEditMode();
+
+  if (!isEditing) {
+    return (
+      <section className="space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold">{props.initialName}</h1>
+          <EditModeToggle />
+        </div>
+      </section>
+    );
+  }
+
+  // Unmounted when edit mode ends, which discards an unsaved name.
+  return <PieceNameEditor {...props} />;
+}
+
+function PieceNameEditor({
   groupSlug,
   pieceId,
   initialName,
@@ -22,13 +42,13 @@ export function PieceMetadataSection({
   const router = useRouter();
   const [savedName, setSavedName] = useState(initialName);
   const [draftName, setDraftName] = useState(initialName);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleCancel() {
-    setIsEditing(false);
+    setIsRenaming(false);
     setDraftName(savedName);
     setError(null);
     setSuccessMessage(null);
@@ -44,7 +64,7 @@ export function PieceMetadataSection({
         const nextName = String(formData.get("name") ?? "").trim();
         setSavedName(nextName);
         setDraftName(nextName);
-        setIsEditing(false);
+        setIsRenaming(false);
         setSuccessMessage("Namn sparat.");
         router.refresh();
       } catch (submitError) {
@@ -55,10 +75,11 @@ export function PieceMetadataSection({
 
   return (
     <section className="space-y-2">
-      {!isEditing ? (
+      {!isRenaming ? (
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold">{savedName}</h1>
-          <Button type="button" variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+          <EditModeToggle />
+          <Button type="button" variant="outline" size="sm" onClick={() => setIsRenaming(true)}>
             Redigera
           </Button>
         </div>
@@ -81,6 +102,7 @@ export function PieceMetadataSection({
           <Button type="button" size="sm" variant="ghost" onClick={handleCancel} disabled={isPending}>
             Avbryt
           </Button>
+          <EditModeToggle />
         </form>
       )}
 
