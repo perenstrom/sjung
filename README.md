@@ -28,6 +28,8 @@ Required variables (from `.env.example`):
 - `R2_BUCKET`
 - `R2_ENDPOINT`
 - `R2_PUBLIC_BASE_URL`
+- `RESEND_API_KEY`
+- `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`)
 
 ## Local bootstrap
 
@@ -101,6 +103,6 @@ and domain rules that do not require network, database, or framework runtime.
 
 Integration tests cover DB-backed access-rights/authz logic against a real, disposable Postgres database. See `docs/testing-access-rights.md` for the full strategy and DB lifecycle (migrations, per-test reset, and shared fixture builders).
 
-- Keep tests under `__tests__/integration/**/*.test.ts`; shared support code (test DB client, fixtures) lives in `__tests__/support/`.
+- Keep tests under `__tests__/integration/**/*.test.ts`; shared support code (test DB client, fixtures, the fake email sender) lives in `__tests__/support/`.
 - Set `TEST_DATABASE_URL` in `.env` before running them.
 - Use `npm run test:integration`.

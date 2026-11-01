@@ -11,6 +11,10 @@ if (!connectionString) {
   );
 }
 
+// App code (lib/prisma.ts) reads DATABASE_URL — point it at the test DB so
+// actions under test never touch the dev database.
+process.env.DATABASE_URL = connectionString;
+
 const adapter = new PrismaPg({ connectionString });
 
 export const testPrisma = new PrismaClient({ adapter });
