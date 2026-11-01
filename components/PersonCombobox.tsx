@@ -35,12 +35,17 @@ export function PersonCombobox({
   onValueChange,
   onCreate,
   className,
+  ref,
+  "aria-label": ariaLabel,
 }: {
   people: Person[];
   value: string;
   onValueChange: (personId: string) => void;
   onCreate: (name: string) => Promise<void>;
   className?: string;
+  /** Forwarded to the trigger button, e.g. to move focus back to the picker. */
+  ref?: React.Ref<HTMLButtonElement>;
+  "aria-label"?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -82,10 +87,12 @@ export function PersonCombobox({
     <Popover open={open} onOpenChange={handleOpenChange} modal>
       <PopoverTrigger asChild>
         <Button
+          ref={ref}
           type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-label={ariaLabel}
           className={cn("justify-between font-normal", className)}
         >
           <span className={cn("truncate", !selected && "text-muted-foreground")}>

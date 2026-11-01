@@ -3,15 +3,13 @@ import { getPieceDetail } from "@/app/actions/pieces";
 import { getSetLists } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
-import { EditPieceDialog } from "@/components/EditPieceDialog";
-import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
+import { EditModeProvider } from "@/components/EditModeContext";
+import { PieceDetailCreditsSection } from "@/components/PieceDetailCreditsSection";
 import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
 import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import { sortCreditsForDisplay } from "@/lib/pieces/credits";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -31,8 +29,6 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
     notFound();
   }
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
-
-  const sortedCredits = sortCreditsForDisplay(piece.credits);
 
   return (
     <EditModeProvider>
@@ -54,45 +50,17 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
           initialName={piece.name}
         />
 
-        <Card>
-          <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-            <h2 className="text-lg leading-8 font-medium">Medverkande</h2>
-            <EditOnly>
-              <EditPieceDialog
-                creditsOnly
-                groupSlug={groupSlug}
-                people={people}
-                piece={{
-                  id: piece.id,
-                  name: piece.name,
-                  credits: piece.credits.map((credit) => ({
-                    personId: credit.personId,
-                    role: credit.role,
-                  })),
-                }}
-              />
-            </EditOnly>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {piece.credits.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
-            ) : (
-              <ul className="space-y-2 text-sm">
-                {sortedCredits.map((credit) => (
-                  <li
-                    key={`${credit.personId}:${credit.role}`}
-                    className="flex items-center gap-3"
-                  >
-                    <span className="font-medium">{credit.person.name}</span>
-                    <span className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
-                      {credit.role}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+        <PieceDetailCreditsSection
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          credits={piece.credits.map((credit) => ({
+            personId: credit.personId,
+            role: credit.role,
+            person: { name: credit.person.name },
+          }))}
+          people={people}
+        />
 
         <PieceDetailFilesSection
           groupSlug={groupSlug}
