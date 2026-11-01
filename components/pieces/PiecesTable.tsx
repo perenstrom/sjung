@@ -6,6 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
+import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
 import {
   DataTable,
@@ -35,6 +36,7 @@ export function PiecesTable({
   people: Person[];
   groupSlug: string;
 }) {
+  const { isEditing } = useEditMode();
   const columns = useMemo<ColumnDef<PieceWithRelations>[]>(
     () => [
       {
@@ -61,11 +63,13 @@ export function PiecesTable({
           return (
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1">{formatCreditsText(piece)}</span>
-              <AddPieceCreditPopover
-                groupSlug={groupSlug}
-                people={people}
-                piece={{ id: piece.id, name: piece.name }}
-              />
+              {isEditing ? (
+                <AddPieceCreditPopover
+                  groupSlug={groupSlug}
+                  people={people}
+                  piece={{ id: piece.id, name: piece.name }}
+                />
+              ) : null}
             </div>
           );
         },
@@ -80,6 +84,7 @@ export function PiecesTable({
           const piece = row.original;
           return (
             <PieceInlineLinksCell
+              readOnly={!isEditing}
               groupSlug={groupSlug}
               pieceId={piece.id}
               pieceName={piece.name}
@@ -103,6 +108,7 @@ export function PiecesTable({
           return (
             <div className="flex min-w-[12rem] items-start">
               <PieceInlineFilesCell
+                readOnly={!isEditing}
                 groupSlug={groupSlug}
                 pieceId={piece.id}
                 pieceName={piece.name}
@@ -126,32 +132,37 @@ export function PiecesTable({
           const piece = row.original;
           return (
             <div className="flex items-center gap-2">
-              <EditPieceDialog
-                groupSlug={groupSlug}
-                people={people}
-                piece={{
-                  id: piece.id,
-                  name: piece.name,
-                  credits: piece.credits.map((credit) => ({
-                    personId: credit.personId,
-                    role: credit.role,
-                  })),
-                }}
-              />
+              {isEditing ? (
+                <EditPieceDialog
+                  groupSlug={groupSlug}
+                  people={people}
+                  piece={{
+                    id: piece.id,
+                    name: piece.name,
+                    credits: piece.credits.map((credit) => ({
+                      personId: credit.personId,
+                      role: credit.role,
+                    })),
+                  }}
+                />
+              ) : null}
               <PieceNotesDialog
+                readOnly={!isEditing}
                 groupSlug={groupSlug}
                 piece={{ id: piece.id, name: piece.name }}
               />
-              <DeletePieceDialog
-                groupSlug={groupSlug}
-                piece={{ id: piece.id, name: piece.name }}
-              />
+              {isEditing ? (
+                <DeletePieceDialog
+                  groupSlug={groupSlug}
+                  piece={{ id: piece.id, name: piece.name }}
+                />
+              ) : null}
             </div>
           );
         },
       },
     ],
-    [groupSlug, people]
+    [groupSlug, isEditing, people]
   );
 
   return (
