@@ -6,11 +6,9 @@ import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
-import { PieceDetailLinksList } from "@/components/PieceDetailLinksList";
-import { PieceLinksDialog } from "@/components/PieceLinksDialog";
+import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
-import type { Piece } from "@/components/PieceLinksDialog/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { sortCreditsForDisplay } from "@/lib/pieces/credits";
@@ -33,21 +31,6 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
     notFound();
   }
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
-
-  const pieceForLinksDialog: Piece = {
-    id: piece.id,
-    name: piece.name,
-    files: piece.files.map((file) => ({
-      id: file.id,
-      displayName: file.displayName,
-      size: file.size,
-    })),
-    links: piece.links.map((link) => ({
-      id: link.id,
-      url: link.url,
-      label: link.label,
-    })),
-  };
 
   const sortedCredits = sortCreditsForDisplay(piece.credits);
 
@@ -111,43 +94,28 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-            <h2 className="text-lg leading-8 font-medium">Filer och länkar</h2>
-            <EditOnly>
-              <PieceLinksDialog
-                groupSlug={groupSlug}
-                piece={pieceForLinksDialog}
-                refreshAfterMutations
-              />
-            </EditOnly>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">Filer</h3>
-              <PieceDetailFilesSection
-                groupSlug={groupSlug}
-                files={piece.files.map((file) => ({
-                  id: file.id,
-                  displayName: file.displayName,
-                  size: file.size,
-                  createdAt: file.createdAt,
-                }))}
-              />
-            </div>
+        <PieceDetailFilesSection
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          files={piece.files.map((file) => ({
+            id: file.id,
+            displayName: file.displayName,
+            size: file.size,
+            createdAt: file.createdAt,
+          }))}
+        />
 
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground">Länkar</h3>
-              <PieceDetailLinksList
-                links={piece.links.map((link) => ({
-                  id: link.id,
-                  url: link.url,
-                  label: link.label,
-                }))}
-              />
-            </div>
-          </CardContent>
-        </Card>
+        <PieceDetailLinksSection
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          links={piece.links.map((link) => ({
+            id: link.id,
+            url: link.url,
+            label: link.label,
+          }))}
+        />
 
         <PieceSetListsSection
           groupSlug={groupSlug}

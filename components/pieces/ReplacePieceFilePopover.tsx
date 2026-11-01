@@ -3,7 +3,7 @@
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
 
-import { usePieceFileTransfer } from "@/components/PieceLinksDialog/usePieceFileTransfer";
+import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

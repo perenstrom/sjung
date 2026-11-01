@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { usePieceFileTransfer } from "@/components/PieceLinksDialog/usePieceFileTransfer";
+import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ export function AddPieceFilePopover({
   open: openControlled,
   disabled = false,
   onOpenChange: onOpenChangeExternal,
+  triggerLabel,
 }: {
   groupSlug: string;
   pieceId: string;
@@ -29,6 +30,8 @@ export function AddPieceFilePopover({
   open?: boolean;
   disabled?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Show a labelled outline button instead of the bare plus icon. */
+  triggerLabel?: string;
 }) {
   const router = useRouter();
   const [openInternal, setOpenInternal] = useState(false);
@@ -59,16 +62,29 @@ export function AddPieceFilePopover({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7 shrink-0"
-          disabled={disabled}
-          aria-label="Ladda upp fil"
-        >
-          <Plus className="size-4" aria-hidden="true" />
-        </Button>
+        {triggerLabel ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            disabled={disabled}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            {triggerLabel}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0"
+            disabled={disabled}
+            aria-label="Ladda upp fil"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80 space-y-4">
         <div className="space-y-1">
