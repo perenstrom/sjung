@@ -1,0 +1,106 @@
+name: Deploy to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force a clean --no-cache rebuild instead of reusing an existing image for this commit"
+        type: boolean
+        default: false
+
+# Never run two production deploys at once, and never cancel one mid-flight.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  checks: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Require main
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "::error::This workflow can only be run against main (got $REF)."
+            exit 1
+          fi
+
+      # Must match the job names CI reports, which are also the required
+      # status checks on main.
+      - name: Confirm CI is green on main's current HEAD
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          for job in "build" "Integration Tests"; do
+            conclusion=$(gh api --method GET "repos/$REPO/commits/$SHA/check-runs" -f check_name="$job" \
+              --jq ".check_runs | sort_by(.started_at) | last | .conclusion")
+            if [ "$conclusion" != "success" ]; then
+              echo "::error::CI job '$job' is not green on $SHA (conclusion: ${conclusion:-not found})."
+              exit 1
+            fi
+            echo "CI job '$job' is green on $SHA."
+          done
+
+      # Coolify builds main's HEAD at trigger time, not github.sha, so a push
+      # landing between dispatch and here would ship an unchecked commit.
+      # Avoid merging to main while a production deploy is starting.
+      - name: Trigger Coolify production deploy
+        id: trigger
+        env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_PROD_APP_UUID: ${{ vars.COOLIFY_PROD_APP_UUID }}
+          COOLIFY_PROD_TOKEN: ${{ secrets.COOLIFY_PROD_TOKEN }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          http_code=$(curl --silent --show-error --output response.json --write-out "%{http_code}" \
+            --request POST "${COOLIFY_URL}/api/v1/deploy?uuid=${COOLIFY_PROD_APP_UUID}&force=${FORCE}" \
+            --header "Authorization: Bearer ${COOLIFY_PROD_TOKEN}")
+          cat response.json
+          if [ "$http_code" -ge 300 ]; then
+            echo "::error::Coolify deploy-trigger request failed (HTTP $http_code)."
+            exit 1
+          fi
+          deployment_uuid=$(jq -r '.deployments[0].deployment_uuid' response.json)
+          if [ -z "$deployment_uuid" ] || [ "$deployment_uuid" = "null" ]; then
+            echo "::error::Coolify's response didn't include a deployment_uuid."
+            exit 1
+          fi
+          echo "deployment_uuid=$deployment_uuid" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the deployment to finish
+        env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_PROD_TOKEN: ${{ secrets.COOLIFY_PROD_TOKEN }}
+          DEPLOYMENT_UUID: ${{ steps.trigger.outputs.deployment_uuid }}
+        run: |
+          # 20 minutes: a forced no-cache build is the slow case.
+          max_polls=120
+          poll_interval=10
+          for i in $(seq 1 "$max_polls"); do
+            # A transient API error shouldn't fail the job while Coolify keeps deploying.
+            status=$(curl --fail --silent --request GET \
+              "${COOLIFY_URL}/api/v1/deployments/${DEPLOYMENT_UUID}" \
+              --header "Authorization: Bearer ${COOLIFY_PROD_TOKEN}" | jq -r '.status') || status="unreachable"
+            echo "[$i/$max_polls] deployment $DEPLOYMENT_UUID status: $status"
+            case "$status" in
+              finished)
+                exit 0
+                ;;
+              failed|"cancelled-by-user")
+                echo "::error::Coolify deployment ended with status '$status'."
+                exit 1
+                ;;
+            esac
+            sleep "$poll_interval"
+          done
+          echo "::error::Timed out waiting for the deployment to finish."
+          exit 1

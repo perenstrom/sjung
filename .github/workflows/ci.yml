@@ -6,9 +6,11 @@ on:
       - main
   pull_request:
 
+# On main, runs queue instead of cancelling each other: a cancelled run would
+# also cancel its deploy-staging job, so that commit would never reach staging.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -125,3 +127,27 @@ jobs:
       - name: Run integration tests
         if: needs.changes.outputs.code == 'true'
         run: npm run test:integration
+
+  # Coolify's own auto-deploy is off; this is the only thing that deploys
+  # staging. Docs-only pushes don't deploy.
+  deploy-staging:
+    needs: [changes, build, integration-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Trigger Coolify staging deploy
+        env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_STAGING_APP_UUID: ${{ vars.COOLIFY_STAGING_APP_UUID }}
+          COOLIFY_STAGING_TOKEN: ${{ secrets.COOLIFY_STAGING_TOKEN }}
+        run: |
+          http_code=$(curl --silent --show-error --output response.json --write-out "%{http_code}" \
+            --request POST "${COOLIFY_URL}/api/v1/deploy?uuid=${COOLIFY_STAGING_APP_UUID}&force=false" \
+            --header "Authorization: Bearer ${COOLIFY_STAGING_TOKEN}")
+          cat response.json
+          if [ "$http_code" -ge 300 ]; then
+            echo "::error::Coolify deploy-trigger request failed (HTTP $http_code)."
+            exit 1
+          fi
