@@ -1,24 +1,14 @@
 "use client";
 
-import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { updatePieceFileDisplayName } from "@/app/actions/files";
 import { AddPieceFilePopover } from "@/components/pieces/AddPieceFilePopover";
 import {
   PieceFilesList,
   type PieceFileListItem,
-} from "@/components/PieceLinksDialog/PieceFilesList";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { getThrownMessage } from "@/lib/getThrownMessage";
+} from "@/components/pieces/PieceFilesList";
+import { RenamePieceFilePopover } from "@/components/pieces/RenamePieceFilePopover";
 
 export type PieceInlineFile = PieceFileListItem;
 
@@ -40,18 +30,6 @@ export function PieceInlineFilesCell({
   const [addPopoverOpen, setAddPopoverOpen] = useState(false);
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
   const [replacingFileId, setReplacingFileId] = useState<string | null>(null);
-  const [editError, setEditError] = useState<string | null>(null);
-
-  async function handleUpdate(formData: FormData) {
-    try {
-      await updatePieceFileDisplayName(formData);
-      setEditingFileId(null);
-      setEditError(null);
-      router.refresh();
-    } catch (err) {
-      setEditError(getThrownMessage(err, "Kunde inte spara filnamn"));
-    }
-  }
 
   return (
     <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -74,76 +52,28 @@ export function PieceInlineFilesCell({
             if (fileId !== null) {
               setAddPopoverOpen(false);
               setEditingFileId(null);
-              setEditError(null);
             }
           }}
           renderFileActions={(file) => (
-            <Popover
+            <RenamePieceFilePopover
               key={file.id}
+              groupSlug={groupSlug}
+              fileId={file.id}
+              displayName={file.displayName}
+              pieceName={pieceName}
               open={editingFileId === file.id}
+              disabled={addPopoverOpen || replacingFileId !== null}
+              triggerClassName="size-7 shrink-0"
               onOpenChange={(nextOpen) => {
                 if (nextOpen) {
                   setAddPopoverOpen(false);
                   setReplacingFileId(null);
                   setEditingFileId(file.id);
-                  setEditError(null);
                 } else if (editingFileId === file.id) {
                   setEditingFileId(null);
-                  setEditError(null);
                 }
               }}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 shrink-0"
-                  disabled={addPopoverOpen || replacingFileId !== null}
-                  aria-label={`Redigera filnamn ${file.displayName}`}
-                >
-                  <Pencil className="size-3.5" aria-hidden="true" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-80 space-y-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Redigera filnamn</p>
-                  <p className="text-sm text-muted-foreground">{pieceName}</p>
-                </div>
-
-                <form action={handleUpdate} className="space-y-4">
-                  <input type="hidden" name="groupSlug" value={groupSlug} />
-                  <input type="hidden" name="fileId" value={file.id} />
-
-                  <div className="space-y-2">
-                    <Label htmlFor={`edit-display-name-${file.id}`}>
-                      Visningsnamn
-                    </Label>
-                    <Input
-                      id={`edit-display-name-${file.id}`}
-                      name="displayName"
-                      defaultValue={file.displayName}
-                      required
-                    />
-                  </div>
-
-                  {editError ? (
-                    <p className="text-sm text-destructive">{editError}</p>
-                  ) : null}
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setEditingFileId(null)}
-                    >
-                      Avbryt
-                    </Button>
-                    <Button type="submit">Spara</Button>
-                  </div>
-                </form>
-              </PopoverContent>
-            </Popover>
+            />
           )}
         />
 
@@ -162,7 +92,6 @@ export function PieceInlineFilesCell({
             if (nextOpen) {
               setEditingFileId(null);
               setReplacingFileId(null);
-              setEditError(null);
             }
           }}
         />

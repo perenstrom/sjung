@@ -187,7 +187,7 @@ export function PieceFilesList({
         const deleteError = deleteErrors[file.id];
         return (
           <li key={file.id} className="space-y-2 rounded border p-2">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
                   {file.displayName}
