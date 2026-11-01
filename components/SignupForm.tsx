@@ -31,7 +31,7 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
 
       <input type="hidden" name="next" value={nextPath} />
 
-      {/* React resets the form after each submit, to defaultValue: name and email survive, password doesn't. */}
+      {/* React resets the form after each submit, to defaultValue: name and email survive, the passwords don't. */}
       <div className="space-y-2">
         <Label htmlFor="name">Namn</Label>
         <Input
@@ -64,6 +64,16 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
           required
         />
         <p className="text-sm text-muted-foreground">Minst 12 tecken.</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="passwordConfirmation">Upprepa lösenord</Label>
+        <Input
+          id="passwordConfirmation"
+          name="passwordConfirmation"
+          type="password"
+          required
+        />
       </div>
 
       <Button type="submit" className="w-full" disabled={isPending}>
