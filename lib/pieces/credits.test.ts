@@ -5,7 +5,11 @@ import {
   creditRolesHeldBy,
   diffCredits,
   DUPLICATE_CREDITS_ERROR,
+  EMPTY_CREDIT_DRAFT,
   groupCreditsByPerson,
+  MISSING_CREDIT_PERSON_ERROR,
+  MISSING_CREDIT_ROLE_ERROR,
+  resolveCreditsToSubmit,
 } from "@/lib/pieces/credits";
 
 describe("assertNoDuplicateCredits", () => {
@@ -201,5 +205,40 @@ describe("creditRolesHeldBy", () => {
 
   it("returns an empty set when no Person is chosen", () => {
     expect(creditRolesHeldBy(credits, "")).toEqual(new Set());
+  });
+});
+
+describe("resolveCreditsToSubmit", () => {
+  const staged = [
+    { personId: "person-1", role: "Kompositör" },
+    { personId: "person-2", role: "Arrangör" },
+  ];
+
+  it("returns no credits when nothing is staged or picked", () => {
+    expect(resolveCreditsToSubmit([], EMPTY_CREDIT_DRAFT)).toEqual({ credits: [] });
+  });
+
+  it("returns the staged credits when nothing is picked", () => {
+    expect(resolveCreditsToSubmit(staged, EMPTY_CREDIT_DRAFT)).toEqual({ credits: staged });
+  });
+
+  it("includes a picked Person and role that were not added yet", () => {
+    expect(
+      resolveCreditsToSubmit(staged, { personId: "person-3", role: "Textförfattare" })
+    ).toEqual({
+      credits: [...staged, { personId: "person-3", role: "Textförfattare" }],
+    });
+  });
+
+  it("asks for a role when only a Person is picked", () => {
+    expect(resolveCreditsToSubmit(staged, { personId: "person-3", role: "" })).toEqual({
+      error: MISSING_CREDIT_ROLE_ERROR,
+    });
+  });
+
+  it("asks for a Person when only a role is picked", () => {
+    expect(resolveCreditsToSubmit(staged, { personId: "", role: "Kompositör" })).toEqual({
+      error: MISSING_CREDIT_PERSON_ERROR,
+    });
   });
 });

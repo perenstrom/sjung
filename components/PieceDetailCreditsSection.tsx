@@ -1,14 +1,15 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { removeCredit } from "@/app/actions/pieces";
 import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceCreditRow } from "@/components/pieces/AddPieceCreditRow";
-import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
-import { Button } from "@/components/ui/button";
+import {
+  PieceCreditsList,
+  RemoveCreditRoleButton,
+} from "@/components/pieces/PieceCreditsList";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { creditKey, type CreditForDisplay } from "@/lib/pieces/credits";
@@ -81,17 +82,11 @@ function PieceDetailCreditsCard({
               readOnly
                 ? undefined
                 : (credit) => (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="-mr-1 size-4 rounded-sm"
-                      onClick={() => handleRemove(credit)}
+                    <RemoveCreditRoleButton
+                      credit={credit}
+                      onRemove={handleRemove}
                       disabled={removingKey === creditKey(credit)}
-                      aria-label={`Ta bort ${credit.person.name} som ${credit.role}`}
-                    >
-                      <X className="size-3" aria-hidden="true" />
-                    </Button>
+                    />
                   )
             }
           />

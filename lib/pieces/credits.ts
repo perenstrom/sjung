@@ -46,6 +46,29 @@ export function creditRolesHeldBy(credits: PieceCredit[], personId: string): Set
   );
 }
 
+/** The Person and Credit role picked in an add-credit row; either may still be empty. */
+export type CreditDraft = PieceCredit;
+
+export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", role: "" };
+
+export const MISSING_CREDIT_ROLE_ERROR = "Välj en roll eller rensa medverkande.";
+export const MISSING_CREDIT_PERSON_ERROR = "Välj en person eller rensa medverkande.";
+
+/**
+ * The Credits to save with a new Piece: the staged ones, plus the add row's
+ * draft when both a Person and a Credit role are picked. A half-picked draft
+ * is an error rather than being silently dropped.
+ */
+export function resolveCreditsToSubmit(
+  staged: PieceCredit[],
+  draft: CreditDraft
+): { credits: PieceCredit[] } | { error: string } {
+  if (draft.personId && draft.role) return { credits: [...staged, draft] };
+  if (draft.personId) return { error: MISSING_CREDIT_ROLE_ERROR };
+  if (draft.role) return { error: MISSING_CREDIT_PERSON_ERROR };
+  return { credits: staged };
+}
+
 export type CreditForDisplay = {
   personId: string;
   role: string;

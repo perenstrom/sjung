@@ -1,5 +1,7 @@
+import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
 import { type CreditForDisplay, groupCreditsByPerson } from "@/lib/pieces/credits";
 import { cn } from "@/lib/utils";
 
@@ -41,5 +43,30 @@ export function PieceCreditsList({
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The remove control for a role badge in `PieceCreditsList`. */
+export function RemoveCreditRoleButton({
+  credit,
+  onRemove,
+  disabled,
+}: {
+  credit: CreditForDisplay;
+  onRemove: (credit: CreditForDisplay) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="-mr-1 size-4 rounded-sm"
+      onClick={() => onRemove(credit)}
+      disabled={disabled}
+      aria-label={`Ta bort ${credit.person.name} som ${credit.role}`}
+    >
+      <X className="size-3" aria-hidden="true" />
+    </Button>
   );
 }

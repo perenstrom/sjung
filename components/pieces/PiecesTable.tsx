@@ -224,10 +224,7 @@ export function PiecesTable({
                   piece={{
                     id: piece.id,
                     name: piece.name,
-                    credits: piece.credits.map((credit) => ({
-                      personId: credit.personId,
-                      role: credit.role,
-                    })),
+                    credits: piece.credits,
                   }}
                 />
               ) : null}
