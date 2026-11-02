@@ -13,6 +13,7 @@ import type { PieceFileListItem } from "@/components/pieces/types";
 import { TruncatedTooltip } from "@/components/TruncatedTooltip";
 import { Button } from "@/components/ui/button";
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import { cn } from "@/lib/utils";
 
 export function PieceFilesList({
   groupSlug,
@@ -93,7 +94,14 @@ export function PieceFilesList({
 
   if (files.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">Inga filer uppladdade ännu.</p>
+      <p
+        className={cn(
+          "text-sm text-muted-foreground",
+          compact && "flex min-h-7 items-center"
+        )}
+      >
+        Inga filer uppladdade ännu.
+      </p>
     );
   }
 
@@ -117,12 +125,15 @@ export function PieceFilesList({
 
   if (compact) {
     return (
-      <ul className="space-y-2 text-sm">
+      // Rows are 28px in read-only and edit mode so the first row lines up
+      // with neighbouring table cells; read-only drops the gap to keep its
+      // pitch.
+      <ul className={cn("text-sm", !readOnly && "space-y-2")}>
         {files.map((file) => {
           const deleteError = deleteErrors[file.id];
           return (
             <li key={file.id} className="space-y-1">
-              <div className="flex min-w-0 items-center gap-1">
+              <div className="flex min-h-7 min-w-0 items-center gap-1">
                 <FileText
                   className="size-3.5 shrink-0 text-muted-foreground"
                   aria-hidden

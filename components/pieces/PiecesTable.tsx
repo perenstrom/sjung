@@ -17,7 +17,14 @@ import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
+import { cn } from "@/lib/utils";
 import type { Person } from "@/types/piece-credit-dialog";
+
+// Body cells are top-aligned and every cell's first line is 32px tall (the
+// height of the sm action buttons), so first lines line up across the row.
+// Link and File rows are 28px, so their cells are nudged down 2px.
+const FIRST_LINE_CLASS = "flex min-h-8 items-center";
+const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 
 function formatCreditsText(piece: PieceWithRelations): string {
   return piece.credits.length > 0
@@ -46,12 +53,14 @@ export function PiecesTable({
           <DataTableColumnHeader column={column} title="Namn" />
         ),
         cell: ({ row }) => (
-          <Link
-            className="underline"
-            href={`/app/${groupSlug}/pieces/${row.original.id}`}
-          >
-            {row.original.name}
-          </Link>
+          <div className={FIRST_LINE_CLASS}>
+            <Link
+              className="underline"
+              href={`/app/${groupSlug}/pieces/${row.original.id}`}
+            >
+              {row.original.name}
+            </Link>
+          </div>
         ),
       },
       {
@@ -61,7 +70,7 @@ export function PiecesTable({
         cell: ({ row }) => {
           const piece = row.original;
           return (
-            <div className="flex items-center gap-2">
+            <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
               <span className="min-w-0 flex-1">{formatCreditsText(piece)}</span>
               {isEditing ? (
                 <AddPieceCreditPopover
@@ -83,17 +92,19 @@ export function PiecesTable({
         cell: ({ row }) => {
           const piece = row.original;
           return (
-            <PieceInlineLinksCell
-              readOnly={!isEditing}
-              groupSlug={groupSlug}
-              pieceId={piece.id}
-              pieceName={piece.name}
-              links={piece.links.map((link) => ({
-                id: link.id,
-                url: link.url,
-                label: link.label,
-              }))}
-            />
+            <div className={LIST_CELL_OFFSET_CLASS}>
+              <PieceInlineLinksCell
+                readOnly={!isEditing}
+                groupSlug={groupSlug}
+                pieceId={piece.id}
+                pieceName={piece.name}
+                links={piece.links.map((link) => ({
+                  id: link.id,
+                  url: link.url,
+                  label: link.label,
+                }))}
+              />
+            </div>
           );
         },
       },
@@ -106,7 +117,12 @@ export function PiecesTable({
         cell: ({ row }) => {
           const piece = row.original;
           return (
-            <div className="flex min-w-[12rem] items-start">
+            <div
+              className={cn(
+                "flex min-w-[12rem] items-start",
+                LIST_CELL_OFFSET_CLASS
+              )}
+            >
               <PieceInlineFilesCell
                 readOnly={!isEditing}
                 groupSlug={groupSlug}
@@ -131,7 +147,7 @@ export function PiecesTable({
         cell: ({ row }) => {
           const piece = row.original;
           return (
-            <div className="flex items-center gap-2">
+            <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
               {isEditing ? (
                 <EditPieceDialog
                   groupSlug={groupSlug}
@@ -169,6 +185,7 @@ export function PiecesTable({
     <DataTable
       columns={columns}
       data={pieces}
+      cellAlign="top"
       emptyMessage="Inga noter tillagda ännu."
     />
   );
