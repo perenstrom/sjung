@@ -41,7 +41,7 @@ _Avoid_: User, Contributor, Member.
 ### Repertoire
 
 **Piece**:
-The catalog entry for a musical work: a name plus its Credits, Files, and Links. Swedish UI: _Stycke_ (the entity), _Noter_ (the catalog/list page name).
+The catalog entry for a musical work: a name plus its Credits, Files, Links and Piece notes. Swedish UI: _Stycke_ (the entity), _Noter_ (the catalog/list page name).
 _Avoid_: Song, Sheet music, Score — those name the physical artifact (see File), not the work entry itself.
 
 **File**:
@@ -63,7 +63,7 @@ _Avoid_: Repertoire (English) — keep "Set list" as the English name even thoug
 One occurrence of a Piece within a Set list, at a specific position. A Piece may appear more than once in the same Set list, each occurrence with its own position and Performance notes. Swedish UI: _Repertoarpost_.
 
 **Piece note**:
-A note attached directly to a Piece and visible everywhere that Piece appears — persistent, Group-wide.
+A note attached directly to a Piece and visible everywhere that Piece appears — persistent, Group-wide. Swedish UI: _Anteckning_ / _Anteckningar_.
 _Avoid_: Note, Comment — always qualify which of the three note types (see Performance note, Running-order note) you mean.
 
 **Performance note**:

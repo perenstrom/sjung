@@ -30,21 +30,16 @@ import {
   getPieceDetailForGroup,
   getPiecesForGroup,
   getSetListIdsContainingPiece,
+  toPieceNoteListItem,
 } from "@/lib/pieces/queries";
 import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
-import type { PieceDetail } from "@/lib/pieces/types";
+import {
+  pieceNoteListItemSelect,
+  type PieceDetail,
+  type PieceNoteListItem,
+} from "@/lib/pieces/types";
 import { revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
-
-export type PieceNoteListItem = {
-  id: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-  createdById: string;
-  updatedById: string;
-  createdByName: string;
-};
 
 const DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
 
@@ -289,27 +284,17 @@ export async function listPieceNotes(
   const notes = await prisma.pieceNote.findMany({
     where: { pieceId: parsedPieceId, groupId },
     orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-      createdById: true,
-      updatedById: true,
-      createdBy: { select: { name: true } },
-    },
+    select: pieceNoteListItemSelect,
   });
 
-  return notes.map(({ createdBy, ...note }) => ({
-    ...note,
-    createdByName: createdBy.name,
-  }));
+  return notes.map(toPieceNoteListItem);
 }
 
 // createPieceNote/updatePieceNote/deletePieceNote intentionally skip revalidatePieceRoutes:
-// no page selects PieceNote data server-side (see
-// pieceWithRelationsInclude, pieceDetailSelect), so there's no SSR cache to refresh, and
-// revalidating the current route here resets client-side dialog state on every mutation.
+// revalidating the current route here resets client-side note state (the pieces table's
+// notes dialog) on every mutation. Callers refresh their own list via listPieceNotes
+// instead. The piece detail page does select notes server-side (pieceDetailSelect), but
+// it's dynamically rendered, so navigating to it still fetches fresh notes.
 export async function createPieceNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);

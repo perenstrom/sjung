@@ -18,6 +18,24 @@ export type PieceWithRelations = Prisma.PieceGetPayload<{
   include: typeof pieceWithRelationsInclude;
 }>;
 
+export const pieceNoteListItemSelect = {
+  id: true,
+  content: true,
+  createdAt: true,
+  updatedAt: true,
+  createdById: true,
+  updatedById: true,
+  createdBy: { select: { name: true } },
+} as const satisfies Prisma.PieceNoteSelect;
+
+export type PieceNoteListItemQueryResult = Prisma.PieceNoteGetPayload<{
+  select: typeof pieceNoteListItemSelect;
+}>;
+
+export type PieceNoteListItem = Omit<PieceNoteListItemQueryResult, "createdBy"> & {
+  createdByName: PieceNoteListItemQueryResult["createdBy"]["name"];
+};
+
 export const pieceDetailSelect = {
   id: true,
   name: true,
@@ -48,6 +66,10 @@ export const pieceDetailSelect = {
       label: true,
     },
   },
+  notes: {
+    orderBy: { updatedAt: "desc" },
+    select: pieceNoteListItemSelect,
+  },
   setListEntries: {
     select: {
       id: true,
@@ -65,7 +87,8 @@ type PieceDetailQueryResult = Prisma.PieceGetPayload<{
   select: typeof pieceDetailSelect;
 }>;
 
-export type PieceDetail = Omit<PieceDetailQueryResult, "setListEntries"> & {
+export type PieceDetail = Omit<PieceDetailQueryResult, "notes" | "setListEntries"> & {
+  notes: PieceNoteListItem[];
   setListEntries: Array<{
     id: PieceDetailQueryResult["setListEntries"][number]["id"];
     setListId: PieceDetailQueryResult["setListEntries"][number]["setListId"];
