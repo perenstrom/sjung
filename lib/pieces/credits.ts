@@ -46,31 +46,49 @@ export function creditRolesHeldBy(credits: PieceCredit[], personId: string): Set
   );
 }
 
-type CreditForDisplay = {
+export type CreditForDisplay = {
+  personId: string;
   role: string;
   person: { name: string };
 };
 
+export type CreditedPerson = {
+  personId: string;
+  name: string;
+  roles: string[];
+};
+
 const compareSv = (a: string, b: string) => a.localeCompare(b, "sv-SE", { sensitivity: "base" });
 
-export function sortCreditsForDisplay<T extends CreditForDisplay>(credits: T[]): T[] {
-  const roleBuckets = new Map<string, T[]>();
+const KNOWN_ROLES: readonly string[] = ROLES;
+
+/** Known roles in ROLES order first, then any other roles alphabetically. */
+function compareRoles(a: string, b: string): number {
+  const rankA = KNOWN_ROLES.indexOf(a);
+  const rankB = KNOWN_ROLES.indexOf(b);
+  if (rankA !== -1 && rankB !== -1) return rankA - rankB;
+  if (rankA !== -1) return -1;
+  if (rankB !== -1) return 1;
+  return compareSv(a, b);
+}
+
+/**
+ * A piece's credits for display: each Person once, with their Credit roles.
+ * People are ordered by their highest-ranked role, then by name.
+ */
+export function groupCreditsByPerson(credits: CreditForDisplay[]): CreditedPerson[] {
+  const people = new Map<string, CreditedPerson>();
 
   for (const credit of credits) {
-    const bucket = roleBuckets.get(credit.role);
-    if (bucket) bucket.push(credit);
-    else roleBuckets.set(credit.role, [credit]);
+    const person = people.get(credit.personId);
+    if (person) person.roles.push(credit.role);
+    else people.set(credit.personId, { personId: credit.personId, name: credit.person.name, roles: [credit.role] });
   }
 
-  const knownRoleSet = new Set<string>(ROLES as unknown as string[]);
-  const knownRoles = ROLES.filter((role) => roleBuckets.has(role));
-  const unknownRoles = [...roleBuckets.keys()].filter((role) => !knownRoleSet.has(role)).sort(compareSv);
+  const grouped = [...people.values()];
+  for (const person of grouped) person.roles.sort(compareRoles);
 
-  const orderedRoles = [...knownRoles, ...unknownRoles];
-
-  return orderedRoles.flatMap((role) => {
-    const bucket = roleBuckets.get(role) ?? [];
-    bucket.sort((a, b) => compareSv(a.person.name, b.person.name));
-    return bucket;
-  });
+  return grouped.sort(
+    (a, b) => compareRoles(a.roles[0], b.roles[0]) || compareSv(a.name, b.name)
+  );
 }

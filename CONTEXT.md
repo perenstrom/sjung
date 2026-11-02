@@ -52,7 +52,7 @@ _Avoid_: Score, Sheet music, Attachment — reserve those for casual conversatio
 An external URL reference attached to a Piece (e.g. a recording or streaming link).
 
 **Credit**:
-A role-tagged link between a Person and a Piece. Roles are a closed set today — Kompositör (composer), Arrangör (arranger), Textförfattare (lyricist) — defined in `lib/roles.ts`; expect this set to grow. Swedish UI: _Medverkande_.
+A role-tagged link between a Person and a Piece. Roles are a closed set today — Kompositör (composer), Arrangör (arranger), Textförfattare (lyricist) — defined in `lib/roles.ts`; expect this set to grow. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Medverkande_.
 _Avoid_: Role on its own — always say "Credit role" to avoid confusion with anything membership-related.
 
 **Set list**:

@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -11,7 +11,7 @@ import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import { creditKey } from "@/lib/pieces/credits";
+import { creditKey, type CreditForDisplay } from "@/lib/pieces/credits";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 type PieceDetailCredit = PieceCredit & { person: { name: string } };
@@ -47,7 +47,7 @@ function PieceDetailCreditsCard({
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
 
-  async function handleRemove(credit: PieceDetailCredit) {
+  async function handleRemove(credit: CreditForDisplay) {
     setRemovingKey(creditKey(credit));
     try {
       const formData = new FormData();
@@ -77,7 +77,7 @@ function PieceDetailCreditsCard({
           <PieceCreditsList
             credits={credits}
             className="space-y-2"
-            renderAction={
+            renderRoleAction={
               readOnly
                 ? undefined
                 : (credit) => (
@@ -85,12 +85,12 @@ function PieceDetailCreditsCard({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-7 shrink-0"
+                      className="-mr-1 size-4 rounded-sm"
                       onClick={() => handleRemove(credit)}
                       disabled={removingKey === creditKey(credit)}
                       aria-label={`Ta bort ${credit.person.name} som ${credit.role}`}
                     >
-                      <Trash2 className="size-3.5" aria-hidden="true" />
+                      <X className="size-3" aria-hidden="true" />
                     </Button>
                   )
             }
