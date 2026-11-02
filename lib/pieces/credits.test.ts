@@ -5,7 +5,7 @@ import {
   creditRolesHeldBy,
   diffCredits,
   DUPLICATE_CREDITS_ERROR,
-  sortCreditsForDisplay,
+  groupCreditsByPerson,
 } from "@/lib/pieces/credits";
 
 describe("assertNoDuplicateCredits", () => {
@@ -85,57 +85,100 @@ describe("diffCredits", () => {
   });
 });
 
-describe("sortCreditsForDisplay", () => {
-  it("returns an empty list unchanged", () => {
-    expect(sortCreditsForDisplay([])).toEqual([]);
+describe("groupCreditsByPerson", () => {
+  const credit = (personId: string, name: string, role: string) => ({
+    personId,
+    role,
+    person: { name },
   });
 
-  it("orders known roles per ROLES, regardless of input order", () => {
-    const credits = [
-      { role: "Textförfattare", person: { name: "Anna" } },
-      { role: "Kompositör", person: { name: "Bertil" } },
-      { role: "Arrangör", person: { name: "Cecilia" } },
-    ];
+  it("returns an empty list unchanged", () => {
+    expect(groupCreditsByPerson([])).toEqual([]);
+  });
 
-    expect(sortCreditsForDisplay(credits).map((c) => c.role)).toEqual([
-      "Kompositör",
-      "Arrangör",
-      "Textförfattare",
+  it("returns a Person with a single role as one entry", () => {
+    expect(groupCreditsByPerson([credit("p1", "Anna", "Arrangör")])).toEqual([
+      { personId: "p1", name: "Anna", roles: ["Arrangör"] },
     ]);
   });
 
-  it("sorts people within a role by name using Swedish collation", () => {
+  it("shows each Person once, with their roles in ROLES order", () => {
     const credits = [
-      { role: "Kompositör", person: { name: "Östen" } },
-      { role: "Kompositör", person: { name: "Anna" } },
-      { role: "Kompositör", person: { name: "Bertil" } },
+      credit("p1", "Anna", "Textförfattare"),
+      credit("p1", "Anna", "Kompositör"),
+      credit("p1", "Anna", "Arrangör"),
     ];
 
-    expect(sortCreditsForDisplay(credits).map((c) => c.person.name)).toEqual([
-      "Anna",
-      "Bertil",
-      "Östen",
+    expect(groupCreditsByPerson(credits)).toEqual([
+      { personId: "p1", name: "Anna", roles: ["Kompositör", "Arrangör", "Textförfattare"] },
     ]);
   });
 
   it("places unknown roles after known roles, sorted alphabetically", () => {
     const credits = [
-      { role: "Ösats", person: { name: "Anna" } },
-      { role: "Kompositör", person: { name: "Bertil" } },
-      { role: "Annan roll", person: { name: "Cecilia" } },
+      credit("p1", "Anna", "Ösats"),
+      credit("p1", "Anna", "Textförfattare"),
+      credit("p1", "Anna", "Annan roll"),
     ];
 
-    expect(sortCreditsForDisplay(credits).map((c) => c.role)).toEqual([
-      "Kompositör",
+    expect(groupCreditsByPerson(credits)[0].roles).toEqual([
+      "Textförfattare",
       "Annan roll",
       "Ösats",
     ]);
   });
 
-  it("omits roles that have no credits", () => {
-    const credits = [{ role: "Arrangör", person: { name: "Anna" } }];
+  it("orders people by their highest-ranked role, regardless of input order", () => {
+    const credits = [
+      credit("p1", "Anna", "Textförfattare"),
+      credit("p2", "Bertil", "Annan roll"),
+      credit("p3", "Cecilia", "Arrangör"),
+      credit("p4", "David", "Textförfattare"),
+      credit("p4", "David", "Kompositör"),
+    ];
 
-    expect(sortCreditsForDisplay(credits).map((c) => c.role)).toEqual(["Arrangör"]);
+    expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual([
+      "David",
+      "Cecilia",
+      "Anna",
+      "Bertil",
+    ]);
+  });
+
+  it("orders people with the same highest role by name using Swedish collation", () => {
+    const credits = [
+      credit("p1", "Östen", "Kompositör"),
+      credit("p2", "anna", "Kompositör"),
+      credit("p3", "Bertil", "Kompositör"),
+      credit("p3", "Bertil", "Arrangör"),
+    ];
+
+    expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual([
+      "anna",
+      "Bertil",
+      "Östen",
+    ]);
+  });
+
+  it("ranks people holding only unknown roles alphabetically by that role", () => {
+    const credits = [
+      credit("p1", "Anna", "Ösats"),
+      credit("p2", "Bertil", "Annan roll"),
+    ];
+
+    expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual(["Bertil", "Anna"]);
+  });
+
+  it("keeps two Persons with the same name apart", () => {
+    const credits = [
+      credit("p1", "Anna", "Kompositör"),
+      credit("p2", "Anna", "Textförfattare"),
+    ];
+
+    expect(groupCreditsByPerson(credits)).toEqual([
+      { personId: "p1", name: "Anna", roles: ["Kompositör"] },
+      { personId: "p2", name: "Anna", roles: ["Textförfattare"] },
+    ]);
   });
 });
 
