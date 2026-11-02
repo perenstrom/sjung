@@ -1,34 +1,50 @@
 import { notFound } from "next/navigation";
-import { getGroups, listGroupMembers } from "@/app/actions/groups";
+import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { AddGroupMemberForm } from "@/components/AddGroupMemberForm";
-import { RemoveGroupMemberDialog } from "@/components/RemoveGroupMemberDialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ClaimsManagementPrototype } from "@/components/prototype/ClaimsManagementPrototype";
 import { canManageGroupMembers } from "@/lib/actions/guards";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
+import prisma from "@/lib/prisma";
 import { requireTenantGroup } from "@/lib/tenant-group";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;
+  searchParams: Promise<{ variant?: string }>;
 };
 
-export default async function GroupMembersPage({ params }: PageProps) {
+// PROTOTYPE — the member table is swapped for ClaimsManagementPrototype
+// (?variant=A|B|C). Claims and creator are read straight from Prisma here
+// because listGroupMembers doesn't return them yet.
+export default async function GroupMembersPage({ params, searchParams }: PageProps) {
   const { groupSlug } = await params;
+  const { variant = "A" } = await searchParams;
   const { userId, groupId } = await requireTenantGroup(groupSlug);
 
   if (!(await canManageGroupMembers(groupId, userId))) {
     notFound();
   }
 
-  const [members, groups] = await Promise.all([listGroupMembers(groupSlug), getGroups()]);
+  const [group, groups] = await Promise.all([
+    prisma.group.findUniqueOrThrow({
+      where: { id: groupId },
+      select: {
+        createdById: true,
+        users: {
+          select: {
+            user: { select: { id: true, name: true, email: true } },
+            claims: { select: { claim: true } },
+          },
+        },
+      },
+    }),
+    getGroups(),
+  ]);
   const groupName = groups.find((groupOption) => groupOption.slug === groupSlug)?.name ?? groupSlug;
+  const members = group.users.map((row) => ({
+    ...row.user,
+    claims: row.claims.map(({ claim }) => claim),
+  }));
 
   return (
     <div className="space-y-6">
@@ -48,39 +64,12 @@ export default async function GroupMembersPage({ params }: PageProps) {
 
       <AddGroupMemberForm groupSlug={groupSlug} />
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Namn</TableHead>
-            <TableHead>E-post</TableHead>
-            <TableHead className="w-[120px] text-right">Åtgärder</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={3} className="text-muted-foreground">
-                Inga medlemmar hittades.
-              </TableCell>
-            </TableRow>
-          ) : (
-            members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell>{member.name}</TableCell>
-                <TableCell>{member.email}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end">
-                    <RemoveGroupMemberDialog
-                      groupSlug={groupSlug}
-                      member={member}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <ClaimsManagementPrototype
+        initialMembers={members}
+        creatorId={group.createdById}
+        currentUserId={userId}
+        variant={variant}
+      />
     </div>
   );
 }
