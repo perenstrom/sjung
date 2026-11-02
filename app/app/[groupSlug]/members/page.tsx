@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getGroups, listGroupMembers } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { AddGroupMemberForm } from "@/components/AddGroupMemberForm";
+import { GroupMemberClaimBadges } from "@/components/GroupMemberClaimBadges";
+import { GroupMemberClaimsDialog } from "@/components/GroupMemberClaimsDialog";
 import { RemoveGroupMemberDialog } from "@/components/RemoveGroupMemberDialog";
 import {
   Table,
@@ -53,13 +55,14 @@ export default async function GroupMembersPage({ params }: PageProps) {
           <TableRow>
             <TableHead>Namn</TableHead>
             <TableHead>E-post</TableHead>
-            <TableHead className="w-[120px] text-right">Åtgärder</TableHead>
+            <TableHead>Behörigheter</TableHead>
+            <TableHead className="w-[100px] text-right">Åtgärder</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {members.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={3} className="text-muted-foreground">
+              <TableCell colSpan={4} className="text-muted-foreground">
                 Inga medlemmar hittades.
               </TableCell>
             </TableRow>
@@ -68,13 +71,17 @@ export default async function GroupMembersPage({ params }: PageProps) {
               <TableRow key={member.id}>
                 <TableCell>{member.name}</TableCell>
                 <TableCell>{member.email}</TableCell>
+                <TableCell>
+                  <GroupMemberClaimBadges member={member} />
+                </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end">
-                    <RemoveGroupMemberDialog
-                      groupSlug={groupSlug}
-                      member={member}
-                    />
-                  </div>
+                  {/* The server rejects changes to the Creator and to the viewer's own membership. */}
+                  {member.isCreator || member.id === userId ? null : (
+                    <div className="flex justify-end gap-1">
+                      <GroupMemberClaimsDialog groupSlug={groupSlug} member={member} />
+                      <RemoveGroupMemberDialog groupSlug={groupSlug} member={member} />
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             ))

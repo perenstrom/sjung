@@ -6,7 +6,7 @@ import {
   inviteEmailSchema,
   memberUserIdSchema,
   membershipGroupSlugSchema,
-  parseGroupClaimFromFormData,
+  parseGroupClaimsFromFormData,
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
   parseInviteEmailFromFormData,
@@ -218,25 +218,30 @@ describe("parseMemberUserIdFromFormData", () => {
   });
 });
 
-describe("parseGroupClaimFromFormData", () => {
-  it("parses each GroupClaim value", () => {
-    expect(
-      parseGroupClaimFromFormData(createFormData({ claim: "MANAGE_MEMBERS" }))
-    ).toBe("MANAGE_MEMBERS");
-    expect(
-      parseGroupClaimFromFormData(createFormData({ claim: "MANAGE_CONTENT" }))
-    ).toBe("MANAGE_CONTENT");
+describe("parseGroupClaimsFromFormData", () => {
+  function claimsFormData(claims: string[]): FormData {
+    const formData = new FormData();
+    for (const claim of claims) {
+      formData.append("claims", claim);
+    }
+    return formData;
+  }
+
+  it("returns an empty set when no claims are submitted", () => {
+    expect(parseGroupClaimsFromFormData(claimsFormData([]))).toEqual([]);
   });
 
-  it("throws Ogiltig behörighet when missing or not a known Claim", () => {
-    expect(() => parseGroupClaimFromFormData(createFormData({}))).toThrow(
-      "Ogiltig behörighet"
-    );
+  it("parses every submitted Claim, dropping duplicates", () => {
+    expect(
+      parseGroupClaimsFromFormData(
+        claimsFormData(["MANAGE_CONTENT", "MANAGE_MEMBERS", "MANAGE_CONTENT"])
+      )
+    ).toEqual(["MANAGE_CONTENT", "MANAGE_MEMBERS"]);
+  });
+
+  it("throws Ogiltig behörighet when any value is not a known Claim", () => {
     expect(() =>
-      parseGroupClaimFromFormData(createFormData({ claim: "manage_members" }))
-    ).toThrow("Ogiltig behörighet");
-    expect(() =>
-      parseGroupClaimFromFormData(createFormData({ claim: "ADMIN" }))
+      parseGroupClaimsFromFormData(claimsFormData(["MANAGE_MEMBERS", "ADMIN"]))
     ).toThrow("Ogiltig behörighet");
   });
 });

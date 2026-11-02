@@ -50,13 +50,17 @@ export default async function GroupsPage() {
               <TableRow key={group.id}>
                 <TableCell>{group.name}</TableCell>
                 <TableCell className="text-right">
-                  {group.isCreator ? (
+                  {group.canManageMembers ? (
                     <div className="flex justify-end gap-2">
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/app/${group.slug}/members`}>Medlemmar</Link>
                       </Button>
-                      <EditGroupDialog group={{ id: group.id, name: group.name }} />
-                      <DeleteGroupDialog group={{ id: group.id, name: group.name }} />
+                      {group.isCreator ? (
+                        <>
+                          <EditGroupDialog group={{ id: group.id, name: group.name }} />
+                          <DeleteGroupDialog group={{ id: group.id, name: group.name }} />
+                        </>
+                      ) : null}
                     </div>
                   ) : (
                     <span className="text-muted-foreground">–</span>

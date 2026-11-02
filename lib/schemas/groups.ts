@@ -82,10 +82,13 @@ export function parseMemberUserIdFromFormData(formData: FormData): string {
   return result.data;
 }
 
-export function parseGroupClaimFromFormData(formData: FormData): GroupClaim {
-  const result = groupClaimSchema.safeParse(formDataString(formData, "claim"));
+/** Reads the repeated `claims` field as a Member's complete Claim set; empty means none. */
+export function parseGroupClaimsFromFormData(formData: FormData): GroupClaim[] {
+  const result = z
+    .array(groupClaimSchema)
+    .safeParse(formData.getAll("claims"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Ogiltig behörighet");
   }
-  return result.data;
+  return [...new Set(result.data)];
 }
