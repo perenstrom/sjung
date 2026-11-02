@@ -235,23 +235,6 @@ export async function requirePieceNoteInGroup<
   return note;
 }
 
-export async function requireCreatorGroupBySlug(
-  groupSlug: string,
-  forbiddenMessage = "Du har inte behörighet att hantera medlemmar i gruppen"
-) {
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const group = await prisma.group.findUnique({
-    where: { id: groupId },
-    select: { createdById: true },
-  });
-
-  if (!group || group.createdById !== userId) {
-    throw new Error(forbiddenMessage);
-  }
-
-  return { userId, groupId };
-}
-
 /** Matches the group only if `userId` is its Creator or holds `MANAGE_MEMBERS` in it. */
 function memberManagerGroupWhere(groupId: string, userId: string): Prisma.GroupWhereInput {
   return {
