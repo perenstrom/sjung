@@ -1,5 +1,12 @@
 import { testPrisma } from "./db";
-import type { User, Group, Piece, PieceNote } from "@/app/generated/prisma/client";
+import type {
+  User,
+  Group,
+  GroupClaim,
+  GroupMemberClaim,
+  Piece,
+  PieceNote,
+} from "@/app/generated/prisma/client";
 
 let userCounter = 0;
 let groupCounter = 0;
@@ -63,6 +70,19 @@ export async function createGroup(
   });
 
   return group;
+}
+
+/** Grants Claims to an existing Member (the `UsersToGroups` row must already exist). */
+export async function grantClaims(
+  userId: string,
+  groupId: string,
+  claims: GroupClaim[],
+): Promise<GroupMemberClaim[]> {
+  return Promise.all(
+    claims.map((claim) =>
+      testPrisma.groupMemberClaim.create({ data: { userId, groupId, claim } }),
+    ),
+  );
 }
 
 type CreatePieceOptions = Partial<{

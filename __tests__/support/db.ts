@@ -25,6 +25,7 @@ const TABLES = [
   "users",
   "groups",
   "users_to_groups",
+  "group_member_claims",
   "pieces",
   "links",
   "files",

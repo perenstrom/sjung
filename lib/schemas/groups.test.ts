@@ -6,6 +6,7 @@ import {
   inviteEmailSchema,
   memberUserIdSchema,
   membershipGroupSlugSchema,
+  parseGroupClaimFromFormData,
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
   parseInviteEmailFromFormData,
@@ -214,5 +215,28 @@ describe("parseMemberUserIdFromFormData", () => {
     expect(() =>
       parseMemberUserIdFromFormData(createFormData({ memberUserId: "  " }))
     ).toThrow("Ogiltig medlem");
+  });
+});
+
+describe("parseGroupClaimFromFormData", () => {
+  it("parses each GroupClaim value", () => {
+    expect(
+      parseGroupClaimFromFormData(createFormData({ claim: "MANAGE_MEMBERS" }))
+    ).toBe("MANAGE_MEMBERS");
+    expect(
+      parseGroupClaimFromFormData(createFormData({ claim: "MANAGE_CONTENT" }))
+    ).toBe("MANAGE_CONTENT");
+  });
+
+  it("throws Ogiltig behörighet when missing or not a known Claim", () => {
+    expect(() => parseGroupClaimFromFormData(createFormData({}))).toThrow(
+      "Ogiltig behörighet"
+    );
+    expect(() =>
+      parseGroupClaimFromFormData(createFormData({ claim: "manage_members" }))
+    ).toThrow("Ogiltig behörighet");
+    expect(() =>
+      parseGroupClaimFromFormData(createFormData({ claim: "ADMIN" }))
+    ).toThrow("Ogiltig behörighet");
   });
 });

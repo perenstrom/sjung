@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import prisma from "@/lib/prisma";
+import { canManageGroupMembers } from "@/lib/actions/guards";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { requireTenantGroup } from "@/lib/tenant-group";
 
@@ -23,11 +23,7 @@ export default async function GroupMembersPage({ params }: PageProps) {
   const { groupSlug } = await params;
   const { userId, groupId } = await requireTenantGroup(groupSlug);
 
-  const group = await prisma.group.findUnique({
-    where: { id: groupId },
-    select: { createdById: true },
-  });
-  if (!group || group.createdById !== userId) {
+  if (!(await canManageGroupMembers(groupId, userId))) {
     notFound();
   }
 

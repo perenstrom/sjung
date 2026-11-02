@@ -1,15 +1,23 @@
 import { describe, expect, it, vi } from "vitest";
 
-// lib/actions/guards.ts imports getWritableGroupIdForSlug (for
-// requireCreatorGroupBySlug), which transitively imports the real NextAuth
-// setup; none of the guards exercised here need a session, so stub it out
-// rather than pull NextAuth into this DB-only test.
+// lib/actions/guards.ts imports getWritableGroupIdForSlug (for the by-slug
+// guards), which transitively imports the real NextAuth setup; stub it out
+// rather than pull NextAuth into this DB-only test. Tests that need a session
+// set one on the mock.
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
+import { auth } from "@/auth";
 import { testPrisma } from "../support/db";
-import { createGroup, createPiece, createUser } from "../support/fixtures";
+import {
+  createAccessScenario,
+  createGroup,
+  createPiece,
+  createUser,
+  grantClaims,
+} from "../support/fixtures";
 import {
   requireCreatorGroupById,
+  requireMemberManagerGroupBySlug,
   requireFileInGroup,
   requireLinkInGroup,
   requirePieceInGroup,
@@ -181,5 +189,79 @@ describe("requireCreatorGroupById", () => {
     await expect(
       requireCreatorGroupById(group.id, member.id, { forbiddenMessage: "Ej behörig" })
     ).rejects.toThrow("Ej behörig");
+  });
+});
+
+describe("requireMemberManagerGroupBySlug", () => {
+  const mockAuth = vi.mocked(auth);
+  const FORBIDDEN = "Du har inte behörighet att hantera medlemmar i gruppen";
+
+  function actAs(userId: string) {
+    mockAuth.mockResolvedValue({ user: { id: userId } } as never);
+  }
+
+  it("allows the group's creator without any stored Claim", async () => {
+    const { group, creator } = await createAccessScenario();
+    actAs(creator.id);
+
+    await expect(requireMemberManagerGroupBySlug(group.slug)).resolves.toEqual({
+      userId: creator.id,
+      groupId: group.id,
+      creatorId: creator.id,
+    });
+  });
+
+  it("allows a non-creator member holding MANAGE_MEMBERS", async () => {
+    const { group, creator, member } = await createAccessScenario();
+    await grantClaims(member.id, group.id, ["MANAGE_MEMBERS"]);
+    actAs(member.id);
+
+    await expect(requireMemberManagerGroupBySlug(group.slug)).resolves.toEqual({
+      userId: member.id,
+      groupId: group.id,
+      creatorId: creator.id,
+    });
+  });
+
+  it("denies a member holding only MANAGE_CONTENT", async () => {
+    const { group, member } = await createAccessScenario();
+    await grantClaims(member.id, group.id, ["MANAGE_CONTENT"]);
+    actAs(member.id);
+
+    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
+      FORBIDDEN
+    );
+  });
+
+  it("denies a member holding no Claim", async () => {
+    const { group, member } = await createAccessScenario();
+    actAs(member.id);
+
+    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
+      FORBIDDEN
+    );
+  });
+
+  it("denies a member whose MANAGE_MEMBERS is held in a different group", async () => {
+    const { group, member } = await createAccessScenario();
+    const otherGroup = await createGroup();
+    await testPrisma.usersToGroups.create({
+      data: { userId: member.id, groupId: otherGroup.id },
+    });
+    await grantClaims(member.id, otherGroup.id, ["MANAGE_MEMBERS"]);
+    actAs(member.id);
+
+    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
+      FORBIDDEN
+    );
+  });
+
+  it("denies a non-member", async () => {
+    const { group, nonMember } = await createAccessScenario();
+    actAs(nonMember.id);
+
+    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
+      "Ogiltig grupp eller saknad behörighet"
+    );
   });
 });

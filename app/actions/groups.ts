@@ -3,10 +3,11 @@
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
-import { requireCreatorGroupById, requireCreatorGroupBySlug } from "@/lib/actions/guards";
+import { requireCreatorGroupById, requireMemberManagerGroupBySlug } from "@/lib/actions/guards";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import {
+  parseGroupClaimFromFormData,
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
   parseInviteEmailFromFormData,
@@ -155,7 +156,7 @@ export async function deleteGroup(formData: FormData) {
 }
 
 export async function listGroupMembers(groupSlug: string) {
-  const { groupId } = await requireCreatorGroupBySlug(groupSlug);
+  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
 
   const rows = await prisma.usersToGroups.findMany({
     where: { groupId },
@@ -181,7 +182,7 @@ export async function listGroupMembers(groupSlug: string) {
 export async function addMemberToGroup(formData: FormData) {
   const groupSlug = parseMembershipGroupSlugFromFormData(formData);
   const email = parseInviteEmailFromFormData(formData);
-  const { groupId } = await requireCreatorGroupBySlug(groupSlug);
+  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -218,23 +219,15 @@ export async function removeMemberFromGroup(formData: FormData) {
   const groupSlug = parseMembershipGroupSlugFromFormData(formData);
   const memberUserId = parseMemberUserIdFromFormData(formData);
 
-  const { userId, groupId } = await requireCreatorGroupBySlug(groupSlug);
+  const { userId, groupId, creatorId } = await requireMemberManagerGroupBySlug(groupSlug);
   if (memberUserId === userId) {
     throw new Error("Du kan inte ta bort dig själv från gruppen");
   }
-
-  const membership = await prisma.usersToGroups.findUnique({
-    where: {
-      userId_groupId: {
-        userId: memberUserId,
-        groupId,
-      },
-    },
-    select: { userId: true },
-  });
-  if (!membership) {
-    throw new Error("Medlemmen finns inte i gruppen");
+  if (memberUserId === creatorId) {
+    throw new Error("Gruppens skapare kan inte tas bort från gruppen");
   }
+
+  await requireGroupMembership(memberUserId, groupId);
 
   const memberCount = await prisma.usersToGroups.count({
     where: { groupId },
@@ -253,4 +246,75 @@ export async function removeMemberFromGroup(formData: FormData) {
   });
 
   revalidateGroupMembersRoutes(groupSlug);
+}
+
+/** Parses a grant/revoke request, authorizes the caller and validates the target member. */
+async function requireClaimChange(formData: FormData) {
+  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const memberUserId = parseMemberUserIdFromFormData(formData);
+  const claim = parseGroupClaimFromFormData(formData);
+
+  const { userId, groupId, creatorId } = await requireMemberManagerGroupBySlug(groupSlug);
+  // Creator status implies every Claim and is never stored as a Claim row.
+  if (memberUserId === creatorId) {
+    throw new Error("Gruppens skapare har alltid alla behörigheter");
+  }
+  if (memberUserId === userId) {
+    throw new Error("Du kan inte ändra dina egna behörigheter");
+  }
+
+  await requireGroupMembership(memberUserId, groupId);
+
+  return { groupSlug, groupId, memberUserId, claim };
+}
+
+export async function grantMemberClaim(formData: FormData) {
+  const { groupSlug, groupId, memberUserId, claim } = await requireClaimChange(formData);
+
+  await prisma.groupMemberClaim.upsert({
+    where: {
+      userId_groupId_claim: {
+        userId: memberUserId,
+        groupId,
+        claim,
+      },
+    },
+    create: {
+      userId: memberUserId,
+      groupId,
+      claim,
+    },
+    update: {},
+  });
+
+  revalidateGroupMembersRoutes(groupSlug);
+}
+
+export async function revokeMemberClaim(formData: FormData) {
+  const { groupSlug, groupId, memberUserId, claim } = await requireClaimChange(formData);
+
+  await prisma.groupMemberClaim.deleteMany({
+    where: {
+      userId: memberUserId,
+      groupId,
+      claim,
+    },
+  });
+
+  revalidateGroupMembersRoutes(groupSlug);
+}
+
+async function requireGroupMembership(memberUserId: string, groupId: string) {
+  const membership = await prisma.usersToGroups.findUnique({
+    where: {
+      userId_groupId: {
+        userId: memberUserId,
+        groupId,
+      },
+    },
+    select: { userId: true },
+  });
+  if (!membership) {
+    throw new Error("Medlemmen finns inte i gruppen");
+  }
 }

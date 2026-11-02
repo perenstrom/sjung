@@ -77,11 +77,34 @@ model UsersToGroups {
   userId  String @map("user_id")
   groupId String @map("group_id")
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group  Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  claims GroupMemberClaim[]
 
   @@id([userId, groupId])
   @@map("users_to_groups")
+}
+
+// Elevated capabilities a Member can hold within one Group. The Creator is
+// never stored here — Creator status is Group.createdById and implies every
+// Claim (see docs/adr/0002-group-membership-gains-claims.md).
+enum GroupClaim {
+  MANAGE_MEMBERS
+  MANAGE_CONTENT
+
+  @@map("group_claim")
+}
+
+model GroupMemberClaim {
+  userId  String     @map("user_id")
+  groupId String     @map("group_id")
+  claim   GroupClaim
+
+  // Hangs off the membership row, so removing a Member drops their Claims.
+  membership UsersToGroups @relation(fields: [userId, groupId], references: [userId, groupId], onDelete: Cascade)
+
+  @@id([userId, groupId, claim])
+  @@map("group_member_claims")
 }
 
 model Piece {
