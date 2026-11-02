@@ -1,8 +1,10 @@
+import type { PieceWithRelations } from "@/lib/pieces/types";
+
 export type SetListPieceStep = {
   kind: "piece";
   id: string;
   pieceId: string;
-  pieceName: string;
+  piece: PieceWithRelations;
   position: number;
 };
 

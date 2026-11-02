@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
@@ -15,8 +15,10 @@ import {
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
+import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
+import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
 import type { Person } from "@/types/piece-credit-dialog";
 
@@ -26,47 +28,105 @@ import type { Person } from "@/types/piece-credit-dialog";
 const FIRST_LINE_CLASS = "flex min-h-8 items-center";
 const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 
+// A Running-order note row's text spans the Namn, Medverkande, Länkar and
+// Filer columns.
+const NOTE_COL_SPAN = 4;
+
+// A row is a piece or, in set list mode, a Running-order note. Set list rows
+// carry the step id, so the same piece can appear in several rows.
+type PieceRow = { kind: "piece"; id: string; piece: PieceWithRelations };
+type NoteRow = { kind: "note"; id: string; content: string };
+type PiecesTableRow = PieceRow | NoteRow;
+
+/** Cell renderer for piece-only columns; note rows never reach it (spanned) but render nothing. */
+function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
+  return function PieceCell({ row }: { row: { original: PiecesTableRow } }) {
+    return row.original.kind === "piece" ? render(row.original.piece) : null;
+  };
+}
+
 function formatCreditsText(piece: PieceWithRelations): string {
   return piece.credits
     .map((credit) => `${credit.person.name} (${credit.role})`)
     .join(", ");
 }
 
+/**
+ * The table for every list of pieces. Pass `setList` instead of `pieces` to
+ * show a set list's steps in position order: adds a `#` column and the step
+ * reorder/remove actions, turns off sorting and drops the delete-piece action.
+ */
 export function PiecesTable({
-  pieces,
   people,
   groupSlug,
+  ...props
 }: {
-  pieces: PieceWithRelations[];
   people: Person[];
   groupSlug: string;
-}) {
+} & (
+  | { pieces: PieceWithRelations[]; setList?: undefined }
+  | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
+)) {
   const { isEditing } = useEditMode();
-  const columns = useMemo<ColumnDef<PieceWithRelations>[]>(
+  const { pieces, setList } = props;
+  const rows = useMemo<PiecesTableRow[]>(
+    () =>
+      setList
+        ? setList.steps
+        : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece })),
+    [pieces, setList]
+  );
+  const orderedStepIds = useMemo(
+    () => setList?.steps.map((step) => step.id) ?? [],
+    [setList]
+  );
+
+  const columns = useMemo<ColumnDef<PiecesTableRow>[]>(
     () => [
+      ...(setList
+        ? [
+            {
+              id: "position",
+              header: () => <span className="w-[1%] whitespace-nowrap">#</span>,
+              cell: ({ row }) => (
+                <div className={cn(FIRST_LINE_CLASS, "font-mono text-xs")}>
+                  {row.index + 1}
+                </div>
+              ),
+            } satisfies ColumnDef<PiecesTableRow>,
+          ]
+        : []),
       {
-        accessorKey: "name",
+        id: "name",
+        accessorFn: (row) => (row.kind === "piece" ? row.piece.name : ""),
         sortingFn: caseInsensitiveSortingFn,
+        meta: {
+          getColSpan: (row) => (row.kind === "note" ? NOTE_COL_SPAN : 1),
+        },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Namn" />
         ),
-        cell: ({ row }) => (
-          <div className={FIRST_LINE_CLASS}>
-            <Link
-              className="underline"
-              href={`/app/${groupSlug}/pieces/${row.original.id}`}
-            >
-              {row.original.name}
-            </Link>
-          </div>
-        ),
+        cell: ({ row }) =>
+          row.original.kind === "note" ? (
+            <div className="whitespace-pre-wrap py-1.5 text-muted-foreground">
+              {row.original.content}
+            </div>
+          ) : (
+            <div className={FIRST_LINE_CLASS}>
+              <Link
+                className="underline"
+                href={`/app/${groupSlug}/pieces/${row.original.piece.id}`}
+              >
+                {row.original.piece.name}
+              </Link>
+            </div>
+          ),
       },
       {
         id: "credits",
         enableSorting: false,
         header: () => "Medverkande",
-        cell: ({ row }) => {
-          const piece = row.original;
+        cell: pieceCell((piece) => {
           return (
             <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
               <span className="min-w-0 flex-1">{formatCreditsText(piece)}</span>
@@ -79,7 +139,7 @@ export function PiecesTable({
               ) : null}
             </div>
           );
-        },
+        }),
       },
       {
         id: "links",
@@ -87,8 +147,7 @@ export function PiecesTable({
         header: () => (
           <span className="w-[1%] whitespace-nowrap">Länkar</span>
         ),
-        cell: ({ row }) => {
-          const piece = row.original;
+        cell: pieceCell((piece) => {
           return (
             <div className={LIST_CELL_OFFSET_CLASS}>
               <PieceInlineLinksCell
@@ -104,7 +163,7 @@ export function PiecesTable({
               />
             </div>
           );
-        },
+        }),
       },
       {
         id: "files",
@@ -112,8 +171,7 @@ export function PiecesTable({
         header: () => (
           <span className="w-[1%] whitespace-nowrap">Filer</span>
         ),
-        cell: ({ row }) => {
-          const piece = row.original;
+        cell: pieceCell((piece) => {
           return (
             <div
               className={cn(
@@ -134,7 +192,7 @@ export function PiecesTable({
               />
             </div>
           );
-        },
+        }),
       },
       {
         id: "actions",
@@ -143,10 +201,22 @@ export function PiecesTable({
           <span className="w-[1%] whitespace-nowrap">Åtgärder</span>
         ),
         cell: ({ row }) => {
-          const piece = row.original;
+          const step = row.original;
+          const piece = step.kind === "piece" ? step.piece : null;
           return (
             <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
-              {isEditing ? (
+              {setList && isEditing ? (
+                <div className="flex items-center">
+                  <SetListStepActions
+                    step={step}
+                    stepIndex={row.index}
+                    orderedStepIds={orderedStepIds}
+                    groupSlug={groupSlug}
+                    setListId={setList.id}
+                  />
+                </div>
+              ) : null}
+              {piece && isEditing ? (
                 <EditPieceDialog
                   groupSlug={groupSlug}
                   people={people}
@@ -160,12 +230,14 @@ export function PiecesTable({
                   }}
                 />
               ) : null}
-              <PieceNotesDialog
-                readOnly={!isEditing}
-                groupSlug={groupSlug}
-                piece={{ id: piece.id, name: piece.name }}
-              />
-              {isEditing ? (
+              {piece ? (
+                <PieceNotesDialog
+                  readOnly={!isEditing}
+                  groupSlug={groupSlug}
+                  piece={{ id: piece.id, name: piece.name }}
+                />
+              ) : null}
+              {piece && !setList && isEditing ? (
                 <DeletePieceDialog
                   groupSlug={groupSlug}
                   piece={{ id: piece.id, name: piece.name }}
@@ -176,15 +248,16 @@ export function PiecesTable({
         },
       },
     ],
-    [groupSlug, isEditing, people]
+    [groupSlug, isEditing, orderedStepIds, people, setList]
   );
 
   return (
     <DataTable
       columns={columns}
-      data={pieces}
+      data={rows}
+      enableSorting={!setList}
       cellAlign="top"
-      emptyMessage="Inga noter tillagda ännu."
+      emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
     />
   );
 }

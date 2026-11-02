@@ -20,10 +20,7 @@ import {
   parseFinalizePieceFileUploadFromFormData,
   parseUpdatePieceFileDisplayNameFromFormData,
 } from "@/lib/schemas/files";
-import {
-  revalidateGroupPieceDetailRoutes,
-  revalidateGroupRoute,
-} from "@/lib/revalidate/group-routes";
+import { revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
 import { runGroupMutation } from "@/lib/tenant-group";
 
 const UPLOAD_URL_EXPIRES_SECONDS = 60 * 10;
@@ -91,8 +88,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
         },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, pieceId);
+      await revalidatePieceRoutes(groupSlug, pieceId);
     }
   );
 }
@@ -163,8 +159,7 @@ export async function finalizePieceFileReplace(formData: FormData) {
         },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, file.pieceId);
+      await revalidatePieceRoutes(groupSlug, file.pieceId);
     }
   );
 }
@@ -212,8 +207,7 @@ export async function updatePieceFileDisplayName(formData: FormData) {
         },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, file.pieceId);
+      await revalidatePieceRoutes(groupSlug, file.pieceId);
     }
   );
 }
@@ -244,8 +238,7 @@ export async function deletePieceFile(formData: FormData) {
         where: { id: file.id },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, file.pieceId);
+      await revalidatePieceRoutes(groupSlug, file.pieceId);
     }
   );
 }

@@ -9,6 +9,7 @@ import {
   requireSetListPieceNoteInGroup,
 } from "@/lib/actions/guards";
 import prisma from "@/lib/prisma";
+import { pieceWithRelationsInclude } from "@/lib/pieces/types";
 import { parsePieceIdFromFormData } from "@/lib/schemas/pieces";
 import {
   parseWritableGroupSlugFromFormData,
@@ -138,9 +139,7 @@ export async function getSetListDetail(
           pieceId: true,
           position: true,
           piece: {
-            select: {
-              name: true,
-            },
+            include: pieceWithRelationsInclude,
           },
         },
       },
@@ -164,7 +163,7 @@ export async function getSetListDetail(
       kind: "piece" as const,
       id: entry.id,
       pieceId: entry.pieceId,
-      pieceName: entry.piece.name,
+      piece: entry.piece,
       position: entry.position,
     })),
     ...setList.notes.map((entry) => ({

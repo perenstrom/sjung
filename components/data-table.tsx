@@ -26,6 +26,9 @@
  * ```
  *
  * Use `enableSorting={false}` when the view uses manual reorder (e.g. setlist steps).
+ *
+ * A column can make its cell span several columns per row with
+ * `meta: { getColSpan: (row) => n }`; the covered cells are skipped.
  */
 import {
   type Column,
@@ -33,6 +36,7 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
+  type RowData,
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -48,8 +52,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { spanCells } from "@/lib/data-table/cellSpans";
 import { caseInsensitiveSortingFns } from "@/lib/data-table/sorting";
 import { cn } from "@/lib/utils";
+
+declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    /**
+     * How many columns this column's cell covers in the given row (default 1).
+     * The covered cells to its right are not rendered.
+     */
+    getColSpan?: (row: TData) => number;
+  }
+}
 
 export type { ColumnDef };
 
@@ -108,9 +124,13 @@ export function DataTable<TData, TValue>({
           {table.getRowModel().rows.length > 0 ? (
             table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
+                {spanCells(
+                  row.getVisibleCells(),
+                  (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1
+                ).map(({ cell, colSpan }) => (
                   <TableCell
                     key={cell.id}
+                    colSpan={colSpan > 1 ? colSpan : undefined}
                     className={cn(cellAlign === "top" && "align-top")}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
