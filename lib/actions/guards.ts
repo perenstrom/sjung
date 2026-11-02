@@ -1,4 +1,4 @@
-import type { Prisma } from "@/app/generated/prisma/client";
+import { GroupClaim, type Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
@@ -250,6 +250,47 @@ export async function requireCreatorGroupBySlug(
   }
 
   return { userId, groupId };
+}
+
+/** Matches the group only if `userId` is its Creator or holds `MANAGE_MEMBERS` in it. */
+function memberManagerGroupWhere(groupId: string, userId: string): Prisma.GroupWhereInput {
+  return {
+    id: groupId,
+    OR: [
+      { createdById: userId },
+      {
+        users: {
+          some: { userId, claims: { some: { claim: GroupClaim.MANAGE_MEMBERS } } },
+        },
+      },
+    ],
+  };
+}
+
+export async function canManageGroupMembers(groupId: string, userId: string): Promise<boolean> {
+  const group = await prisma.group.findFirst({
+    where: memberManagerGroupWhere(groupId, userId),
+    select: { id: true },
+  });
+  return group !== null;
+}
+
+/**
+ * Membership-management guard: the Creator or any `MANAGE_MEMBERS` holder.
+ * Returns the Group's `creatorId` so callers can refuse to target the Creator.
+ */
+export async function requireMemberManagerGroupBySlug(groupSlug: string) {
+  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const group = await prisma.group.findFirst({
+    where: memberManagerGroupWhere(groupId, userId),
+    select: { createdById: true },
+  });
+
+  if (!group) {
+    throw new Error("Du har inte behörighet att hantera medlemmar i gruppen");
+  }
+
+  return { userId, groupId, creatorId: group.createdById };
 }
 
 export async function requireCreatorGroupById<

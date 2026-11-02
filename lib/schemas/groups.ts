@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GroupClaim } from "@/app/generated/prisma/enums";
 
 export const groupNameSchema = z
   .string()
@@ -22,6 +23,10 @@ export const memberUserIdSchema = z
   .string()
   .trim()
   .min(1, { error: "Ogiltig medlem" });
+
+export const groupClaimSchema = z.enum(GroupClaim, {
+  error: "Ogiltig behörighet",
+});
 
 function formDataString(formData: FormData, field: string): string {
   const raw = formData.get(field);
@@ -73,6 +78,14 @@ export function parseMemberUserIdFromFormData(formData: FormData): string {
   );
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Ogiltig medlem");
+  }
+  return result.data;
+}
+
+export function parseGroupClaimFromFormData(formData: FormData): GroupClaim {
+  const result = groupClaimSchema.safeParse(formDataString(formData, "claim"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Ogiltig behörighet");
   }
   return result.data;
 }
