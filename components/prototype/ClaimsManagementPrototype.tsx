@@ -4,6 +4,7 @@
 // members page, switchable via ?variant=. Saving and removing only change
 // in-memory state; nothing reaches the server.
 import { useState } from "react";
+import { ShieldCheck, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -195,14 +196,14 @@ function VariantA({ ctx }: { ctx: Ctx }) {
   const [editing, setEditing] = useState<PrototypeMember | null>(null);
 
   return (
-    <>
+    <TooltipProvider>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Namn</TableHead>
             <TableHead>E-post</TableHead>
             <TableHead>Behörigheter</TableHead>
-            <TableHead className="w-[220px] text-right">Åtgärder</TableHead>
+            <TableHead className="w-[100px] text-right">Åtgärder</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -215,13 +216,37 @@ function VariantA({ ctx }: { ctx: Ctx }) {
               </TableCell>
               <TableCell className="text-right">
                 {isEditable(member, ctx) ? (
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setEditing(member)}>
-                      Behörigheter
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => ctx.remove(member.id)}>
-                      Ta bort
-                    </Button>
+                  <div className="flex justify-end gap-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8"
+                          onClick={() => setEditing(member)}
+                          aria-label={`Behörigheter för ${member.name}`}
+                        >
+                          <ShieldCheck className="size-4" aria-hidden="true" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Behörigheter</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-destructive hover:text-destructive"
+                          onClick={() => ctx.remove(member.id)}
+                          aria-label={`Ta bort ${member.name}`}
+                        >
+                          <Trash2 className="size-4" aria-hidden="true" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Ta bort</TooltipContent>
+                    </Tooltip>
                   </div>
                 ) : null}
               </TableCell>
@@ -232,7 +257,7 @@ function VariantA({ ctx }: { ctx: Ctx }) {
       {editing ? (
         <ClaimsDialog member={editing} ctx={ctx} onClose={() => setEditing(null)} />
       ) : null}
-    </>
+    </TooltipProvider>
   );
 }
 
