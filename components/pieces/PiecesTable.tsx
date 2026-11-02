@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useMemo } from "react";
+import { type ComponentProps, createContext, type ReactNode, useContext, useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
@@ -39,6 +39,29 @@ type PieceRow = { kind: "piece"; id: string; piece: PieceWithRelations };
 type NoteRow = { kind: "note"; id: string; content: string };
 type PiecesTableRow = PieceRow | NoteRow;
 
+// Cell data that is a new object after every router.refresh(). The columns
+// memo must not depend on it: new columns mean new cell components, which
+// remounts every cell and closes any dialog open inside one.
+const PiecesTableCellContext = createContext<{
+  people: Person[];
+  orderedStepIds: string[];
+}>({ people: [], orderedStepIds: [] });
+
+function EditPieceAction(props: Omit<ComponentProps<typeof EditPieceDialog>, "people">) {
+  const { people } = useContext(PiecesTableCellContext);
+  return <EditPieceDialog people={people} {...props} />;
+}
+
+function AddCreditAction(props: Omit<ComponentProps<typeof AddPieceCreditPopover>, "people">) {
+  const { people } = useContext(PiecesTableCellContext);
+  return <AddPieceCreditPopover people={people} {...props} />;
+}
+
+function StepActions(props: Omit<ComponentProps<typeof SetListStepActions>, "orderedStepIds">) {
+  const { orderedStepIds } = useContext(PiecesTableCellContext);
+  return <SetListStepActions orderedStepIds={orderedStepIds} {...props} />;
+}
+
 /** Cell renderer for piece-only columns; note rows never reach it (spanned) but render nothing. */
 function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
   return function PieceCell({ row }: { row: { original: PiecesTableRow } }) {
@@ -64,6 +87,7 @@ export function PiecesTable({
 )) {
   const { isEditing } = useEditMode();
   const { pieces, setList } = props;
+  const setListId = setList?.id;
   const rows = useMemo<PiecesTableRow[]>(
     () =>
       setList
@@ -71,14 +95,14 @@ export function PiecesTable({
         : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece })),
     [pieces, setList]
   );
-  const orderedStepIds = useMemo(
-    () => setList?.steps.map((step) => step.id) ?? [],
-    [setList]
+  const cellContext = useMemo(
+    () => ({ people, orderedStepIds: setList?.steps.map((step) => step.id) ?? [] }),
+    [people, setList]
   );
 
   const columns = useMemo<ColumnDef<PiecesTableRow>[]>(
     () => [
-      ...(setList
+      ...(setListId
         ? [
             {
               id: "position",
@@ -131,9 +155,8 @@ export function PiecesTable({
               </div>
               {isEditing ? (
                 <div className={FIRST_LINE_CLASS}>
-                  <AddPieceCreditPopover
+                  <AddCreditAction
                     groupSlug={groupSlug}
-                    people={people}
                     piece={{ id: piece.id, name: piece.name }}
                   />
                 </div>
@@ -206,21 +229,19 @@ export function PiecesTable({
           const piece = step.kind === "piece" ? step.piece : null;
           return (
             <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
-              {setList && isEditing ? (
+              {setListId && isEditing ? (
                 <div className="flex items-center">
-                  <SetListStepActions
+                  <StepActions
                     step={step}
                     stepIndex={row.index}
-                    orderedStepIds={orderedStepIds}
                     groupSlug={groupSlug}
-                    setListId={setList.id}
+                    setListId={setListId}
                   />
                 </div>
               ) : null}
               {piece && isEditing ? (
-                <EditPieceDialog
+                <EditPieceAction
                   groupSlug={groupSlug}
-                  people={people}
                   piece={{
                     id: piece.id,
                     name: piece.name,
@@ -235,7 +256,7 @@ export function PiecesTable({
                   piece={{ id: piece.id, name: piece.name }}
                 />
               ) : null}
-              {piece && !setList && isEditing ? (
+              {piece && !setListId && isEditing ? (
                 <DeletePieceDialog
                   groupSlug={groupSlug}
                   piece={{ id: piece.id, name: piece.name }}
@@ -246,16 +267,18 @@ export function PiecesTable({
         },
       },
     ],
-    [groupSlug, isEditing, orderedStepIds, people, setList]
+    [groupSlug, isEditing, setListId]
   );
 
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      enableSorting={!setList}
-      cellAlign="top"
-      emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
-    />
+    <PiecesTableCellContext.Provider value={cellContext}>
+      <DataTable
+        columns={columns}
+        data={rows}
+        enableSorting={!setList}
+        cellAlign="top"
+        emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
+      />
+    </PiecesTableCellContext.Provider>
   );
 }
