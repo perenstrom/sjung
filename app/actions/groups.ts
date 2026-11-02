@@ -1,5 +1,6 @@
 "use server";
 
+import { GroupClaim } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
@@ -7,7 +8,7 @@ import { requireCreatorGroupById, requireMemberManagerGroupBySlug } from "@/lib/
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import {
-  parseGroupClaimFromFormData,
+  parseGroupClaimsFromFormData,
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
   parseInviteEmailFromFormData,
@@ -34,15 +35,29 @@ export async function getGroups() {
       name: true,
       slug: true,
       createdById: true,
+      users: {
+        where: { userId: user.id },
+        select: {
+          claims: { select: { claim: true } },
+        },
+      },
     },
   });
 
-  return groups.map((g) => ({
-    id: g.id,
-    name: g.name,
-    slug: g.slug,
-    isCreator: g.createdById === user.id,
-  }));
+  return groups.map((g) => {
+    const isCreator = g.createdById === user.id;
+    return {
+      id: g.id,
+      name: g.name,
+      slug: g.slug,
+      isCreator,
+      canManageMembers:
+        isCreator ||
+        g.users.some((membership) =>
+          membership.claims.some(({ claim }) => claim === GroupClaim.MANAGE_MEMBERS)
+        ),
+    };
+  });
 }
 
 export async function setActiveGroup(groupSlug: string) {
@@ -156,7 +171,7 @@ export async function deleteGroup(formData: FormData) {
 }
 
 export async function listGroupMembers(groupSlug: string) {
-  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
+  const { groupId, creatorId } = await requireMemberManagerGroupBySlug(groupSlug);
 
   const rows = await prisma.usersToGroups.findMany({
     where: { groupId },
@@ -168,6 +183,10 @@ export async function listGroupMembers(groupSlug: string) {
           email: true,
         },
       },
+      claims: {
+        select: { claim: true },
+        orderBy: { claim: "asc" },
+      },
     },
     orderBy: {
       user: {
@@ -176,7 +195,11 @@ export async function listGroupMembers(groupSlug: string) {
     },
   });
 
-  return rows.map((row) => row.user);
+  return rows.map((row) => ({
+    ...row.user,
+    isCreator: row.user.id === creatorId,
+    claims: row.claims.map(({ claim }) => claim),
+  }));
 }
 
 export async function addMemberToGroup(formData: FormData) {
@@ -224,7 +247,7 @@ export async function removeMemberFromGroup(formData: FormData) {
     throw new Error("Du kan inte ta bort dig själv från gruppen");
   }
   if (memberUserId === creatorId) {
-    throw new Error("Gruppens skapare kan inte tas bort från gruppen");
+    throw new Error("Gruppens administratör kan inte tas bort från gruppen");
   }
 
   await requireGroupMembership(memberUserId, groupId);
@@ -248,57 +271,42 @@ export async function removeMemberFromGroup(formData: FormData) {
   revalidateGroupMembersRoutes(groupSlug);
 }
 
-/** Parses a grant/revoke request, authorizes the caller and validates the target member. */
-async function requireClaimChange(formData: FormData) {
+/**
+ * Sets a Member's complete Claim set in one transaction; concurrent saves resolve last-write-wins.
+ * The caller must manage members, and may not target the Creator or themselves.
+ */
+export async function setMemberClaims(formData: FormData) {
   const groupSlug = parseMembershipGroupSlugFromFormData(formData);
   const memberUserId = parseMemberUserIdFromFormData(formData);
-  const claim = parseGroupClaimFromFormData(formData);
+  const claims = parseGroupClaimsFromFormData(formData);
 
   const { userId, groupId, creatorId } = await requireMemberManagerGroupBySlug(groupSlug);
   // Creator status implies every Claim and is never stored as a Claim row.
   if (memberUserId === creatorId) {
-    throw new Error("Gruppens skapare har alltid alla behörigheter");
+    throw new Error("Gruppens administratör har alltid alla behörigheter");
   }
   if (memberUserId === userId) {
     throw new Error("Du kan inte ändra dina egna behörigheter");
   }
 
-  await requireGroupMembership(memberUserId, groupId);
+  await prisma.$transaction(async (tx) => {
+    // Locking the membership row queues concurrent saves for this Member, so the
+    // last one replaces the set instead of merging with it. It also proves membership.
+    const membership = await tx.$queryRaw<unknown[]>`
+      SELECT 1 FROM users_to_groups
+      WHERE user_id = ${memberUserId} AND group_id = ${groupId}
+      FOR UPDATE
+    `;
+    if (membership.length === 0) {
+      throw new Error("Medlemmen finns inte i gruppen");
+    }
 
-  return { groupSlug, groupId, memberUserId, claim };
-}
-
-export async function grantMemberClaim(formData: FormData) {
-  const { groupSlug, groupId, memberUserId, claim } = await requireClaimChange(formData);
-
-  await prisma.groupMemberClaim.upsert({
-    where: {
-      userId_groupId_claim: {
-        userId: memberUserId,
-        groupId,
-        claim,
-      },
-    },
-    create: {
-      userId: memberUserId,
-      groupId,
-      claim,
-    },
-    update: {},
-  });
-
-  revalidateGroupMembersRoutes(groupSlug);
-}
-
-export async function revokeMemberClaim(formData: FormData) {
-  const { groupSlug, groupId, memberUserId, claim } = await requireClaimChange(formData);
-
-  await prisma.groupMemberClaim.deleteMany({
-    where: {
-      userId: memberUserId,
-      groupId,
-      claim,
-    },
+    await tx.groupMemberClaim.deleteMany({
+      where: { userId: memberUserId, groupId },
+    });
+    await tx.groupMemberClaim.createMany({
+      data: claims.map((claim) => ({ userId: memberUserId, groupId, claim })),
+    });
   });
 
   revalidateGroupMembersRoutes(groupSlug);

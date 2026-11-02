@@ -8,14 +8,14 @@ vi.mock("next/cache", () => ({
 import { auth } from "@/auth";
 import type { GroupClaim } from "@/app/generated/prisma/client";
 import { testPrisma } from "../support/db";
-import { createAccessScenario, createUser, grantClaims } from "../support/fixtures";
+import { createAccessScenario, createGroup, createUser, grantClaims } from "../support/fixtures";
 import {
   addMemberToGroup,
   deleteGroup,
-  grantMemberClaim,
+  getGroups,
   listGroupMembers,
   removeMemberFromGroup,
-  revokeMemberClaim,
+  setMemberClaims,
   updateGroup,
 } from "@/app/actions/groups";
 
@@ -45,6 +45,15 @@ async function createManagerScenario(managerClaims: GroupClaim[] = ["MANAGE_MEMB
   return { ...scenario, manager, other };
 }
 
+/** A `setMemberClaims` request: the full Claim set the target should end up with. */
+function claimsFormData(groupSlug: string, memberUserId: string, claims: GroupClaim[]): FormData {
+  const fd = formData({ groupSlug, memberUserId });
+  for (const claim of claims) {
+    fd.append("claims", claim);
+  }
+  return fd;
+}
+
 async function claimsOf(userId: string, groupId: string) {
   const rows = await testPrisma.groupMemberClaim.findMany({
     where: { userId, groupId },
@@ -71,6 +80,24 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     expect(members.map((m) => m.id).sort()).toEqual(
       [creator.id, manager.id, other.id].sort()
     );
+  });
+
+  it("lists each member's Claims and marks only the Creator", async () => {
+    const { group, creator, manager, other } = await createManagerScenario([
+      "MANAGE_CONTENT",
+      "MANAGE_MEMBERS",
+    ]);
+    actAs(manager.id);
+
+    const members = await listGroupMembers(group.slug);
+    const byId = new Map(members.map((m) => [m.id, m]));
+
+    expect(byId.get(creator.id)).toMatchObject({ isCreator: true, claims: [] });
+    expect(byId.get(manager.id)).toMatchObject({
+      isCreator: false,
+      claims: ["MANAGE_MEMBERS", "MANAGE_CONTENT"],
+    });
+    expect(byId.get(other.id)).toMatchObject({ isCreator: false, claims: [] });
   });
 
   it("invites an existing user by email", async () => {
@@ -120,7 +147,7 @@ describe("removing the Creator", () => {
 
     await expect(
       removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))
-    ).rejects.toThrow("Gruppens skapare kan inte tas bort från gruppen");
+    ).rejects.toThrow("Gruppens administratör kan inte tas bort från gruppen");
     expect(await isMember(creator.id, group.id)).toBe(true);
   });
 
@@ -149,6 +176,51 @@ describe("removing a member who holds Claims", () => {
   });
 });
 
+describe("getGroups", () => {
+  it.each<[string, GroupClaim[], boolean]>([
+    ["MANAGE_MEMBERS", ["MANAGE_MEMBERS"], true],
+    ["only MANAGE_CONTENT", ["MANAGE_CONTENT"], false],
+    ["no Claim", [], false],
+  ])("flags canManageMembers for a member holding %s", async (_label, claims, expected) => {
+    const { group, member } = await createAccessScenario();
+    await grantClaims(member.id, group.id, claims);
+    actAs(member.id);
+
+    const groups = await getGroups();
+
+    expect(groups.find((g) => g.id === group.id)).toMatchObject({
+      isCreator: false,
+      canManageMembers: expected,
+    });
+  });
+
+  it("flags the Creator as able to manage members", async () => {
+    const { group, creator } = await createAccessScenario();
+    actAs(creator.id);
+
+    const groups = await getGroups();
+
+    expect(groups.find((g) => g.id === group.id)).toMatchObject({
+      isCreator: true,
+      canManageMembers: true,
+    });
+  });
+
+  it("does not let one group's MANAGE_MEMBERS leak into another group", async () => {
+    const { group, member } = await createAccessScenario();
+    await grantClaims(member.id, group.id, ["MANAGE_MEMBERS"]);
+    const otherGroup = await createGroup();
+    await testPrisma.usersToGroups.create({ data: { userId: member.id, groupId: otherGroup.id } });
+    actAs(member.id);
+
+    const groups = await getGroups();
+
+    expect(groups.find((g) => g.id === otherGroup.id)).toMatchObject({
+      canManageMembers: false,
+    });
+  });
+});
+
 describe("renaming and deleting the Group", () => {
   it("stays Creator-only: MANAGE_MEMBERS does not unlock either", async () => {
     const { group, manager } = await createManagerScenario(["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
@@ -166,28 +238,35 @@ describe("renaming and deleting the Group", () => {
   });
 });
 
-describe("grantMemberClaim / revokeMemberClaim", () => {
-  it.each<GroupClaim>(["MANAGE_MEMBERS", "MANAGE_CONTENT"])(
-    "lets the Creator grant and revoke %s on a member",
-    async (claim) => {
-      const { group, creator, other } = await createManagerScenario();
-      actAs(creator.id);
+describe("setMemberClaims", () => {
+  it("lets the Creator grant both Claims and then clear them", async () => {
+    const { group, creator, other } = await createManagerScenario();
+    actAs(creator.id);
 
-      await grantMemberClaim(formData({ groupSlug: group.slug, memberUserId: other.id, claim }));
-      expect(await claimsOf(other.id, group.id)).toEqual([claim]);
+    await setMemberClaims(
+      claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT"])
+    );
+    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
 
-      await revokeMemberClaim(formData({ groupSlug: group.slug, memberUserId: other.id, claim }));
-      expect(await claimsOf(other.id, group.id)).toEqual([]);
-    }
-  );
+    await setMemberClaims(claimsFormData(group.slug, other.id, []));
+    expect(await claimsOf(other.id, group.id)).toEqual([]);
+  });
+
+  it("replaces the member's whole Claim set rather than adding to it", async () => {
+    const { group, creator, other } = await createManagerScenario();
+    await grantClaims(other.id, group.id, ["MANAGE_MEMBERS"]);
+    actAs(creator.id);
+
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"]));
+
+    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
+  });
 
   it("lets a MANAGE_MEMBERS-only holder grant MANAGE_CONTENT they don't hold", async () => {
     const { group, manager, other } = await createManagerScenario(["MANAGE_MEMBERS"]);
     actAs(manager.id);
 
-    await grantMemberClaim(
-      formData({ groupSlug: group.slug, memberUserId: other.id, claim: "MANAGE_CONTENT" })
-    );
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"]));
 
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
   });
@@ -197,26 +276,37 @@ describe("grantMemberClaim / revokeMemberClaim", () => {
     await grantClaims(other.id, group.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
     actAs(manager.id);
 
-    await revokeMemberClaim(
-      formData({ groupSlug: group.slug, memberUserId: other.id, claim: "MANAGE_MEMBERS" })
-    );
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"]));
 
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
   });
 
-  it("is idempotent: granting a held Claim or revoking an absent one succeeds", async () => {
-    const { group, creator, other } = await createManagerScenario();
-    await grantClaims(other.id, group.id, ["MANAGE_CONTENT"]);
-    actAs(creator.id);
+  it("lets the last of two managers' saves win", async () => {
+    const { group, creator, manager, other } = await createManagerScenario();
 
-    await grantMemberClaim(
-      formData({ groupSlug: group.slug, memberUserId: other.id, claim: "MANAGE_CONTENT" })
-    );
-    await revokeMemberClaim(
-      formData({ groupSlug: group.slug, memberUserId: other.id, claim: "MANAGE_MEMBERS" })
-    );
+    actAs(manager.id);
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]));
+    actAs(creator.id);
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"]));
 
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
+  });
+
+  it("never merges two concurrent saves: one of them wins outright", async () => {
+    const { group, creator, other } = await createManagerScenario();
+    actAs(creator.id);
+
+    for (let round = 0; round < 10; round++) {
+      await setMemberClaims(claimsFormData(group.slug, other.id, []));
+      await Promise.all([
+        setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"])),
+        setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"])),
+      ]);
+
+      expect([["MANAGE_MEMBERS"], ["MANAGE_CONTENT"]]).toContainEqual(
+        await claimsOf(other.id, group.id)
+      );
+    }
   });
 
   it("is forbidden for a member holding only MANAGE_CONTENT", async () => {
@@ -224,23 +314,18 @@ describe("grantMemberClaim / revokeMemberClaim", () => {
     actAs(manager.id);
 
     await expect(
-      grantMemberClaim(
-        formData({ groupSlug: group.slug, memberUserId: other.id, claim: "MANAGE_MEMBERS" })
-      )
+      setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]))
     ).rejects.toThrow(FORBIDDEN);
     expect(await claimsOf(other.id, group.id)).toEqual([]);
   });
 
-  it.each([
-    ["grant", grantMemberClaim],
-    ["revoke", revokeMemberClaim],
-  ] as const)("rejects an attempt to %s a Claim on the Creator", async (_label, action) => {
+  it("rejects setting Claims on the Creator", async () => {
     const { group, creator, manager } = await createManagerScenario();
     actAs(manager.id);
 
     await expect(
-      action(formData({ groupSlug: group.slug, memberUserId: creator.id, claim: "MANAGE_MEMBERS" }))
-    ).rejects.toThrow("Gruppens skapare har alltid alla behörigheter");
+      setMemberClaims(claimsFormData(group.slug, creator.id, ["MANAGE_MEMBERS"]))
+    ).rejects.toThrow("Gruppens administratör har alltid alla behörigheter");
     expect(await claimsOf(creator.id, group.id)).toEqual([]);
   });
 
@@ -248,11 +333,9 @@ describe("grantMemberClaim / revokeMemberClaim", () => {
     const { group, manager } = await createManagerScenario();
     actAs(manager.id);
 
-    await expect(
-      grantMemberClaim(
-        formData({ groupSlug: group.slug, memberUserId: manager.id, claim: "MANAGE_CONTENT" })
-      )
-    ).rejects.toThrow("Du kan inte ändra dina egna behörigheter");
+    await expect(setMemberClaims(claimsFormData(group.slug, manager.id, []))).rejects.toThrow(
+      "Du kan inte ändra dina egna behörigheter"
+    );
     expect(await claimsOf(manager.id, group.id)).toEqual(["MANAGE_MEMBERS"]);
   });
 
@@ -261,9 +344,19 @@ describe("grantMemberClaim / revokeMemberClaim", () => {
     actAs(creator.id);
 
     await expect(
-      grantMemberClaim(
-        formData({ groupSlug: group.slug, memberUserId: nonMember.id, claim: "MANAGE_CONTENT" })
-      )
+      setMemberClaims(claimsFormData(group.slug, nonMember.id, ["MANAGE_CONTENT"]))
     ).rejects.toThrow("Medlemmen finns inte i gruppen");
+  });
+
+  it("rejects an unknown Claim without changing the member's Claims", async () => {
+    const { group, creator, other } = await createManagerScenario();
+    await grantClaims(other.id, group.id, ["MANAGE_CONTENT"]);
+    actAs(creator.id);
+
+    const fd = claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]);
+    fd.append("claims", "ADMIN");
+
+    await expect(setMemberClaims(fd)).rejects.toThrow("Ogiltig behörighet");
+    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
   });
 });

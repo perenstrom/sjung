@@ -32,6 +32,7 @@ type GroupOption = {
   id: string;
   name: string;
   slug: string;
+  canManageMembers: boolean;
 };
 
 function tenantSlugFromPathname(pathname: string): string | null {
@@ -61,7 +62,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const noterHref = hasActiveGroup ? `/app/${currentGroupSlug}` : null;
   const peopleHref = hasActiveGroup ? `/app/${currentGroupSlug}/people` : null;
   const setListsHref = hasActiveGroup ? `/app/${currentGroupSlug}/setlists` : null;
-  const membersHref = hasActiveGroup
+  const membersHref = currentGroup?.canManageMembers
     ? `/app/${currentGroupSlug}/members`
     : null;
   const groupsHref = "/app/me/groups";
@@ -163,8 +164,8 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
                 )}
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                {membersHref ? (
+              {membersHref ? (
+                <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
                     tooltip="Medlemmar"
@@ -175,13 +176,8 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
                       <span>Medlemmar</span>
                     </Link>
                   </SidebarMenuButton>
-                ) : (
-                  <SidebarMenuButton tooltip="Medlemmar" disabled>
-                    <UserPlus />
-                    <span>Medlemmar</span>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
+                </SidebarMenuItem>
+              ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

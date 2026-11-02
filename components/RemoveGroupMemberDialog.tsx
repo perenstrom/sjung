@@ -1,5 +1,6 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { removeMemberFromGroup } from "@/app/actions/groups";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -13,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type GroupMember = {
   id: string;
@@ -50,11 +52,22 @@ export function RemoveGroupMemberDialog({
         }
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="destructive" size="sm">
-          Ta bort
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 text-destructive hover:text-destructive"
+              aria-label={`Ta bort ${member.name}`}
+            >
+              <Trash2 className="size-4" aria-hidden="true" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>Ta bort</TooltipContent>
+      </Tooltip>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Ta bort medlem?</DialogTitle>
