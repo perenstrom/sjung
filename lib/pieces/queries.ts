@@ -3,6 +3,8 @@ import {
   pieceDetailSelect,
   pieceWithRelationsInclude,
   type PieceDetail,
+  type PieceNoteListItem,
+  type PieceNoteListItemQueryResult,
   type PieceWithRelations,
 } from "@/lib/pieces/types";
 
@@ -33,6 +35,7 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
     credits: piece.credits,
     files: piece.files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     links: piece.links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    notes: piece.notes.map(toPieceNoteListItem),
     setListEntries: piece.setListEntries
       .map((entry) => ({
         id: entry.id,
@@ -41,6 +44,13 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
       }))
       .sort((a, b) => a.setListName.localeCompare(b.setListName, "sv-SE")),
   };
+}
+
+export function toPieceNoteListItem({
+  createdBy,
+  ...note
+}: PieceNoteListItemQueryResult): PieceNoteListItem {
+  return { ...note, createdByName: createdBy.name };
 }
 
 /** Distinct ids of the set lists that contain the piece at least once. */

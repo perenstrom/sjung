@@ -1,5 +1,5 @@
 import { testPrisma } from "./db";
-import type { User, Group, Piece } from "@/app/generated/prisma/client";
+import type { User, Group, Piece, PieceNote } from "@/app/generated/prisma/client";
 
 let userCounter = 0;
 let groupCounter = 0;
@@ -97,6 +97,31 @@ export async function createPiece(
       groupId,
       createdById: creatorId,
       updatedById: overrides.updatedById ?? creatorId,
+    },
+  });
+}
+
+type CreatePieceNoteOptions = {
+  piece: Piece;
+  createdById: string;
+  content?: string;
+  updatedAt?: Date;
+};
+
+export async function createPieceNote({
+  piece,
+  createdById,
+  content,
+  updatedAt,
+}: CreatePieceNoteOptions): Promise<PieceNote> {
+  return testPrisma.pieceNote.create({
+    data: {
+      content: content ?? "Test note",
+      pieceId: piece.id,
+      groupId: piece.groupId,
+      createdById,
+      updatedById: createdById,
+      ...(updatedAt !== undefined ? { updatedAt } : {}),
     },
   });
 }

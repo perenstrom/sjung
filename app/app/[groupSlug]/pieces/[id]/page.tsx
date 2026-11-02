@@ -7,6 +7,7 @@ import { EditModeProvider } from "@/components/EditModeContext";
 import { PieceDetailCreditsSection } from "@/components/PieceDetailCreditsSection";
 import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
 import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
+import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
@@ -48,6 +49,13 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
           groupSlug={groupSlug}
           pieceId={piece.id}
           initialName={piece.name}
+        />
+
+        <PieceDetailNotesSection
+          key={`notes-${piece.id}`}
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          notes={piece.notes}
         />
 
         <PieceDetailCreditsSection
