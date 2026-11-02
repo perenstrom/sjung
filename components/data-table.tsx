@@ -41,7 +41,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -78,6 +78,8 @@ export interface DataTableProps<TData, TValue> {
   /** Vertical alignment of body cells. Default "middle". */
   cellAlign?: "middle" | "top";
   className?: string;
+  /** PROTOTYPE (PER-351): an extra full-width row rendered under a row. */
+  renderSubRow?: (row: TData) => React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -87,6 +89,7 @@ export function DataTable<TData, TValue>({
   emptyMessage = "Inga rader.",
   cellAlign = "middle",
   className,
+  renderSubRow,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -122,8 +125,11 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.length > 0 ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+            table.getRowModel().rows.map((row) => {
+              const subRow = renderSubRow?.(row.original);
+              return (
+              <Fragment key={row.id}>
+              <TableRow className={cn(subRow && "border-b-0")}>
                 {spanCells(
                   row.getVisibleCells(),
                   (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1
@@ -137,7 +143,16 @@ export function DataTable<TData, TValue>({
                   </TableCell>
                 ))}
               </TableRow>
-            ))
+              {subRow ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={row.getVisibleCells().length} className="pt-0">
+                    {subRow}
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              </Fragment>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell

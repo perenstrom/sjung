@@ -12,6 +12,11 @@ export const pieceWithRelationsInclude = {
   links: {
     orderBy: { createdAt: "desc" },
   },
+  // PROTOTYPE (PER-351): Piece notes in the list view.
+  notes: {
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, content: true, updatedAt: true, createdBy: { select: { name: true } } },
+  },
 } as const satisfies Prisma.PieceFindManyArgs["include"];
 
 export type PieceWithRelations = Prisma.PieceGetPayload<{

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { type ComponentProps, createContext, type ReactNode, useContext, useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -16,6 +17,17 @@ import {
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
+import {
+  NOTE_VARIANTS,
+  type NoteVariant,
+  NotesColumnCell,
+  NotesIndicator,
+  NotesSubRow,
+  NotesUnderName,
+  notesFor,
+  padWithFakePieces,
+} from "@/components/pieces/PieceNotesListVariants.prototype";
+import { PrototypeSwitcher } from "@/components/PrototypeSwitcher";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
@@ -86,13 +98,15 @@ export function PiecesTable({
   | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
 )) {
   const { isEditing } = useEditMode();
+  // PROTOTYPE (PER-351): Piece notes variants.
+  const variant = (useSearchParams().get("variant") ?? "A") as NoteVariant;
   const { pieces, setList } = props;
   const setListId = setList?.id;
   const rows = useMemo<PiecesTableRow[]>(
     () =>
       setList
         ? setList.steps
-        : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece })),
+        : padWithFakePieces(pieces).map((piece) => ({ kind: "piece", id: piece.id, piece })),
     [pieces, setList]
   );
   const cellContext = useMemo(
@@ -120,7 +134,7 @@ export function PiecesTable({
         accessorFn: (row) => (row.kind === "piece" ? row.piece.name : ""),
         sortingFn: caseInsensitiveSortingFn,
         meta: {
-          getColSpan: (row) => (row.kind === "note" ? NOTE_COL_SPAN : 1),
+          getColSpan: (row) => (row.kind === "note" ? NOTE_COL_SPAN + (variant === "B" ? 1 : 0) : 1),
         },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Namn" />
@@ -131,13 +145,24 @@ export function PiecesTable({
               {row.original.content}
             </div>
           ) : (
-            <div className={FIRST_LINE_CLASS}>
-              <Link
-                className="underline"
-                href={`/app/${groupSlug}/pieces/${row.original.piece.id}`}
-              >
-                {row.original.piece.name}
-              </Link>
+            <div>
+              <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
+                <Link
+                  className="underline"
+                  href={`/app/${groupSlug}/pieces/${row.original.piece.id}`}
+                >
+                  {row.original.piece.name}
+                </Link>
+                {variant === "D" ? (
+                  <NotesIndicator
+                    pieceName={row.original.piece.name}
+                    notes={notesFor(row.original.piece)}
+                  />
+                ) : null}
+              </div>
+              {variant === "A" ? (
+                <NotesUnderName notes={notesFor(row.original.piece)} />
+              ) : null}
             </div>
           ),
       },
@@ -165,6 +190,20 @@ export function PiecesTable({
           );
         }),
       },
+      ...(variant === "B"
+        ? [
+            {
+              id: "notes",
+              enableSorting: false,
+              header: () => "Anteckningar",
+              cell: pieceCell((piece) => (
+                <div className={LIST_CELL_OFFSET_CLASS}>
+                  <NotesColumnCell notes={notesFor(piece)} />
+                </div>
+              )),
+            } satisfies ColumnDef<PiecesTableRow>,
+          ]
+        : []),
       {
         id: "links",
         enableSorting: false,
@@ -249,7 +288,7 @@ export function PiecesTable({
                   }}
                 />
               ) : null}
-              {piece ? (
+              {piece && isEditing ? (
                 <PieceNotesDialog
                   readOnly={!isEditing}
                   groupSlug={groupSlug}
@@ -267,7 +306,7 @@ export function PiecesTable({
         },
       },
     ],
-    [groupSlug, isEditing, setListId]
+    [groupSlug, isEditing, setListId, variant]
   );
 
   return (
@@ -278,7 +317,17 @@ export function PiecesTable({
         enableSorting={!setList}
         cellAlign="top"
         emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
+        renderSubRow={
+          variant === "C"
+            ? (row) => {
+                if (row.kind !== "piece") return null;
+                const notes = notesFor(row.piece);
+                return notes.length > 0 ? <NotesSubRow notes={notes} /> : null;
+              }
+            : undefined
+        }
       />
+      <PrototypeSwitcher variants={NOTE_VARIANTS} />
     </PiecesTableCellContext.Provider>
   );
 }
