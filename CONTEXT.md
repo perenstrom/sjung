@@ -27,11 +27,11 @@ The Group a User lands in when opening the app — whichever Group they last swi
 _Avoid_: Active group, Current group.
 
 **Creator**:
-The single User who created a Group. Structurally special, not a Claim: the only privilege that can never be granted or revoked by anyone, including the holder — determined by matching the Group's stored creator id, not by a membership record. Creator implicitly holds every Claim and is the only member who can rename or delete the Group itself. See ADR-0001 (superseded), ADR-0002.
+The single User who created a Group. Structurally special, not a Claim: the only privilege that can never be granted or revoked by anyone, including the holder — determined by matching the Group's stored creator id, not by a membership record. Creator implicitly holds every Claim and is the only member who can rename or delete the Group itself. See ADR-0001 (superseded), ADR-0002. Swedish UI: _Administratör_ — a UI label only; in English and in code it stays Creator.
 _Avoid_: Admin, Owner, Role.
 
 **Claim**:
-A specific elevated capability a Member can hold within a Group, independent of Creator status. Today: `MANAGE_MEMBERS` (invite/remove members, grant/revoke Claims on other members) and `MANAGE_CONTENT` (write access to all of the Group's content, bypassing the default that a Member may only edit/delete content they created). A Member may hold neither, either, or both. See ADR-0002.
+A specific elevated capability a Member can hold within a Group, independent of Creator status. Today: `MANAGE_MEMBERS` (invite/remove members, grant/revoke Claims on other members) and `MANAGE_CONTENT` (write access to all of the Group's content, bypassing the default that a Member may only edit/delete content they created). A Member may hold neither, either, or both. See ADR-0002. Swedish UI: _Behörighet_ / _Behörigheter_ — _Hantera medlemmar_ (`MANAGE_MEMBERS`), _Hantera innehåll_ (`MANAGE_CONTENT`).
 _Avoid_: Role, Permission, Admin — "Claim" is this model's term.
 
 **Person**:
