@@ -7,10 +7,11 @@ import { useState } from "react";
 import { removeCredit } from "@/app/actions/pieces";
 import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceCreditRow } from "@/components/pieces/AddPieceCreditRow";
+import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import { sortCreditsForDisplay } from "@/lib/pieces/credits";
+import { creditKey } from "@/lib/pieces/credits";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 type PieceDetailCredit = PieceCredit & { person: { name: string } };
@@ -22,10 +23,6 @@ type PieceDetailCreditsSectionProps = {
   credits: PieceDetailCredit[];
   people: Person[];
 };
-
-function creditKey(credit: PieceDetailCredit): string {
-  return `${credit.personId}::${credit.role}`;
-}
 
 export function PieceDetailCreditsSection(props: PieceDetailCreditsSectionProps) {
   const { isEditing } = useEditMode();
@@ -49,8 +46,6 @@ function PieceDetailCreditsCard({
   const router = useRouter();
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
-
-  const sortedCredits = sortCreditsForDisplay(credits);
 
   async function handleRemove(credit: PieceDetailCredit) {
     setRemovingKey(creditKey(credit));
@@ -76,32 +71,30 @@ function PieceDetailCreditsCard({
         <h2 className="text-lg leading-8 font-medium">Medverkande</h2>
       </CardHeader>
       <CardContent className="space-y-3">
-        {sortedCredits.length === 0 ? (
+        {credits.length === 0 ? (
           <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
         ) : (
-          <ul className="space-y-2 text-sm">
-            {sortedCredits.map((credit) => (
-              <li key={creditKey(credit)} className="flex min-h-7 items-center gap-2">
-                <span className="font-medium">{credit.person.name}</span>
-                <span className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
-                  {credit.role}
-                </span>
-                {readOnly ? null : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 shrink-0"
-                    onClick={() => handleRemove(credit)}
-                    disabled={removingKey === creditKey(credit)}
-                    aria-label={`Ta bort ${credit.person.name} som ${credit.role}`}
-                  >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
+          <PieceCreditsList
+            credits={credits}
+            className="space-y-2"
+            renderAction={
+              readOnly
+                ? undefined
+                : (credit) => (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 shrink-0"
+                      onClick={() => handleRemove(credit)}
+                      disabled={removingKey === creditKey(credit)}
+                      aria-label={`Ta bort ${credit.person.name} som ${credit.role}`}
+                    >
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  )
+            }
+          />
         )}
 
         {removeError ? <p className="text-sm text-destructive">{removeError}</p> : null}

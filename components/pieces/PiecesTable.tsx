@@ -8,6 +8,7 @@ import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
+import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import {
   DataTable,
   DataTableColumnHeader,
@@ -24,7 +25,7 @@ import type { Person } from "@/types/piece-credit-dialog";
 
 // Body cells are top-aligned and every cell's first line is 32px tall (the
 // height of the sm action buttons), so first lines line up across the row.
-// Link and File rows are 28px, so their cells are nudged down 2px.
+// Credit, Link and File rows are 28px, so their lists are nudged down 2px.
 const FIRST_LINE_CLASS = "flex min-h-8 items-center";
 const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 
@@ -43,12 +44,6 @@ function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
   return function PieceCell({ row }: { row: { original: PiecesTableRow } }) {
     return row.original.kind === "piece" ? render(row.original.piece) : null;
   };
-}
-
-function formatCreditsText(piece: PieceWithRelations): string {
-  return piece.credits
-    .map((credit) => `${credit.person.name} (${credit.role})`)
-    .join(", ");
 }
 
 /**
@@ -128,14 +123,20 @@ export function PiecesTable({
         header: () => "Medverkande",
         cell: pieceCell((piece) => {
           return (
-            <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
-              <span className="min-w-0 flex-1">{formatCreditsText(piece)}</span>
+            <div className="flex items-start gap-2">
+              <div className={cn("min-w-0 flex-1", LIST_CELL_OFFSET_CLASS)}>
+                {piece.credits.length === 0 ? null : (
+                  <PieceCreditsList credits={piece.credits} />
+                )}
+              </div>
               {isEditing ? (
-                <AddPieceCreditPopover
-                  groupSlug={groupSlug}
-                  people={people}
-                  piece={{ id: piece.id, name: piece.name }}
-                />
+                <div className={FIRST_LINE_CLASS}>
+                  <AddPieceCreditPopover
+                    groupSlug={groupSlug}
+                    people={people}
+                    piece={{ id: piece.id, name: piece.name }}
+                  />
+                </div>
               ) : null}
             </div>
           );

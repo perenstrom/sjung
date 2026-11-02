@@ -5,12 +5,16 @@ export type PieceCredit = {
   role: string;
 };
 
+export function creditKey(credit: PieceCredit): string {
+  return `${credit.personId}::${credit.role}`;
+}
+
 export const DUPLICATE_CREDITS_ERROR = "En person kan inte ha samma roll flera gånger";
 
 export function assertNoDuplicateCredits(credits: PieceCredit[]) {
   const seen = new Set<string>();
   for (const credit of credits) {
-    const key = `${credit.personId}::${credit.role}`;
+    const key = creditKey(credit);
     if (seen.has(key)) {
       throw new Error(DUPLICATE_CREDITS_ERROR);
     }
@@ -19,14 +23,14 @@ export function assertNoDuplicateCredits(credits: PieceCredit[]) {
 }
 
 export function diffCredits(current: PieceCredit[], next: PieceCredit[]) {
-  const nextKeys = new Set(next.map((credit) => `${credit.personId}::${credit.role}`));
-  const currentKeys = new Set(current.map((credit) => `${credit.personId}::${credit.role}`));
+  const nextKeys = new Set(next.map(creditKey));
+  const currentKeys = new Set(current.map(creditKey));
 
   const creditsToCreate = next.filter(
-    (credit) => !currentKeys.has(`${credit.personId}::${credit.role}`)
+    (credit) => !currentKeys.has(creditKey(credit))
   );
   const creditsToDelete = current.filter(
-    (credit) => !nextKeys.has(`${credit.personId}::${credit.role}`)
+    (credit) => !nextKeys.has(creditKey(credit))
   );
 
   return {
