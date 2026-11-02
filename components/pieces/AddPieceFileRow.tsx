@@ -7,6 +7,7 @@ import { useRef, useState, type DragEvent } from "react";
 import { pickDroppedFile } from "@/components/pieces/droppedFile";
 import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 import { cn } from "@/lib/utils";
 
@@ -106,11 +107,14 @@ export function AddPieceFileRow({
             }
           }}
         />
-        <Upload className="size-4" aria-hidden="true" />
         {isTransferring ? (
-          <span>Laddar upp…</span>
+          <>
+            <Spinner />
+            <span>Laddar upp…</span>
+          </>
         ) : (
           <>
+            <Upload className="size-4" aria-hidden="true" />
             <span>Släpp en fil här eller</span>
             <Button
               type="button"
