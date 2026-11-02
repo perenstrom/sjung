@@ -6,9 +6,3 @@ export type Person = {
   id: string;
   name: string;
 };
-
-export type CreditRow = {
-  id: number;
-  personId: string;
-  role: string;
-};

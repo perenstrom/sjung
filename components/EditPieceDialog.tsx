@@ -3,9 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { removeCredit, updatePiece } from "@/app/actions/pieces";
-import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
+import { AddPieceCreditRow } from "@/components/pieces/AddPieceCreditRow";
+import {
+  PieceCreditsList,
+  RemoveCreditRoleButton,
+} from "@/components/pieces/PieceCreditsList";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import type { PieceCredit, Person } from "@/types/piece-credit-dialog";
+import { creditKey, type CreditForDisplay } from "@/lib/pieces/credits";
+import type { Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,15 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X } from "lucide-react";
-
-function creditKey(credit: PieceCredit): string {
-  return `${credit.personId}::${credit.role}`;
-}
-
-function personName(people: Person[], personId: string): string {
-  return people.find((person) => person.id === personId)?.name ?? "Okänd person";
-}
 
 export function EditPieceDialog({
   groupSlug,
@@ -36,7 +32,7 @@ export function EditPieceDialog({
   piece: {
     id: string;
     name: string;
-    credits: PieceCredit[];
+    credits: CreditForDisplay[];
   };
 }) {
   const router = useRouter();
@@ -49,7 +45,7 @@ export function EditPieceDialog({
     setError(null);
   }
 
-  async function handleRemoveCredit(credit: PieceCredit) {
+  async function handleRemoveCredit(credit: CreditForDisplay) {
     setError(null);
     setRemovingKey(creditKey(credit));
 
@@ -107,45 +103,33 @@ export function EditPieceDialog({
           </div>
         </form>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Medverkande</Label>
-            <AddPieceCreditPopover
+        <div className="space-y-3">
+          <Label>Medverkande</Label>
+
+          {piece.credits.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+          ) : (
+            <PieceCreditsList
+              credits={piece.credits}
+              className="space-y-2"
+              renderRoleAction={(credit) => (
+                <RemoveCreditRoleButton
+                  credit={credit}
+                  onRemove={handleRemoveCredit}
+                  disabled={removingKey === creditKey(credit)}
+                />
+              )}
+            />
+          )}
+
+          <div className="border-t pt-3">
+            <AddPieceCreditRow
               groupSlug={groupSlug}
+              pieceId={piece.id}
               people={people}
-              piece={{ id: piece.id, name: piece.name }}
+              credits={piece.credits}
             />
           </div>
-
-          {piece.credits.length > 0 ? (
-            <ul className="space-y-2">
-              {piece.credits.map((credit) => (
-                <li
-                  key={creditKey(credit)}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <span className="min-w-0 flex-1 truncate">
-                    {personName(people, credit.personId)}
-                  </span>
-                  <span className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
-                    {credit.role}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    disabled={removingKey === creditKey(credit)}
-                    onClick={() => handleRemoveCredit(credit)}
-                    aria-label={`Ta bort ${personName(people, credit.personId)} som ${credit.role}`}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">Inga medverkande tillagda.</p>
-          )}
         </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
