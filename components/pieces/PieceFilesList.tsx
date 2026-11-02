@@ -93,15 +93,13 @@ export function PieceFilesList({
   }
 
   if (files.length === 0) {
+    // Compact lists sit in piece table cells, where an empty cell stays blank.
+    if (compact) {
+      return null;
+    }
+
     return (
-      <p
-        className={cn(
-          "text-sm text-muted-foreground",
-          compact && "flex min-h-7 items-center"
-        )}
-      >
-        Inga filer uppladdade ännu.
-      </p>
+      <p className="text-sm text-muted-foreground">Inga filer uppladdade ännu.</p>
     );
   }
 
