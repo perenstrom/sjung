@@ -27,11 +27,9 @@ const FIRST_LINE_CLASS = "flex min-h-8 items-center";
 const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 
 function formatCreditsText(piece: PieceWithRelations): string {
-  return piece.credits.length > 0
-    ? piece.credits
-        .map((credit) => `${credit.person.name} (${credit.role})`)
-        .join(", ")
-    : "–";
+  return piece.credits
+    .map((credit) => `${credit.person.name} (${credit.role})`)
+    .join(", ");
 }
 
 export function PiecesTable({
