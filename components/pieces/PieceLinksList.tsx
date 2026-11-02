@@ -11,6 +11,7 @@ import type { PieceLink } from "@/components/pieces/types";
 import { TruncatedTooltip } from "@/components/TruncatedTooltip";
 import { Button } from "@/components/ui/button";
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import { cn } from "@/lib/utils";
 
 export function PieceLinksList({
   groupSlug,
@@ -54,7 +55,14 @@ export function PieceLinksList({
 
   if (links.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">Inga länkar tillagda ännu.</p>
+      <p
+        className={cn(
+          "text-sm text-muted-foreground",
+          compact && "flex min-h-7 items-center"
+        )}
+      >
+        Inga länkar tillagda ännu.
+      </p>
     );
   }
 
@@ -81,9 +89,15 @@ export function PieceLinksList({
   return (
     <div className="space-y-2">
       {compact ? (
-        <ul className="space-y-2 text-sm">
+        // Rows are 28px in read-only and edit mode so the first row lines up
+        // with neighbouring table cells; read-only drops the gap to keep its
+        // pitch.
+        <ul className={cn("text-sm", !readOnly && "space-y-2")}>
           {links.map((link) => (
-            <li key={link.id} className="flex min-w-0 items-center gap-1">
+            <li
+              key={link.id}
+              className="flex min-h-7 min-w-0 items-center gap-1"
+            >
               <ExternalLink
                 className="size-3.5 shrink-0 text-muted-foreground"
                 aria-hidden

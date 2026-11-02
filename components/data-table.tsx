@@ -59,6 +59,8 @@ export interface DataTableProps<TData, TValue> {
   /** When false, rows keep server/data order (e.g. manual reorder tables). Default true. */
   enableSorting?: boolean;
   emptyMessage?: string;
+  /** Vertical alignment of body cells. Default "middle". */
+  cellAlign?: "middle" | "top";
   className?: string;
 }
 
@@ -67,6 +69,7 @@ export function DataTable<TData, TValue>({
   data,
   enableSorting = true,
   emptyMessage = "Inga rader.",
+  cellAlign = "middle",
   className,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -106,7 +109,10 @@ export function DataTable<TData, TValue>({
             table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    className={cn(cellAlign === "top" && "align-top")}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
