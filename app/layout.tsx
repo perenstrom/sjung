@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { connection } from "next/server";
+import { appTitle, getAppEnvironment } from "@/lib/app-environment";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,10 +14,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Sjung",
-  description: "Notbibliotek",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // APP_ENV is a runtime variable, so read it per request rather than baking
+  // the build-time value into prerendered pages.
+  await connection();
+
+  return {
+    title: appTitle(getAppEnvironment()),
+    description: "Notbibliotek",
+  };
+}
 
 export default function RootLayout({
   children,

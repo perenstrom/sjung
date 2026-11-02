@@ -30,6 +30,7 @@ Required variables (from `.env.example`):
 - `R2_PUBLIC_BASE_URL`
 - `RESEND_API_KEY`
 - `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`)
+- `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 
 ## Local bootstrap
 
@@ -76,6 +77,8 @@ gh workflow run deploy-production.yml --ref main
 ```
 
 Config lives in the `staging` and `production` GitHub environments: variables `COOLIFY_URL` and `COOLIFY_STAGING_APP_UUID` / `COOLIFY_PROD_APP_UUID`, and secrets `COOLIFY_STAGING_TOKEN` / `COOLIFY_PROD_TOKEN`.
+
+Each Coolify app sets the runtime variable `APP_ENV`: `staging` on `sjung-staging` and `production` on `sjung-production`. It decides the environment label in the browser tab title (`[staging] Sjung` on staging, plain `Sjung` in production; `npm run dev` always shows `[local] Sjung`). An unset or unknown value counts as production.
 
 ## Commits
 
