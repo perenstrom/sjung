@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
 export function AddPieceFilePopover({
@@ -57,7 +58,16 @@ export function AddPieceFilePopover({
   });
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        // Keep the popover open mid-transfer so its outcome stays visible.
+        if (!nextOpen && isTransferring) {
+          return;
+        }
+        handleOpenChange(nextOpen);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -104,7 +114,14 @@ export function AddPieceFilePopover({
               Avbryt
             </Button>
             <Button type="submit" disabled={isTransferring}>
-              {isTransferring ? "Laddar upp..." : "Ladda upp"}
+              {isTransferring ? (
+                <>
+                  <Spinner />
+                  Laddar upp...
+                </>
+              ) : (
+                "Ladda upp"
+              )}
             </Button>
           </div>
         </form>

@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
 export function ReplacePieceFilePopover({
@@ -63,7 +64,16 @@ export function ReplacePieceFilePopover({
   });
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        // Keep the popover open mid-transfer so its outcome stays visible.
+        if (!nextOpen && isTransferring) {
+          return;
+        }
+        handleOpenChange(nextOpen);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -114,7 +124,14 @@ export function ReplacePieceFilePopover({
               Avbryt
             </Button>
             <Button type="submit" disabled={isTransferring}>
-              {isTransferring ? "Ersätter..." : "Ersätt"}
+              {isTransferring ? (
+                <>
+                  <Spinner />
+                  Ersätter...
+                </>
+              ) : (
+                "Ersätt"
+              )}
             </Button>
           </div>
         </form>

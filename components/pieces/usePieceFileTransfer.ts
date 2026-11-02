@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useRef, useTransition } from "react";
 
 import {
   createPieceFileReplaceUploadUrl,
@@ -68,35 +68,24 @@ export function usePieceFileTransfer({
   onTransferringChange,
   onTransferSuccess,
 }: UsePieceFileTransferArgs) {
-  const [isTransferring, setIsTransferring] = useState(false);
+  // The hook owns its own transition so isTransferring is shown even when
+  // handleTransfer runs as a <form action>: isPending updates immediately,
+  // whereas a plain setState there is held back until the action ends.
+  const [isTransferring, startTransition] = useTransition();
 
-  function setTransferring(next: boolean) {
-    setIsTransferring(next);
-    onTransferringChange?.(next);
-  }
-
-  async function handleTransfer(formData: FormData) {
-    const adapter = resolveAdapter(target);
-
-    const selectedFile = formData.get("file");
-    if (!(selectedFile instanceof File)) {
-      onError(adapter.missingFileMessage);
+  const notifyTransferringChange = useEffectEvent((transferring: boolean) => {
+    onTransferringChange?.(transferring);
+  });
+  const wasTransferringRef = useRef(false);
+  useEffect(() => {
+    if (wasTransferringRef.current === isTransferring) {
       return;
     }
+    wasTransferringRef.current = isTransferring;
+    notifyTransferringChange(isTransferring);
+  }, [isTransferring]);
 
-    if (!ALLOWED_MIME_TYPES.has(selectedFile.type)) {
-      onError("Filtypen stöds inte");
-      return;
-    }
-
-    if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
-      onError("Filen är för stor (max 50 MB)");
-      return;
-    }
-
-    setTransferring(true);
-    onClearError?.();
-
+  async function transfer(adapter: PieceFileTransferAdapter, selectedFile: File) {
     try {
       const uploadMeta = new FormData();
       uploadMeta.set("groupSlug", target.groupSlug);
@@ -129,9 +118,41 @@ export function usePieceFileTransfer({
       onTransferSuccess?.();
     } catch (err) {
       onError(getThrownMessage(err, adapter.failureFallbackMessage));
-    } finally {
-      setTransferring(false);
     }
+  }
+
+  async function handleTransfer(formData: FormData) {
+    const adapter = resolveAdapter(target);
+
+    const selectedFile = formData.get("file");
+    if (!(selectedFile instanceof File)) {
+      onError(adapter.missingFileMessage);
+      return;
+    }
+
+    if (!ALLOWED_MIME_TYPES.has(selectedFile.type)) {
+      onError("Filtypen stöds inte");
+      return;
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+      onError("Filen är för stor (max 50 MB)");
+      return;
+    }
+
+    onClearError?.();
+
+    // Resolve only once the transfer is done, so a <form action> stays
+    // pending and callers can await the whole upload.
+    await new Promise<void>((resolve) => {
+      startTransition(async () => {
+        try {
+          await transfer(adapter, selectedFile);
+        } finally {
+          resolve();
+        }
+      });
+    });
   }
 
   return { handleTransfer, isTransferring };
