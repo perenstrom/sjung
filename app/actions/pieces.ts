@@ -26,13 +26,14 @@ import {
   parseWritableGroupSlugFromFormData,
   parseWritableGroupSlugParam,
 } from "@/lib/schemas/people";
-import { getPieceDetailForGroup, getPiecesForGroup } from "@/lib/pieces/queries";
+import {
+  getPieceDetailForGroup,
+  getPiecesForGroup,
+  getSetListIdsContainingPiece,
+} from "@/lib/pieces/queries";
 import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
 import type { PieceDetail } from "@/lib/pieces/types";
-import {
-  revalidateGroupPieceDetailRoutes,
-  revalidateGroupRoute,
-} from "@/lib/revalidate/group-routes";
+import { revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 
 export type PieceNoteListItem = {
@@ -104,8 +105,8 @@ export async function createPiece(formData: FormData) {
       select: { id: true },
     });
 
-    revalidateGroupRoute(groupSlug);
-    revalidateGroupPieceDetailRoutes(groupSlug, created.id);
+    // A new piece is in no set list yet.
+    await revalidatePieceRoutes(groupSlug, created.id, []);
   });
 }
 
@@ -126,8 +127,7 @@ export async function updatePiece(formData: FormData) {
         },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      await revalidatePieceRoutes(groupSlug, piece.id);
     }
   );
 }
@@ -149,8 +149,7 @@ export async function updatePieceMetadata(formData: FormData) {
         },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      await revalidatePieceRoutes(groupSlug, piece.id);
     }
   );
 }
@@ -175,8 +174,7 @@ export async function addLink(formData: FormData) {
         },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      await revalidatePieceRoutes(groupSlug, piece.id);
     }
   );
 }
@@ -193,8 +191,7 @@ export async function removeLink(formData: FormData) {
         where: { id: link.id },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+      await revalidatePieceRoutes(groupSlug, link.pieceId);
     }
   );
 }
@@ -218,8 +215,7 @@ export async function updateLink(formData: FormData) {
         },
       });
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, link.pieceId);
+      await revalidatePieceRoutes(groupSlug, link.pieceId);
     }
   );
 }
@@ -249,8 +245,7 @@ export async function addCredit(formData: FormData) {
         throw err;
       }
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      await revalidatePieceRoutes(groupSlug, piece.id);
     }
   );
 }
@@ -277,8 +272,7 @@ export async function removeCredit(formData: FormData) {
         throw new Error("Medverkande hittades inte");
       }
 
-      revalidateGroupRoute(groupSlug);
-      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+      await revalidatePieceRoutes(groupSlug, piece.id);
     }
   );
 }
@@ -312,8 +306,8 @@ export async function listPieceNotes(
   }));
 }
 
-// createPieceNote/updatePieceNote/deletePieceNote intentionally skip revalidateGroupRoute/
-// revalidateGroupPieceDetailRoutes: no page selects PieceNote data server-side (see
+// createPieceNote/updatePieceNote/deletePieceNote intentionally skip revalidatePieceRoutes:
+// no page selects PieceNote data server-side (see
 // pieceWithRelationsInclude, pieceDetailSelect), so there's no SSR cache to refresh, and
 // revalidating the current route here resets client-side dialog state on every mutation.
 export async function createPieceNote(formData: FormData) {
@@ -411,11 +405,14 @@ export async function deletePiece(formData: FormData) {
         }
       );
 
+      // Look up before deleting: the delete cascades to the piece's set list entries.
+      const setListIds = await getSetListIdsContainingPiece(piece.id);
+
       await prisma.piece.delete({
         where: { id: piece.id },
       });
 
-      revalidateGroupRoute(groupSlug);
+      await revalidatePieceRoutes(groupSlug, piece.id, setListIds);
     }
   );
 }

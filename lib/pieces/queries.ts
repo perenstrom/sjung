@@ -42,3 +42,13 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
       .sort((a, b) => a.setListName.localeCompare(b.setListName, "sv-SE")),
   };
 }
+
+/** Distinct ids of the set lists that contain the piece at least once. */
+export async function getSetListIdsContainingPiece(pieceId: string): Promise<string[]> {
+  const entries = await prisma.setListPiece.findMany({
+    where: { pieceId },
+    distinct: ["setListId"],
+    select: { setListId: true },
+  });
+  return entries.map((entry) => entry.setListId);
+}

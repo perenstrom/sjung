@@ -5,10 +5,11 @@ import {
   getSetListPieceOptions,
 } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
+import { getPeople } from "@/app/actions/people";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { PageHeader } from "@/components/PageHeader";
-import { SetListStepsTable } from "@/components/setlists/SetListStepsTable";
+import { PiecesTable } from "@/components/pieces/PiecesTable";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { Button } from "@/components/ui/button";
@@ -28,9 +29,10 @@ function formatSetListDate(date: Date | null): string {
 
 export default async function TenantSetListDetailPage({ params }: PageProps) {
   const { groupSlug, id } = await params;
-  const [setList, pieces, groups] = await Promise.all([
+  const [setList, pieces, people, groups] = await Promise.all([
     getSetListDetail(groupSlug, id),
     getSetListPieceOptions(groupSlug),
+    getPeople(groupSlug),
     getGroups(),
   ]);
 
@@ -96,10 +98,10 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
 
         <section className="space-y-3">
           <h2 className="text-lg font-medium">Ordning</h2>
-          <SetListStepsTable
-            steps={setList.steps}
+          <PiecesTable
+            setList={{ id: setList.id, steps: setList.steps }}
+            people={people}
             groupSlug={groupSlug}
-            setListId={setList.id}
           />
         </section>
       </div>
