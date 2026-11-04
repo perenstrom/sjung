@@ -21,6 +21,14 @@ import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
+// PROTOTYPE (PER-365) — mobile variants; remove before merging to main.
+import { PrototypeSwitcher, usePrototypeVariant } from "@/components/PrototypeSwitcher";
+import {
+  PIECES_LIST_VARIANTS,
+  VariantAccordion,
+  VariantCards,
+  VariantNarrowTable,
+} from "@/components/pieces/PiecesListMobilePrototype";
 import type { Person } from "@/types/piece-credit-dialog";
 
 // Body cells are top-aligned and every cell's first line is 32px tall (the
@@ -270,15 +278,48 @@ export function PiecesTable({
     [groupSlug, isEditing, setListId]
   );
 
+  const variant = usePrototypeVariant(PIECES_LIST_VARIANTS);
+  const emptyMessage = setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu.";
+  const mobileProps = {
+    rows,
+    isEditing,
+    groupSlug,
+    people,
+    setListId,
+    orderedStepIds: cellContext.orderedStepIds,
+    emptyMessage,
+  };
+  // Variant C keeps the real table below md, in its own horizontal scroll with
+  // the name column pinned. Literal class strings so Tailwind picks them up.
+  const stickyNameClass = setListId
+    ? "max-md:[&_tr>*:nth-child(2)]:sticky max-md:[&_tr>*:nth-child(2)]:left-0 max-md:[&_tr>*:nth-child(2)]:z-10 max-md:[&_tr>*:nth-child(2)]:bg-background max-md:[&_tr>*:nth-child(2)]:max-w-[9rem] max-md:[&_tr>*:nth-child(2)]:shadow-[1px_0_0_var(--border)]"
+    : "max-md:[&_tr>*:nth-child(1)]:sticky max-md:[&_tr>*:nth-child(1)]:left-0 max-md:[&_tr>*:nth-child(1)]:z-10 max-md:[&_tr>*:nth-child(1)]:bg-background max-md:[&_tr>*:nth-child(1)]:max-w-[9rem] max-md:[&_tr>*:nth-child(1)]:shadow-[1px_0_0_var(--border)]";
+  const table = (
+    <DataTable
+      columns={columns}
+      data={rows}
+      enableSorting={!setList}
+      cellAlign="top"
+      emptyMessage={emptyMessage}
+      className={cn(variant === "C" && stickyNameClass, variant === "C" && "max-md:[&_td]:whitespace-normal")}
+    />
+  );
+
   return (
     <PiecesTableCellContext.Provider value={cellContext}>
-      <DataTable
-        columns={columns}
-        data={rows}
-        enableSorting={!setList}
-        cellAlign="top"
-        emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
-      />
+      {variant === "C" ? (
+        table
+      ) : (
+        <>
+          <div className="md:hidden">
+            {variant === "A" ? <VariantCards {...mobileProps} /> : null}
+            {variant === "B" ? <VariantNarrowTable {...mobileProps} /> : null}
+            {variant === "D" ? <VariantAccordion {...mobileProps} /> : null}
+          </div>
+          <div className="hidden md:block">{table}</div>
+        </>
+      )}
+      <PrototypeSwitcher variants={PIECES_LIST_VARIANTS} />
     </PiecesTableCellContext.Provider>
   );
 }
