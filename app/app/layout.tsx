@@ -7,6 +7,8 @@ import { AppBreadcrumb } from "@/components/AppBreadcrumb";
 import { AppBreadcrumbProvider } from "@/components/AppBreadcrumbContext";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Separator } from "@/components/ui/separator";
+import { Suspense } from "react";
+import { DensitySwitcher } from "@/components/prototype/DensitySwitcher";
 import { getGroups } from "@/app/actions/groups";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 
@@ -32,6 +34,12 @@ export default async function ProtectedLayout({
             <AppBreadcrumb />
           </header>
           <main className="p-8 pl-12">{children}</main>
+          {/* PROTOTYPE — PER-366 density switcher, never merge */}
+          {process.env.NODE_ENV !== "production" ? (
+            <Suspense fallback={null}>
+              <DensitySwitcher />
+            </Suspense>
+          ) : null}
         </SidebarInset>
       </AppBreadcrumbProvider>
     </SidebarProvider>
