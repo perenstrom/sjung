@@ -52,13 +52,14 @@ function creditsLine(piece: PieceWithRelations): string {
     .join(" · ");
 }
 
-function FileChip({ groupSlug, file }: { groupSlug: string; file: { id: string; displayName: string } }) {
+function FileChip({ groupSlug, file, asRow = false }: { groupSlug: string; file: { id: string; displayName: string }; asRow?: boolean }) {
   const [busy, setBusy] = useState(false);
   return (
     <button
       type="button"
       disabled={busy}
       onClick={async () => {
+        if (file.id.startsWith("mock-")) return;
         setBusy(true);
         try {
           const formData = new FormData();
@@ -70,23 +71,29 @@ function FileChip({ groupSlug, file }: { groupSlug: string; file: { id: string; 
           setBusy(false);
         }
       }}
-      className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border bg-background px-3 text-sm text-primary disabled:opacity-50"
+      className={cn(
+        "inline-flex max-w-full items-center gap-1.5 text-sm text-primary disabled:opacity-50",
+        asRow ? "min-h-10 w-full text-left" : "min-h-11 rounded-full border bg-background px-3"
+      )}
     >
-      <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <FileText className={cn("shrink-0 text-muted-foreground", asRow ? "size-3.5" : "size-4")} aria-hidden />
       <span className="truncate">{busy ? "Hämtar..." : file.displayName}</span>
     </button>
   );
 }
 
-function LinkChip({ link }: { link: { id: string; url: string; label: string | null } }) {
+function LinkChip({ link, asRow = false }: { link: { id: string; url: string; label: string | null }; asRow?: boolean }) {
   return (
     <a
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border bg-background px-3 text-sm text-primary"
+      className={cn(
+        "inline-flex max-w-full items-center gap-1.5 text-sm text-primary",
+        asRow ? "min-h-10 w-full" : "min-h-11 rounded-full border bg-background px-3"
+      )}
     >
-      <ExternalLink className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <ExternalLink className={cn("shrink-0 text-muted-foreground", asRow ? "size-3.5" : "size-4")} aria-hidden />
       <span className="truncate">{labelForLink(link)}</span>
     </a>
   );
@@ -181,16 +188,16 @@ export function VariantCards(props: MobileListProps) {
   const { rows, groupSlug, isEditing, people, setListId } = props;
   if (rows.length === 0) return <Empty message={props.emptyMessage} />;
   return (
-    <ol className="space-y-3">
+    <ol className="-mx-4 divide-y border-y">
       {rows.map((row, index) => (
         <li key={row.id}>
           {row.kind === "note" ? (
-            <div className="space-y-2 px-1 py-1">
+            <div className="space-y-2 bg-muted/30 px-4 py-3">
               <NoteBlock content={row.content} />
               {isEditing ? <RowActions row={row} index={index} props={props} /> : null}
             </div>
           ) : (
-            <div className="space-y-3 rounded-xl border bg-card p-4 shadow-xs">
+            <div className="space-y-3 bg-card p-4">
               <div className="flex items-start gap-3">
                 {setListId ? (
                   <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-muted font-mono text-xs">
@@ -320,11 +327,11 @@ export function VariantAccordion(props: MobileListProps) {
   }
 
   return (
-    <ul className="divide-y border-y">
+    <ul className="-mx-4 divide-y border-y">
       {rows.map((row, index) => {
         if (row.kind === "note") {
           return (
-            <li key={row.id} className="space-y-2 py-3 pl-9">
+            <li key={row.id} className={cn("space-y-2 py-3 pr-4", setListId ? "pl-13" : "pl-4")}>
               <NoteBlock content={row.content} />
               {isEditing ? <RowActions row={row} index={index} props={props} /> : null}
             </li>
@@ -338,15 +345,19 @@ export function VariantAccordion(props: MobileListProps) {
               type="button"
               onClick={() => toggle(row.id)}
               aria-expanded={open}
-              className="flex min-h-14 w-full items-center gap-3 py-2 text-left"
+              className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left"
             >
-              <span className="w-6 shrink-0 text-center font-mono text-xs text-muted-foreground">
-                {setListId ? index + 1 : null}
-              </span>
+              {setListId ? (
+                <span className="w-6 shrink-0 text-center font-mono text-xs text-muted-foreground">
+                  {index + 1}
+                </span>
+              ) : null}
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{piece.name}</span>
+                <span className={cn("block font-medium", !open && "truncate")}>{piece.name}</span>
                 {piece.credits.length > 0 ? (
-                  <span className="block truncate text-xs text-muted-foreground">{creditsLine(piece)}</span>
+                  <span className={cn("block text-xs text-muted-foreground", !open && "truncate")}>
+                    {creditsLine(piece)}
+                  </span>
                 ) : null}
               </span>
               <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
@@ -364,18 +375,22 @@ export function VariantAccordion(props: MobileListProps) {
               </span>
             </button>
             {open ? (
-              <div className="space-y-3 pb-4 pl-9">
+              <div className={cn("space-y-3 pr-4 pb-4", setListId ? "pl-13" : "pl-4")}>
                 {isEditing ? (
                   <EditSections piece={piece} groupSlug={groupSlug} people={people} />
                 ) : piece.files.length + piece.links.length > 0 ? (
-                  <div className="flex flex-col items-start gap-2">
+                  <ul>
                     {piece.files.map((file) => (
-                      <FileChip key={file.id} groupSlug={groupSlug} file={file} />
+                      <li key={file.id}>
+                        <FileChip groupSlug={groupSlug} file={file} asRow />
+                      </li>
                     ))}
                     {piece.links.map((link) => (
-                      <LinkChip key={link.id} link={link} />
+                      <li key={link.id}>
+                        <LinkChip link={link} asRow />
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 ) : (
                   <p className="text-sm text-muted-foreground">Inga filer eller länkar.</p>
                 )}
@@ -395,4 +410,81 @@ export function VariantAccordion(props: MobileListProps) {
       })}
     </ul>
   );
+}
+
+// ---------- mock data (prototype only) ----------
+
+type MockPiece = {
+  name: string;
+  credits: [string, string][];
+  files: [string, number][];
+  links: [string, string | null][];
+};
+
+const MOCK_PIECES: MockPiece[] = [
+  {
+    name: "Uti vår hage",
+    credits: [["Hugo Alfvén", "Arrangör"], ["Folkvisa från Värend", "Kompositör"]],
+    files: [["Uti vår hage – partitur.pdf", 412_000], ["Uti vår hage – sopran stämfil.mp3", 3_400_000], ["Uti vår hage – alt stämfil.mp3", 3_300_000]],
+    links: [["https://www.youtube.com/watch?v=abc123", "Inspelning, Orphei Drängar"], ["https://imslp.org/wiki/Uti_v%C3%A5r_hage", null]],
+  },
+  {
+    name: "Even When He Is Silent (Text from a wall in Cologne, 1945)",
+    credits: [["Kim André Arnesen", "Kompositör"], ["Okänd", "Textförfattare"]],
+    files: [["Even When He Is Silent.pdf", 980_000]],
+    links: [["https://open.spotify.com/track/xyz", "Spotify"]],
+  },
+  {
+    name: "Det är en ros utsprungen",
+    credits: [
+      ["Michael Praetorius", "Kompositör"],
+      ["Michael Praetorius", "Arrangör"],
+      ["Jan Sandström", "Arrangör"],
+      ["Johan Olof Wallin", "Översättare"],
+    ],
+    files: [["Det är en ros – Sandström.pdf", 1_200_000], ["Det är en ros – tenor.mp3", 2_900_000], ["Det är en ros – bas.mp3", 2_950_000], ["Det är en ros – tutti.mp3", 3_100_000]],
+    links: [],
+  },
+  {
+    name: "Bred dina vida vingar",
+    credits: [["Lina Sandell", "Textförfattare"]],
+    files: [],
+    links: [["https://www.youtube.com/watch?v=def456", "Övningsvideo"], ["https://www.youtube.com/watch?v=ghi789", "Konsert 2024"], ["https://example.com/noter/bred-dina-vida-vingar", null]],
+  },
+  {
+    name: "Sommarpsalm",
+    credits: [["Waldemar Åhlén", "Kompositör"], ["Carl David af Wirsén", "Textförfattare"]],
+    files: [["Sommarpsalm.pdf", 300_000]],
+    links: [["https://www.youtube.com/watch?v=jkl012", "Referensinspelning"]],
+  },
+  {
+    name: "Ave Maria",
+    credits: [],
+    files: [],
+    links: [],
+  },
+];
+
+export function mockRows(withNote: boolean): Row[] {
+  const rows: Row[] = MOCK_PIECES.map((mock, i) => ({
+    kind: "piece",
+    id: `mock-${i}`,
+    piece: {
+      id: `mock-${i}`,
+      name: mock.name,
+      credits: mock.credits.map(([name, role], j) => ({
+        personId: `mock-person-${name}`,
+        pieceId: `mock-${i}`,
+        role,
+        person: { name },
+        id: `mock-credit-${i}-${j}`,
+      })),
+      files: mock.files.map(([displayName, size], j) => ({ id: `mock-file-${i}-${j}`, displayName, size })),
+      links: mock.links.map(([url, label], j) => ({ id: `mock-link-${i}-${j}`, url, label })),
+    } as unknown as PieceWithRelations,
+  }));
+  if (withNote) {
+    rows.splice(3, 0, { kind: "note", id: "mock-note", content: "Paus – 15 min. Byt till svarta mappar." });
+  }
+  return rows;
 }

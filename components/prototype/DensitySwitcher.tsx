@@ -26,7 +26,7 @@ export function DensitySwitcher() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const current = searchParams.get("density") ?? "today";
+  const current = searchParams.get("density") ?? "flush";
   const index = Math.max(
     0,
     VARIANTS.findIndex((v) => v.key === current)
@@ -57,6 +57,9 @@ export function DensitySwitcher() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [go]);
+
+  // PER-365 prototype: density is decided (Flush) — keep it applied, hide the bar.
+  if (process.env.NODE_ENV !== "test") return null;
 
   return (
     <div className="fixed bottom-3 left-1/2 z-[100] flex max-w-[calc(100%-16px)] -translate-x-1/2 flex-col items-center gap-1 rounded-2xl bg-fuchsia-700 px-2 py-1.5 text-xs text-white shadow-xl">

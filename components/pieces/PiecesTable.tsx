@@ -28,6 +28,7 @@ import {
   VariantAccordion,
   VariantCards,
   VariantNarrowTable,
+  mockRows,
 } from "@/components/pieces/PiecesListMobilePrototype";
 import type { Person } from "@/types/piece-credit-dialog";
 
@@ -281,7 +282,7 @@ export function PiecesTable({
   const variant = usePrototypeVariant(PIECES_LIST_VARIANTS);
   const emptyMessage = setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu.";
   const mobileProps = {
-    rows,
+    rows: [...rows, ...mockRows(Boolean(setListId))],
     isEditing,
     groupSlug,
     people,
@@ -301,7 +302,7 @@ export function PiecesTable({
       enableSorting={!setList}
       cellAlign="top"
       emptyMessage={emptyMessage}
-      className={cn(variant === "C" && stickyNameClass, variant === "C" && "max-md:[&_td]:whitespace-normal")}
+      className={cn(variant === "C" && stickyNameClass, variant === "C" && "max-md:-mx-4 max-md:[&_tr>*:first-child]:pl-4 max-md:[&_tr>*:last-child]:pr-4 max-md:[&_td]:whitespace-normal")}
     />
   );
 
