@@ -19,7 +19,7 @@ const VARIANTS = [
 const READOUT: Record<string, string> = {
   comfortable: "gutter 16 · section 20 · card 20/16 · r12 · dialog 20",
   compact: "gutter 12 · section 12 · card 12/12 · r8 · dialog 16",
-  flush: "gutter 16 · section 0 · card 16/16 full-bleed · r0 · dialog 16",
+  flush: "gutter 16 · section 16 (0 between cards) · card 16/16 full-bleed · r0 · dialog 16",
 };
 
 export function DensitySwitcher() {

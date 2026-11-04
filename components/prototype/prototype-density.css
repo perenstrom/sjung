@@ -38,7 +38,7 @@
   html[data-density="flush"] {
     --d-gutter: 16px;
     --d-main-top: 16px;
-    --d-section: 0px;
+    --d-section: 16px;
     --d-card-py: 16px;
     --d-card-px: 16px;
     --d-card-gap: 12px;
@@ -53,11 +53,11 @@
     padding-inline: var(--d-gutter) !important;
   }
 
-  html[data-density] main {
+  html[data-density] [data-slot="sidebar-inset"] > main {
     padding: var(--d-main-top) var(--d-gutter) 96px !important;
   }
 
-  html[data-density] main > .space-y-6 > :not(:last-child) {
+  html[data-density] [data-slot="sidebar-inset"] > main > .space-y-6 > :not(:last-child) {
     margin-block-start: 0 !important;
     margin-block-end: var(--d-section) !important;
   }
@@ -87,7 +87,16 @@
     box-shadow: none !important;
   }
 
-  html[data-density="flush"] main > .space-y-6 > [data-slot="card"]:first-of-type {
+  /* Consecutive cards touch, separated by a hairline only. */
+  html[data-density="flush"] [data-slot="sidebar-inset"] > main > .space-y-6 > [data-slot="card"]:has(+ [data-slot="card"]) {
+    margin-block-end: 0 !important;
+  }
+
+  html[data-density="flush"] [data-slot="sidebar-inset"] > main > .space-y-6 > :not([data-slot="card"]) + [data-slot="card"] {
     border-top-width: 1px !important;
+  }
+
+  html[data-density="flush"] [data-slot="sidebar-inset"] > main > .space-y-6 > [data-slot="card"] {
+    border-bottom-width: 1px !important;
   }
 }
