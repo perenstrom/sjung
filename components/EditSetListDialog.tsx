@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 import { updateSetList } from "@/app/actions/setlists";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,12 @@ function toDateInputValue(date: Date | null): string {
 export function EditSetListDialog({
   groupSlug,
   setList,
+  trigger = "button",
 }: {
   groupSlug: string;
   setList: SetListRow;
+  /** "icon" is a pencil icon button, for the mobile list row. */
+  trigger?: "button" | "icon";
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,9 +63,15 @@ export function EditSetListDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Redigera
-        </Button>
+        {trigger === "icon" ? (
+          <Button variant="ghost" size="icon" aria-label={`Redigera ${setList.name}`}>
+            <Pencil className="size-4" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm">
+            Redigera
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
+import { formatSetListDate } from "@/lib/setlists/date";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { notFound } from "next/navigation";
@@ -19,13 +20,6 @@ import { notFound } from "next/navigation";
 type PageProps = {
   params: Promise<{ groupSlug: string; id: string }>;
 };
-
-function formatSetListDate(date: Date | null): string {
-  if (!date) {
-    return "–";
-  }
-  return new Intl.DateTimeFormat("sv-SE").format(date);
-}
 
 export default async function TenantSetListDetailPage({ params }: PageProps) {
   const { groupSlug, id } = await params;
@@ -56,7 +50,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
         />
         <div className="space-y-2">
           <PageHeader title={setList.name} />
-          <p className="text-sm text-muted-foreground">Datum: {formatSetListDate(setList.date)}</p>
+          <p className="text-sm text-muted-foreground">Datum: {formatSetListDate(setList.date) ?? "–"}</p>
         </div>
 
         <EditOnly>
