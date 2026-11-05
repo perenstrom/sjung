@@ -12,12 +12,15 @@ export type PieceInlineFile = PieceFileListItem;
 
 export function PieceInlineFilesCell({
   readOnly = false,
+  touch = false,
   groupSlug,
   pieceId,
   pieceName,
   files,
 }: {
   readOnly?: boolean;
+  /** 40px lines for touch lists; see the list's `touch`. */
+  touch?: boolean;
   groupSlug: string;
   pieceId: string;
   pieceName: string;
@@ -36,6 +39,7 @@ export function PieceInlineFilesCell({
           groupSlug={groupSlug}
           files={files}
           compact
+          touch={touch}
           readOnly={readOnly}
           onAggregateError={setError}
           onClearAggregateError={() => setError(null)}

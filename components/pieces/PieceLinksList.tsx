@@ -22,6 +22,7 @@ export function PieceLinksList({
   editingLinkId,
   onEditingLinkIdChange,
   compact = false,
+  touch = false,
 }: {
   groupSlug: string;
   links: PieceLink[];
@@ -32,6 +33,8 @@ export function PieceLinksList({
   editingLinkId: string | null;
   onEditingLinkIdChange: (linkId: string | null) => void;
   compact?: boolean;
+  /** Compact only: 40px lines whose label fills the line, for touch lists. */
+  touch?: boolean;
 }) {
   const router = useRouter();
   const [removingLinkId, setRemovingLinkId] = useState<string | null>(null);
@@ -90,11 +93,14 @@ export function PieceLinksList({
         // Rows are 28px in read-only and edit mode so the first row lines up
         // with neighbouring table cells; read-only drops the gap to keep its
         // pitch.
-        <ul className={cn("text-sm", !readOnly && "space-y-2")}>
+        <ul className={cn("text-sm", !readOnly && !touch && "space-y-2")}>
           {links.map((link) => (
             <li
               key={link.id}
-              className="flex min-h-7 min-w-0 items-center gap-1"
+              className={cn(
+                "flex min-w-0 items-center gap-1",
+                touch ? "min-h-10" : "min-h-7"
+              )}
             >
               <ExternalLink
                 className="size-3.5 shrink-0 text-muted-foreground"
@@ -104,7 +110,10 @@ export function PieceLinksList({
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-w-0 flex-1 truncate text-primary underline-offset-4 hover:underline"
+                className={cn(
+                  "min-w-0 flex-1 truncate text-primary underline-offset-4 hover:underline",
+                  touch && "leading-10"
+                )}
               >
                 {labelForLink(link)}
                 <span className="sr-only">, öppnas i ny flik</span>
