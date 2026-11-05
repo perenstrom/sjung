@@ -22,9 +22,7 @@ import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
 // PROTOTYPE (PER-365) — mobile variants; remove before merging to main.
-import { PrototypeSwitcher, usePrototypeVariant } from "@/components/PrototypeSwitcher";
 import {
-  PIECES_LIST_VARIANTS,
   VariantAccordion,
   VariantCards,
   VariantNarrowTable,
@@ -279,7 +277,8 @@ export function PiecesTable({
     [groupSlug, isEditing, setListId]
   );
 
-  const variant = usePrototypeVariant(PIECES_LIST_VARIANTS);
+  // PER-365 decided D (Utfällbar lista); pinned for the PER-369 dialog prototype.
+  const variant: string = "D";
   const emptyMessage = setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu.";
   const mobileProps = {
     rows: [...rows, ...mockRows(Boolean(setListId))],
@@ -320,7 +319,6 @@ export function PiecesTable({
           <div className="hidden md:block">{table}</div>
         </>
       )}
-      <PrototypeSwitcher variants={PIECES_LIST_VARIANTS} />
     </PiecesTableCellContext.Provider>
   );
 }

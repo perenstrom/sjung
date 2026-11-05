@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Separator } from "@/components/ui/separator";
 import { Suspense } from "react";
 import { DensitySwitcher } from "@/components/prototype/DensitySwitcher";
+import { DialogPrototype } from "@/components/prototype/DialogPrototype";
 import { getGroups } from "@/app/actions/groups";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 
@@ -38,6 +39,8 @@ export default async function ProtectedLayout({
           {process.env.NODE_ENV !== "production" ? (
             <Suspense fallback={null}>
               <DensitySwitcher />
+              {/* PROTOTYPE — PER-369 dialog variants, never merge */}
+              <DialogPrototype />
             </Suspense>
           ) : null}
         </SidebarInset>

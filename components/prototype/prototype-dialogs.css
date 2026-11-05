@@ -1,0 +1,228 @@
+/*
+ * PROTOTYPE — throwaway. Mobile dialog & popover pattern (PER-369).
+ *
+ * Variants set by DialogPrototype on html[data-dialog]:
+ *   A  today — no overrides
+ *   B  top-pinned: 16px from the top of the visible area, height capped to it
+ *   C  bottom sheet: sits on top of the keyboard, rounded top only
+ *   D  full screen: fills the visible area exactly
+ * In B–D the 6 form popovers (add credit/link/file, edit link, rename/replace
+ * file) are shown as that same dialog surface, and the close button gets a
+ * 44px hit area on touch screens. The people combobox popover is left as a
+ * popover and handled by html[data-combobox].
+ *
+ * !important beats Tailwind utilities and Radix inline styles without touching
+ * the components — prototype only. Applies below 768px only.
+ */
+
+@keyframes proto-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  /* --- shared dialog structure (B, C, D) -------------------------------- */
+
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"]) [data-slot="dialog-content"] {
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: calc(var(--vv-height, 100dvh) - 32px);
+    translate: none !important;
+    left: 16px !important;
+    right: 16px !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* Header: never scrolls, left-aligned on phones. */
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"]) [data-slot="dialog-header"] {
+    flex: none;
+    text-align: left !important;
+    padding: 16px 60px 12px 16px;
+  }
+
+  /* Everything between header and footer is the scrolling body. */
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"])
+    [data-slot="dialog-content"] > :not([data-slot="dialog-header"]):not([data-slot="dialog-close"]):not([data-slot="dialog-footer"]) {
+    min-height: 0;
+    flex: 0 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px 16px 16px;
+  }
+
+  /* Footer: the action row stays visible at the bottom of the body. Forms put
+     their buttons in a last div; DialogFooter is used by confirmations. */
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"])
+    [data-slot="dialog-content"] form > div:last-child:has(> button[type="submit"]),
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"]) [data-slot="dialog-footer"] {
+    position: sticky;
+    bottom: -16px;
+    margin: 0 -16px -16px;
+    padding: 12px 16px 16px;
+    background: var(--background);
+    border-top: 1px solid var(--border);
+    z-index: 1;
+  }
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"]) [data-slot="dialog-content"] > [data-slot="dialog-footer"] {
+    position: static;
+    margin: 0;
+    flex: none;
+  }
+
+  /* --- B: top-pinned ---------------------------------------------------- */
+
+  html[data-dialog="B"] [data-slot="dialog-content"] {
+    top: calc(var(--vv-top, 0px) + 16px) !important;
+    border-radius: 12px !important;
+  }
+
+  /* --- C: bottom sheet -------------------------------------------------- */
+
+  html[data-dialog="C"] [data-slot="dialog-content"] {
+    top: auto !important;
+    bottom: var(--vv-bottom, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-height: calc(var(--vv-height, 100dvh) - 48px);
+    border-radius: 12px 12px 0 0 !important;
+    border-width: 1px 0 0 !important;
+    animation: proto-sheet-in 200ms ease-out !important;
+  }
+  html[data-dialog="C"] [data-slot="dialog-content"]::before {
+    content: "";
+    flex: none;
+    align-self: center;
+    width: 36px;
+    height: 4px;
+    margin-top: 8px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+  html[data-dialog="C"] [data-slot="dialog-header"] {
+    padding-top: 8px;
+  }
+
+  /* --- D: full screen --------------------------------------------------- */
+
+  html[data-dialog="D"] [data-slot="dialog-content"] {
+    top: var(--vv-top, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: var(--vv-height, 100dvh);
+    max-height: none;
+    border-radius: 0 !important;
+    border-width: 0 !important;
+  }
+  html[data-dialog="D"] [data-slot="dialog-header"] {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 12px;
+  }
+  html[data-dialog="D"] [data-slot="dialog-content"] > :not([data-slot="dialog-header"]):not([data-slot="dialog-close"]):not([data-slot="dialog-footer"]) {
+    flex: 1 1 auto;
+  }
+
+  /* Full screen: the action row sits at the bottom of the screen, not mid-way. */
+  html[data-dialog="D"] [data-slot="dialog-content"] > form {
+    display: flex;
+    flex-direction: column;
+  }
+  html[data-dialog="D"] [data-slot="dialog-content"] > form > div:last-child:has(> button[type="submit"]) {
+    margin-top: auto;
+  }
+
+  /* --- close button: 44px hit area on touch (B, C, D) -------------------- */
+
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"]) [data-slot="dialog-close"] {
+    top: 6px !important;
+    right: 6px !important;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  html[data-dialog="C"] [data-slot="dialog-close"] {
+    top: 14px !important;
+  }
+
+  /* --- form popovers shown as the dialog surface (B, C, D) -------------- */
+
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"])
+    [data-radix-popper-content-wrapper]:has(> [data-slot="popover-content"]):not(:has([cmdk-root])) {
+    position: fixed !important;
+    transform: none !important;
+    min-width: 0 !important;
+    left: 16px !important;
+    right: 16px !important;
+    top: calc(var(--vv-top, 0px) + 16px) !important;
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.5);
+    border-radius: 12px;
+    z-index: 50 !important;
+  }
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"])
+    [data-radix-popper-content-wrapper] > [data-slot="popover-content"]:not(:has([cmdk-root])) {
+    width: 100% !important;
+    max-height: calc(var(--vv-height, 100dvh) - 32px);
+    overflow-y: auto;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  html[data-dialog="C"]
+    [data-radix-popper-content-wrapper]:has(> [data-slot="popover-content"]):not(:has([cmdk-root])) {
+    top: auto !important;
+    bottom: var(--vv-bottom, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 12px 12px 0 0;
+  }
+  html[data-dialog="C"] [data-radix-popper-content-wrapper] > [data-slot="popover-content"]:not(:has([cmdk-root])) {
+    border-radius: 12px 12px 0 0;
+    max-height: calc(var(--vv-height, 100dvh) - 48px);
+    animation: proto-sheet-in 200ms ease-out !important;
+  }
+
+  html[data-dialog="D"]
+    [data-radix-popper-content-wrapper]:has(> [data-slot="popover-content"]):not(:has([cmdk-root])) {
+    top: var(--vv-top, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0;
+  }
+  html[data-dialog="D"] [data-radix-popper-content-wrapper] > [data-slot="popover-content"]:not(:has([cmdk-root])) {
+    height: var(--vv-height, 100dvh);
+    max-height: none;
+    border-radius: 0;
+    border-width: 0;
+  }
+
+  /* Form popover action rows: full-width buttons on phones. */
+  html:is([data-dialog="B"], [data-dialog="C"], [data-dialog="D"])
+    [data-slot="popover-content"]:not(:has([cmdk-root])) form > div:last-child:has(> button[type="submit"]) > button {
+    flex: 1;
+  }
+
+  /* --- people combobox, popover mode (fixes from the keyboard research) -- */
+
+  html[data-combobox="popover"] [data-slot="popover-content"]:has([cmdk-root]) [data-slot="command-input"] {
+    font-size: 16px !important; /* stops iOS Safari zooming on focus */
+  }
+  html[data-combobox="popover"] [data-slot="popover-content"]:has([cmdk-root]) [data-slot="command-list"] {
+    max-height: min(300px, calc(var(--radix-popover-content-available-height, 300px) - 52px)) !important;
+  }
+  [data-slot="popover-content"]:has([cmdk-root]) [cmdk-item] {
+    min-height: 44px;
+  }
+}
+
+/* The switcher bar can't be used while a modal is open, and it hides the
+   footer in C/D — get it out of the way until the dialog closes. */
+html:has([data-slot="dialog-content"], [data-slot="popover-content"]) [data-prototype-bar] {
+  display: none !important;
+}
