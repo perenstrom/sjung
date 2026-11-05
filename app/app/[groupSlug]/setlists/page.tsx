@@ -6,17 +6,11 @@ import { EditModeProvider } from "@/components/EditModeContext";
 import { PageHeader } from "@/components/PageHeader";
 import { SetListsTable } from "@/components/setlists/SetListsTable";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
+import { formatSetListDate } from "@/lib/setlists/date";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;
 };
-
-function formatSetListDate(date: Date | null): string {
-  if (!date) {
-    return "–";
-  }
-  return new Intl.DateTimeFormat("sv-SE").format(date);
-}
 
 export default async function TenantSetListsPage({ params }: PageProps) {
   const { groupSlug } = await params;

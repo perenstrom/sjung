@@ -1,0 +1,98 @@
+import * as React from "react"
+import Link from "next/link"
+
+import { cn } from "@/lib/utils"
+
+/**
+ * The shared list used by every list view below `md` (desktop keeps its
+ * tables). It runs edge to edge, pulled out of the 16px page gutter (`px-4` on
+ * <main> in app/app/layout.tsx), with rows joined by hairlines and no header
+ * row. Hidden from `md` up, so a page renders it next to its table.
+ */
+function MobileList({ className, ...props }: React.ComponentProps<"ul">) {
+  return (
+    <ul
+      data-slot="mobile-list"
+      className={cn("-mx-4 divide-y border-y md:hidden", className)}
+      {...props}
+    />
+  )
+}
+
+/** The one muted line an empty list shows instead of rows. */
+function MobileListEmpty({ className, ...props }: React.ComponentProps<"li">) {
+  return (
+    <li
+      data-slot="mobile-list-empty"
+      className={cn("text-muted-foreground px-4 py-3 text-sm", className)}
+      {...props}
+    />
+  )
+}
+
+type MobileListRowProps = {
+  /** One line, truncated. */
+  primary: React.ReactNode
+  /** Optional one line below the primary line, truncated. Omit rather than pass a placeholder. */
+  secondary?: React.ReactNode
+  /** Trailing slot, e.g. a chevron, badges or icon buttons. */
+  trailing?: React.ReactNode
+  /**
+   * Makes the whole row a link (at least 56px tall). Trailing content stays
+   * above the link, so icon buttons there remain their own tap targets.
+   * Without it the row is static text, at least 44px tall.
+   */
+  href?: string
+  /** Extra content below the text lines, e.g. a wrapping line of badges. */
+  children?: React.ReactNode
+  className?: string
+}
+
+function MobileListRow({
+  primary,
+  secondary,
+  trailing,
+  href,
+  children,
+  className,
+}: MobileListRowProps) {
+  const textLines = (
+    <>
+      <span className="block truncate">{primary}</span>
+      {secondary ? (
+        <span className="text-muted-foreground block truncate text-sm">{secondary}</span>
+      ) : null}
+    </>
+  )
+
+  return (
+    <li
+      data-slot="mobile-list-row"
+      className={cn(
+        "relative flex items-center gap-2 px-4",
+        href ? "has-[a:active]:bg-muted/50 min-h-14 py-2" : "min-h-11 py-2.5",
+        className
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        {href ? (
+          // The link stretches over the whole row, so the full row is its tap target.
+          <Link
+            href={href}
+            className="focus-visible:after:ring-ring/50 block outline-none after:absolute after:inset-0 focus-visible:after:ring-[3px] focus-visible:after:ring-inset"
+          >
+            {textLines}
+          </Link>
+        ) : (
+          textLines
+        )}
+        {children}
+      </div>
+      {trailing ? (
+        <div className="relative flex shrink-0 items-center gap-1">{trailing}</div>
+      ) : null}
+    </li>
+  )
+}
+
+export { MobileList, MobileListEmpty, MobileListRow }

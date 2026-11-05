@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 
 type PageProps = {
@@ -38,28 +39,38 @@ export default async function TenantPeoplePage({ params }: PageProps) {
           editActions={<CreatePersonDialog groupSlug={groupSlug} />}
         />
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Namn</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {people.length === 0 ? (
+        <MobileList>
+          {people.length === 0 ? (
+            <MobileListEmpty>Inga personer tillagda ännu.</MobileListEmpty>
+          ) : (
+            people.map((person) => <MobileListRow key={person.id} primary={person.name} />)
+          )}
+        </MobileList>
+
+        <div className="max-md:hidden">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell className="text-muted-foreground">
-                  Inga personer tillagda ännu.
-                </TableCell>
+                <TableHead>Namn</TableHead>
               </TableRow>
-            ) : (
-              people.map((person) => (
-                <TableRow key={person.id}>
-                  <TableCell>{person.name}</TableCell>
+            </TableHeader>
+            <TableBody>
+              {people.length === 0 ? (
+                <TableRow>
+                  <TableCell className="text-muted-foreground">
+                    Inga personer tillagda ännu.
+                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                people.map((person) => (
+                  <TableRow key={person.id}>
+                    <TableCell>{person.name}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </EditModeProvider>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { deleteSetList } from "@/app/actions/setlists";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
@@ -22,9 +23,12 @@ type SetListRow = {
 export function DeleteSetListDialog({
   groupSlug,
   setList,
+  trigger = "button",
 }: {
   groupSlug: string;
   setList: SetListRow;
+  /** "icon" is a trash icon button, for the mobile list row. */
+  trigger?: "button" | "icon";
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +54,20 @@ export function DeleteSetListDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="destructive" size="sm">
-          Ta bort
-        </Button>
+        {trigger === "icon" ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            aria-label={`Ta bort ${setList.name}`}
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Button variant="destructive" size="sm">
+            Ta bort
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
