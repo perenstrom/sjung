@@ -13,7 +13,7 @@ import { PiecesTable } from "@/components/pieces/PiecesTable";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -43,7 +43,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
 
   return (
     <EditModeProvider>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
           trail={{
             visibility: "visible",
@@ -81,15 +81,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
               <input type="hidden" name="setListId" value={setList.id} />
               <label className="block space-y-2">
                 <span className="text-sm font-medium">Lägg till anteckning</span>
-                <textarea
-                  name="content"
-                  required
-                  rows={4}
-                  className={cn(
-                    "border-input placeholder:text-muted-foreground flex min-h-[6rem] w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm",
-                    "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  )}
-                />
+                <Textarea name="content" required rows={4} className="min-h-[6rem]" />
               </label>
               <Button type="submit">Lägg till anteckning</Button>
             </form>

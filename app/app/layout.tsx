@@ -31,7 +31,7 @@ export default async function ProtectedLayout({
             <Separator orientation="vertical" className="mx-2 h-4" />
             <AppBreadcrumb />
           </header>
-          <main className="p-8 pl-12">{children}</main>
+          <main className="px-4 py-4 md:p-8 md:pl-12">{children}</main>
         </SidebarInset>
       </AppBreadcrumbProvider>
     </SidebarProvider>

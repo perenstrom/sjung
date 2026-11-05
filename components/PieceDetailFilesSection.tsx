@@ -40,7 +40,7 @@ function PieceDetailFilesCard({
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
 
   return (
-    <Card>
+    <Card variant="section">
       <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
         <h2 className="text-lg leading-8 font-medium">Filer</h2>
       </CardHeader>

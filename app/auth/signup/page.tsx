@@ -12,7 +12,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
   const nextPath = parseRedirectPathFromValue(next);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6">
+    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 md:px-6">
       <SignupForm nextPath={nextPath} />
     </main>
   );
