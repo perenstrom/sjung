@@ -37,7 +37,7 @@ function PieceDetailLinksCard({
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
 
   return (
-    <Card>
+    <Card variant="section">
       <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
         <h2 className="text-lg leading-8 font-medium">Länkar</h2>
       </CardHeader>

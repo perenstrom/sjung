@@ -25,7 +25,7 @@ export default async function TenantSetListsPage({ params }: PageProps) {
 
   return (
     <EditModeProvider>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
           trail={{
             visibility: "visible",

@@ -33,7 +33,7 @@ export default async function GroupMembersPage({ params }: PageProps) {
   const groupName = groups.find((groupOption) => groupOption.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <BreadcrumbRegistrar
         trail={{
           visibility: "visible",

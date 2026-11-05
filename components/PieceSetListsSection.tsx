@@ -104,7 +104,7 @@ function PieceSetListsCard({
   }
 
   return (
-    <Card>
+    <Card variant="section">
       <CardHeader className="space-y-0">
         <h2 className="text-lg font-medium">Repertoarer</h2>
       </CardHeader>
@@ -159,7 +159,7 @@ function PieceSetListsCard({
                   id={`add-setlist-${pieceId}`}
                   name="setListId"
                   className={cn(
-                    "flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
+                    "flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none pointer-coarse:h-11 md:pointer-fine:text-sm",
                     "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
                     "disabled:cursor-not-allowed disabled:opacity-50"
                   )}
