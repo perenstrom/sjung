@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -89,9 +90,9 @@ export function EditSetListDialog({
             />
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <div className="flex justify-end">
+          <DialogFooter>
             <Button type="submit">Spara</Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

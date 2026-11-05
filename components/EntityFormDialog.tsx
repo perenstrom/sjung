@@ -25,7 +25,9 @@
  *     <EntityFormDialog.Form action={async (fd) => { await save(fd); }}>
  *       <input name="name" />
  *       <EntityFormDialog.Error />
- *       <Button type="submit">Spara</Button>
+ *       <EntityFormDialog.Footer>
+ *         <Button type="submit">Spara</Button>
+ *       </EntityFormDialog.Footer>
  *     </EntityFormDialog.Form>
  *   </EntityFormDialog.Content>
  * </EntityFormDialog.Root>
@@ -38,6 +40,7 @@ import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -107,6 +110,11 @@ function Content(props: React.ComponentProps<typeof DialogContent>) {
 
 function Header(props: React.ComponentProps<typeof DialogHeader>) {
   return <DialogHeader {...props} />;
+}
+
+/** Action row; on mobile it stays visible at the bottom while the body scrolls. */
+function Footer(props: React.ComponentProps<typeof DialogFooter>) {
+  return <DialogFooter {...props} />;
 }
 
 function Title(props: React.ComponentProps<typeof DialogTitle>) {
@@ -180,5 +188,6 @@ export const EntityFormDialog = {
   Header,
   Title,
   Form,
+  Footer,
   Error: ErrorMessage,
 };
