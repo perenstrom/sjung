@@ -23,8 +23,10 @@ export function PieceMetadataSection(props: PieceMetadataSectionProps) {
     return (
       <section className="space-y-2">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">{props.initialName}</h1>
-          <EditModeToggle />
+          <h1 className="min-w-0 flex-1 text-2xl font-semibold break-words">{props.initialName}</h1>
+          <div className="shrink-0">
+            <EditModeToggle />
+          </div>
         </div>
       </section>
     );
@@ -77,11 +79,14 @@ function PieceNameEditor({
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         {!isRenaming ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold">{savedName}</h1>
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsRenaming(true)}>
-              Byt namn
-            </Button>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+            <h1 className="min-w-0 text-2xl font-semibold break-words">{savedName}</h1>
+            {/* Below md the edit action gets its own row under the title. */}
+            <div className="basis-full md:basis-auto">
+              <Button type="button" variant="outline" size="sm" onClick={() => setIsRenaming(true)}>
+                Byt namn
+              </Button>
+            </div>
           </div>
         ) : (
           <form action={handleSubmit} className="flex flex-1 flex-wrap items-center gap-2">
@@ -104,7 +109,9 @@ function PieceNameEditor({
             </Button>
           </form>
         )}
-        <EditModeToggle />
+        <div className="shrink-0">
+          <EditModeToggle />
+        </div>
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
