@@ -27,6 +27,7 @@ export function PieceFilesList({
   replacingFileId,
   onReplacingFileIdChange,
   compact = false,
+  touch = false,
 }: {
   groupSlug: string;
   files: PieceFileListItem[];
@@ -41,6 +42,8 @@ export function PieceFilesList({
   replacingFileId?: string | null;
   onReplacingFileIdChange?: (fileId: string | null) => void;
   compact?: boolean;
+  /** Compact only: 40px lines whose name fills the line, for touch lists. */
+  touch?: boolean;
 }) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(
     null,
@@ -126,12 +129,17 @@ export function PieceFilesList({
       // Rows are 28px in read-only and edit mode so the first row lines up
       // with neighbouring table cells; read-only drops the gap to keep its
       // pitch.
-      <ul className={cn("text-sm", !readOnly && "space-y-2")}>
+      <ul className={cn("text-sm", !readOnly && !touch && "space-y-2")}>
         {files.map((file) => {
           const deleteError = deleteErrors[file.id];
           return (
             <li key={file.id} className="space-y-1">
-              <div className="flex min-h-7 min-w-0 items-center gap-1">
+              <div
+                className={cn(
+                  "flex min-w-0 items-center gap-1",
+                  touch ? "min-h-10" : "min-h-7"
+                )}
+              >
                 <FileText
                   className="size-3.5 shrink-0 text-muted-foreground"
                   aria-hidden
@@ -144,7 +152,10 @@ export function PieceFilesList({
                     deletingFileId === file.id ||
                     disabled
                   }
-                  className="min-w-0 flex-1 truncate text-left text-primary underline-offset-4 hover:underline disabled:opacity-50"
+                  className={cn(
+                    "min-w-0 flex-1 truncate text-left text-primary underline-offset-4 hover:underline disabled:opacity-50",
+                    touch && "leading-10"
+                  )}
                 >
                   {downloadingFileId === file.id
                     ? "Hämtar..."

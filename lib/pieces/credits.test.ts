@@ -6,6 +6,7 @@ import {
   diffCredits,
   DUPLICATE_CREDITS_ERROR,
   EMPTY_CREDIT_DRAFT,
+  formatCreditsLine,
   groupCreditsByPerson,
   MISSING_CREDIT_PERSON_ERROR,
   MISSING_CREDIT_ROLE_ERROR,
@@ -240,5 +241,27 @@ describe("resolveCreditsToSubmit", () => {
     expect(resolveCreditsToSubmit(staged, { personId: "", role: "Kompositör" })).toEqual({
       error: MISSING_CREDIT_PERSON_ERROR,
     });
+  });
+});
+
+describe("formatCreditsLine", () => {
+  const credit = (personId: string, name: string, role: string) => ({
+    personId,
+    role,
+    person: { name },
+  });
+
+  it("is empty for a piece without credits", () => {
+    expect(formatCreditsLine([])).toBe("");
+  });
+
+  it("lists each Person once with their Credit roles, in display order", () => {
+    expect(
+      formatCreditsLine([
+        credit("p2", "Bo", "Arrangör"),
+        credit("p1", "Ann", "Textförfattare"),
+        credit("p1", "Ann", "Kompositör"),
+      ])
+    ).toBe("Ann (Kompositör, Textförfattare) · Bo (Arrangör)");
   });
 });
