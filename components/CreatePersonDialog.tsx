@@ -28,9 +28,9 @@ export function CreatePersonDialog({ groupSlug }: { groupSlug: string }) {
             <Input id="name" name="name" required autoFocus />
           </div>
           <EntityFormDialog.Error />
-          <div className="flex justify-end">
+          <EntityFormDialog.Footer>
             <Button type="submit">Spara</Button>
-          </div>
+          </EntityFormDialog.Footer>
         </EntityFormDialog.Form>
       </EntityFormDialog.Content>
     </EntityFormDialog.Root>
