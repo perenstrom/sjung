@@ -146,10 +146,13 @@ function MobileListExpandableRow({
         </span>
         <span className="text-muted-foreground flex shrink-0 items-center gap-2 text-xs">
           {trailing}
-          <ChevronDown
-            className={cn("size-4 transition-transform", open && "rotate-180")}
+          {/* Rotate a wrapper, not the svg: Safari ignores `rotate` on svg elements. */}
+          <span
+            className={cn("inline-flex transition-transform", open && "rotate-180")}
             aria-hidden="true"
-          />
+          >
+            <ChevronDown className="size-4" />
+          </span>
         </span>
       </button>
       {open ? (
