@@ -2,8 +2,9 @@ import { EditOnly } from "@/components/EditModeContext";
 import { EditModeToggle } from "@/components/EditModeToggle";
 
 /**
- * Page title with the edit mode toggle pinned to the right. Edit-only actions
- * appear to the left of the toggle, so the toggle never moves.
+ * Page title with the edit mode toggle pinned to the right. Titles wrap rather
+ * than push the toggle off screen. Edit-only actions sit to the left of the
+ * toggle from `md` up, and on a second row below it, so the toggle never moves.
  */
 export function PageHeader({
   title,
@@ -13,10 +14,16 @@ export function PageHeader({
   editActions?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <div className="flex items-center gap-2">
-        {editActions ? <EditOnly>{editActions}</EditOnly> : null}
+    <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:gap-2">
+      <h1 className="min-w-0 flex-1 text-2xl font-semibold break-words md:mr-1">{title}</h1>
+      {editActions ? (
+        <EditOnly>
+          <div className="order-last flex basis-full flex-wrap items-center gap-2 md:order-none md:basis-auto">
+            {editActions}
+          </div>
+        </EditOnly>
+      ) : null}
+      <div className="shrink-0">
         <EditModeToggle />
       </div>
     </div>

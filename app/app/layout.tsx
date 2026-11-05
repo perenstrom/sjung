@@ -26,9 +26,11 @@ export default async function ProtectedLayout({
       <AppBreadcrumbProvider>
         <AppSidebar groups={groups} activeGroupSlug={activeGroupSlug} />
         <SidebarInset className="min-w-0">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="mx-2 h-4" />
+          {/* Below md: a 56px bar (plus hairline) that scrolls away, with a flush,
+              square, full-height trigger. */}
+          <header className="box-content flex h-14 shrink-0 items-center gap-3 border-b pr-4 md:box-border md:h-16 md:gap-2 md:pl-4">
+            <SidebarTrigger className="size-14 rounded-none border-r pointer-coarse:size-14 md:size-7 md:rounded-md md:border-r-0 md:pointer-coarse:size-11" />
+            <Separator orientation="vertical" className="mx-2 hidden h-4 md:block" />
             <AppBreadcrumb />
           </header>
           <main className="px-4 py-4 md:p-8 md:pl-12">{children}</main>
