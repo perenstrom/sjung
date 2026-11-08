@@ -1,16 +1,21 @@
 import type { ReactNode } from "react";
 import { Resend } from "resend";
 
-type RequiredEmailEnvVar = "RESEND_API_KEY" | "EMAIL_FROM";
+type EmailEnvVar = "RESEND_API_KEY" | "EMAIL_FROM";
 
 let cachedClient: Resend | null = null;
 
-function getRequiredEnv(name: RequiredEmailEnvVar): string {
-  const value = process.env[name];
-  if (!value || value.trim() === "") {
+function readEnv(name: EmailEnvVar): string | undefined {
+  const value = process.env[name]?.trim();
+  return value ? value : undefined;
+}
+
+function getRequiredEnv(name: EmailEnvVar): string {
+  const value = readEnv(name);
+  if (!value) {
     throw new Error(`Saknar miljövariabel: ${name}`);
   }
-  return value.trim();
+  return value;
 }
 
 function getResendClient(): Resend {
