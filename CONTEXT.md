@@ -18,6 +18,10 @@ _Avoid_: Member (a User's relationship to one specific Group), Person (a differe
 A User who has proven they control their email address. An **Unverified user** can log in but cannot use any Group or app content until they verify. Users who existed before verification was introduced count as Verified.
 _Avoid_: Active, Activated, Pending — "active" is already rejected wording around Default group.
 
+**Password reset**:
+A User proving control of their email address, via an emailed single-use link, in order to set a new password. Completing one also makes the User Verified and logs out all of that User's sessions. Swedish UI: _Glömt lösenord_ (the entry link), _Återställ lösenord_ (the flow).
+_Avoid_: Password recovery, Forgot password (as the concept name — it's only the link label).
+
 **Member**:
 A User's association with one Group. May additionally hold one or more Claims granting elevated capabilities — see Claim, Creator.
 _Avoid_: User (the account itself, group-independent).
