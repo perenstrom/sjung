@@ -51,13 +51,6 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
           initialName={piece.name}
         />
 
-        <PieceDetailNotesSection
-          key={`notes-${piece.id}`}
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          notes={piece.notes}
-        />
-
         <PieceDetailCreditsSection
           groupSlug={groupSlug}
           pieceId={piece.id}
@@ -91,6 +84,13 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
             url: link.url,
             label: link.label,
           }))}
+        />
+
+        <PieceDetailNotesSection
+          key={`notes-${piece.id}`}
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          notes={piece.notes}
         />
 
         <PieceSetListsSection
