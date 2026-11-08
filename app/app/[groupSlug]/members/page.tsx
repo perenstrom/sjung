@@ -2,17 +2,7 @@ import { notFound } from "next/navigation";
 import { getGroups, listGroupMembers } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { AddGroupMemberForm } from "@/components/AddGroupMemberForm";
-import { GroupMemberClaimBadges } from "@/components/GroupMemberClaimBadges";
-import { GroupMemberClaimsDialog } from "@/components/GroupMemberClaimsDialog";
-import { RemoveGroupMemberDialog } from "@/components/RemoveGroupMemberDialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { GroupMembersTable } from "@/components/members/GroupMembersTable";
 import { canManageGroupMembers } from "@/lib/actions/guards";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { requireTenantGroup } from "@/lib/tenant-group";
@@ -50,44 +40,7 @@ export default async function GroupMembersPage({ params }: PageProps) {
 
       <AddGroupMemberForm groupSlug={groupSlug} />
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Namn</TableHead>
-            <TableHead>E-post</TableHead>
-            <TableHead>Behörigheter</TableHead>
-            <TableHead className="w-[100px] text-right">Åtgärder</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} className="text-muted-foreground">
-                Inga medlemmar hittades.
-              </TableCell>
-            </TableRow>
-          ) : (
-            members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell>{member.name}</TableCell>
-                <TableCell>{member.email}</TableCell>
-                <TableCell>
-                  <GroupMemberClaimBadges member={member} />
-                </TableCell>
-                <TableCell className="text-right">
-                  {/* The server rejects changes to the Creator and to the viewer's own membership. */}
-                  {member.isCreator || member.id === userId ? null : (
-                    <div className="flex justify-end gap-1">
-                      <GroupMemberClaimsDialog groupSlug={groupSlug} member={member} />
-                      <RemoveGroupMemberDialog groupSlug={groupSlug} member={member} />
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <GroupMembersTable groupSlug={groupSlug} members={members} viewerUserId={userId} />
     </div>
   );
 }

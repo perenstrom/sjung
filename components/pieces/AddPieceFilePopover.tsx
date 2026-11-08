@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useControllableOpen } from "@/hooks/use-controllable-open";
 
 import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
@@ -33,20 +34,12 @@ export function AddPieceFilePopover({
   onOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [openInternal, setOpenInternal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isControlled = openControlled !== undefined;
-  const open = isControlled ? openControlled : openInternal;
-
-  function handleOpenChange(nextOpen: boolean) {
-    if (!isControlled) {
-      setOpenInternal(nextOpen);
-    }
-    onOpenChangeExternal?.(nextOpen);
-    if (!nextOpen) {
-      setError(null);
-    }
-  }
+  const { open, setOpen: handleOpenChange } = useControllableOpen({
+    open: openControlled,
+    onOpenChange: onOpenChangeExternal,
+    onClose: () => setError(null),
+  });
 
   const { handleTransfer, isTransferring } = usePieceFileTransfer({
     target: { kind: "upload", groupSlug, pieceId },

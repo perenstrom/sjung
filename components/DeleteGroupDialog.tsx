@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useControllableOpen } from "@/hooks/use-controllable-open";
 import { deleteGroup } from "@/app/actions/groups";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
@@ -19,14 +20,26 @@ type GroupRow = {
   name: string;
 };
 
-export function DeleteGroupDialog({ group }: { group: GroupRow }) {
-  const [open, setOpen] = useState(false);
+export function DeleteGroupDialog({
+  group,
+  open: openControlled,
+  onOpenChange: onOpenChangeExternal,
+}: {
+  group: GroupRow;
+  /** Pass to open it from elsewhere, e.g. a menu item; it then renders no trigger button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const [error, setError] = useState<string | null>(null);
+  const { open, setOpen, isControlled } = useControllableOpen({
+    open: openControlled,
+    onOpenChange: onOpenChangeExternal,
+    onClose: () => setError(null),
+  });
 
   async function handleSubmit(formData: FormData) {
     try {
       await deleteGroup(formData);
-      setError(null);
       setOpen(false);
     } catch (err) {
       setError(getThrownMessage(err, "Kunde inte ta bort grupp"));
@@ -34,20 +47,14 @@ export function DeleteGroupDialog({ group }: { group: GroupRow }) {
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (!nextOpen) {
-          setError(null);
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="destructive" size="sm">
-          Ta bort
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={setOpen}>
+      {isControlled ? null : (
+        <DialogTrigger asChild>
+          <Button variant="destructive" size="sm">
+            Ta bort
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Ta bort grupp?</DialogTitle>

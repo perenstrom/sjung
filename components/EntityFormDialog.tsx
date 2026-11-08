@@ -35,6 +35,7 @@
  */
 
 import * as React from "react";
+import { useControllableOpen } from "@/hooks/use-controllable-open";
 import { useMergedRefs } from "@/hooks/use-merged-refs";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { cn } from "@/lib/utils";
@@ -69,27 +70,33 @@ export type EntityFormDialogRootProps = {
   children: React.ReactNode;
   /** Swedish fallback for `getThrownMessage` when the thrown value has no message. */
   fallbackSv: string;
+  /** Controls the dialog from outside, e.g. when a menu item opens it and it has no Trigger. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-function Root({ children, fallbackSv }: EntityFormDialogRootProps) {
-  const [open, setOpen] = React.useState(false);
+function Root({
+  children,
+  fallbackSv,
+  open: openControlled,
+  onOpenChange: onOpenChangeExternal,
+}: EntityFormDialogRootProps) {
   const [error, setError] = React.useState<string | null>(null);
-
-  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (!nextOpen) {
-      setError(null);
-    }
-  }, []);
+  const clearError = React.useCallback(() => setError(null), []);
+  const { open, setOpen: handleOpenChange } = useControllableOpen({
+    open: openControlled,
+    onOpenChange: onOpenChangeExternal,
+    onClose: clearError,
+  });
 
   const value = React.useMemo(
     () => ({
-      setOpen,
+      setOpen: handleOpenChange,
       error,
       setError,
       fallbackSv,
     }),
-    [error, fallbackSv],
+    [handleOpenChange, error, fallbackSv],
   );
 
   return (
