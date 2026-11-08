@@ -32,3 +32,16 @@ export function resetFakeEmail() {
   sent = [];
   failingRecipients = new Set();
 }
+
+/**
+ * The `token` query parameter of the link to `path` on the test origin
+ * (APP_BASE_URL) in an email's text. Throws if the email has no such link.
+ */
+export function emailedLinkToken(email: SentEmail, path: string): string {
+  // App paths are plain `/a-z` segments, so they need no regex escaping.
+  const match = email.text.match(new RegExp(`http://sjung\\.test${path}\\?token=([A-Za-z0-9_-]+)`));
+  if (!match) {
+    throw new Error(`No ${path} link in email:\n${email.text}`);
+  }
+  return match[1];
+}

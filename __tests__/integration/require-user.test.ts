@@ -42,6 +42,22 @@ describe("requireUser", () => {
     await expect(requireUser()).rejects.toThrow("Unauthorized");
   });
 
+  it("rejects a session logged in before the User's sessions were revoked", async () => {
+    const user = await createUser();
+    actAs(user.id, { sessionVersion: 0 });
+    await testPrisma.user.update({ where: { id: user.id }, data: { sessionVersion: 1 } });
+
+    await expect(requireUser()).rejects.toThrow("Unauthorized");
+  });
+
+  it("accepts a session logged in after the revocation", async () => {
+    const user = await createUser();
+    await testPrisma.user.update({ where: { id: user.id }, data: { sessionVersion: 1 } });
+    actAs(user.id, { sessionVersion: 1 });
+
+    await expect(requireUser()).resolves.toMatchObject({ id: user.id });
+  });
+
   it("rejects a session whose User no longer exists", async () => {
     actAs("00000000-0000-0000-0000-000000000000");
 
@@ -55,6 +71,14 @@ describe("getSessionUser", () => {
     actAs(user.id);
 
     await expect(getSessionUser()).resolves.toMatchObject({ id: user.id, emailVerifiedAt: null });
+  });
+
+  it("returns null for a revoked session", async () => {
+    const user = await createUser({ emailVerifiedAt: null });
+    actAs(user.id, { sessionVersion: 0 });
+    await testPrisma.user.update({ where: { id: user.id }, data: { sessionVersion: 1 } });
+
+    await expect(getSessionUser()).resolves.toBeNull();
   });
 
   it("returns null without a session", async () => {

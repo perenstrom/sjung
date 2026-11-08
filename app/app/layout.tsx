@@ -10,18 +10,20 @@ import { Separator } from "@/components/ui/separator";
 import { getGroups } from "@/app/actions/groups";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { getSessionUser } from "@/lib/auth/require-user";
-import { VERIFY_EMAIL_PATH } from "@/lib/auth/verify-email-routes";
+import { SESSION_ENDED_PATH, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 import { redirect } from "next/navigation";
 
 export default async function ProtectedLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // proxy.ts has already bounced visitors without a session. The verified
-  // state is read from the database, not the JWT, so verifying on another
-  // device takes effect at once. requireUser() enforces the same for actions.
+  // proxy.ts has already bounced visitors without a session cookie, so no
+  // user here means the session was revoked (or its User deleted). The
+  // verified state is read from the database, not the JWT, so verifying on
+  // another device takes effect at once. requireUser() enforces the same for
+  // actions.
   const user = await getSessionUser();
   if (!user) {
-    throw new Error("Unauthorized");
+    redirect(SESSION_ENDED_PATH);
   }
   if (!user.emailVerifiedAt) {
     redirect(VERIFY_EMAIL_PATH);

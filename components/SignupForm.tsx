@@ -6,7 +6,7 @@ import { signUp } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SIGNUP_PASSWORD_MIN_LENGTH } from "@/lib/schemas/auth";
+import { PASSWORD_MIN_LENGTH } from "@/lib/schemas/auth";
 
 export function SignupForm({ nextPath }: { nextPath: string }) {
   const [state, formAction, isPending] = useActionState(signUp, null);
@@ -60,10 +60,10 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
           id="password"
           name="password"
           type="password"
-          minLength={SIGNUP_PASSWORD_MIN_LENGTH}
+          minLength={PASSWORD_MIN_LENGTH}
           required
         />
-        <p className="text-sm text-muted-foreground">Minst 12 tecken.</p>
+        <p className="text-sm text-muted-foreground">Minst {PASSWORD_MIN_LENGTH} tecken.</p>
       </div>
 
       <div className="space-y-2">

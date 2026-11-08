@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   loginCredentialsSchema,
   parseLoginFormData,
+  parseNewPasswordFormData,
   parseRedirectPathFromFormData,
   parseRedirectPathFromValue,
   parseSignupFormData,
@@ -310,5 +311,47 @@ describe("parseSignupFormData", () => {
       expect(result.data.redirectTo).toBe("/app");
       expect(result.data.email).toBe("u@u.com");
     }
+  });
+});
+
+describe("parseNewPasswordFormData", () => {
+  it("returns the token and password for a valid payload", () => {
+    const result = parseNewPasswordFormData(
+      createFormData({
+        token: "abc",
+        password: "ett långt lösenord",
+        passwordConfirmation: "ett långt lösenord",
+      })
+    );
+
+    expect(result).toEqual({ ok: true, data: { token: "abc", password: "ett långt lösenord" } });
+  });
+
+  it("applies the signup password rules", () => {
+    expect(
+      parseNewPasswordFormData(
+        createFormData({ token: "abc", password: "kort", passwordConfirmation: "kort" })
+      )
+    ).toEqual({ ok: false, error: "Lösenordet måste vara minst 12 tecken" });
+    expect(
+      parseNewPasswordFormData(
+        createFormData({
+          token: "abc",
+          password: "ett långt lösenord",
+          passwordConfirmation: "ett annat lösenord",
+        })
+      )
+    ).toEqual({ ok: false, error: "Lösenorden matchar inte" });
+  });
+
+  it("fails when the token or a password field is missing", () => {
+    expect(
+      parseNewPasswordFormData(
+        createFormData({ password: "ett långt lösenord", passwordConfirmation: "ett långt lösenord" })
+      )
+    ).toEqual({ ok: false, error: "Ogiltiga formulärdata" });
+    expect(
+      parseNewPasswordFormData(createFormData({ token: "abc", password: "ett långt lösenord" }))
+    ).toEqual({ ok: false, error: "Ogiltiga formulärdata" });
   });
 });

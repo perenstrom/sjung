@@ -6,13 +6,16 @@ const SESSION_USER_SELECT = {
   name: true,
   email: true,
   emailVerifiedAt: true,
+  sessionVersion: true,
 } as const;
 
 /**
  * The signed-in User, read fresh from the database on every call — never from
  * the JWT, which would go stale when the User verifies on another device.
- * Null without a session or when the session's User no longer exists. Does
- * not check verification: use `requireUser()` for anything behind the gate.
+ * Null without a session, when the session's User no longer exists, or when
+ * the session was revoked (logged in before the User's `sessionVersion` was
+ * bumped, e.g. by a Password reset). Does not check verification: use
+ * `requireUser()` for anything behind the gate.
  */
 export async function getSessionUser() {
   const session = await auth();
@@ -21,7 +24,12 @@ export async function getSessionUser() {
     return null;
   }
 
-  return prisma.user.findUnique({ where: { id: userId }, select: SESSION_USER_SELECT });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: SESSION_USER_SELECT });
+  // Sessions from before sessionVersion existed carry none; they count as 0.
+  if (!user || user.sessionVersion !== (session.user.sessionVersion ?? 0)) {
+    return null;
+  }
+  return user;
 }
 
 export type SessionUser = NonNullable<Awaited<ReturnType<typeof getSessionUser>>>;

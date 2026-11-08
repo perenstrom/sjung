@@ -20,6 +20,9 @@ model User {
   passwordHash String @map("password_hash")
   // Null while the User is Unverified (see CONTEXT.md, "Verified user").
   emailVerifiedAt DateTime? @map("email_verified_at")
+  // Stamped into each session's JWT at login. Bumping it logs out every
+  // session logged in before (a completed Password reset does this).
+  sessionVersion  Int       @default(0) @map("session_version")
 
   createdBy User? @relation("UserCreatedBy", fields: [createdById], references: [id])
   updatedBy User? @relation("UserUpdatedBy", fields: [updatedById], references: [id])
@@ -53,9 +56,10 @@ model User {
   @@map("users")
 }
 
-// What a UserToken proves when redeemed. Password reset (PER-388) adds its own.
+// What a UserToken proves when redeemed.
 enum UserTokenPurpose {
   EMAIL_VERIFICATION
+  PASSWORD_RESET
 
   @@map("user_token_purpose")
 }
