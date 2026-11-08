@@ -16,6 +16,7 @@ import {
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
+import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import type { PieceWithRelations } from "@/lib/pieces/types";
@@ -70,7 +71,8 @@ function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
 }
 
 /**
- * The table for every list of pieces. Pass `setList` instead of `pieces` to
+ * The table for every list of pieces. With `pieces` it is a table from `md`
+ * up and `PiecesMobileList` below it. Pass `setList` instead of `pieces` to
  * show a set list's steps in position order: adds a `#` column and the step
  * reorder/remove actions, turns off sorting and drops the delete-piece action.
  */
@@ -272,7 +274,17 @@ export function PiecesTable({
 
   return (
     <PiecesTableCellContext.Provider value={cellContext}>
+      {/* Set list detail keeps the table at every width for now (PER-382). */}
+      {pieces ? (
+        <PiecesMobileList
+          pieces={pieces}
+          people={people}
+          groupSlug={groupSlug}
+          isEditing={isEditing}
+        />
+      ) : null}
       <DataTable
+        className={pieces ? "max-md:hidden" : undefined}
         columns={columns}
         data={rows}
         enableSorting={!setList}

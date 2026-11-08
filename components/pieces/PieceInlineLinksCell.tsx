@@ -8,12 +8,15 @@ import type { PieceLink } from "@/components/pieces/types";
 
 export function PieceInlineLinksCell({
   readOnly = false,
+  touch = false,
   groupSlug,
   pieceId,
   pieceName,
   links,
 }: {
   readOnly?: boolean;
+  /** 40px lines for touch lists; see the list's `touch`. */
+  touch?: boolean;
   groupSlug: string;
   pieceId: string;
   pieceName: string;
@@ -30,6 +33,7 @@ export function PieceInlineLinksCell({
           links={links}
           pieceName={pieceName}
           compact
+          touch={touch}
           readOnly={readOnly}
           disabled={addPopoverOpen}
           editingLinkId={editingLinkId}

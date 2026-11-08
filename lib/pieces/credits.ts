@@ -115,3 +115,13 @@ export function groupCreditsByPerson(credits: CreditForDisplay[]): CreditedPerso
     (a, b) => compareRoles(a.roles[0], b.roles[0]) || compareSv(a.name, b.name)
   );
 }
+
+/**
+ * A piece's credits on one line, as `Name (role, role) · Name (role)`, in
+ * the same order as `groupCreditsByPerson`. Empty when there are none.
+ */
+export function formatCreditsLine(credits: CreditForDisplay[]): string {
+  return groupCreditsByPerson(credits)
+    .map((person) => `${person.name} (${person.roles.join(", ")})`)
+    .join(" · ");
+}

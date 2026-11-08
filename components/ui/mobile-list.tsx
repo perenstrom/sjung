@@ -1,5 +1,6 @@
 import * as React from "react"
 import Link from "next/link"
+import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -95,4 +96,72 @@ function MobileListRow({
   )
 }
 
-export { MobileList, MobileListEmpty, MobileListRow }
+type MobileListExpandableRowProps = {
+  /** One line, truncated while closed and shown in full when open. */
+  primary: React.ReactNode
+  /** Optional line below the primary line, truncated while closed. Omit rather than pass a placeholder. */
+  secondary?: React.ReactNode
+  /** Non-interactive trailing content shown before the chevron, e.g. counts. */
+  trailing?: React.ReactNode
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** What the row shows below its summary when open. Unmounted while closed. */
+  children: React.ReactNode
+  className?: string
+}
+
+/**
+ * A row that opens in place. The whole summary (at least 56px tall) is one
+ * button that toggles it; the opened content sits below, inset like the text.
+ */
+function MobileListExpandableRow({
+  primary,
+  secondary,
+  trailing,
+  open,
+  onOpenChange,
+  children,
+  className,
+}: MobileListExpandableRowProps) {
+  const panelId = React.useId()
+
+  return (
+    <li data-slot="mobile-list-expandable-row" className={className}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => onOpenChange(!open)}
+        className="focus-visible:ring-ring/50 active:bg-muted/50 flex min-h-14 w-full items-center gap-2 px-4 py-2 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-inset"
+      >
+        <span className="min-w-0 flex-1">
+          <span className={cn("block", !open && "truncate")}>{primary}</span>
+          {secondary ? (
+            <span
+              className={cn("text-muted-foreground block text-sm", !open && "truncate")}
+            >
+              {secondary}
+            </span>
+          ) : null}
+        </span>
+        <span className="text-muted-foreground flex shrink-0 items-center gap-2 text-xs">
+          {trailing}
+          {/* Rotate a wrapper, not the svg: Safari ignores `rotate` on svg elements. */}
+          <span
+            className={cn("inline-flex transition-transform", open && "rotate-180")}
+            aria-hidden="true"
+          >
+            <ChevronDown className="size-4" />
+          </span>
+        </span>
+      </button>
+      {open ? (
+        <div id={panelId} className="space-y-3 px-4 pb-4">
+          {children}
+        </div>
+      ) : null}
+    </li>
+  )
+}
+
+export { MobileList, MobileListEmpty, MobileListExpandableRow, MobileListRow }
