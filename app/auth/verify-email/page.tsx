@@ -3,7 +3,7 @@ import { logOut } from "@/app/actions/auth";
 import { ResendVerificationForm } from "@/components/ResendVerificationForm";
 import { Button } from "@/components/ui/button";
 import { getSessionUser } from "@/lib/auth/require-user";
-import { isSendFailedFlag, VERIFY_EMAIL_PATH } from "@/lib/auth/verify-email-routes";
+import { isSendFailedFlag, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 
 type VerifyEmailPageProps = {
   searchParams: Promise<{

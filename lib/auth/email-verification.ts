@@ -3,18 +3,17 @@ import { UserTokenPurpose } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
 import {
   issueUserToken,
-  latestUserTokenIssuedAt,
   lookUpUserToken,
   redeemUserToken,
+  resendCooldownSeconds,
 } from "@/lib/auth/tokens";
 import { VERIFICATION_EMAIL_SUBJECT, VerificationEmail } from "@/lib/auth/verification-email";
-import { CONFIRM_EMAIL_PATH } from "@/lib/auth/verify-email-routes";
+import { CONFIRM_EMAIL_PATH } from "@/lib/auth/routes";
 import { sendEmail } from "@/lib/email";
 import prisma from "@/lib/prisma";
 
 const PURPOSE = UserTokenPurpose.EMAIL_VERIFICATION;
 const VALID_FOR_HOURS = 24;
-const RESEND_COOLDOWN_SECONDS = 60;
 
 /**
  * Emails a fresh confirm link, replacing earlier ones. Throws if the email
@@ -46,12 +45,9 @@ export async function resendVerificationEmail(
   userId: string,
   now: Date = new Date()
 ): Promise<{ ok: true } | { ok: false; retryAfterSeconds: number }> {
-  const lastSentAt = await latestUserTokenIssuedAt(userId, PURPOSE);
-  if (lastSentAt) {
-    const elapsedSeconds = (now.getTime() - lastSentAt.getTime()) / 1000;
-    if (elapsedSeconds < RESEND_COOLDOWN_SECONDS) {
-      return { ok: false, retryAfterSeconds: Math.ceil(RESEND_COOLDOWN_SECONDS - elapsedSeconds) };
-    }
+  const retryAfterSeconds = await resendCooldownSeconds(userId, PURPOSE, now);
+  if (retryAfterSeconds > 0) {
+    return { ok: false, retryAfterSeconds };
   }
 
   await sendVerificationEmail(userId, now);

@@ -15,8 +15,11 @@ export function parseRedirectPathFromFormData(
   return parseRedirectPathFromValue(formData.get(field));
 }
 
+/** An email address as typed into any auth form: trimmed, then validated. */
+export const emailSchema = z.string().trim().pipe(z.email());
+
 export const loginCredentialsSchema = z.object({
-  email: z.string().trim().pipe(z.email()),
+  email: emailSchema,
   password: z.string().min(1),
 });
 
@@ -49,11 +52,11 @@ export function parseLoginFormData(formData: FormData): LoginFormParseResult {
   return { ok: true, data: { ...parsed.data, redirectTo } };
 }
 
-export const SIGNUP_PASSWORD_MIN_LENGTH = 12;
+export const PASSWORD_MIN_LENGTH = 12;
 
 /** A new password, asked for twice. Shared by signup and Password reset. */
 const newPasswordFields = {
-  password: z.string().min(SIGNUP_PASSWORD_MIN_LENGTH),
+  password: z.string().min(PASSWORD_MIN_LENGTH),
   passwordConfirmation: z.string(),
 };
 
@@ -66,7 +69,7 @@ const passwordMismatch = { path: ["passwordConfirmation"] };
 export const signupCredentialsSchema = z
   .object({
     name: z.string().trim(),
-    email: z.string().trim().pipe(z.email()),
+    email: emailSchema,
     ...newPasswordFields,
   })
   .refine(passwordsMatch, passwordMismatch)
@@ -79,8 +82,6 @@ export type NewPasswordParseError =
   | "Ogiltiga formulärdata"
   | "Lösenordet måste vara minst 12 tecken"
   | "Lösenorden matchar inte";
-
-export type SignupFormParseError = NewPasswordParseError;
 
 function mapNewPasswordSchemaFailure(error: z.ZodError): NewPasswordParseError {
   for (const issue of error.issues) {
@@ -101,7 +102,7 @@ export type SignupFormValues = { name: string; email: string };
 
 export type SignupFormParseResult =
   | { ok: true; data: SignupCredentials & { redirectTo: string } }
-  | { ok: false; error: SignupFormParseError; values: SignupFormValues };
+  | { ok: false; error: NewPasswordParseError; values: SignupFormValues };
 
 export function parseSignupFormData(formData: FormData): SignupFormParseResult {
   const redirectTo = parseRedirectPathFromFormData(formData);

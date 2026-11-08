@@ -2,24 +2,18 @@ import argon2 from "argon2";
 import { describe, expect, it } from "vitest";
 
 import { createUser } from "../support/fixtures";
-import { failEmailsTo, sentEmails } from "../support/fake-email";
+import { emailedLinkToken, failEmailsTo, sentEmails, type SentEmail } from "../support/fake-email";
 import { testPrisma } from "../support/db";
 import {
   completePasswordReset,
   getPasswordResetTokenState,
   requestPasswordReset,
 } from "@/lib/auth/password-reset";
+import { CONFIRM_EMAIL_PATH, NEW_PASSWORD_PATH } from "@/lib/auth/routes";
 
-const RESET_LINK = /http:\/\/sjung\.test\/auth\/reset-password\/new\?token=([A-Za-z0-9_-]+)/;
 const NEW_PASSWORD = "ett nytt långt lösenord";
 
-function linkTokenIn(text: string): string {
-  const match = text.match(RESET_LINK);
-  if (!match) {
-    throw new Error(`No reset link in email:\n${text}`);
-  }
-  return match[1];
-}
+const linkTokenIn = (email: SentEmail) => emailedLinkToken(email, NEW_PASSWORD_PATH);
 
 const sentAt = new Date("2026-11-01T12:00:00Z");
 const after = (seconds: number) => new Date(sentAt.getTime() + seconds * 1000);
@@ -28,7 +22,7 @@ const after = (seconds: number) => new Date(sentAt.getTime() + seconds * 1000);
 async function emailedToken(overrides: Parameters<typeof createUser>[0] = {}) {
   const user = await createUser({ email: "anna@example.com", ...overrides });
   await requestPasswordReset("anna@example.com", sentAt);
-  return { user, token: linkTokenIn(sentEmails().at(-1)!.text) };
+  return { user, token: linkTokenIn(sentEmails().at(-1)!) };
 }
 
 async function reloadUser(userId: string) {
@@ -47,7 +41,7 @@ describe("requestPasswordReset", () => {
     expect(email.subject).toBe("Återställ ditt lösenord för Sjung");
     expect(email.text).toContain("Hej Anna");
     expect(email.text).toContain("1 timme");
-    expect(linkTokenIn(email.text)).not.toBe("");
+    expect(linkTokenIn(email)).not.toBe("");
   });
 
   it("matches the address regardless of case and surrounding spaces", async () => {
@@ -78,7 +72,7 @@ describe("requestPasswordReset", () => {
     await requestPasswordReset("anna@example.com", after(60));
 
     expect(sentEmails()).toHaveLength(2);
-    const newToken = linkTokenIn(sentEmails()[1].text);
+    const newToken = linkTokenIn(sentEmails()[1]);
     await expect(getPasswordResetTokenState(oldToken, after(61))).resolves.toEqual({ state: "invalid" });
     await expect(getPasswordResetTokenState(newToken, after(61))).resolves.toMatchObject({ state: "valid" });
   });
@@ -113,7 +107,7 @@ describe("opening the reset link", () => {
     const { sendVerificationEmail } = await import("@/lib/auth/email-verification");
     const user = await createUser({ email: "anna@example.com", emailVerifiedAt: null });
     await sendVerificationEmail(user.id);
-    const verificationToken = sentEmails()[0].text.match(/token=([A-Za-z0-9_-]+)/)![1];
+    const verificationToken = emailedLinkToken(sentEmails()[0], CONFIRM_EMAIL_PATH);
 
     await expect(getPasswordResetTokenState(verificationToken)).resolves.toEqual({ state: "invalid" });
     await expect(completePasswordReset(verificationToken, NEW_PASSWORD)).resolves.toEqual({ ok: false });

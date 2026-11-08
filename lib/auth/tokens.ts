@@ -109,15 +109,25 @@ export async function redeemUserToken(
   return row.userId;
 }
 
-/** When the User's latest token for `purpose` was issued, for resend cooldowns. */
-export async function latestUserTokenIssuedAt(
+const RESEND_COOLDOWN_SECONDS = 60;
+
+/**
+ * Seconds left before another `purpose` token may be emailed to the User: a
+ * new link at most every 60 seconds. 0 when one may go out now.
+ */
+export async function resendCooldownSeconds(
   userId: string,
-  purpose: UserTokenPurpose
-): Promise<Date | null> {
+  purpose: UserTokenPurpose,
+  now: Date = new Date()
+): Promise<number> {
   const latest = await prisma.userToken.findFirst({
     where: { userId, purpose },
     orderBy: { createdAt: "desc" },
     select: { createdAt: true },
   });
-  return latest?.createdAt ?? null;
+  if (!latest) {
+    return 0;
+  }
+  const elapsedSeconds = (now.getTime() - latest.createdAt.getTime()) / 1000;
+  return Math.max(0, Math.ceil(RESEND_COOLDOWN_SECONDS - elapsedSeconds));
 }

@@ -3,9 +3,10 @@ export const PASSWORD_RESET_EMAIL_SUBJECT = "Återställ ditt lösenord för Sju
 type PasswordResetEmailProps = {
   name: string;
   resetUrl: string;
+  validForHours: number;
 };
 
-export function PasswordResetEmail({ name, resetUrl }: PasswordResetEmailProps) {
+export function PasswordResetEmail({ name, resetUrl, validForHours }: PasswordResetEmailProps) {
   return (
     <html lang="sv">
       <body style={{ fontFamily: "system-ui, sans-serif", color: "#111", lineHeight: 1.5 }}>
@@ -26,11 +27,15 @@ export function PasswordResetEmail({ name, resetUrl }: PasswordResetEmailProps) 
             Välj ett nytt lösenord
           </a>
         </p>
-        <p>Länken gäller i 1 timme och kan bara användas en gång.</p>
+        <p>Länken gäller i {hoursInSwedish(validForHours)} och kan bara användas en gång.</p>
         <p style={{ color: "#666" }}>
           Om det inte var du kan du ignorera det här mejlet. Ditt lösenord ändras inte.
         </p>
       </body>
     </html>
   );
+}
+
+export function hoursInSwedish(hours: number): string {
+  return hours === 1 ? "1 timme" : `${hours} timmar`;
 }

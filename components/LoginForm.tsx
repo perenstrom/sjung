@@ -6,7 +6,7 @@ import { logIn } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { REQUEST_PASSWORD_RESET_PATH } from "@/lib/auth/password-reset-routes";
+import { REQUEST_PASSWORD_RESET_PATH } from "@/lib/auth/routes";
 
 export function LoginForm({ nextPath, notice }: { nextPath: string; notice?: string }) {
   const [state, formAction, isPending] = useActionState(logIn, null);

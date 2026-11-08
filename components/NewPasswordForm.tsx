@@ -5,7 +5,7 @@ import { setNewPassword } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SIGNUP_PASSWORD_MIN_LENGTH } from "@/lib/schemas/auth";
+import { PASSWORD_MIN_LENGTH } from "@/lib/schemas/auth";
 
 export function NewPasswordForm({ token, email }: { token: string; email: string }) {
   const [state, formAction, isPending] = useActionState(setNewPassword, null);
@@ -35,10 +35,10 @@ export function NewPasswordForm({ token, email }: { token: string; email: string
           name="password"
           type="password"
           autoComplete="new-password"
-          minLength={SIGNUP_PASSWORD_MIN_LENGTH}
+          minLength={PASSWORD_MIN_LENGTH}
           required
         />
-        <p className="text-sm text-muted-foreground">Minst 12 tecken.</p>
+        <p className="text-sm text-muted-foreground">Minst {PASSWORD_MIN_LENGTH} tecken.</p>
       </div>
 
       <div className="space-y-2">

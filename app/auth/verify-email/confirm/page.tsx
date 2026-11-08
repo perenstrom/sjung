@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { confirmEmail } from "@/app/actions/auth";
+import { InvalidLinkNotice } from "@/components/InvalidLinkNotice";
 import { Button } from "@/components/ui/button";
 import { getVerificationTokenState } from "@/lib/auth/email-verification";
-import { VERIFY_EMAIL_PATH } from "@/lib/auth/verify-email-routes";
+import { VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 
 type ConfirmEmailPageProps = {
   searchParams: Promise<{
@@ -54,17 +55,10 @@ export default async function ConfirmEmailPage({ searchParams }: ConfirmEmailPag
         )}
 
         {tokenState.state === "invalid" && (
-          <>
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold">Länken fungerar inte</h1>
-              <p className="text-sm text-muted-foreground">
-                Länken är ogiltig eller har gått ut. Logga in för att få en ny.
-              </p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href={VERIFY_EMAIL_PATH}>Skicka en ny länk</Link>
-            </Button>
-          </>
+          <InvalidLinkNotice
+            message="Länken är ogiltig eller har gått ut. Logga in för att få en ny."
+            newLinkHref={VERIFY_EMAIL_PATH}
+          />
         )}
       </div>
     </main>

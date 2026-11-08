@@ -12,21 +12,20 @@ import {
   sendVerificationEmail,
 } from "@/lib/auth/email-verification";
 import { completePasswordReset, requestPasswordReset } from "@/lib/auth/password-reset";
-import { NEW_PASSWORD_PATH } from "@/lib/auth/password-reset-routes";
 import { getSessionUser } from "@/lib/auth/require-user";
 import {
   CONFIRM_EMAIL_PATH,
+  NEW_PASSWORD_PATH,
   VERIFY_EMAIL_PATH,
   VERIFY_EMAIL_SEND_FAILED_PATH,
-} from "@/lib/auth/verify-email-routes";
+} from "@/lib/auth/routes";
 import {
-  loginCredentialsSchema,
+  emailSchema,
   parseLoginFormData,
   parseNewPasswordFormData,
   parseSignupFormData,
   type LoginFormValues,
   type NewPasswordParseError,
-  type SignupFormParseError,
   type SignupFormValues,
 } from "@/lib/schemas/auth";
 
@@ -38,7 +37,7 @@ export type LoginFormState = {
 
 /** `useActionState` state for the signup form: `null` until a submit fails. */
 export type SignupFormState = {
-  error: SignupFormParseError | "E-postadressen används redan";
+  error: NewPasswordParseError | "E-postadressen används redan";
   values: SignupFormValues;
 } | null;
 
@@ -186,7 +185,7 @@ export async function requestPasswordResetForm(
 ): Promise<RequestPasswordResetState> {
   const emailRaw = formData.get("email");
   const email = typeof emailRaw === "string" ? emailRaw.trim() : "";
-  if (!loginCredentialsSchema.shape.email.safeParse(email).success) {
+  if (!emailSchema.safeParse(email).success) {
     return { status: "error", error: "Ange en giltig e-postadress", values: { email } };
   }
 

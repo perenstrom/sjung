@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createUser } from "../support/fixtures";
-import { failEmailsTo, sentEmails } from "../support/fake-email";
+import { emailedLinkToken, failEmailsTo, sentEmails, type SentEmail } from "../support/fake-email";
 import { testPrisma } from "../support/db";
 import {
   confirmEmailVerification,
@@ -9,22 +9,15 @@ import {
   resendVerificationEmail,
   sendVerificationEmail,
 } from "@/lib/auth/email-verification";
+import { CONFIRM_EMAIL_PATH } from "@/lib/auth/routes";
 
-const CONFIRM_LINK = /http:\/\/sjung\.test\/auth\/verify-email\/confirm\?token=([A-Za-z0-9_-]+)/;
-
-function linkTokenIn(text: string): string {
-  const match = text.match(CONFIRM_LINK);
-  if (!match) {
-    throw new Error(`No confirm link in email:\n${text}`);
-  }
-  return match[1];
-}
+const linkTokenIn = (email: SentEmail) => emailedLinkToken(email, CONFIRM_EMAIL_PATH);
 
 /** Sends a verification email to a new Unverified user and returns the link's token. */
 async function emailedToken(now?: Date) {
   const user = await createUser({ email: "anna@example.com", emailVerifiedAt: null });
   await sendVerificationEmail(user.id, now);
-  return { user, token: linkTokenIn(sentEmails().at(-1)!.text) };
+  return { user, token: linkTokenIn(sentEmails().at(-1)!) };
 }
 
 async function isVerified(userId: string) {
@@ -44,7 +37,7 @@ describe("sendVerificationEmail", () => {
     expect(email.subject).toBe("Bekräfta din e-postadress för Sjung");
     expect(email.text).toContain("Hej Anna");
     expect(email.text).toContain("24 timmar");
-    expect(linkTokenIn(email.text)).not.toBe("");
+    expect(linkTokenIn(email)).not.toBe("");
   });
 });
 
@@ -91,7 +84,7 @@ describe("confirmEmailVerification", () => {
   it("rejects a token superseded by a newer email", async () => {
     const { user, token: oldToken } = await emailedToken();
     await sendVerificationEmail(user.id);
-    const newToken = linkTokenIn(sentEmails().at(-1)!.text);
+    const newToken = linkTokenIn(sentEmails().at(-1)!);
 
     await expect(getVerificationTokenState(oldToken)).resolves.toEqual({ state: "invalid" });
     await expect(confirmEmailVerification(oldToken)).resolves.toEqual({ ok: false });
@@ -123,7 +116,7 @@ describe("resendVerificationEmail", () => {
     await expect(resendVerificationEmail(user.id, after(60))).resolves.toEqual({ ok: true });
 
     expect(sentEmails()).toHaveLength(2);
-    const newToken = linkTokenIn(sentEmails()[1].text);
+    const newToken = linkTokenIn(sentEmails()[1]);
     await expect(getVerificationTokenState(oldToken, after(61))).resolves.toEqual({ state: "invalid" });
     await expect(getVerificationTokenState(newToken, after(61))).resolves.toMatchObject({ state: "valid" });
   });

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function RequestPasswordResetForm() {
+export function RequestPasswordResetForm({ validFor }: { validFor: string }) {
   const [state, formAction, isPending] = useActionState(requestPasswordResetForm, null);
 
   return (
@@ -23,7 +23,7 @@ export function RequestPasswordResetForm() {
       {state?.status === "sent" && (
         <p className="rounded-md bg-muted px-3 py-2 text-sm">
           Om det finns ett konto för <strong>{state.email}</strong> har vi skickat en länk dit. Den
-          gäller i 1 timme.
+          gäller i {validFor}.
         </p>
       )}
 

@@ -1,8 +1,7 @@
-import Link from "next/link";
+import { InvalidLinkNotice } from "@/components/InvalidLinkNotice";
 import { NewPasswordForm } from "@/components/NewPasswordForm";
-import { Button } from "@/components/ui/button";
 import { getPasswordResetTokenState } from "@/lib/auth/password-reset";
-import { REQUEST_PASSWORD_RESET_PATH } from "@/lib/auth/password-reset-routes";
+import { REQUEST_PASSWORD_RESET_PATH } from "@/lib/auth/routes";
 
 type NewPasswordPageProps = {
   searchParams: Promise<{
@@ -25,17 +24,10 @@ export default async function NewPasswordPage({ searchParams }: NewPasswordPageP
         {tokenState.state === "valid" && token ? (
           <NewPasswordForm token={token} email={tokenState.email} />
         ) : (
-          <>
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold">Länken fungerar inte</h1>
-              <p className="text-sm text-muted-foreground">
-                Länken är ogiltig, har redan använts eller har gått ut. Be om en ny.
-              </p>
-            </div>
-            <Button asChild className="w-full">
-              <Link href={REQUEST_PASSWORD_RESET_PATH}>Skicka en ny länk</Link>
-            </Button>
-          </>
+          <InvalidLinkNotice
+            message="Länken är ogiltig, har redan använts eller har gått ut. Be om en ny."
+            newLinkHref={REQUEST_PASSWORD_RESET_PATH}
+          />
         )}
       </div>
     </main>

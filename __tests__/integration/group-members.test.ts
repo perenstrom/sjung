@@ -7,6 +7,7 @@ vi.mock("next/cache", () => ({
 
 import type { GroupClaim } from "@/app/generated/prisma/client";
 import { testPrisma } from "../support/db";
+import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createUser, grantClaims } from "../support/fixtures";
 import {
@@ -20,14 +21,6 @@ import {
 } from "@/app/actions/groups";
 
 const FORBIDDEN = "Du har inte behörighet att hantera medlemmar i gruppen";
-
-function formData(values: Record<string, string>): FormData {
-  const fd = new FormData();
-  for (const [key, value] of Object.entries(values)) {
-    fd.set(key, value);
-  }
-  return fd;
-}
 
 /** Access scenario plus a second plain member, and a manager holding the given Claims. */
 async function createManagerScenario(managerClaims: GroupClaim[] = ["MANAGE_MEMBERS"]) {

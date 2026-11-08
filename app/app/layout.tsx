@@ -10,8 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { getGroups } from "@/app/actions/groups";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { getSessionUser } from "@/lib/auth/require-user";
-import { SESSION_ENDED_PATH } from "@/lib/auth/session-routes";
-import { VERIFY_EMAIL_PATH } from "@/lib/auth/verify-email-routes";
+import { SESSION_ENDED_PATH, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 import { redirect } from "next/navigation";
 
 export default async function ProtectedLayout({

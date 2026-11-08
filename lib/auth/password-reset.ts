@@ -3,20 +3,19 @@ import { createElement } from "react";
 import { UserTokenPurpose } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
 import { PASSWORD_RESET_EMAIL_SUBJECT, PasswordResetEmail } from "@/lib/auth/password-reset-email";
-import { NEW_PASSWORD_PATH } from "@/lib/auth/password-reset-routes";
+import { NEW_PASSWORD_PATH } from "@/lib/auth/routes";
 import {
   issueUserToken,
-  latestUserTokenIssuedAt,
   lookUpUserToken,
   redeemUserToken,
+  resendCooldownSeconds,
 } from "@/lib/auth/tokens";
 import { sendEmail } from "@/lib/email";
 import prisma from "@/lib/prisma";
 
 const PURPOSE = UserTokenPurpose.PASSWORD_RESET;
 // Shorter than verification's 24 hours: a reset link hands over the account.
-const VALID_FOR_HOURS = 1;
-const RESEND_COOLDOWN_SECONDS = 60;
+export const PASSWORD_RESET_VALID_FOR_HOURS = 1;
 
 /**
  * "Glömt lösenord": emails a reset link to the User with this address, if
@@ -33,19 +32,19 @@ export async function requestPasswordReset(email: string, now: Date = new Date()
     return;
   }
 
-  const lastSentAt = await latestUserTokenIssuedAt(user.id, PURPOSE);
-  if (lastSentAt && now.getTime() - lastSentAt.getTime() < RESEND_COOLDOWN_SECONDS * 1000) {
+  if ((await resendCooldownSeconds(user.id, PURPOSE, now)) > 0) {
     return;
   }
 
   try {
-    await issueUserToken(user.id, PURPOSE, { validForHours: VALID_FOR_HOURS, now }, (token) =>
+    await issueUserToken(user.id, PURPOSE, { validForHours: PASSWORD_RESET_VALID_FOR_HOURS, now }, (token) =>
       sendEmail({
         to: user.email,
         subject: PASSWORD_RESET_EMAIL_SUBJECT,
         react: createElement(PasswordResetEmail, {
           name: user.name,
           resetUrl: appUrl(NEW_PASSWORD_PATH, { token }),
+          validForHours: PASSWORD_RESET_VALID_FOR_HOURS,
         }),
       })
     );

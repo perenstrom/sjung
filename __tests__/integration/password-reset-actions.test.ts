@@ -20,9 +20,11 @@ vi.mock("next/navigation", () => ({
 
 import { signOut } from "@/auth";
 import { createUser } from "../support/fixtures";
-import { sentEmails } from "../support/fake-email";
+import { emailedLinkToken, sentEmails } from "../support/fake-email";
+import { formData as form } from "../support/form-data";
 import { testPrisma } from "../support/db";
 import { requestPasswordResetForm, setNewPassword } from "@/app/actions/auth";
+import { NEW_PASSWORD_PATH } from "@/lib/auth/routes";
 
 const mockSignOut = vi.mocked(signOut);
 
@@ -36,19 +38,11 @@ async function runAfterResponse() {
   await Promise.all(afterCallbacks.splice(0).map((callback) => callback()));
 }
 
-function form(values: Record<string, string>): FormData {
-  const fd = new FormData();
-  for (const [key, value] of Object.entries(values)) {
-    fd.set(key, value);
-  }
-  return fd;
-}
-
 async function emailedToken() {
   const user = await createUser({ email: "anna@example.com" });
   await requestPasswordResetForm(null, form({ email: "anna@example.com" }));
   await runAfterResponse();
-  const token = sentEmails().at(-1)!.text.match(/token=([A-Za-z0-9_-]+)/)![1];
+  const token = emailedLinkToken(sentEmails().at(-1)!, NEW_PASSWORD_PATH);
   return { user, token };
 }
 
