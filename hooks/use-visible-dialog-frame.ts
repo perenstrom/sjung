@@ -1,6 +1,10 @@
 import * as React from "react"
 
-import { dialogFrame, revealScrollDelta } from "@/lib/dialog/dialogFrame"
+import { dialogFrame } from "@/lib/dialog/dialogFrame"
+import {
+  revealInDialogBody,
+  revealTargetFor,
+} from "@/lib/dialog/revealInDialogBody"
 
 /**
  * Keeps a dialog inside the visible area while the on-screen keyboard is open.
@@ -32,12 +36,8 @@ export function useVisibleDialogFrame(node: HTMLElement | null) {
     const onResize = () => {
       update()
       const focused = document.activeElement
-      const body = node.querySelector<HTMLElement>("[data-slot=dialog-body]")
-      if (body && focused instanceof HTMLElement && body.contains(focused)) {
-        body.scrollTop += revealScrollDelta(
-          focused.getBoundingClientRect(),
-          body.getBoundingClientRect()
-        )
+      if (focused instanceof HTMLElement && node.contains(focused)) {
+        revealInDialogBody(revealTargetFor(focused))
       }
     }
 

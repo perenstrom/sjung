@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useMergedRefs } from "@/hooks/use-merged-refs"
 import { useVisibleDialogFrame } from "@/hooks/use-visible-dialog-frame"
 
 function Dialog({
@@ -65,14 +66,7 @@ function DialogContent({
 }) {
   const [node, setNode] = React.useState<HTMLDivElement | null>(null)
   useVisibleDialogFrame(node)
-  const setRefs = React.useCallback(
-    (element: HTMLDivElement | null) => {
-      setNode(element)
-      if (typeof ref === "function") ref(element)
-      else if (ref) ref.current = element
-    },
-    [ref]
-  )
+  const setRefs = useMergedRefs(setNode, ref)
 
   return (
     <DialogPortal data-slot="dialog-portal">

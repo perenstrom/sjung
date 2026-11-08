@@ -35,6 +35,7 @@
  */
 
 import * as React from "react";
+import { useMergedRefs } from "@/hooks/use-merged-refs";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { cn } from "@/lib/utils";
 import {
@@ -135,18 +136,7 @@ const Form = React.forwardRef<HTMLFormElement, EntityFormDialogFormProps>(
     );
     const innerRef = React.useRef<HTMLFormElement>(null);
 
-    const mergedRef = React.useCallback(
-      (node: HTMLFormElement | null) => {
-        innerRef.current = node;
-        if (typeof ref === "function") {
-          ref(node);
-        } else if (ref) {
-          (ref as React.MutableRefObject<HTMLFormElement | null>).current =
-            node;
-        }
-      },
-      [ref],
-    );
+    const mergedRef = useMergedRefs(innerRef, ref);
 
     const handleAction = React.useCallback(
       async (formData: FormData) => {
