@@ -3,6 +3,7 @@
 import argon2 from "argon2";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import prisma from "@/lib/prisma";
 import { signIn, signOut } from "@/auth";
 import {
@@ -10,6 +11,8 @@ import {
   resendVerificationEmail,
   sendVerificationEmail,
 } from "@/lib/auth/email-verification";
+import { completePasswordReset, requestPasswordReset } from "@/lib/auth/password-reset";
+import { NEW_PASSWORD_PATH } from "@/lib/auth/password-reset-routes";
 import { getSessionUser } from "@/lib/auth/require-user";
 import {
   CONFIRM_EMAIL_PATH,
@@ -17,9 +20,12 @@ import {
   VERIFY_EMAIL_SEND_FAILED_PATH,
 } from "@/lib/auth/verify-email-routes";
 import {
+  loginCredentialsSchema,
   parseLoginFormData,
+  parseNewPasswordFormData,
   parseSignupFormData,
   type LoginFormValues,
+  type NewPasswordParseError,
   type SignupFormParseError,
   type SignupFormValues,
 } from "@/lib/schemas/auth";
@@ -162,4 +168,58 @@ export async function confirmEmail(formData: FormData) {
 
   const sessionUser = await getSessionUser();
   redirect(sessionUser ? "/app" : "/auth/login?bekraftad=1");
+}
+
+/** `useActionState` state for the "Glömt lösenord" form. */
+export type RequestPasswordResetState =
+  | { status: "sent"; email: string }
+  | { status: "error"; error: "Ange en giltig e-postadress"; values: { email: string } }
+  | null;
+
+/**
+ * "Glömt lösenord". Answers "sent" for every well-formed address, whether or
+ * not it has an account, so the form can't be used to find out who does.
+ */
+export async function requestPasswordResetForm(
+  _prevState: RequestPasswordResetState,
+  formData: FormData
+): Promise<RequestPasswordResetState> {
+  const emailRaw = formData.get("email");
+  const email = typeof emailRaw === "string" ? emailRaw.trim() : "";
+  if (!loginCredentialsSchema.shape.email.safeParse(email).success) {
+    return { status: "error", error: "Ange en giltig e-postadress", values: { email } };
+  }
+
+  // Looked up and sent after the response, so an existing account doesn't
+  // make the answer measurably slower than a missing one.
+  after(() => requestPasswordReset(email));
+  return { status: "sent", email };
+}
+
+/** `useActionState` state for the new-password form: `null` until a submit fails. */
+export type NewPasswordFormState = { error: NewPasswordParseError } | null;
+
+/**
+ * The new-password form's POST — the only place a reset token is used. On
+ * success every session of the User is revoked, this browser's included, so
+ * it logs out here too (clearing the cookie) and goes to the login page.
+ */
+export async function setNewPassword(
+  _prevState: NewPasswordFormState,
+  formData: FormData
+): Promise<NewPasswordFormState> {
+  const parsed = parseNewPasswordFormData(formData);
+  if (!parsed.ok) {
+    return { error: parsed.error };
+  }
+
+  const { token, password } = parsed.data;
+  const result = await completePasswordReset(token, password);
+  if (!result.ok) {
+    // Back to the link page, which explains what's wrong with the token.
+    redirect(`${NEW_PASSWORD_PATH}?token=${encodeURIComponent(token)}`);
+  }
+
+  await signOut({ redirectTo: "/auth/login?aterstallt=1" });
+  return null;
 }

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { auth } from "@/auth";
+import { getSessionUser } from "@/lib/auth/require-user";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export default async function LandingPage() {
-  const session = await auth();
-  if (session?.user) {
+  // Not auth(): a revoked session's JWT would still count there.
+  if (await getSessionUser()) {
     redirect("/app");
   }
 

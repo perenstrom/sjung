@@ -6,6 +6,7 @@ import { logIn } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { REQUEST_PASSWORD_RESET_PATH } from "@/lib/auth/password-reset-routes";
 
 export function LoginForm({ nextPath, notice }: { nextPath: string; notice?: string }) {
   const [state, formAction, isPending] = useActionState(logIn, null);
@@ -47,7 +48,12 @@ export function LoginForm({ nextPath, notice }: { nextPath: string; notice?: str
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Lösenord</Label>
+        <div className="flex items-baseline justify-between gap-2">
+          <Label htmlFor="password">Lösenord</Label>
+          <Link href={REQUEST_PASSWORD_RESET_PATH} className="text-sm text-muted-foreground">
+            Glömt lösenord?
+          </Link>
+        </div>
         <Input id="password" name="password" type="password" required />
       </div>
 
