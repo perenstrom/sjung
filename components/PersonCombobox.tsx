@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { revealInDialogBody } from "@/hooks/use-visible-dialog-frame";
+import { useMergedRefs } from "@/hooks/use-merged-refs";
+import {
+  DIALOG_REVEAL_ATTRIBUTE,
+  revealInDialogBody,
+} from "@/lib/dialog/revealInDialogBody";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { filterPeople, shouldOfferCreatePerson } from "@/lib/people/person-options";
 import { cn } from "@/lib/utils";
@@ -26,26 +30,7 @@ import type { Person } from "@/types/piece-credit-dialog";
 
 const CREATE_PERSON_ITEM_VALUE = "__create-person__";
 
-/**
- * Searchable Person picker that can also create a Person from the typed text.
- * `onCreate` owns creating and selecting the new Person; if it throws, the
- * error is shown in the picker and the typed name is kept for another try.
- *
- * From `md` up the search opens in a popover. Below it the search opens
- * inline, right under the trigger, so inside a dialog its results scroll with
- * the dialog body and stay above the on-screen keyboard. Inline, it sits next
- * to the trigger as a full-width sibling, so in a wrapping flex row it takes
- * a line of its own.
- */
-export function PersonCombobox({
-  people,
-  value,
-  onValueChange,
-  onCreate,
-  className,
-  ref,
-  "aria-label": ariaLabel,
-}: {
+type PersonComboboxProps = {
   people: Person[];
   value: string;
   onValueChange: (personId: string) => void;
@@ -54,100 +39,169 @@ export function PersonCombobox({
   /** Forwarded to the trigger button, e.g. to move focus back to the picker. */
   ref?: React.Ref<HTMLButtonElement>;
   "aria-label"?: string;
-}) {
-  const inline = useIsMobile();
+};
+
+/**
+ * Searchable Person picker that can also create a Person from the typed text.
+ * `onCreate` owns creating and selecting the new Person; if it throws, the
+ * error is shown in the picker and the typed name is kept for another try.
+ *
+ * From `md` up the search opens in a popover. Below it the search opens
+ * inline, right under the trigger, so inside a dialog its results scroll with
+ * the dialog body and stay above the on-screen keyboard.
+ */
+export function PersonCombobox(props: PersonComboboxProps) {
+  return useIsMobile() ? (
+    <InlinePersonCombobox {...props} />
+  ) : (
+    <PopoverPersonCombobox {...props} />
+  );
+}
+
+function PopoverPersonCombobox({
+  people,
+  value,
+  onValueChange,
+  onCreate,
+  className,
+  ref,
+  "aria-label": ariaLabel,
+}: PersonComboboxProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    // `modal` keeps the list scrollable when the combobox sits inside a Dialog.
+    <Popover open={open} onOpenChange={setOpen} modal>
+      <PopoverTrigger asChild>
+        <PersonTrigger
+          ref={ref}
+          aria-label={ariaLabel}
+          aria-expanded={open}
+          className={className}
+          selected={people.find((person) => person.id === value)}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-(--radix-popover-trigger-width) min-w-56 p-0"
+      >
+        <PersonSearch
+          people={people}
+          value={value}
+          onCreate={onCreate}
+          onDone={(personId) => {
+            if (personId) onValueChange(personId);
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * The search opens in the page flow as a full-width sibling of the trigger,
+ * so in a wrapping flex row it takes a line of its own. A tap outside both,
+ * or tabbing away, closes it.
+ */
+function InlinePersonCombobox({
+  people,
+  value,
+  onValueChange,
+  onCreate,
+  className,
+  ref,
+  "aria-label": ariaLabel,
+}: PersonComboboxProps) {
   const panelId = useId();
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const setTriggerRefs = useMergedRefs(triggerRef, ref);
   const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
 
-  const selected = people.find((person) => person.id === value);
-  const matches = filterPeople(people, query);
-  const offerCreate = shouldOfferCreatePerson(people, query);
-
-  // Inline, the search opens in the flow of the dialog body; scroll it into
-  // view there (the keyboard opening reveals it again, see the dialog frame).
   useEffect(() => {
-    if (inline && open && panelRef.current) revealInDialogBody(panelRef.current);
-  }, [inline, open]);
+    if (!open) return;
+    // Inside a dialog, scroll the search into view in its body (the keyboard
+    // opening reveals it again, see `useVisibleDialogFrame`).
+    if (panelRef.current) revealInDialogBody(panelRef.current);
 
-  // Inline, a tap anywhere outside the trigger and the search closes it. iOS
-  // doesn't move focus to a tapped button, so a blur alone can't tell.
-  useEffect(() => {
-    if (!inline || !open) return;
-    function onPointerDown(event: PointerEvent) {
+    // iOS doesn't move focus to a tapped button, so a blur can't tell.
+    function closeOnTapOutside(event: PointerEvent) {
       const target = event.target as Node;
-      if (triggerRef.current?.contains(target) || panelRef.current?.contains(target)) {
-        return;
+      if (!triggerRef.current?.contains(target) && !panelRef.current?.contains(target)) {
+        setOpen(false);
       }
-      setOpen(false);
-      setQuery("");
-      setCreateError(null);
     }
-    document.addEventListener("pointerdown", onPointerDown, true);
-    return () => document.removeEventListener("pointerdown", onPointerDown, true);
-  }, [inline, open]);
+    document.addEventListener("pointerdown", closeOnTapOutside, true);
+    return () => document.removeEventListener("pointerdown", closeOnTapOutside, true);
+  }, [open]);
 
-  const setTriggerRef = useCallback(
-    (element: HTMLButtonElement | null) => {
-      triggerRef.current = element;
-      if (typeof ref === "function") ref(element);
-      else if (ref) ref.current = element;
-    },
-    [ref]
-  );
-
-  function handleOpenChange(nextOpen: boolean) {
-    setOpen(nextOpen);
-    if (!nextOpen) {
-      setQuery("");
-      setCreateError(null);
-    }
-  }
-
-  /** Closes the inline search and hands focus back to the trigger. */
-  function closeInline() {
-    handleOpenChange(false);
+  function closeAndRefocusTrigger() {
+    setOpen(false);
     triggerRef.current?.focus();
   }
 
-  function close() {
-    if (inline) closeInline();
-    else handleOpenChange(false);
-  }
+  return (
+    // `contents` keeps the trigger and the search direct children of the
+    // caller's layout, while catching focus moving to another field.
+    <div
+      className="contents"
+      onBlur={(event) => {
+        const next = event.relatedTarget;
+        if (next && !event.currentTarget.contains(next)) setOpen(false);
+      }}
+    >
+      <PersonTrigger
+        ref={setTriggerRefs}
+        aria-label={ariaLabel}
+        aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
+        className={className}
+        selected={people.find((person) => person.id === value)}
+        onClick={() => setOpen(!open)}
+      />
+      {open ? (
+        <div
+          ref={panelRef}
+          id={panelId}
+          {...DIALOG_REVEAL_ATTRIBUTE}
+          // Results get 44px tap targets and grow the dialog body, which does
+          // the scrolling.
+          className="w-full basis-full overflow-hidden rounded-md border **:data-[slot=command-item]:min-h-11 **:data-[slot=command-list]:max-h-none"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.preventDefault();
+              closeAndRefocusTrigger();
+            }
+          }}
+        >
+          <PersonSearch
+            people={people}
+            value={value}
+            onCreate={onCreate}
+            onDone={(personId) => {
+              if (personId) onValueChange(personId);
+              closeAndRefocusTrigger();
+            }}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
-  function handleSelect(personId: string) {
-    onValueChange(personId);
-    close();
-  }
-
-  async function handleCreate() {
-    setCreating(true);
-    setCreateError(null);
-    try {
-      await onCreate(query.trim());
-      close();
-    } catch (err) {
-      setCreateError(getThrownMessage(err, "Kunde inte skapa person"));
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  const trigger = (
+function PersonTrigger({
+  selected,
+  className,
+  ...props
+}: React.ComponentProps<typeof Button> & { selected: Person | undefined }) {
+  return (
     <Button
-      ref={setTriggerRef}
       type="button"
       variant="outline"
       role="combobox"
-      aria-expanded={open}
-      aria-controls={inline && open ? panelId : undefined}
-      aria-label={ariaLabel}
       className={cn("justify-between font-normal", className)}
-      onClick={inline ? () => handleOpenChange(!open) : undefined}
+      {...props}
     >
       <span className={cn("truncate", !selected && "text-muted-foreground")}>
         {selected ? selected.name : "Person"}
@@ -155,34 +209,56 @@ export function PersonCombobox({
       <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden="true" />
     </Button>
   );
+}
 
-  const search = (
-    <Command
-      shouldFilter={false}
-      // Inline means touch: give each result a 44px tap target.
-      className={cn(inline && "**:data-[slot=command-item]:min-h-11")}
-      onKeyDown={
-        inline
-          ? (event) => {
-              if (event.key === "Escape") {
-                event.preventDefault();
-                closeInline();
-              }
-            }
-          : undefined
-      }
-    >
+/**
+ * The search field and its results. Mounts when the picker opens, so the
+ * typed text and any create error start fresh each time.
+ */
+function PersonSearch({
+  people,
+  value,
+  onCreate,
+  onDone,
+}: {
+  people: Person[];
+  value: string;
+  onCreate: (name: string) => Promise<void>;
+  /** A Person was picked (their id), or created and selected by `onCreate` (no id). */
+  onDone: (personId?: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const matches = filterPeople(people, query);
+  const offerCreate = shouldOfferCreatePerson(people, query);
+
+  async function handleCreate() {
+    setCreating(true);
+    setCreateError(null);
+    try {
+      await onCreate(query.trim());
+      onDone();
+    } catch (err) {
+      setCreateError(getThrownMessage(err, "Kunde inte skapa person"));
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <Command shouldFilter={false}>
       <CommandInput
         placeholder="Sök eller skapa person…"
-        autoFocus={inline}
+        autoFocus
         value={query}
         onValueChange={(nextQuery) => {
           setQuery(nextQuery);
           setCreateError(null);
         }}
       />
-      {/* Inline, the results grow the dialog body, which does the scrolling. */}
-      <CommandList className={cn(inline && "max-h-none")}>
+      <CommandList>
         <CommandEmpty>
           {people.length === 0
             ? "Skriv ett namn för att lägga till en person."
@@ -194,7 +270,7 @@ export function PersonCombobox({
               <CommandItem
                 key={person.id}
                 value={person.id}
-                onSelect={() => handleSelect(person.id)}
+                onSelect={() => onDone(person.id)}
               >
                 <Check
                   className={cn(
@@ -227,47 +303,5 @@ export function PersonCombobox({
         </p>
       ) : null}
     </Command>
-  );
-
-  if (inline) {
-    return (
-      // `contents` keeps the trigger and the search direct children of the
-      // caller's layout, while catching focus moving to another field.
-      <div
-        className="contents"
-        onBlur={(event) => {
-          const next = event.relatedTarget;
-          // Tabbing to another field closes it; taps are handled above.
-          if (open && next && !event.currentTarget.contains(next)) {
-            handleOpenChange(false);
-          }
-        }}
-      >
-        {trigger}
-        {open ? (
-          <div
-            ref={panelRef}
-            id={panelId}
-            data-dialog-reveal
-            className="w-full basis-full overflow-hidden rounded-md border"
-          >
-            {search}
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    // `modal` keeps the list scrollable when the combobox sits inside a Dialog.
-    <Popover open={open} onOpenChange={handleOpenChange} modal>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-(--radix-popover-trigger-width) min-w-56 p-0"
-      >
-        {search}
-      </PopoverContent>
-    </Popover>
   );
 }
