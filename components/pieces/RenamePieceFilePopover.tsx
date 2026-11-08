@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  FormPopover,
+  FormPopoverContent,
+  FormPopoverFooter,
+  FormPopoverTrigger,
+} from "@/components/ui/form-popover";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 export function RenamePieceFilePopover({
@@ -55,8 +56,8 @@ export function RenamePieceFilePopover({
   }
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
+    <FormPopover open={open} onOpenChange={handleOpenChange}>
+      <FormPopoverTrigger asChild>
         <Button
           type="button"
           variant="ghost"
@@ -67,15 +68,11 @@ export function RenamePieceFilePopover({
         >
           <Pencil className="size-3.5" aria-hidden="true" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 space-y-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Redigera filnamn</p>
-          <p className="text-sm text-muted-foreground">
-            {pieceName ?? displayName}
-          </p>
-        </div>
-
+      </FormPopoverTrigger>
+      <FormPopoverContent
+        title="Redigera filnamn"
+        description={pieceName ?? displayName}
+      >
         <form action={handleUpdate} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="fileId" value={fileId} />
@@ -92,7 +89,7 @@ export function RenamePieceFilePopover({
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <div className="flex justify-end gap-2">
+          <FormPopoverFooter>
             <Button
               type="button"
               variant="outline"
@@ -101,9 +98,9 @@ export function RenamePieceFilePopover({
               Avbryt
             </Button>
             <Button type="submit">Spara</Button>
-          </div>
+          </FormPopoverFooter>
         </form>
-      </PopoverContent>
-    </Popover>
+      </FormPopoverContent>
+    </FormPopover>
   );
 }

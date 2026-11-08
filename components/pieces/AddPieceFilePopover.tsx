@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  FormPopover,
+  FormPopoverContent,
+  FormPopoverFooter,
+  FormPopoverTrigger,
+} from "@/components/ui/form-popover";
 import { Spinner } from "@/components/ui/spinner";
 import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
@@ -58,17 +59,17 @@ export function AddPieceFilePopover({
   });
 
   return (
-    <Popover
+    <FormPopover
       open={open}
       onOpenChange={(nextOpen) => {
-        // Keep the popover open mid-transfer so its outcome stays visible.
+        // Keep the form open mid-transfer so its outcome stays visible.
         if (!nextOpen && isTransferring) {
           return;
         }
         handleOpenChange(nextOpen);
       }}
     >
-      <PopoverTrigger asChild>
+      <FormPopoverTrigger asChild>
         <Button
           type="button"
           variant="ghost"
@@ -79,13 +80,8 @@ export function AddPieceFilePopover({
         >
           <Plus className="size-4" aria-hidden="true" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 space-y-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Ladda upp fil</p>
-          <p className="text-sm text-muted-foreground">{pieceName}</p>
-        </div>
-
+      </FormPopoverTrigger>
+      <FormPopoverContent title="Ladda upp fil" description={pieceName}>
         <form action={handleTransfer} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="pieceId" value={pieceId} />
@@ -104,7 +100,7 @@ export function AddPieceFilePopover({
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <div className="flex justify-end gap-2">
+          <FormPopoverFooter>
             <Button
               type="button"
               variant="outline"
@@ -123,9 +119,9 @@ export function AddPieceFilePopover({
                 "Ladda upp"
               )}
             </Button>
-          </div>
+          </FormPopoverFooter>
         </form>
-      </PopoverContent>
-    </Popover>
+      </FormPopoverContent>
+    </FormPopover>
   );
 }
