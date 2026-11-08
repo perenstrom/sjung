@@ -25,6 +25,7 @@ async function main() {
       name: "Systemanvändare",
       email: SYSTEM_USER_EMAIL,
       passwordHash,
+      emailVerifiedAt: new Date(),
       createdById: null,
       updatedById: null,
     },

@@ -30,6 +30,7 @@ Required variables (from `.env.example`):
 - `R2_PUBLIC_BASE_URL`
 - `RESEND_API_KEY` (optional locally — see "Emails in local development" below)
 - `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`; optional locally)
+- `APP_BASE_URL` (origin for links in emails, e.g. `https://sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 
 ## Local bootstrap

@@ -18,6 +18,8 @@ model User {
   name         String
   email        String @unique
   passwordHash String @map("password_hash")
+  // Null while the User is Unverified (see CONTEXT.md, "Verified user").
+  emailVerifiedAt DateTime? @map("email_verified_at")
 
   createdBy User? @relation("UserCreatedBy", fields: [createdById], references: [id])
   updatedBy User? @relation("UserUpdatedBy", fields: [updatedById], references: [id])
@@ -46,8 +48,35 @@ model User {
   createdPieceNotes    PieceNote[]     @relation("PieceNoteCreatedBy")
   updatedPieceNotes    PieceNote[]     @relation("PieceNoteUpdatedBy")
   groups               UsersToGroups[]
+  tokens               UserToken[]
 
   @@map("users")
+}
+
+// What a UserToken proves when redeemed. Password reset (PER-388) adds its own.
+enum UserTokenPurpose {
+  EMAIL_VERIFICATION
+
+  @@map("user_token_purpose")
+}
+
+// Single-use emailed tokens. Only a hash of the token is stored. Used and
+// superseded tokens are kept (marked, not deleted) so a reused link can be
+// told apart from an unknown one.
+model UserToken {
+  id            String           @id @default(uuid())
+  createdAt     DateTime         @default(now()) @map("created_at")
+  userId        String           @map("user_id")
+  purpose       UserTokenPurpose
+  tokenHash     String           @unique @map("token_hash")
+  expiresAt     DateTime         @map("expires_at")
+  usedAt        DateTime?        @map("used_at")
+  invalidatedAt DateTime?        @map("invalidated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@map("user_tokens")
 }
 
 model Group {
