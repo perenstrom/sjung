@@ -16,6 +16,8 @@ type CreateUserOptions = Partial<{
   name: string;
   email: string;
   passwordHash: string;
+  /** Defaults to Verified; pass `null` for an Unverified user. */
+  emailVerifiedAt: Date | null;
   createdById: string | null;
   updatedById: string | null;
 }>;
@@ -32,6 +34,8 @@ export async function createUser(
       name: overrides.name ?? `Test User ${n}`,
       email: overrides.email ?? `user-${n}@test.local`,
       passwordHash: overrides.passwordHash ?? "test-hash",
+      emailVerifiedAt:
+        overrides.emailVerifiedAt !== undefined ? overrides.emailVerifiedAt : new Date(),
       createdById: overrides.createdById ?? null,
       updatedById: overrides.updatedById ?? null,
     },

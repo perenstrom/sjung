@@ -15,6 +15,9 @@ if (!connectionString) {
 // actions under test never touch the dev database.
 process.env.DATABASE_URL = connectionString;
 
+// Emailed links are built from APP_BASE_URL; give tests a fixed origin.
+process.env.APP_BASE_URL = "http://sjung.test";
+
 const adapter = new PrismaPg({ connectionString });
 
 export const testPrisma = new PrismaClient({ adapter });
@@ -36,6 +39,7 @@ const TABLES = [
   "piece_notes",
   "set_list_piece_notes",
   "set_list_notes",
+  "user_tokens",
 ];
 
 export async function resetDatabase() {

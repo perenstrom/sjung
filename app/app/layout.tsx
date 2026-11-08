@@ -9,10 +9,24 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Separator } from "@/components/ui/separator";
 import { getGroups } from "@/app/actions/groups";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
+import { getSessionUser } from "@/lib/auth/require-user";
+import { VERIFY_EMAIL_PATH } from "@/lib/auth/verify-email-routes";
+import { redirect } from "next/navigation";
 
 export default async function ProtectedLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // proxy.ts has already bounced visitors without a session. The verified
+  // state is read from the database, not the JWT, so verifying on another
+  // device takes effect at once. requireUser() enforces the same for actions.
+  const user = await getSessionUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+  if (!user.emailVerifiedAt) {
+    redirect(VERIFY_EMAIL_PATH);
+  }
+
   const groups = await getGroups();
   const activeGroupSlugFromCookie = await getActiveGroupSlugCookie();
   const activeGroupSlug = groups.some(

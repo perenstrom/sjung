@@ -5,9 +5,9 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-import { auth } from "@/auth";
 import type { GroupClaim } from "@/app/generated/prisma/client";
 import { testPrisma } from "../support/db";
+import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createUser, grantClaims } from "../support/fixtures";
 import {
   addMemberToGroup,
@@ -19,13 +19,7 @@ import {
   updateGroup,
 } from "@/app/actions/groups";
 
-const mockAuth = vi.mocked(auth);
-
 const FORBIDDEN = "Du har inte behörighet att hantera medlemmar i gruppen";
-
-function actAs(userId: string) {
-  mockAuth.mockResolvedValue({ user: { id: userId } } as never);
-}
 
 function formData(values: Record<string, string>): FormData {
   const fd = new FormData();

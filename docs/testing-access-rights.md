@@ -71,6 +71,7 @@ Use this scope as the baseline coverage matrix:
 1. Authentication (`requireUser`)
    - Allow: signed-in request with a valid user id.
    - Deny: anonymous/invalid session (expect unauthorized error path).
+   - Deny: signed-in Unverified user (expect "E-postadressen är inte bekräftad"). The verified state is read from the database on every call, never from the JWT.
 2. Tenant membership (`requireTenantGroup`, `getWritableGroupIdForSlug`)
    - Allow: user is a member of the target group slug.
    - Deny: non-member or invalid slug (expect not-found or explicit permission error depending on helper).
@@ -96,7 +97,7 @@ Use a deterministic auth seam in integration tests:
   - member user
   - non-member user
   - creator user
-- Keep this identity control in test setup utilities so each test describes identity in one line and avoids HTTP login ceremony.
+- Keep this identity control in test setup utilities (`actAs` / `actAsAnonymous` in `__tests__/support/session.ts`) so each test describes identity in one line and avoids HTTP login ceremony.
 
 Why:
 - Fast and deterministic.

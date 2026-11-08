@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
+export function LoginForm({ nextPath, notice }: { nextPath: string; notice?: string }) {
   const [state, formAction, isPending] = useActionState(logIn, null);
 
   return (
@@ -21,6 +21,10 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           Ange e-post och lösenord för att komma till appen.
         </p>
       </div>
+
+      {notice && !state?.error && (
+        <p className="rounded-md bg-muted px-3 py-2 text-sm">{notice}</p>
+      )}
 
       {state?.error && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
