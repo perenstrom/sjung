@@ -28,8 +28,8 @@ Required variables (from `.env.example`):
 - `R2_BUCKET`
 - `R2_ENDPOINT`
 - `R2_PUBLIC_BASE_URL`
-- `RESEND_API_KEY`
-- `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`)
+- `RESEND_API_KEY` (optional locally — see "Emails in local development" below)
+- `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`; optional locally)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 
 ## Local bootstrap
@@ -46,6 +46,14 @@ npm run dev
 ```
 
 App runs at `http://localhost:3000`.
+
+### Emails in local development
+
+With `npm run dev` and no `RESEND_API_KEY`, emails aren't sent. Each one is printed to the terminal running the dev server instead: sender, recipient, subject and the email as plain text, so links such as the verification link can be opened from there. `EMAIL_FROM` can be left empty too.
+
+To test real delivery locally, set `RESEND_API_KEY` and `EMAIL_FROM` in `.env`; emails then go through Resend as on staging and production.
+
+Staging and production never print emails: if either variable is missing there, sending an email fails with an error.
 
 ## Useful commands
 
