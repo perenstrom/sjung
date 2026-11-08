@@ -36,16 +36,19 @@ export type VerticalBounds = { top: number; bottom: number };
 
 /**
  * How far to scroll the dialog body so the focused field sits clear of the
- * sticky rows. Scrolling only the body (not `scrollIntoView`) keeps iOS from
- * panning the visual viewport again.
+ * sticky rows. A field taller than the room between them (such as the inline
+ * person picker with its results) gets its top just under the title row, so
+ * it is read from its start. Scrolling only the body (not `scrollIntoView`)
+ * keeps iOS from panning the visual viewport again.
  */
 export function revealScrollDelta(
   field: VerticalBounds,
   body: VerticalBounds,
 ): number {
-  const lowest = body.bottom - DIALOG_STICKY_CLEARANCE_PX;
-  if (field.bottom > lowest) return field.bottom - lowest;
   const highest = body.top + DIALOG_STICKY_CLEARANCE_PX;
+  const lowest = body.bottom - DIALOG_STICKY_CLEARANCE_PX;
+  if (field.bottom - field.top > lowest - highest) return field.top - highest;
+  if (field.bottom > lowest) return field.bottom - lowest;
   if (field.top < highest) return field.top - highest;
   return 0;
 }

@@ -3,6 +3,23 @@ import * as React from "react"
 import { dialogFrame, revealScrollDelta } from "@/lib/dialog/dialogFrame"
 
 /**
+ * Scrolls the mobile dialog body that holds `element` so the element sits
+ * clear of the sticky title and action rows. Does nothing outside a dialog.
+ *
+ * When the keyboard opens, the focused field is revealed this way, or its
+ * closest `[data-dialog-reveal]` ancestor when the field belongs to something
+ * larger that should be seen whole, like the inline person picker.
+ */
+export function revealInDialogBody(element: HTMLElement) {
+  const body = element.closest<HTMLElement>("[data-slot=dialog-body]")
+  if (!body) return
+  body.scrollTop += revealScrollDelta(
+    element.getBoundingClientRect(),
+    body.getBoundingClientRect()
+  )
+}
+
+/**
  * Keeps a dialog inside the visible area while the on-screen keyboard is open.
  *
  * The keyboard only shrinks the visual viewport (and on iOS pans it), never
@@ -32,11 +49,9 @@ export function useVisibleDialogFrame(node: HTMLElement | null) {
     const onResize = () => {
       update()
       const focused = document.activeElement
-      const body = node.querySelector<HTMLElement>("[data-slot=dialog-body]")
-      if (body && focused instanceof HTMLElement && body.contains(focused)) {
-        body.scrollTop += revealScrollDelta(
-          focused.getBoundingClientRect(),
-          body.getBoundingClientRect()
+      if (focused instanceof HTMLElement && node.contains(focused)) {
+        revealInDialogBody(
+          focused.closest<HTMLElement>("[data-dialog-reveal]") ?? focused
         )
       }
     }
