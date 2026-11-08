@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 // set one on the mock.
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
 import { testPrisma } from "../support/db";
+import { actAs } from "../support/session";
 import {
   createAccessScenario,
   createGroup,
@@ -193,12 +193,7 @@ describe("requireCreatorGroupById", () => {
 });
 
 describe("requireMemberManagerGroupBySlug", () => {
-  const mockAuth = vi.mocked(auth);
   const FORBIDDEN = "Du har inte behörighet att hantera medlemmar i gruppen";
-
-  function actAs(userId: string) {
-    mockAuth.mockResolvedValue({ user: { id: userId } } as never);
-  }
 
   it("allows the group's creator without any stored Claim", async () => {
     const { group, creator } = await createAccessScenario();

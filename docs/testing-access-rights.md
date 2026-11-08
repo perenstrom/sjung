@@ -97,7 +97,7 @@ Use a deterministic auth seam in integration tests:
   - member user
   - non-member user
   - creator user
-- Keep this identity control in test setup utilities so each test describes identity in one line and avoids HTTP login ceremony.
+- Keep this identity control in test setup utilities (`actAs` / `actAsAnonymous` in `__tests__/support/session.ts`) so each test describes identity in one line and avoids HTTP login ceremony.
 
 Why:
 - Fast and deterministic.

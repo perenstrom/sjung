@@ -2,16 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
-import { auth } from "@/auth";
 import { createUser } from "../support/fixtures";
 import { testPrisma } from "../support/db";
+import { actAs, actAsAnonymous } from "../support/session";
 import { getSessionUser, requireUser } from "@/lib/auth/require-user";
-
-const mockAuth = vi.mocked(auth);
-
-function actAs(userId: string) {
-  mockAuth.mockResolvedValue({ user: { id: userId } } as never);
-}
 
 describe("requireUser", () => {
   it("returns a Verified user", async () => {
@@ -43,7 +37,7 @@ describe("requireUser", () => {
   });
 
   it("rejects a request without a session", async () => {
-    mockAuth.mockResolvedValue(null as never);
+    actAsAnonymous();
 
     await expect(requireUser()).rejects.toThrow("Unauthorized");
   });
@@ -64,7 +58,7 @@ describe("getSessionUser", () => {
   });
 
   it("returns null without a session", async () => {
-    mockAuth.mockResolvedValue(null as never);
+    actAsAnonymous();
 
     await expect(getSessionUser()).resolves.toBeNull();
   });
