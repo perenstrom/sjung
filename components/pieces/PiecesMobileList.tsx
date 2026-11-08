@@ -11,6 +11,7 @@ import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
+import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import {
   MobileList,
   MobileListEmpty,
@@ -18,84 +19,136 @@ import {
 } from "@/components/ui/mobile-list";
 import { formatCreditsLine } from "@/lib/pieces/credits";
 import type { PieceWithRelations } from "@/lib/pieces/types";
+import type { SetListStep } from "@/lib/setlists/types";
 import type { Person } from "@/types/piece-credit-dialog";
+
+// The running-order number. Note rows reserve the same width, so a note's
+// text lines up with the piece names.
+const STEP_NUMBER_CLASS = "text-muted-foreground w-6 shrink-0 font-mono text-xs";
 
 /**
  * The pieces list below `md` (Utfällbar lista): one row per piece that opens
  * in place to reach its Files, Links and Piece notes. In edit mode an open row
  * shows the same inline edit sections as the desktop table's cells.
+ *
+ * Pass `setList` instead of `pieces` for a set list's running order: rows get
+ * their number, Running-order notes show inline, and in edit mode an open row
+ * (or a note) gets the step reorder/remove actions instead of delete-piece.
  */
 export function PiecesMobileList({
-  pieces,
   people,
   groupSlug,
   isEditing,
+  ...props
 }: {
-  pieces: PieceWithRelations[];
   people: Person[];
   groupSlug: string;
   isEditing: boolean;
-}) {
-  // Kept by piece id, so rows stay open across router.refresh().
+} & (
+  | { pieces: PieceWithRelations[]; setList?: undefined }
+  | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
+)) {
+  const { pieces, setList } = props;
+  // Kept by row id (the step id in a set list, where a piece can appear
+  // twice), so rows stay open across router.refresh().
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set());
 
-  function setOpen(pieceId: string, open: boolean) {
+  function setOpen(rowId: string, open: boolean) {
     setOpenIds((prev) => {
       const next = new Set(prev);
-      if (open) next.add(pieceId);
-      else next.delete(pieceId);
+      if (open) next.add(rowId);
+      else next.delete(rowId);
       return next;
     });
   }
 
+  const rows: (SetListStep | { kind: "piece"; id: string; piece: PieceWithRelations })[] =
+    setList ? setList.steps : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece }));
+  const orderedStepIds = setList ? setList.steps.map((step) => step.id) : [];
+
   return (
     <MobileList>
-      {pieces.length === 0 ? (
-        <MobileListEmpty>Inga noter tillagda ännu.</MobileListEmpty>
+      {rows.length === 0 ? (
+        <MobileListEmpty>
+          {setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
+        </MobileListEmpty>
       ) : (
-        pieces.map((piece) => (
-          <MobileListExpandableRow
-            key={piece.id}
-            open={openIds.has(piece.id)}
-            onOpenChange={(open) => setOpen(piece.id, open)}
-            primary={<span className="font-medium">{piece.name}</span>}
-            // Edit mode lists the credits in its Medverkande section instead.
-            secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
-            trailing={<FileAndLinkCounts piece={piece} />}
-          >
-            {isEditing ? (
-              <PieceEditSections piece={piece} people={people} groupSlug={groupSlug} />
-            ) : (
-              <PieceMaterial piece={piece} groupSlug={groupSlug} />
-            )}
-            <div className="flex flex-wrap items-center gap-2">
-              {isEditing ? (
-                <EditPieceDialog
-                  people={people}
+        rows.map((row, index) => {
+          const number = setList ? <span className={STEP_NUMBER_CLASS}>{index + 1}</span> : null;
+          const stepActions =
+            setList && isEditing ? (
+              <div className="flex items-center">
+                <SetListStepActions
+                  step={row}
+                  stepIndex={index}
+                  orderedStepIds={orderedStepIds}
                   groupSlug={groupSlug}
-                  piece={{ id: piece.id, name: piece.name, credits: piece.credits }}
+                  setListId={setList.id}
                 />
-              ) : null}
-              <PieceNotesDialog
-                readOnly={!isEditing}
-                groupSlug={groupSlug}
-                piece={{ id: piece.id, name: piece.name }}
-              />
+              </div>
+            ) : null;
+
+          if (row.kind === "note") {
+            return (
+              <li key={row.id} className="flex items-baseline gap-2 px-4 py-3">
+                {number}
+                <div className="min-w-0 flex-1 space-y-2">
+                  <p className="text-muted-foreground border-l-2 pl-3 text-sm whitespace-pre-wrap italic">
+                    {row.content}
+                  </p>
+                  {stepActions}
+                </div>
+              </li>
+            );
+          }
+
+          const { piece } = row;
+          return (
+            <MobileListExpandableRow
+              key={row.id}
+              open={openIds.has(row.id)}
+              onOpenChange={(open) => setOpen(row.id, open)}
+              leading={number}
+              primary={<span className="font-medium">{piece.name}</span>}
+              // Edit mode lists the credits in its Medverkande section instead.
+              secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
+              trailing={<FileAndLinkCounts piece={piece} />}
+            >
               {isEditing ? (
-                <DeletePieceDialog
+                <PieceEditSections piece={piece} people={people} groupSlug={groupSlug} />
+              ) : (
+                <PieceMaterial piece={piece} groupSlug={groupSlug} />
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {stepActions}
+                {isEditing ? (
+                  <EditPieceDialog
+                    people={people}
+                    groupSlug={groupSlug}
+                    piece={{ id: piece.id, name: piece.name, credits: piece.credits }}
+                  />
+                ) : null}
+                <PieceNotesDialog
+                  readOnly={!isEditing}
                   groupSlug={groupSlug}
                   piece={{ id: piece.id, name: piece.name }}
                 />
-              ) : null}
-              <Link
-                href={`/app/${groupSlug}/pieces/${piece.id}`}
-                className="inline-flex min-h-11 items-center px-1 text-sm underline underline-offset-4"
-              >
-                Öppna stycket
-              </Link>
-            </div>
-          </MobileListExpandableRow>
-        ))
+                {isEditing && !setList ? (
+                  <DeletePieceDialog
+                    groupSlug={groupSlug}
+                    piece={{ id: piece.id, name: piece.name }}
+                  />
+                ) : null}
+                <Link
+                  href={`/app/${groupSlug}/pieces/${piece.id}`}
+                  className="inline-flex min-h-11 items-center px-1 text-sm underline underline-offset-4"
+                >
+                  Öppna stycket
+                </Link>
+              </div>
+            </MobileListExpandableRow>
+          );
+        })
       )}
     </MobileList>
   );

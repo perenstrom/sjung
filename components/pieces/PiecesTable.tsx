@@ -71,8 +71,8 @@ function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
 }
 
 /**
- * The table for every list of pieces. With `pieces` it is a table from `md`
- * up and `PiecesMobileList` below it. Pass `setList` instead of `pieces` to
+ * The table for every list of pieces: a table from `md` up and
+ * `PiecesMobileList` below it. Pass `setList` instead of `pieces` to
  * show a set list's steps in position order: adds a `#` column and the step
  * reorder/remove actions, turns off sorting and drops the delete-piece action.
  */
@@ -274,17 +274,14 @@ export function PiecesTable({
 
   return (
     <PiecesTableCellContext.Provider value={cellContext}>
-      {/* Set list detail keeps the table at every width for now (PER-382). */}
-      {pieces ? (
-        <PiecesMobileList
-          pieces={pieces}
-          people={people}
-          groupSlug={groupSlug}
-          isEditing={isEditing}
-        />
-      ) : null}
+      <PiecesMobileList
+        {...props}
+        people={people}
+        groupSlug={groupSlug}
+        isEditing={isEditing}
+      />
       <DataTable
-        className={pieces ? "max-md:hidden" : undefined}
+        className="max-md:hidden"
         columns={columns}
         data={rows}
         enableSorting={!setList}

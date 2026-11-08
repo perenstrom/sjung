@@ -14,6 +14,8 @@ import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
 
 // 32px, the height of the sm action buttons beside these in the actions cell.
+// The icon variant's `pointer-coarse:size-11` still applies, so they are 44px
+// on touch screens.
 const ICON_BUTTON_CLASS = "size-8";
 
 function moveStepIds(

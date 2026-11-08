@@ -97,6 +97,8 @@ function MobileListRow({
 }
 
 type MobileListExpandableRowProps = {
+  /** Optional content before the text lines, e.g. a running-order number. */
+  leading?: React.ReactNode
   /** One line, truncated while closed and shown in full when open. */
   primary: React.ReactNode
   /** Optional line below the primary line, truncated while closed. Omit rather than pass a placeholder. */
@@ -115,6 +117,7 @@ type MobileListExpandableRowProps = {
  * button that toggles it; the opened content sits below, inset like the text.
  */
 function MobileListExpandableRow({
+  leading,
   primary,
   secondary,
   trailing,
@@ -134,6 +137,7 @@ function MobileListExpandableRow({
         onClick={() => onOpenChange(!open)}
         className="focus-visible:ring-ring/50 active:bg-muted/50 flex min-h-14 w-full items-center gap-2 px-4 py-2 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-inset"
       >
+        {leading}
         <span className="min-w-0 flex-1">
           <span className={cn("block", !open && "truncate")}>{primary}</span>
           {secondary ? (
