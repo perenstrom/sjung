@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  FormPopover,
+  FormPopoverContent,
+  FormPopoverFooter,
+  FormPopoverTrigger,
+} from "@/components/ui/form-popover";
 import { Spinner } from "@/components/ui/spinner";
 import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
@@ -64,17 +65,17 @@ export function ReplacePieceFilePopover({
   });
 
   return (
-    <Popover
+    <FormPopover
       open={open}
       onOpenChange={(nextOpen) => {
-        // Keep the popover open mid-transfer so its outcome stays visible.
+        // Keep the form open mid-transfer so its outcome stays visible.
         if (!nextOpen && isTransferring) {
           return;
         }
         handleOpenChange(nextOpen);
       }}
     >
-      <PopoverTrigger asChild>
+      <FormPopoverTrigger asChild>
         <Button
           type="button"
           variant="ghost"
@@ -85,17 +86,11 @@ export function ReplacePieceFilePopover({
         >
           <RefreshCw className="size-3.5" aria-hidden="true" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 space-y-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Ersätt fil</p>
-          {pieceName ? (
-            <p className="text-sm text-muted-foreground">{pieceName}</p>
-          ) : (
-            <p className="text-sm text-muted-foreground">{displayName}</p>
-          )}
-        </div>
-
+      </FormPopoverTrigger>
+      <FormPopoverContent
+        title="Ersätt fil"
+        description={pieceName ?? displayName}
+      >
         <form action={handleTransfer} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="fileId" value={fileId} />
@@ -114,7 +109,7 @@ export function ReplacePieceFilePopover({
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <div className="flex justify-end gap-2">
+          <FormPopoverFooter>
             <Button
               type="button"
               variant="outline"
@@ -133,9 +128,9 @@ export function ReplacePieceFilePopover({
                 "Ersätt"
               )}
             </Button>
-          </div>
+          </FormPopoverFooter>
         </form>
-      </PopoverContent>
-    </Popover>
+      </FormPopoverContent>
+    </FormPopover>
   );
 }

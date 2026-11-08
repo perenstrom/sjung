@@ -8,10 +8,11 @@ import { addCredit } from "@/app/actions/pieces";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  FormPopover,
+  FormPopoverContent,
+  FormPopoverFooter,
+  FormPopoverTrigger,
+} from "@/components/ui/form-popover";
 import {
   Select,
   SelectContent,
@@ -94,9 +95,9 @@ export function AddPieceCreditPopover({
   );
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <FormPopover open={open} onOpenChange={handleOpenChange}>
       {hasPeople ? (
-        <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+        <FormPopoverTrigger asChild>{triggerButton}</FormPopoverTrigger>
       ) : (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -105,12 +106,10 @@ export function AddPieceCreditPopover({
           <TooltipContent side="top">{NO_PEOPLE_TOOLTIP}</TooltipContent>
         </Tooltip>
       )}
-      <PopoverContent align="start" className="w-80 space-y-4">
-        <div className="space-y-1">
-          <p className="text-sm font-medium">Lägg till medverkande</p>
-          <p className="text-sm text-muted-foreground">{piece.name}</p>
-        </div>
-
+      <FormPopoverContent
+        title="Lägg till medverkande"
+        description={piece.name}
+      >
         <form action={handleSubmit} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="pieceId" value={piece.id} />
@@ -153,7 +152,7 @@ export function AddPieceCreditPopover({
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <div className="flex justify-end gap-2">
+          <FormPopoverFooter>
             <Button
               type="button"
               variant="outline"
@@ -162,9 +161,9 @@ export function AddPieceCreditPopover({
               Avbryt
             </Button>
             <Button type="submit">Spara</Button>
-          </div>
+          </FormPopoverFooter>
         </form>
-      </PopoverContent>
-    </Popover>
+      </FormPopoverContent>
+    </FormPopover>
   );
 }
