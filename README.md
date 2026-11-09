@@ -30,7 +30,7 @@ Required variables (from `.env.example`):
 - `R2_PUBLIC_BASE_URL`
 - `RESEND_API_KEY` (optional locally — see "Emails in local development" below)
 - `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`; optional locally)
-- `APP_BASE_URL` (origin for links in emails, e.g. `https://sjung.app`; `http://localhost:3000` locally; required to send any email)
+- `APP_BASE_URL` (origin for links in emails, e.g. `https://www.sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 
 ## Local bootstrap
@@ -88,6 +88,16 @@ gh workflow run deploy-production.yml --ref main
 Config lives in the `staging` and `production` GitHub environments: variables `COOLIFY_URL` and `COOLIFY_STAGING_APP_UUID` / `COOLIFY_PROD_APP_UUID`, and secrets `COOLIFY_STAGING_TOKEN` / `COOLIFY_PROD_TOKEN`.
 
 Each Coolify app sets the runtime variable `APP_ENV`: `staging` on `sjung-staging` and `production` on `sjung-production`. It decides the environment label in the browser tab title (`[staging] Sjung` on staging, plain `Sjung` in production; `npm run dev` always shows `[local] Sjung`). An unset or unknown value counts as production.
+
+Both apps also set three runtime variables for email. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
+
+| Variable | `sjung-staging` | `sjung-production` |
+| --- | --- | --- |
+| `RESEND_API_KEY` | Resend key `sjung-staging` | Resend key `sjung-production` |
+| `EMAIL_FROM` | `Sjung <noreply@per.fyi>` | `Sjung <noreply@per.fyi>` |
+| `APP_BASE_URL` | `https://staging.sjung.app` | `https://www.sjung.app` |
+
+Each app has its own sending-only Resend key, so either can be revoked alone. The sender must be on a domain verified in Resend. Production uses `www` because `sjung.app` redirects there, and links in emails shouldn't go through a redirect. Set them as runtime variables, not build variables; a restart picks up a change.
 
 ## Commits
 
