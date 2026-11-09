@@ -13,6 +13,7 @@ import {
   DataTable,
   DataTableColumnHeader,
 } from "@/components/data-table";
+import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
@@ -192,16 +193,8 @@ export function PiecesTable({
                 groupSlug={groupSlug}
                 pieceId={piece.id}
                 pieceName={piece.name}
-                files={piece.files.map((file) => ({
-                  id: file.id,
-                  displayName: file.displayName,
-                  size: file.size,
-                }))}
-                links={piece.links.map((link) => ({
-                  id: link.id,
-                  url: link.url,
-                  label: link.label,
-                }))}
+                files={toInlineFiles(piece)}
+                links={toInlineLinks(piece)}
               />
             </div>
           );
