@@ -7,12 +7,19 @@ import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { requireCreatorGroupById, requireMemberManagerGroupBySlug } from "@/lib/actions/guards";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
-import { inviteToGroup, type InviteToGroupResult } from "@/lib/invitations/invitations";
+import {
+  findGroupInvitations,
+  inviteToGroup,
+  resendInvitation,
+  revokeInvitation,
+  type InviteToGroupResult,
+} from "@/lib/invitations/invitations";
 import {
   inviteEmailSchema,
   parseGroupClaimsFromFormData,
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
+  parseInvitationIdFromFormData,
   parseMemberUserIdFromFormData,
   parseMembershipGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
@@ -231,6 +238,8 @@ export async function inviteMemberToGroup(
   const email = parsed.data;
 
   const result = await inviteToGroup({ groupId, email, invitedById: userId });
+  // The page lists Invitations; even a failed first email leaves one there.
+  revalidateGroupMembersRoutes(groupSlug);
   if (result.status === "sent") {
     return { status: "sent", email };
   }
@@ -247,6 +256,47 @@ function inviteFailureMessage(result: Exclude<InviteToGroupResult, { status: "se
     case "send-failed":
       return "Kunde inte skicka inbjudan, försök igen";
   }
+}
+
+/** The Group's pending and expired Invitations, for the members page. */
+export async function listGroupInvitations(groupSlug: string) {
+  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
+  return findGroupInvitations(groupId);
+}
+
+const INVITATION_NOT_FOUND = "Inbjudan hittades inte";
+
+/** "Ta bort" on a listed Invitation: deletes it, so its link stops working. */
+export async function revokeGroupInvitation(formData: FormData) {
+  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const invitationId = parseInvitationIdFromFormData(formData);
+  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
+
+  if (!(await revokeInvitation(groupId, invitationId))) {
+    throw new Error(INVITATION_NOT_FOUND);
+  }
+
+  revalidateGroupMembersRoutes(groupSlug);
+}
+
+export type ResendGroupInvitationResult = { ok: true; email: string } | { ok: false; error: string };
+
+/** "Skicka igen" on a listed Invitation, pending or expired: the same re-send as "Bjud in". */
+export async function resendGroupInvitation(formData: FormData): Promise<ResendGroupInvitationResult> {
+  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const invitationId = parseInvitationIdFromFormData(formData);
+  const { userId, groupId } = await requireMemberManagerGroupBySlug(groupSlug);
+
+  const result = await resendInvitation({ groupId, invitationId, invitedById: userId });
+  if (result.status === "not-found") {
+    return { ok: false, error: INVITATION_NOT_FOUND };
+  }
+  if (result.status !== "sent") {
+    return { ok: false, error: inviteFailureMessage(result) };
+  }
+
+  revalidateGroupMembersRoutes(groupSlug);
+  return { ok: true, email: result.email };
 }
 
 export async function removeMemberFromGroup(formData: FormData) {

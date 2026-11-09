@@ -10,13 +10,18 @@ import { testPrisma } from "../support/db";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createUser, grantClaims } from "../support/fixtures";
-import { failEmailsTo, sentEmails } from "../support/fake-email";
+import { emailedLinkToken, failEmailsTo, resetFakeEmail, sentEmails } from "../support/fake-email";
+import { getInvitationView, inviteToGroup } from "@/lib/invitations/invitations";
+import { INVITATION_PATH } from "@/lib/invitations/routes";
 import {
   inviteMemberToGroup,
   deleteGroup,
   getGroups,
+  listGroupInvitations,
   listGroupMembers,
   removeMemberFromGroup,
+  resendGroupInvitation,
+  revokeGroupInvitation,
   setMemberClaims,
   updateGroup,
 } from "@/app/actions/groups";
@@ -425,5 +430,111 @@ describe("setMemberClaims", () => {
 
     await expect(setMemberClaims(fd)).rejects.toThrow("Ogiltig behörighet");
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
+  });
+});
+
+describe("the Group's Invitations", () => {
+  /** Manager scenario with a pending Invitation to anna@example.com, sent by the Creator. */
+  async function createInvitationScenario(managerClaims: GroupClaim[] = ["MANAGE_MEMBERS"]) {
+    const scenario = await createManagerScenario(managerClaims);
+    await inviteToGroup(
+      { groupId: scenario.group.id, email: "anna@example.com", invitedById: scenario.creator.id },
+      new Date(Date.now() - 2 * 60 * 1000)
+    );
+    const token = emailedLinkToken(sentEmails().at(-1)!, INVITATION_PATH);
+    const invitation = await testPrisma.invitation.findFirstOrThrow({ select: { id: true } });
+    const invitationForm = formData({ groupSlug: scenario.group.slug, invitationId: invitation.id });
+    resetFakeEmail();
+    return { ...scenario, token, invitation, invitationForm };
+  }
+
+  it.each([
+    ["a MANAGE_MEMBERS holder", "manager"],
+    ["the Creator", "creator"],
+  ] as const)("are listed for %s with address, sender and expiry", async (_label, viewer) => {
+    const scenario = await createInvitationScenario();
+    actAs(scenario[viewer].id);
+
+    await expect(listGroupInvitations(scenario.group.slug)).resolves.toEqual([
+      {
+        id: scenario.invitation.id,
+        email: "anna@example.com",
+        senderName: scenario.creator.name,
+        expiresAt: expect.any(Date),
+        expired: false,
+      },
+    ]);
+  });
+
+  it("can be revoked, which makes the link no longer valid", async () => {
+    const { manager, token, invitationForm } = await createInvitationScenario();
+    actAs(manager.id);
+
+    await revokeGroupInvitation(invitationForm);
+
+    expect(await testPrisma.invitation.count()).toBe(0);
+    await expect(getInvitationView(token, null)).resolves.toEqual({ state: "invalid" });
+  });
+
+  it("refuses to revoke an Invitation the Group doesn't have", async () => {
+    const { group, manager } = await createInvitationScenario();
+    actAs(manager.id);
+
+    await expect(
+      revokeGroupInvitation(formData({ groupSlug: group.slug, invitationId: "00000000-0000-0000-0000-000000000000" }))
+    ).rejects.toThrow("Inbjudan hittades inte");
+    expect(await testPrisma.invitation.count()).toBe(1);
+  });
+
+  it("can be re-sent, which emails a new link and makes the old one no longer valid", async () => {
+    const { manager, token, invitationForm } = await createInvitationScenario();
+    actAs(manager.id);
+
+    await expect(resendGroupInvitation(invitationForm)).resolves.toEqual({
+      ok: true,
+      email: "anna@example.com",
+    });
+
+    expect(sentEmails().map((email) => email.to)).toEqual(["anna@example.com"]);
+    await expect(getInvitationView(token, null)).resolves.toEqual({ state: "invalid" });
+  });
+
+  it("refuses a second re-send within a minute", async () => {
+    const { manager, invitationForm } = await createInvitationScenario();
+    actAs(manager.id);
+    await resendGroupInvitation(invitationForm);
+
+    await expect(resendGroupInvitation(invitationForm)).resolves.toEqual({
+      ok: false,
+      error: expect.stringMatching(/^Vänta \d+ sekunder innan du skickar inbjudan igen$/),
+    });
+    expect(sentEmails()).toHaveLength(1);
+  });
+
+  it("asks to try again when the re-sent email can't be sent", async () => {
+    const { manager, invitationForm } = await createInvitationScenario();
+    failEmailsTo("anna@example.com");
+    actAs(manager.id);
+
+    await expect(resendGroupInvitation(invitationForm)).resolves.toEqual({
+      ok: false,
+      error: "Kunde inte skicka inbjudan, försök igen",
+    });
+  });
+
+  it.each<[string, GroupClaim[]]>([
+    ["no Claim", []],
+    ["only MANAGE_CONTENT", ["MANAGE_CONTENT"]],
+  ])("are hidden from, and can't be changed by, a member holding %s", async (_label, claims) => {
+    const { group, other, invitationForm } = await createInvitationScenario();
+    await grantClaims(other.id, group.id, claims);
+    actAs(other.id);
+
+    await expect(listGroupInvitations(group.slug)).rejects.toThrow(FORBIDDEN);
+    await expect(revokeGroupInvitation(invitationForm)).rejects.toThrow(FORBIDDEN);
+    await expect(resendGroupInvitation(invitationForm)).rejects.toThrow(FORBIDDEN);
+
+    expect(await testPrisma.invitation.count()).toBe(1);
+    expect(sentEmails()).toHaveLength(0);
   });
 });

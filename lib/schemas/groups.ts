@@ -25,6 +25,8 @@ export const memberUserIdSchema = z
   .trim()
   .min(1, { error: "Ogiltig medlem" });
 
+export const invitationIdSchema = z.uuid({ error: "Ogiltig inbjudan" });
+
 export const groupClaimSchema = z.enum(GroupClaim, {
   error: "Ogiltig behörighet",
 });
@@ -71,6 +73,14 @@ export function parseMemberUserIdFromFormData(formData: FormData): string {
   );
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Ogiltig medlem");
+  }
+  return result.data;
+}
+
+export function parseInvitationIdFromFormData(formData: FormData): string {
+  const result = invitationIdSchema.safeParse(formDataString(formData, "invitationId"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Ogiltig inbjudan");
   }
   return result.data;
 }

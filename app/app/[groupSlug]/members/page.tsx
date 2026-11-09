@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { getGroups, listGroupMembers } from "@/app/actions/groups";
+import { getGroups, listGroupInvitations, listGroupMembers } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { InviteGroupMemberForm } from "@/components/InviteGroupMemberForm";
+import { GroupInvitationsTable } from "@/components/members/GroupInvitationsTable";
 import { GroupMembersTable } from "@/components/members/GroupMembersTable";
 import { canManageGroupMembers } from "@/lib/actions/guards";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
@@ -19,7 +20,11 @@ export default async function GroupMembersPage({ params }: PageProps) {
     notFound();
   }
 
-  const [members, groups] = await Promise.all([listGroupMembers(groupSlug), getGroups()]);
+  const [members, invitations, groups] = await Promise.all([
+    listGroupMembers(groupSlug),
+    listGroupInvitations(groupSlug),
+    getGroups(),
+  ]);
   const groupName = groups.find((groupOption) => groupOption.slug === groupSlug)?.name ?? groupSlug;
 
   return (
@@ -41,6 +46,8 @@ export default async function GroupMembersPage({ params }: PageProps) {
       <InviteGroupMemberForm groupSlug={groupSlug} />
 
       <GroupMembersTable groupSlug={groupSlug} members={members} viewerUserId={userId} />
+
+      <GroupInvitationsTable groupSlug={groupSlug} invitations={invitations} />
     </div>
   );
 }
