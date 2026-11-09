@@ -44,6 +44,19 @@ describe("SetListSequence", () => {
     ]);
   });
 
+  it("gives steps appended at the same time their own places", async () => {
+    await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        i % 2 === 0
+          ? SetListSequence.append(setList.id, { kind: "piece", pieceId: kyrie.id }, userId)
+          : SetListSequence.append(setList.id, { kind: "note", content: `Paus ${i}` }, userId)
+      )
+    );
+
+    const steps = await SetListSequence.steps(setList.id);
+    expect(new Set(steps.map((step) => step.position)).size).toBe(6);
+  });
+
   it("records who added the step", async () => {
     const step = await SetListSequence.append(setList.id, { kind: "note", content: "Paus" }, userId);
 

@@ -12,6 +12,15 @@ function byPositionThenCreation(a: OrderedStep, b: OrderedStep): number {
   return a.position - b.position || a.createdAt.getTime() - b.createdAt.getTime();
 }
 
+/**
+ * Positions span two tables, so no unique constraint can stop two writers from claiming the same
+ * one. Every write to a set list's order locks its `set_lists` row first, so writes to one set
+ * list run one at a time.
+ */
+async function lockSetList(tx: Prisma.TransactionClient, setListId: string): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM set_lists WHERE id = ${setListId} FOR UPDATE`;
+}
+
 async function readSequenceSteps(
   tx: Prisma.TransactionClient,
   setListId: string
@@ -74,6 +83,7 @@ export const SetListSequence = {
   /** Adds a step after every existing step. */
   async append(setListId: string, step: NewSetListStep, userId: string): Promise<SetListSequenceStep> {
     return prisma.$transaction(async (tx) => {
+      await lockSetList(tx, setListId);
       const [maxPiece, maxNote] = await Promise.all([
         tx.setListPiece.aggregate({ where: { setListId }, _max: { position: true } }),
         tx.setListNote.aggregate({ where: { setListId }, _max: { position: true } }),
@@ -103,6 +113,7 @@ export const SetListSequence = {
    */
   async reorder(setListId: string, orderedStepIds: string[], userId: string): Promise<void> {
     await prisma.$transaction(async (tx) => {
+      await lockSetList(tx, setListId);
       const steps = await readSequenceSteps(tx, setListId);
       const updates = SetListPositions.positionsAfterReorder(steps, orderedStepIds);
 
