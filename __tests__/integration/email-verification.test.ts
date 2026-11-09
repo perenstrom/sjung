@@ -70,6 +70,21 @@ describe("confirmEmailVerification", () => {
     await expect(confirmEmailVerification(token)).resolves.toEqual({ ok: false });
   });
 
+  it("keeps an already Verified user's original verification time", async () => {
+    const sentAt = new Date("2026-11-01T12:00:00Z");
+    const { user, token } = await emailedToken(sentAt);
+    // Verified another way since, e.g. by a Password reset.
+    const verifiedAt = new Date("2026-11-01T12:05:00Z");
+    await testPrisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: verifiedAt } });
+
+    await expect(confirmEmailVerification(token, new Date("2026-11-01T12:10:00Z"))).resolves.toEqual({
+      ok: true,
+    });
+
+    const reloaded = await testPrisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(reloaded.emailVerifiedAt).toEqual(verifiedAt);
+  });
+
   it("rejects a token after 24 hours", async () => {
     const sentAt = new Date("2026-11-01T12:00:00Z");
     const { user, token } = await emailedToken(sentAt);

@@ -3,6 +3,7 @@ import { UserTokenPurpose } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
 import { VERIFICATION_EMAIL_SUBJECT, VerificationEmail } from "@/lib/auth/verification-email";
 import { CONFIRM_EMAIL_PATH } from "@/lib/auth/routes";
+import { markVerified } from "@/lib/auth/verified";
 import { sendEmail } from "@/lib/email";
 import { type IssueLinkResult, userLinks } from "@/lib/email-links/email-links";
 import prisma from "@/lib/prisma";
@@ -64,7 +65,7 @@ export async function getVerificationTokenState(
   return { state: "valid", email: user.email };
 }
 
-/** Uses up the token and marks its User Verified, together. */
+/** Uses up the token and marks its User Verified (keeping an earlier time), together. */
 export async function confirmEmailVerification(
   token: string,
   now: Date = new Date()
@@ -74,7 +75,7 @@ export async function confirmEmailVerification(
     if (!userId) {
       return { ok: false };
     }
-    await tx.user.update({ where: { id: userId }, data: { emailVerifiedAt: now } });
+    await markVerified(tx, userId, now);
     return { ok: true };
   });
 }
