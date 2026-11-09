@@ -11,3 +11,8 @@ export function pieceHref(
   if (!fromSetListId) return href;
   return `${href}?${new URLSearchParams({ setlist: fromSetListId })}`;
 }
+
+/** The Set list a Piece link carries (its `setlist` search param), if any. */
+export function fromSetListIdParam(setlist: string | string[] | undefined): string | undefined {
+  return typeof setlist === "string" && setlist !== "" ? setlist : undefined;
+}

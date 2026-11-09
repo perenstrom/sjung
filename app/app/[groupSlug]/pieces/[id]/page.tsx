@@ -11,6 +11,7 @@ import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import { pieceDetailTrail } from "@/lib/breadcrumbs";
+import { fromSetListIdParam } from "@/lib/pieces/href";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -41,7 +42,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
             groupName,
             pieceName: piece.name,
             setLists,
-            fromSetListId: typeof setlist === "string" ? setlist : undefined,
+            fromSetListId: fromSetListIdParam(setlist),
           })}
         />
         <PieceMetadataSection
