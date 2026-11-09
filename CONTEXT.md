@@ -28,7 +28,7 @@ _Avoid_: User (the account itself, group-independent).
 
 **Invitation**:
 A pending offer for one email address to become a Member of one Group, made by a Member holding `MANAGE_MEMBERS`. It is the only way to add someone to a Group — existing Users must accept too. Bound to the invited address: only a User with that email can accept it. Single-use and time-limited; re-inviting the same address replaces the pending Invitation, and it can be revoked but not declined. Grants no Claims — those are granted after joining. Accepting proves control of the address, so it also makes the User a Verified user. Swedish UI: _Inbjudan_.
-_Avoid_: Invite (as a noun), Pending member — an Invitation is not a membership yet.
+_Avoid_: Invite (as a noun), Pending member — an Invitation is not a membership yet. Group manager — there is no such role; any Member holding `MANAGE_MEMBERS` can invite.
 
 **Default group**:
 The Group a User lands in when opening the app — whichever Group they last switched to. Belongs to the User, not to the browser or the login session, so it survives logging out.
