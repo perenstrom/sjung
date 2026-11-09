@@ -1,57 +1,39 @@
 import { createElement } from "react";
 import { UserTokenPurpose } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
-import {
-  issueUserToken,
-  lookUpUserToken,
-  redeemUserToken,
-  resendCooldownSeconds,
-} from "@/lib/auth/tokens";
 import { VERIFICATION_EMAIL_SUBJECT, VerificationEmail } from "@/lib/auth/verification-email";
 import { CONFIRM_EMAIL_PATH } from "@/lib/auth/routes";
 import { sendEmail } from "@/lib/email";
+import { type IssueLinkResult, userLinks } from "@/lib/email-links/email-links";
 import prisma from "@/lib/prisma";
 
-const PURPOSE = UserTokenPurpose.EMAIL_VERIFICATION;
 const VALID_FOR_HOURS = 24;
+const verificationLinks = userLinks(UserTokenPurpose.EMAIL_VERIFICATION, { validForHours: VALID_FOR_HOURS });
 
 /**
- * Emails a fresh confirm link, replacing earlier ones. Throws if the email
- * can't be sent; the User's earlier link then keeps working.
+ * Emails a fresh confirm link, replacing earlier ones — unless the latest one
+ * went out less than 60 seconds ago ("cooldown"). Throws if the email can't be
+ * sent; the User's earlier link then keeps working.
  */
-export async function sendVerificationEmail(userId: string, now: Date = new Date()): Promise<void> {
+export async function sendVerificationEmail(userId: string, now: Date = new Date()): Promise<IssueLinkResult> {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
     select: { name: true, email: true },
   });
-  await issueUserToken(userId, PURPOSE, { validForHours: VALID_FOR_HOURS, now }, (token) =>
-    sendEmail({
-      to: user.email,
-      subject: VERIFICATION_EMAIL_SUBJECT,
-      react: createElement(VerificationEmail, {
-        name: user.name,
-        confirmUrl: appUrl(CONFIRM_EMAIL_PATH, { token }),
-        validForHours: VALID_FOR_HOURS,
+  return verificationLinks.issue(
+    userId,
+    (token) =>
+      sendEmail({
+        to: user.email,
+        subject: VERIFICATION_EMAIL_SUBJECT,
+        react: createElement(VerificationEmail, {
+          name: user.name,
+          confirmUrl: appUrl(CONFIRM_EMAIL_PATH, { token }),
+          validForHours: VALID_FOR_HOURS,
+        }),
       }),
-    })
+    now
   );
-}
-
-/**
- * "Skicka igen": sends a new link unless the latest one went out less than 60
- * seconds ago. Throws, like `sendVerificationEmail`, if sending fails.
- */
-export async function resendVerificationEmail(
-  userId: string,
-  now: Date = new Date()
-): Promise<{ ok: true } | { ok: false; retryAfterSeconds: number }> {
-  const retryAfterSeconds = await resendCooldownSeconds(userId, PURPOSE, now);
-  if (retryAfterSeconds > 0) {
-    return { ok: false, retryAfterSeconds };
-  }
-
-  await sendVerificationEmail(userId, now);
-  return { ok: true };
 }
 
 export type VerificationTokenState =
@@ -67,13 +49,13 @@ export async function getVerificationTokenState(
   token: string,
   now: Date = new Date()
 ): Promise<VerificationTokenState> {
-  const lookup = await lookUpUserToken(token, PURPOSE, now);
+  const lookup = await verificationLinks.lookUp(token, now);
   if (lookup.status === "invalid") {
     return { state: "invalid" };
   }
 
   const user = await prisma.user.findUniqueOrThrow({
-    where: { id: lookup.userId },
+    where: { id: lookup.subjectId },
     select: { email: true, emailVerifiedAt: true },
   });
   if (lookup.status === "used") {
@@ -88,7 +70,7 @@ export async function confirmEmailVerification(
   now: Date = new Date()
 ): Promise<{ ok: boolean }> {
   return prisma.$transaction(async (tx) => {
-    const userId = await redeemUserToken(tx, token, PURPOSE, now);
+    const userId = await verificationLinks.redeem(tx, token, now);
     if (!userId) {
       return { ok: false };
     }

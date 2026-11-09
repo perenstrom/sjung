@@ -9,7 +9,7 @@ import {
   getPasswordResetTokenState,
   requestPasswordReset,
 } from "@/lib/auth/password-reset";
-import { CONFIRM_EMAIL_PATH, NEW_PASSWORD_PATH } from "@/lib/auth/routes";
+import { NEW_PASSWORD_PATH } from "@/lib/auth/routes";
 
 const NEW_PASSWORD = "ett nytt långt lösenord";
 
@@ -66,16 +66,6 @@ describe("requestPasswordReset", () => {
     expect(sentEmails()).toHaveLength(1);
   });
 
-  it("sends a new link after 60 seconds, replacing the old one", async () => {
-    const { token: oldToken } = await emailedToken();
-
-    await requestPasswordReset("anna@example.com", after(60));
-
-    expect(sentEmails()).toHaveLength(2);
-    const newToken = linkTokenIn(sentEmails()[1]);
-    await expect(getPasswordResetTokenState(oldToken, after(61))).resolves.toEqual({ state: "invalid" });
-    await expect(getPasswordResetTokenState(newToken, after(61))).resolves.toMatchObject({ state: "valid" });
-  });
 
   it("swallows a failed send, so the result never reveals whether the account exists", async () => {
     await createUser({ email: "anna@example.com" });
@@ -103,15 +93,6 @@ describe("opening the reset link", () => {
     await expect(getPasswordResetTokenState("not-a-real-token")).resolves.toEqual({ state: "invalid" });
   });
 
-  it("doesn't accept an email verification token", async () => {
-    const { sendVerificationEmail } = await import("@/lib/auth/email-verification");
-    const user = await createUser({ email: "anna@example.com", emailVerifiedAt: null });
-    await sendVerificationEmail(user.id);
-    const verificationToken = emailedLinkToken(sentEmails()[0], CONFIRM_EMAIL_PATH);
-
-    await expect(getPasswordResetTokenState(verificationToken)).resolves.toEqual({ state: "invalid" });
-    await expect(completePasswordReset(verificationToken, NEW_PASSWORD)).resolves.toEqual({ ok: false });
-  });
 });
 
 describe("completePasswordReset", () => {

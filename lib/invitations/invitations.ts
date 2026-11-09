@@ -8,7 +8,7 @@ import {
   tokenExpiresAt,
   tokenStatus,
   usableTokenWhere,
-} from "@/lib/auth/tokens";
+} from "@/lib/email-links/tokens";
 import { sendEmail } from "@/lib/email";
 import { InvitationEmail, invitationEmailSubject } from "@/lib/invitations/invitation-email";
 import { INVITATION_PATH } from "@/lib/invitations/routes";

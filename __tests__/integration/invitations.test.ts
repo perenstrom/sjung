@@ -14,7 +14,7 @@ import {
   revokeInvitation,
   signUpFromInvitation,
 } from "@/lib/invitations/invitations";
-import { hashToken } from "@/lib/auth/tokens";
+import { hashToken } from "@/lib/email-links/tokens";
 import { INVITATION_PATH } from "@/lib/invitations/routes";
 
 const linkTokenIn = (email: SentEmail) => emailedLinkToken(email, INVITATION_PATH);
