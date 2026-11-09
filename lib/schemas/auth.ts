@@ -104,10 +104,18 @@ export type SignupFormParseResult =
   | { ok: true; data: SignupCredentials & { redirectTo: string } }
   | { ok: false; error: NewPasswordParseError; values: SignupFormValues };
 
-export function parseSignupFormData(formData: FormData): SignupFormParseResult {
+/**
+ * The signup form. Signing up from an Invitation passes `invitedEmail`, which
+ * replaces whatever email was submitted: the account always gets the address
+ * the Invitation was sent to.
+ */
+export function parseSignupFormData(
+  formData: FormData,
+  { invitedEmail }: { invitedEmail?: string } = {}
+): SignupFormParseResult {
   const redirectTo = parseRedirectPathFromFormData(formData);
   const nameRaw = formData.get("name");
-  const emailRaw = formData.get("email");
+  const emailRaw = invitedEmail ?? formData.get("email");
   const passwordRaw = formData.get("password");
   const passwordConfirmationRaw = formData.get("passwordConfirmation");
   const values: SignupFormValues = {

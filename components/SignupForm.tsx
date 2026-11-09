@@ -2,15 +2,26 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { signUp } from "@/app/actions/auth";
+import { signUp, signUpFromInvitationForm } from "@/app/actions/auth";
 import { loginPath } from "@/lib/auth/routes";
+import { invitationPagePath } from "@/lib/invitations/routes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PASSWORD_MIN_LENGTH } from "@/lib/schemas/auth";
 
-export function SignupForm({ nextPath }: { nextPath: string }) {
-  const [state, formAction, isPending] = useActionState(signUp, null);
+type SignupFormProps =
+  | { nextPath: string; invitation?: never }
+  /** Signup from an Invitation: the email is locked to the invited address. */
+  | { nextPath?: never; invitation: { token: string; email: string; groupName: string } };
+
+export function SignupForm({ nextPath, invitation }: SignupFormProps) {
+  const [state, formAction, isPending] = useActionState(
+    invitation ? signUpFromInvitationForm : signUp,
+    null
+  );
+  // Logging in instead returns to where signing up would have led.
+  const loginHref = loginPath(invitation ? invitationPagePath(invitation.token) : nextPath);
 
   return (
     <form
@@ -20,17 +31,31 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Skapa konto</h1>
         <p className="text-sm text-muted-foreground">
-          Registrera dig för att komma igång med Sjung.
+          {invitation
+            ? `Skapa ett konto för att gå med i ${invitation.groupName} på Sjung.`
+            : "Registrera dig för att komma igång med Sjung."}
         </p>
       </div>
 
       {state?.error && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
+          {state.error === "Det finns redan ett konto med den e-postadressen" && (
+            <>
+              {" "}
+              <Link href={loginHref} className="underline">
+                Logga in
+              </Link>
+            </>
+          )}
         </p>
       )}
 
-      <input type="hidden" name="next" value={nextPath} />
+      {invitation ? (
+        <input type="hidden" name="invitation" value={invitation.token} />
+      ) : (
+        <input type="hidden" name="next" value={nextPath} />
+      )}
 
       {/* React resets the form after each submit, to defaultValue: name and email survive, the passwords don't. */}
       <div className="space-y-2">
@@ -46,13 +71,24 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
 
       <div className="space-y-2">
         <Label htmlFor="email">E-post</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          defaultValue={state?.values.email}
-          required
-        />
+        {invitation ? (
+          // Shown only: the server takes the address from the Invitation.
+          <Input
+            id="email"
+            type="email"
+            value={invitation.email}
+            readOnly
+            className="bg-muted text-muted-foreground"
+          />
+        ) : (
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            defaultValue={state?.values.email}
+            required
+          />
+        )}
       </div>
 
       <div className="space-y-2">
@@ -83,7 +119,7 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
 
       <p className="text-center text-sm text-muted-foreground">
         Har du redan konto?{" "}
-        <Link href={loginPath(nextPath)}>
+        <Link href={loginHref}>
           Logga in
         </Link>
       </p>

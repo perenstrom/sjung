@@ -197,6 +197,30 @@ describe("signupCredentialsSchema", () => {
 });
 
 describe("parseSignupFormData", () => {
+  it("takes the invited address instead of the submitted email when given one", () => {
+    const passwords = { password: "123456789012", passwordConfirmation: "123456789012" };
+    const tampered = parseSignupFormData(
+      createFormData({ name: "Anna", email: "inte en adress", ...passwords }),
+      { invitedEmail: "anna@example.com" }
+    );
+    const missing = parseSignupFormData(createFormData({ name: "Anna", ...passwords }), {
+      invitedEmail: "anna@example.com",
+    });
+
+    for (const result of [tampered, missing]) {
+      expect(result).toMatchObject({ ok: true, data: { email: "anna@example.com" } });
+    }
+  });
+
+  it("echoes the invited address back after a failed submit", () => {
+    const result = parseSignupFormData(
+      createFormData({ name: "Anna", email: "bertil@example.com", password: "kort", passwordConfirmation: "kort" }),
+      { invitedEmail: "anna@example.com" }
+    );
+
+    expect(result).toMatchObject({ ok: false, values: { name: "Anna", email: "anna@example.com" } });
+  });
+
   it("maps short password to Swedish min-length message", () => {
     const fd = createFormData({
       name: "Test",

@@ -13,6 +13,7 @@ import {
   sendVerificationEmail,
 } from "@/lib/auth/email-verification";
 import { completePasswordReset, requestPasswordReset } from "@/lib/auth/password-reset";
+import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { getSessionUser } from "@/lib/auth/require-user";
 import {
   CONFIRM_EMAIL_PATH,
@@ -21,6 +22,9 @@ import {
   VERIFY_EMAIL_PATH,
   VERIFY_EMAIL_SEND_FAILED_PATH,
 } from "@/lib/auth/routes";
+import { getInvitationSignup, signUpFromInvitation } from "@/lib/invitations/invitations";
+import { invitationSignupPath } from "@/lib/invitations/routes";
+import { revalidateAppAndMyGroupsWithGroupRoute } from "@/lib/revalidate/group-routes";
 import {
   emailSchema,
   parseLoginFormData,
@@ -39,7 +43,10 @@ export type LoginFormState = {
 
 /** `useActionState` state for the signup form: `null` until a submit fails. */
 export type SignupFormState = {
-  error: NewPasswordParseError | "E-postadressen används redan";
+  error:
+    | NewPasswordParseError
+    | "E-postadressen används redan"
+    | "Det finns redan ett konto med den e-postadressen";
   values: SignupFormValues;
 } | null;
 
@@ -119,6 +126,44 @@ export async function signUp(
     password,
     redirectTo: emailSent ? VERIFY_EMAIL_PATH : VERIFY_EMAIL_SEND_FAILED_PATH,
   });
+  return null;
+}
+
+/**
+ * Signup from an Invitation (the form's hidden `invitation` token). The account
+ * gets the invited address, never the submitted email, and is created Verified
+ * and a Member of the Group — so no verification email (ADR-0003). Then, like
+ * accepting while signed in, the Group becomes the Default group and opens.
+ */
+export async function signUpFromInvitationForm(
+  _prevState: SignupFormState,
+  formData: FormData
+): Promise<SignupFormState> {
+  const tokenRaw = formData.get("invitation");
+  const token = typeof tokenRaw === "string" ? tokenRaw : "";
+  const invitation = await getInvitationSignup(token);
+  if (!invitation.ok) {
+    // Back to the signup page, which says the Invitation is no longer valid.
+    redirect(invitationSignupPath(token));
+  }
+
+  const parsed = parseSignupFormData(formData, { invitedEmail: invitation.email });
+  if (!parsed.ok) {
+    return { error: parsed.error, values: parsed.values };
+  }
+  const { name, email, password } = parsed.data;
+
+  const result = await signUpFromInvitation(token, { name, passwordHash: await argon2.hash(password) });
+  if (result.status === "invalid") {
+    redirect(invitationSignupPath(token));
+  }
+  if (result.status === "email-taken") {
+    return { error: "Det finns redan ett konto med den e-postadressen", values: { name, email } };
+  }
+
+  await setActiveGroupSlugCookie(result.groupSlug);
+  revalidateAppAndMyGroupsWithGroupRoute(result.groupSlug);
+  await signIn("credentials", { email: result.email, password, redirectTo: `/app/${result.groupSlug}` });
   return null;
 }
 
