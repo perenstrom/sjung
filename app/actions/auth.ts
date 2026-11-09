@@ -9,7 +9,6 @@ import { normalizeEmail } from "@/lib/normalize-email";
 import { signIn, signOut } from "@/auth";
 import {
   confirmEmailVerification,
-  resendVerificationEmail,
   sendVerificationEmail,
 } from "@/lib/auth/email-verification";
 import { completePasswordReset, requestPasswordReset } from "@/lib/auth/password-reset";
@@ -186,10 +185,7 @@ export async function resendVerification(
   }
 
   try {
-    const result = await resendVerificationEmail(user.id);
-    return result.ok
-      ? { status: "sent" }
-      : { status: "cooldown", retryAfterSeconds: result.retryAfterSeconds };
+    return await sendVerificationEmail(user.id);
   } catch (sendError) {
     console.error("Kunde inte skicka verifieringsmejl", sendError);
     return { status: "failed" };

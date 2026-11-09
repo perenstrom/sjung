@@ -22,6 +22,10 @@ _Avoid_: Active, Activated, Pending — "active" is already rejected wording aro
 A User proving control of their email address, via an emailed single-use link, in order to set a new password. Completing one also makes the User Verified and logs out all of that User's sessions. Swedish UI: _Glömt lösenord_ (the entry link), _Återställ lösenord_ (the flow).
 _Avoid_: Password recovery, Forgot password (as the concept name — it's only the link label).
 
+**Emailed link**:
+A single-use, time-limited link sent to an email address, used for Password reset, email verification and Invitations. Only the newest link of its kind works: sending a new one makes the earlier ones invalid, and a new one can go out at most once a minute. Opening the link never changes anything; only pressing its button does. A link whose email failed to send never counts.
+_Avoid_: Magic link (nothing logs in by opening it), Token (the secret inside the link, not the link itself).
+
 **Member**:
 A User's association with one Group. May additionally hold one or more Claims granting elevated capabilities — see Claim, Creator.
 _Avoid_: User (the account itself, group-independent).

@@ -1,21 +1,17 @@
 import { createElement } from "react";
 import { Prisma } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
-import {
-  cooldownSecondsLeft,
-  generateToken,
-  hashToken,
-  tokenExpiresAt,
-  tokenStatus,
-  usableTokenWhere,
-} from "@/lib/auth/tokens";
+import { markVerified } from "@/lib/auth/verified";
 import { sendEmail } from "@/lib/email";
+import { type IssueLinkResult, invitationLinks } from "@/lib/email-links/email-links";
+import { tokenStatus } from "@/lib/email-links/tokens";
 import { InvitationEmail, invitationEmailSubject } from "@/lib/invitations/invitation-email";
 import { INVITATION_PATH } from "@/lib/invitations/routes";
 import { normalizeEmail } from "@/lib/normalize-email";
 import prisma from "@/lib/prisma";
 
 export const INVITATION_VALID_FOR_DAYS = 14;
+const acceptLinks = invitationLinks({ validForHours: INVITATION_VALID_FOR_DAYS * 24 });
 
 export type InviteToGroupResult =
   | { status: "sent" }
@@ -46,16 +42,6 @@ export async function inviteToGroup(
     return { status: "already-member" };
   }
 
-  const latestToken = await prisma.invitationToken.findFirst({
-    where: { invitation: { groupId, email } },
-    orderBy: { createdAt: "desc" },
-    select: { createdAt: true },
-  });
-  const retryAfterSeconds = cooldownSecondsLeft(latestToken?.createdAt ?? null, now);
-  if (retryAfterSeconds > 0) {
-    return { status: "cooldown", retryAfterSeconds };
-  }
-
   const invitation = await prisma.invitation.upsert({
     where: { groupId_email: { groupId, email } },
     create: { groupId, email, invitedById, invitedAt: now, createdAt: now },
@@ -68,47 +54,43 @@ export async function inviteToGroup(
     await prisma.user.findUnique({ where: { id: invitedById }, select: { name: true } })
   )?.name ?? null;
 
-  const token = generateToken();
-  const issued = await prisma.invitationToken.create({
-    data: {
-      invitationId: invitation.id,
-      tokenHash: hashToken(token),
-      createdAt: now,
-      expiresAt: tokenExpiresAt(now, INVITATION_VALID_FOR_DAYS * 24),
-    },
-    select: { id: true },
-  });
-
+  // Only a failed email is "send-failed"; any other error propagates.
+  let sendFailed = false;
+  let issued: IssueLinkResult;
   try {
-    await sendEmail({
-      to: email,
-      subject: invitationEmailSubject(invitation.group.name),
-      react: createElement(InvitationEmail, {
-        groupName: invitation.group.name,
-        inviterName,
-        acceptUrl: appUrl(INVITATION_PATH, { token }),
-        validForDays: INVITATION_VALID_FOR_DAYS,
-      }),
-    });
-  } catch (sendError) {
-    // Same as lib/auth/tokens.ts: the undelivered link never reached anyone,
-    // so drop it — the earlier link keeps working and a retry isn't held back.
-    console.error("Kunde inte skicka inbjudan", sendError);
-    await prisma.invitationToken.delete({ where: { id: issued.id } });
+    issued = await acceptLinks.issue(
+      invitation.id,
+      (token) =>
+        sendEmail({
+          to: email,
+          subject: invitationEmailSubject(invitation.group.name),
+          react: createElement(InvitationEmail, {
+            groupName: invitation.group.name,
+            inviterName,
+            acceptUrl: appUrl(INVITATION_PATH, { token }),
+            validForDays: INVITATION_VALID_FOR_DAYS,
+          }),
+        }).catch((sendError: unknown) => {
+          sendFailed = true;
+          throw sendError;
+        }),
+      now
+    );
+  } catch (error) {
+    if (!sendFailed) {
+      throw error;
+    }
+    console.error("Kunde inte skicka inbjudan", error);
     return { status: "send-failed" };
   }
+  if (issued.status === "cooldown") {
+    return issued;
+  }
 
-  // Only the newest emailed link works.
-  await prisma.$transaction([
-    prisma.invitationToken.updateMany({
-      where: { invitationId: invitation.id, usedAt: null, invalidatedAt: null, id: { not: issued.id } },
-      data: { invalidatedAt: now },
-    }),
-    prisma.invitation.update({
-      where: { id: invitation.id },
-      data: { invitedById, invitedAt: now },
-    }),
-  ]);
+  await prisma.invitation.update({
+    where: { id: invitation.id },
+    data: { invitedById, invitedAt: now },
+  });
   return { status: "sent" };
 }
 
@@ -201,44 +183,21 @@ type InvitationTokenLookup =
     }
   | { status: "invalid" };
 
-/**
- * Marks a usable accept token used, inside the caller's transaction so the
- * token and the membership it grants change together. Conditional, so a
- * concurrent accept or a re-send in between wins cleanly: false if the token
- * wasn't usable.
- */
-async function redeemInvitationToken(
-  tx: Prisma.TransactionClient,
-  token: string,
-  now: Date
-): Promise<boolean> {
-  const { count } = await tx.invitationToken.updateMany({
-    where: { tokenHash: hashToken(token), ...usableTokenWhere(now) },
-    data: { usedAt: now },
-  });
-  return count > 0;
-}
-
 async function userExistsWithEmail(email: string): Promise<boolean> {
   return (await prisma.user.findUnique({ where: { email }, select: { id: true } })) !== null;
 }
 
-/** What a raw accept token is, without changing anything. */
+/** What a raw accept token is, with its Invitation, without changing anything. */
 async function lookUpInvitationToken(token: string, now: Date): Promise<InvitationTokenLookup> {
-  const row = await prisma.invitationToken.findUnique({
-    where: { tokenHash: hashToken(token) },
-    select: {
-      usedAt: true,
-      invalidatedAt: true,
-      expiresAt: true,
-      invitation: { select: { email: true, group: { select: { id: true, name: true, slug: true } } } },
-    },
-  });
-  if (!row) {
-    return { status: "invalid" };
+  const lookup = await acceptLinks.lookUp(token, now);
+  if (lookup.status === "invalid") {
+    return lookup;
   }
-  const status = tokenStatus(row, now);
-  return status === "invalid" ? { status } : { status, invitation: row.invitation };
+  const invitation = await prisma.invitation.findUniqueOrThrow({
+    where: { id: lookup.subjectId },
+    select: { email: true, group: { select: { id: true, name: true, slug: true } } },
+  });
+  return { status: lookup.status, invitation };
 }
 
 export type InvitationViewer = { id: string; email: string };
@@ -304,7 +263,7 @@ export async function acceptInvitation(
   }
 
   return prisma.$transaction(async (tx) => {
-    if (!(await redeemInvitationToken(tx, token, now))) {
+    if (!(await acceptLinks.redeem(tx, token, now))) {
       return { ok: false as const };
     }
 
@@ -312,10 +271,7 @@ export async function acceptInvitation(
       data: [{ userId: viewer.id, groupId: lookup.invitation.group.id }],
       skipDuplicates: true,
     });
-    await tx.user.updateMany({
-      where: { id: viewer.id, emailVerifiedAt: null },
-      data: { emailVerifiedAt: now },
-    });
+    await markVerified(tx, viewer.id, now);
     return { ok: true as const, groupSlug: lookup.invitation.group.slug };
   });
 }
@@ -352,20 +308,16 @@ export async function signUpFromInvitation(
   { name, passwordHash }: { name: string; passwordHash: string },
   now: Date = new Date()
 ): Promise<SignUpFromInvitationResult> {
-  const lookup = await lookUpInvitationToken(token, now);
-  if (lookup.status !== "usable") {
-    return { status: "invalid" };
-  }
-  const { email, group } = lookup.invitation;
-  if (await userExistsWithEmail(email)) {
-    return { status: "email-taken" };
-  }
-
   try {
     return await prisma.$transaction(async (tx) => {
-      if (!(await redeemInvitationToken(tx, token, now))) {
+      const invitationId = await acceptLinks.redeem(tx, token, now);
+      if (!invitationId) {
         return { status: "invalid" as const };
       }
+      const { email, group } = await tx.invitation.findUniqueOrThrow({
+        where: { id: invitationId },
+        select: { email: true, group: { select: { id: true, slug: true } } },
+      });
       await tx.user.create({
         data: {
           name: name || email,
@@ -379,8 +331,8 @@ export async function signUpFromInvitation(
       return { status: "created" as const, email, groupSlug: group.slug };
     });
   } catch (createError) {
-    // Another signup took the address after the check above; the
-    // transaction rolled back, so the token is still unused.
+    // A User already has the invited address. The transaction rolled back,
+    // so the token is still unused.
     if (createError instanceof Prisma.PrismaClientKnownRequestError && createError.code === "P2002") {
       return { status: "email-taken" };
     }

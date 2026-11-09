@@ -4,19 +4,15 @@ import { UserTokenPurpose } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
 import { PASSWORD_RESET_EMAIL_SUBJECT, PasswordResetEmail } from "@/lib/auth/password-reset-email";
 import { NEW_PASSWORD_PATH } from "@/lib/auth/routes";
-import {
-  issueUserToken,
-  lookUpUserToken,
-  redeemUserToken,
-  resendCooldownSeconds,
-} from "@/lib/auth/tokens";
+import { markVerified } from "@/lib/auth/verified";
 import { sendEmail } from "@/lib/email";
+import { userLinks } from "@/lib/email-links/email-links";
 import { normalizeEmail } from "@/lib/normalize-email";
 import prisma from "@/lib/prisma";
 
-const PURPOSE = UserTokenPurpose.PASSWORD_RESET;
 // Shorter than verification's 24 hours: a reset link hands over the account.
 export const PASSWORD_RESET_VALID_FOR_HOURS = 1;
+const resetLinks = userLinks(UserTokenPurpose.PASSWORD_RESET, { validForHours: PASSWORD_RESET_VALID_FOR_HOURS });
 
 /**
  * "Glömt lösenord": emails a reset link to the User with this address, if
@@ -33,21 +29,21 @@ export async function requestPasswordReset(email: string, now: Date = new Date()
     return;
   }
 
-  if ((await resendCooldownSeconds(user.id, PURPOSE, now)) > 0) {
-    return;
-  }
-
   try {
-    await issueUserToken(user.id, PURPOSE, { validForHours: PASSWORD_RESET_VALID_FOR_HOURS, now }, (token) =>
-      sendEmail({
-        to: user.email,
-        subject: PASSWORD_RESET_EMAIL_SUBJECT,
-        react: createElement(PasswordResetEmail, {
-          name: user.name,
-          resetUrl: appUrl(NEW_PASSWORD_PATH, { token }),
-          validForHours: PASSWORD_RESET_VALID_FOR_HOURS,
+    // A "cooldown" result is dropped on purpose, like everything else here.
+    await resetLinks.issue(
+      user.id,
+      (token) =>
+        sendEmail({
+          to: user.email,
+          subject: PASSWORD_RESET_EMAIL_SUBJECT,
+          react: createElement(PasswordResetEmail, {
+            name: user.name,
+            resetUrl: appUrl(NEW_PASSWORD_PATH, { token }),
+            validForHours: PASSWORD_RESET_VALID_FOR_HOURS,
+          }),
         }),
-      })
+      now
     );
   } catch (sendError) {
     console.error("Kunde inte skicka mejl för lösenordsåterställning", sendError);
@@ -64,13 +60,13 @@ export async function getPasswordResetTokenState(
   token: string,
   now: Date = new Date()
 ): Promise<PasswordResetTokenState> {
-  const lookup = await lookUpUserToken(token, PURPOSE, now);
+  const lookup = await resetLinks.lookUp(token, now);
   if (lookup.status !== "usable") {
     return { state: "invalid" };
   }
 
   const user = await prisma.user.findUniqueOrThrow({
-    where: { id: lookup.userId },
+    where: { id: lookup.subjectId },
     select: { email: true },
   });
   return { state: "valid", email: user.email };
@@ -90,14 +86,11 @@ export async function completePasswordReset(
   const passwordHash = await argon2.hash(newPassword);
 
   return prisma.$transaction(async (tx) => {
-    const userId = await redeemUserToken(tx, token, PURPOSE, now);
+    const userId = await resetLinks.redeem(tx, token, now);
     if (!userId) {
       return { ok: false };
     }
-    await tx.user.updateMany({
-      where: { id: userId, emailVerifiedAt: null },
-      data: { emailVerifiedAt: now },
-    });
+    await markVerified(tx, userId, now);
     await tx.user.update({
       where: { id: userId },
       data: { passwordHash, sessionVersion: { increment: 1 } },
