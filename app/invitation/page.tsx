@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { acceptGroupInvitation, logOutFromInvitation } from "@/app/actions/invitations";
+import { InvalidInvitationNotice } from "@/components/InvalidInvitationNotice";
 import { Button } from "@/components/ui/button";
 import { getSessionUser } from "@/lib/auth/require-user";
 import { loginPath } from "@/lib/auth/routes";
@@ -76,12 +77,7 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
           </>
         )}
 
-        {view.state === "invalid" && (
-          <Heading title="Inbjudan är inte längre giltig">
-            Länken har gått ut, ersatts av en nyare inbjudan eller återkallats. Be den som bjöd in
-            dig att skicka en ny.
-          </Heading>
-        )}
+        {view.state === "invalid" && <InvalidInvitationNotice />}
       </div>
     </main>
   );

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createAccessScenario, createUser } from "../support/fixtures";
 import { emailedLinkToken, failEmailsTo, resetFakeEmail, sentEmails, type SentEmail } from "../support/fake-email";
 import { testPrisma } from "../support/db";
+import { inviteToNewGroup } from "../support/invitations";
 import { acceptInvitation, getInvitationView, inviteToGroup } from "@/lib/invitations/invitations";
 import { INVITATION_PATH } from "@/lib/invitations/routes";
 
@@ -13,13 +14,6 @@ async function isMember(userId: string, groupId: string) {
     where: { userId_groupId: { userId, groupId } },
   });
   return row !== null;
-}
-
-/** Invites `email` to a new Group and returns the emailed link's token. */
-async function inviteToNewGroup(email = "anna@example.com", now?: Date) {
-  const scenario = await createAccessScenario();
-  await inviteToGroup({ groupId: scenario.group.id, email, invitedById: scenario.creator.id }, now);
-  return { ...scenario, token: linkTokenIn(sentEmails().at(-1)!) };
 }
 
 const viewer = (user: { id: string; email: string }) => ({ id: user.id, email: user.email });

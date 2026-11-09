@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import type { Prisma } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
 import {
   cooldownSecondsLeft,
@@ -118,6 +119,24 @@ type InvitationTokenLookup =
     }
   | { status: "invalid" };
 
+/**
+ * Marks a usable accept token used, inside the caller's transaction so the
+ * token and the membership it grants change together. Conditional, so a
+ * concurrent accept or a re-send in between wins cleanly: false if the token
+ * wasn't usable.
+ */
+async function redeemInvitationToken(
+  tx: Prisma.TransactionClient,
+  token: string,
+  now: Date
+): Promise<boolean> {
+  const { count } = await tx.invitationToken.updateMany({
+    where: { tokenHash: hashToken(token), ...usableTokenWhere(now) },
+    data: { usedAt: now },
+  });
+  return count > 0;
+}
+
 /** What a raw accept token is, without changing anything. */
 async function lookUpInvitationToken(token: string, now: Date): Promise<InvitationTokenLookup> {
   const row = await prisma.invitationToken.findUnique({
@@ -197,12 +216,7 @@ export async function acceptInvitation(
   }
 
   return prisma.$transaction(async (tx) => {
-    // Conditional, so a concurrent accept or a re-send in between wins cleanly.
-    const { count } = await tx.invitationToken.updateMany({
-      where: { tokenHash: hashToken(token), ...usableTokenWhere(now) },
-      data: { usedAt: now },
-    });
-    if (count === 0) {
+    if (!(await redeemInvitationToken(tx, token, now))) {
       return { ok: false as const };
     }
 

@@ -7,37 +7,22 @@ vi.mock("next/navigation", () => ({
     throw new Error(`redirect:${url}`);
   }),
 }));
-// Stands in for the request's cookie jar, where the Default group is kept.
-const cookieJar = vi.hoisted(() => new Map<string, string>());
-vi.mock("next/headers", () => ({
-  cookies: async () => ({
-    get: (name: string) => (cookieJar.has(name) ? { value: cookieJar.get(name) } : undefined),
-    set: (name: string, value: string) => cookieJar.set(name, value),
-    delete: (name: string) => cookieJar.delete(name),
-  }),
-}));
+vi.mock("next/headers", () => import("../support/cookie-jar"));
 
 import { signOut } from "@/auth";
+import { cookieJar } from "../support/cookie-jar";
 import { testPrisma } from "../support/db";
-import { emailedLinkToken, sentEmails } from "../support/fake-email";
-import { createAccessScenario, createUser } from "../support/fixtures";
+import { createUser } from "../support/fixtures";
 import { formData } from "../support/form-data";
+import { inviteToNewGroup } from "../support/invitations";
 import { actAs, actAsAnonymous } from "../support/session";
 import { acceptGroupInvitation, logOutFromInvitation } from "@/app/actions/invitations";
 import { ACTIVE_GROUP_COOKIE_NAME } from "@/lib/active-group-cookie";
-import { inviteToGroup } from "@/lib/invitations/invitations";
-import { INVITATION_PATH } from "@/lib/invitations/routes";
 
 beforeEach(() => {
   cookieJar.clear();
   vi.mocked(signOut).mockClear();
 });
-
-async function inviteToNewGroup(email: string) {
-  const { group, creator } = await createAccessScenario();
-  await inviteToGroup({ groupId: group.id, email, invitedById: creator.id });
-  return { group, token: emailedLinkToken(sentEmails().at(-1)!, INVITATION_PATH) };
-}
 
 async function isMember(userId: string, groupId: string) {
   const row = await testPrisma.usersToGroups.findUnique({
