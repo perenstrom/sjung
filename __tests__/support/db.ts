@@ -40,6 +40,8 @@ const TABLES = [
   "set_list_piece_notes",
   "set_list_notes",
   "user_tokens",
+  "invitations",
+  "invitation_tokens",
 ];
 
 export async function resetDatabase() {

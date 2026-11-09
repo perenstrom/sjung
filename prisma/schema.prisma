@@ -52,6 +52,7 @@ model User {
   updatedPieceNotes    PieceNote[]     @relation("PieceNoteUpdatedBy")
   groups               UsersToGroups[]
   tokens               UserToken[]
+  sentInvitations      Invitation[]
 
   @@map("users")
 }
@@ -102,6 +103,7 @@ model Group {
   setLists   SetList[]
   pieceNotes PieceNote[]
   setListPieceNotes SetListPieceNote[]
+  invitations       Invitation[]
 
   @@map("groups")
 }
@@ -116,6 +118,46 @@ model UsersToGroups {
 
   @@id([userId, groupId])
   @@map("users_to_groups")
+}
+
+// An offer for one email address to become a Member of one Group (see
+// CONTEXT.md, "Invitation", and docs/adr/0003). At most one per (Group,
+// email): inviting the same address again re-sends this one with a new token.
+model Invitation {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  groupId     String   @map("group_id")
+  // Normalized: trimmed and lower-cased.
+  email       String
+  // Who sent it most recently, and when. Cleared if that User is deleted; the
+  // Invitation stays valid even if they leave or lose MANAGE_MEMBERS.
+  invitedById String?  @map("invited_by_id")
+  invitedAt   DateTime @default(now()) @map("invited_at")
+
+  group     Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedBy User?             @relation(fields: [invitedById], references: [id], onDelete: SetNull)
+  tokens    InvitationToken[]
+
+  @@unique([groupId, email])
+  @@map("invitations")
+}
+
+// An emailed accept link for an Invitation. Same rules as UserToken: only a
+// hash is stored, single use, and used or superseded tokens are kept (marked,
+// not deleted) so a reused link can be told apart from an unknown one.
+model InvitationToken {
+  id            String    @id @default(uuid())
+  createdAt     DateTime  @default(now()) @map("created_at")
+  invitationId  String    @map("invitation_id")
+  tokenHash     String    @unique @map("token_hash")
+  expiresAt     DateTime  @map("expires_at")
+  usedAt        DateTime? @map("used_at")
+  invalidatedAt DateTime? @map("invalidated_at")
+
+  invitation Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  @@index([invitationId])
+  @@map("invitation_tokens")
 }
 
 // Elevated capabilities a Member can hold within one Group. The Creator is

@@ -9,7 +9,6 @@ import {
   parseGroupClaimsFromFormData,
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
-  parseInviteEmailFromFormData,
   parseMemberUserIdFromFormData,
   parseMembershipGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
@@ -146,6 +145,12 @@ describe("inviteEmailSchema", () => {
       })
     );
   });
+
+  it("rejects something that isn't an email address", () => {
+    expect(inviteEmailSchema.safeParse("inte en adress").error?.issues[0]?.message).toBe(
+      "Ange en giltig e-postadress"
+    );
+  });
 });
 
 describe("memberUserIdSchema", () => {
@@ -179,22 +184,6 @@ describe("parseMembershipGroupSlugFromFormData", () => {
         createFormData({ groupSlug: "   " })
       )
     ).toThrow("Ogiltig grupp");
-  });
-});
-
-describe("parseInviteEmailFromFormData", () => {
-  it("parses email with trim and lowercase", () => {
-    const fd = createFormData({ email: "  A@B.C  " });
-    expect(parseInviteEmailFromFormData(fd)).toBe("a@b.c");
-  });
-
-  it("throws E-post krävs when missing or blank", () => {
-    expect(() => parseInviteEmailFromFormData(createFormData({}))).toThrow(
-      "E-post krävs"
-    );
-    expect(() =>
-      parseInviteEmailFromFormData(createFormData({ email: "  " }))
-    ).toThrow("E-post krävs");
   });
 });
 
