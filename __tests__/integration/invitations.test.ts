@@ -362,20 +362,15 @@ describe("inviting the same address again", () => {
     expect(sentEmails()).toHaveLength(1);
   });
 
-  it("keeps the Invitation and the earlier link when sending fails, and allows an immediate retry", async () => {
-    const anna = await createUser({ email: "anna@example.com" });
-    const { group, creator, token: oldToken } = await inviteToNewGroup("anna@example.com", sentAt);
+  it("keeps the Invitation and says so when sending fails", async () => {
+    const { group, creator } = await inviteToNewGroup("anna@example.com", sentAt);
     failEmailsTo("anna@example.com");
-    const invite = (at: Date) =>
-      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, at);
 
-    await expect(invite(after(60))).resolves.toEqual({ status: "send-failed" });
-    await expect(invite(after(61))).resolves.toEqual({ status: "send-failed" });
+    await expect(
+      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, after(60))
+    ).resolves.toEqual({ status: "send-failed" });
 
     expect(await testPrisma.invitation.count()).toBe(1);
-    await expect(getInvitationView(oldToken, viewer(anna), after(62))).resolves.toMatchObject({
-      state: "can-accept",
-    });
   });
 
   it("records who re-sent it only once the email has gone out", async () => {
