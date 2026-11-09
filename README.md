@@ -133,6 +133,7 @@ and domain rules that do not require network, database, or framework runtime.
 
 - Test first: `lib/*` modules with pure or mostly pure logic.
 - Prefer not mocking for unit tests; only mock when isolating unavoidable external boundaries.
+- When what a page shows is the behaviour under test (e.g. an empty state instead of a list), render its view component with `renderToStaticMarkup` from `react-dom/server` and assert on the text. Mock the server-actions module the view's dialogs import, since it reaches the database.
 - Keep tests co-located as `*.test.ts` next to the implementation file.
 - Use the canonical CI/local command: `npm run test:unit`.
 - Use watch mode while developing: `npm run test:unit:watch`.
