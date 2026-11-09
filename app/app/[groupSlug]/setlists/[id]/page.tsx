@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import { formatSetListDate } from "@/lib/setlists/date";
+import { formatDate } from "@/lib/format-date";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { notFound } from "next/navigation";
@@ -50,7 +50,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
         />
         <div className="space-y-2">
           <PageHeader title={setList.name} />
-          <p className="text-sm text-muted-foreground">Datum: {formatSetListDate(setList.date) ?? "–"}</p>
+          <p className="text-sm text-muted-foreground">Datum: {formatDate(setList.date) ?? "–"}</p>
         </div>
 
         <section className="space-y-3">

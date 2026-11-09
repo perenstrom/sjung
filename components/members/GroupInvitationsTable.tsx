@@ -9,14 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/format-date";
 import type { GroupInvitation } from "@/lib/invitations/invitations";
 
 /** Stands in for a sender whose User was deleted, or an expiry never set. */
 const MISSING = "–";
-
-function formatExpiry(expiresAt: Date | null): string | null {
-  return expiresAt ? new Intl.DateTimeFormat("sv-SE").format(expiresAt) : null;
-}
 
 function ExpiredBadge() {
   return <Badge variant="outline">Utgången</Badge>;
@@ -46,7 +43,7 @@ export function GroupInvitationsTable({
 
       <MobileList>
         {invitations.map((invitation) => {
-          const expiry = formatExpiry(invitation.expiresAt);
+          const expiry = formatDate(invitation.expiresAt);
           return (
             <MobileListRow
               key={invitation.id}
@@ -89,7 +86,7 @@ export function GroupInvitationsTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    {formatExpiry(invitation.expiresAt) ?? (
+                    {formatDate(invitation.expiresAt) ?? (
                       <span className="text-muted-foreground">{MISSING}</span>
                     )}
                     {invitation.expired ? <ExpiredBadge /> : null}
