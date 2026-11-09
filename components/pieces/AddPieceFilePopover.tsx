@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { FilePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useControllableOpen } from "@/hooks/use-controllable-open";
@@ -71,7 +71,7 @@ export function AddPieceFilePopover({
           disabled={disabled}
           aria-label="Ladda upp fil"
         >
-          <Plus className="size-4" aria-hidden="true" />
+          <FilePlus className="size-4" aria-hidden="true" />
         </Button>
       </FormPopoverTrigger>
       <FormPopoverContent title="Ladda upp fil" description={pieceName}>

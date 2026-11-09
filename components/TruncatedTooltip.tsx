@@ -6,7 +6,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 /**
  * Shows `content` in a tooltip on hover, but only while the child (which must
- * truncate its own text, e.g. with `truncate`) is actually cut off.
+ * truncate its own text, e.g. with `truncate`) is actually cut off. When the
+ * child truncates only part of its text, mark that part with
+ * `data-truncates` and it is measured instead.
  */
 export function TruncatedTooltip({
   content,
@@ -25,8 +27,11 @@ export function TruncatedTooltip({
       return;
     }
 
-    const measure = () =>
-      setIsTruncated(element.scrollWidth > element.clientWidth);
+    const measure = () => {
+      const target =
+        element.querySelector<HTMLElement>("[data-truncates]") ?? element;
+      setIsTruncated(target.scrollWidth > target.clientWidth);
+    };
     measure();
 
     const observer = new ResizeObserver(measure);

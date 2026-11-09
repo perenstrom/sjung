@@ -1,11 +1,11 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useControllableOpen } from "@/hooks/use-controllable-open";
 
 import { addLink } from "@/app/actions/pieces";
+import { LinkPlus } from "@/components/pieces/LinkPlus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,7 +61,7 @@ export function AddPieceLinkPopover({
           disabled={disabled}
           aria-label="Lägg till länk"
         >
-          <Plus className="size-4" aria-hidden="true" />
+          <LinkPlus className="size-4" aria-hidden="true" />
         </Button>
       </FormPopoverTrigger>
       <FormPopoverContent title="Lägg till länk" description={pieceName}>
