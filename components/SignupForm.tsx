@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signUp } from "@/app/actions/auth";
+import { loginPath } from "@/lib/auth/routes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,7 +83,7 @@ export function SignupForm({ nextPath }: { nextPath: string }) {
 
       <p className="text-center text-sm text-muted-foreground">
         Har du redan konto?{" "}
-        <Link href={`/auth/login?next=${encodeURIComponent(nextPath)}`}>
+        <Link href={loginPath(nextPath)}>
           Logga in
         </Link>
       </p>

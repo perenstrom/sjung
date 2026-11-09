@@ -11,6 +11,7 @@ import {
   resendCooldownSeconds,
 } from "@/lib/auth/tokens";
 import { sendEmail } from "@/lib/email";
+import { normalizeEmail } from "@/lib/normalize-email";
 import prisma from "@/lib/prisma";
 
 const PURPOSE = UserTokenPurpose.PASSWORD_RESET;
@@ -25,7 +26,7 @@ export const PASSWORD_RESET_VALID_FOR_HOURS = 1;
  */
 export async function requestPasswordReset(email: string, now: Date = new Date()): Promise<void> {
   const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase().trim() },
+    where: { email: normalizeEmail(email) },
     select: { id: true, name: true, email: true },
   });
   if (!user) {
