@@ -234,16 +234,6 @@ function PieceEditSections({
         {piece.credits.length > 0 ? <PieceCreditsList credits={piece.credits} /> : null}
       </section>
       <section className="space-y-1">
-        <SectionHeading>Länkar</SectionHeading>
-        <PieceInlineLinksCell
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          links={toInlineLinks(piece)}
-        />
-      </section>
-      <section className="space-y-1">
         <SectionHeading>Filer</SectionHeading>
         <PieceInlineFilesCell
           touch
@@ -251,6 +241,16 @@ function PieceEditSections({
           pieceId={piece.id}
           pieceName={piece.name}
           files={toInlineFiles(piece)}
+        />
+      </section>
+      <section className="space-y-1">
+        <SectionHeading>Länkar</SectionHeading>
+        <PieceInlineLinksCell
+          touch
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          links={toInlineLinks(piece)}
         />
       </section>
     </div>
