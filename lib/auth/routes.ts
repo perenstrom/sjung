@@ -17,6 +17,9 @@ export const REQUEST_PASSWORD_RESET_PATH = "/auth/reset-password";
 /** The emailed reset link's target. Opening it changes nothing; see its page. */
 export const NEW_PASSWORD_PATH = "/auth/reset-password/new";
 
+/** Where a visitor creates an account. */
+export const SIGNUP_PATH = "/auth/signup";
+
 /** The login page, returning to `next` (an internal path) after logging in. */
 export function loginPath(next: string): string {
   return `/auth/login?next=${encodeURIComponent(next)}`;

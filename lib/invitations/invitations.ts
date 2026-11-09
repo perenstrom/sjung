@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { Prisma } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
 import {
   cooldownSecondsLeft,
@@ -118,6 +119,28 @@ type InvitationTokenLookup =
     }
   | { status: "invalid" };
 
+/**
+ * Marks a usable accept token used, inside the caller's transaction so the
+ * token and the membership it grants change together. Conditional, so a
+ * concurrent accept or a re-send in between wins cleanly: false if the token
+ * wasn't usable.
+ */
+async function redeemInvitationToken(
+  tx: Prisma.TransactionClient,
+  token: string,
+  now: Date
+): Promise<boolean> {
+  const { count } = await tx.invitationToken.updateMany({
+    where: { tokenHash: hashToken(token), ...usableTokenWhere(now) },
+    data: { usedAt: now },
+  });
+  return count > 0;
+}
+
+async function userExistsWithEmail(email: string): Promise<boolean> {
+  return (await prisma.user.findUnique({ where: { email }, select: { id: true } })) !== null;
+}
+
 /** What a raw accept token is, without changing anything. */
 async function lookUpInvitationToken(token: string, now: Date): Promise<InvitationTokenLookup> {
   const row = await prisma.invitationToken.findUnique({
@@ -140,7 +163,8 @@ export type InvitationViewer = { id: string; email: string };
 
 export type InvitationView =
   | { state: "can-accept"; groupName: string }
-  | { state: "sign-in"; groupName: string }
+  /** `canSignUp`: no User has the invited address yet, so an account can be created from the link. */
+  | { state: "sign-in"; groupName: string; canSignUp: boolean }
   | { state: "wrong-account"; groupName: string }
   | { state: "already-member"; groupName: string; groupSlug: string }
   | { state: "invalid" };
@@ -172,7 +196,8 @@ export async function getInvitationView(
   }
 
   if (!viewer) {
-    return { state: "sign-in", groupName };
+    const canSignUp = !(await userExistsWithEmail(lookup.invitation.email));
+    return { state: "sign-in", groupName, canSignUp };
   }
   if (normalizeEmail(viewer.email) !== lookup.invitation.email) {
     return { state: "wrong-account", groupName };
@@ -197,12 +222,7 @@ export async function acceptInvitation(
   }
 
   return prisma.$transaction(async (tx) => {
-    // Conditional, so a concurrent accept or a re-send in between wins cleanly.
-    const { count } = await tx.invitationToken.updateMany({
-      where: { tokenHash: hashToken(token), ...usableTokenWhere(now) },
-      data: { usedAt: now },
-    });
-    if (count === 0) {
+    if (!(await redeemInvitationToken(tx, token, now))) {
       return { ok: false as const };
     }
 
@@ -216,4 +236,72 @@ export async function acceptInvitation(
     });
     return { ok: true as const, groupSlug: lookup.invitation.group.slug };
   });
+}
+
+export type InvitationSignup = { ok: true; email: string; groupName: string } | { ok: false };
+
+/**
+ * What the signup page needs to create an account from an Invitation: the
+ * invited address (which the account will get) and the Group's name. Not ok
+ * unless the token is usable. Read-only.
+ */
+export async function getInvitationSignup(token: string, now: Date = new Date()): Promise<InvitationSignup> {
+  const lookup = await lookUpInvitationToken(token, now);
+  if (lookup.status !== "usable") {
+    return { ok: false };
+  }
+  return { ok: true, email: lookup.invitation.email, groupName: lookup.invitation.group.name };
+}
+
+export type SignUpFromInvitationResult =
+  | { status: "created"; email: string; groupSlug: string }
+  | { status: "invalid" }
+  | { status: "email-taken" };
+
+/**
+ * Signup from an Invitation: in one transaction, uses up the token and
+ * creates a User with the invited address, Verified (the link only reached
+ * that inbox, ADR-0003) and a Member of the Group with no Claims. Creates
+ * nothing if the token isn't usable ("invalid") or a User with the address
+ * already exists ("email-taken", which leaves the token usable for them).
+ */
+export async function signUpFromInvitation(
+  token: string,
+  { name, passwordHash }: { name: string; passwordHash: string },
+  now: Date = new Date()
+): Promise<SignUpFromInvitationResult> {
+  const lookup = await lookUpInvitationToken(token, now);
+  if (lookup.status !== "usable") {
+    return { status: "invalid" };
+  }
+  const { email, group } = lookup.invitation;
+  if (await userExistsWithEmail(email)) {
+    return { status: "email-taken" };
+  }
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      if (!(await redeemInvitationToken(tx, token, now))) {
+        return { status: "invalid" as const };
+      }
+      await tx.user.create({
+        data: {
+          name: name || email,
+          email,
+          passwordHash,
+          emailVerifiedAt: now,
+          groups: { create: { groupId: group.id } },
+        },
+        select: { id: true },
+      });
+      return { status: "created" as const, email, groupSlug: group.slug };
+    });
+  } catch (createError) {
+    // Another signup took the address after the check above; the
+    // transaction rolled back, so the token is still unused.
+    if (createError instanceof Prisma.PrismaClientKnownRequestError && createError.code === "P2002") {
+      return { status: "email-taken" };
+    }
+    throw createError;
+  }
 }

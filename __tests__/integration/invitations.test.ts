@@ -3,7 +3,15 @@ import { describe, expect, it } from "vitest";
 import { createAccessScenario, createUser } from "../support/fixtures";
 import { emailedLinkToken, failEmailsTo, resetFakeEmail, sentEmails, type SentEmail } from "../support/fake-email";
 import { testPrisma } from "../support/db";
-import { acceptInvitation, getInvitationView, inviteToGroup } from "@/lib/invitations/invitations";
+import { inviteToNewGroup } from "../support/invitations";
+import {
+  acceptInvitation,
+  getInvitationSignup,
+  getInvitationView,
+  inviteToGroup,
+  signUpFromInvitation,
+} from "@/lib/invitations/invitations";
+import { hashToken } from "@/lib/auth/tokens";
 import { INVITATION_PATH } from "@/lib/invitations/routes";
 
 const linkTokenIn = (email: SentEmail) => emailedLinkToken(email, INVITATION_PATH);
@@ -13,13 +21,6 @@ async function isMember(userId: string, groupId: string) {
     where: { userId_groupId: { userId, groupId } },
   });
   return row !== null;
-}
-
-/** Invites `email` to a new Group and returns the emailed link's token. */
-async function inviteToNewGroup(email = "anna@example.com", now?: Date) {
-  const scenario = await createAccessScenario();
-  await inviteToGroup({ groupId: scenario.group.id, email, invitedById: scenario.creator.id }, now);
-  return { ...scenario, token: linkTokenIn(sentEmails().at(-1)!) };
 }
 
 const viewer = (user: { id: string; email: string }) => ({ id: user.id, email: user.email });
@@ -74,13 +75,24 @@ describe("inviteToGroup", () => {
 });
 
 describe("opening the accept link", () => {
-  it("asks a visitor without a session to log in", async () => {
+  it("offers a visitor without a session to log in or, for an address with no account, sign up", async () => {
     const { group, token } = await inviteToNewGroup();
 
     await expect(getInvitationView(token, null)).resolves.toEqual({
       state: "sign-in",
       groupName: group.name,
+      canSignUp: true,
     });
+  });
+
+  it("only asks to log in when the address already has an account, Verified or not", async () => {
+    await createUser({ email: "anna@example.com" });
+    await createUser({ email: "bertil@example.com", emailVerifiedAt: null });
+    const { token: annasToken } = await inviteToNewGroup("Anna@Example.com");
+    const { token: bertilsToken } = await inviteToNewGroup("bertil@example.com");
+
+    await expect(getInvitationView(annasToken, null)).resolves.toMatchObject({ canSignUp: false });
+    await expect(getInvitationView(bertilsToken, null)).resolves.toMatchObject({ canSignUp: false });
   });
 
   it("offers to join to the User the Invitation was sent to, changing nothing", async () => {
@@ -214,6 +226,101 @@ describe("acceptInvitation", () => {
     const anna = await createUser({ email: "anna@example.com" });
 
     await expect(acceptInvitation("not-a-real-token", viewer(anna))).resolves.toEqual({ ok: false });
+  });
+});
+
+describe("getInvitationSignup", () => {
+  it("gives the invited address and Group for a usable token", async () => {
+    const { group, token } = await inviteToNewGroup("Anna@Example.com");
+
+    await expect(getInvitationSignup(token)).resolves.toEqual({
+      ok: true,
+      email: "anna@example.com",
+      groupName: group.name,
+    });
+  });
+
+  it("refuses an unknown, expired or used token", async () => {
+    const sentAt = new Date("2026-11-01T12:00:00Z");
+    const { token } = await inviteToNewGroup("anna@example.com", sentAt);
+    const anna = await createUser({ email: "anna@example.com" });
+
+    await expect(getInvitationSignup("not-a-real-token")).resolves.toEqual({ ok: false });
+    await expect(getInvitationSignup(token, new Date("2026-11-15T12:00:00Z"))).resolves.toEqual({ ok: false });
+    await acceptInvitation(token, viewer(anna), sentAt);
+    await expect(getInvitationSignup(token, sentAt)).resolves.toEqual({ ok: false });
+  });
+});
+
+describe("signUpFromInvitation", () => {
+  const signup = { name: "Anna", passwordHash: "hashed" };
+
+  it("creates a Verified User who is a Member with no Claims, and uses up the token", async () => {
+    const now = new Date("2026-11-01T12:00:00Z");
+    const { group, token } = await inviteToNewGroup("Anna@Example.com", now);
+
+    await expect(signUpFromInvitation(token, signup, now)).resolves.toEqual({
+      status: "created",
+      email: "anna@example.com",
+      groupSlug: group.slug,
+    });
+
+    const anna = await testPrisma.user.findUniqueOrThrow({ where: { email: "anna@example.com" } });
+    expect(anna).toMatchObject({ name: "Anna", passwordHash: "hashed", emailVerifiedAt: now });
+    expect(await isMember(anna.id, group.id)).toBe(true);
+    expect(await testPrisma.groupMemberClaim.count({ where: { userId: anna.id } })).toBe(0);
+    expect(await testPrisma.invitationToken.count({ where: { usedAt: now } })).toBe(1);
+  });
+
+  it("uses the address for a name left blank", async () => {
+    const { token } = await inviteToNewGroup("anna@example.com");
+
+    await signUpFromInvitation(token, { name: "", passwordHash: "hashed" });
+
+    const anna = await testPrisma.user.findUniqueOrThrow({ where: { email: "anna@example.com" } });
+    expect(anna.name).toBe("anna@example.com");
+  });
+
+  it("sends no email", async () => {
+    const { token } = await inviteToNewGroup("anna@example.com");
+    const sentBefore = sentEmails().length;
+
+    await signUpFromInvitation(token, signup);
+
+    expect(sentEmails()).toHaveLength(sentBefore);
+  });
+
+  it("creates nothing when the token is expired, superseded, used or unknown", async () => {
+    const sentAt = new Date("2026-11-01T12:00:00Z");
+    const later = new Date(sentAt.getTime() + 61 * 1000);
+    const { group, creator, token: superseded } = await inviteToNewGroup("anna@example.com", sentAt);
+    await inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, later);
+    const { token: used } = await inviteToNewGroup("anna@example.com", sentAt);
+    await testPrisma.invitationToken.update({ where: { tokenHash: hashToken(used) }, data: { usedAt: sentAt } });
+    const { token: expired } = await inviteToNewGroup("anna@example.com", sentAt);
+    const fourteenDaysLater = new Date("2026-11-15T12:00:00Z");
+
+    for (const [token, at] of [
+      [superseded, later],
+      [used, later],
+      ["not-a-real-token", later],
+      [expired, fourteenDaysLater],
+    ] as const) {
+      await expect(signUpFromInvitation(token, signup, at)).resolves.toEqual({ status: "invalid" });
+    }
+
+    expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(0);
+  });
+
+  it("creates nothing and leaves the token usable when the address got an account in the meantime", async () => {
+    const { group, token } = await inviteToNewGroup("anna@example.com");
+    const anna = await createUser({ email: "anna@example.com", emailVerifiedAt: null });
+
+    await expect(signUpFromInvitation(token, signup)).resolves.toEqual({ status: "email-taken" });
+
+    expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(1);
+    expect(await isMember(anna.id, group.id)).toBe(false);
+    await expect(acceptInvitation(token, viewer(anna))).resolves.toMatchObject({ ok: true });
   });
 });
 

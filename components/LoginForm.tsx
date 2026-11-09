@@ -6,7 +6,7 @@ import { logIn } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { REQUEST_PASSWORD_RESET_PATH } from "@/lib/auth/routes";
+import { REQUEST_PASSWORD_RESET_PATH, SIGNUP_PATH } from "@/lib/auth/routes";
 
 export function LoginForm({ nextPath, notice }: { nextPath: string; notice?: string }) {
   const [state, formAction, isPending] = useActionState(logIn, null);
@@ -63,7 +63,7 @@ export function LoginForm({ nextPath, notice }: { nextPath: string; notice?: str
 
       <p className="text-center text-sm text-muted-foreground">
         Saknar konto?{" "}
-        <Link href={`/auth/signup?next=${encodeURIComponent(nextPath)}`}>
+        <Link href={`${SIGNUP_PATH}?next=${encodeURIComponent(nextPath)}`}>
           Skapa konto
         </Link>
       </p>

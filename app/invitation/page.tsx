@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { acceptGroupInvitation, logOutFromInvitation } from "@/app/actions/invitations";
+import { InvalidInvitationNotice } from "@/components/InvalidInvitationNotice";
 import { Button } from "@/components/ui/button";
 import { getSessionUser } from "@/lib/auth/require-user";
 import { loginPath } from "@/lib/auth/routes";
 import { getInvitationView, type InvitationView } from "@/lib/invitations/invitations";
-import { invitationPagePath } from "@/lib/invitations/routes";
+import { invitationPagePath, invitationSignupPath } from "@/lib/invitations/routes";
 
 type InvitationPageProps = {
   searchParams: Promise<{
@@ -41,13 +42,22 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
         {view.state === "sign-in" && token && (
           <>
             <Heading title={`Inbjudan till ${view.groupName}`}>
-              Logga in med den e-postadress inbjudan skickades till för att gå med.
+              {view.canSignUp
+                ? "Logga in eller skapa ett konto med den e-postadress inbjudan skickades till för att gå med."
+                : "Logga in med den e-postadress inbjudan skickades till för att gå med."}
             </Heading>
-            <Button asChild className="w-full">
-              <Link href={loginPath(invitationPagePath(token))}>
-                Logga in
-              </Link>
-            </Button>
+            <div className="space-y-3">
+              <Button asChild className="w-full">
+                <Link href={loginPath(invitationPagePath(token))}>
+                  Logga in
+                </Link>
+              </Button>
+              {view.canSignUp && (
+                <Button asChild variant="outline" className="w-full">
+                  <Link href={invitationSignupPath(token)}>Skapa konto</Link>
+                </Button>
+              )}
+            </div>
           </>
         )}
 
@@ -76,12 +86,7 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
           </>
         )}
 
-        {view.state === "invalid" && (
-          <Heading title="Inbjudan är inte längre giltig">
-            Länken har gått ut, ersatts av en nyare inbjudan eller återkallats. Be den som bjöd in
-            dig att skicka en ny.
-          </Heading>
-        )}
+        {view.state === "invalid" && <InvalidInvitationNotice />}
       </div>
     </main>
   );

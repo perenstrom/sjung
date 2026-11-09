@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth/require-user";
+import { SIGNUP_PATH } from "@/lib/auth/routes";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
@@ -20,7 +21,7 @@ export default async function LandingPage() {
           <Link href="/auth/login">Logga in</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/auth/signup">Skapa konto</Link>
+          <Link href={SIGNUP_PATH}>Skapa konto</Link>
         </Button>
       </div>
     </main>
