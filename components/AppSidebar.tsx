@@ -1,8 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import {
   Sidebar,
@@ -40,6 +39,34 @@ function tenantSlugFromPathname(pathname: string): string | null {
   if (parts[0] !== "app" || parts.length < 2) return null;
   if (parts[1] === "me") return null;
   return parts[1];
+}
+
+type NavItemProps = {
+  /** `null` renders the item disabled, e.g. when there is no active group. */
+  href: string | null;
+  label: string;
+  icon: ReactNode;
+  isActive: boolean;
+};
+
+function NavItem({ href, label, icon, isActive }: NavItemProps) {
+  return (
+    <SidebarMenuItem>
+      {href ? (
+        <SidebarMenuButton asChild tooltip={label} isActive={isActive}>
+          <Link href={href}>
+            {icon}
+            <span>{label}</span>
+          </Link>
+        </SidebarMenuButton>
+      ) : (
+        <SidebarMenuButton tooltip={label} disabled>
+          {icon}
+          <span>{label}</span>
+        </SidebarMenuButton>
+      )}
+    </SidebarMenuItem>
+  );
 }
 
 type AppSidebarProps = {
@@ -104,79 +131,31 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                {noterHref ? (
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Noter"
-                    isActive={pathname === noterHref}
-                  >
-                    <Link href={noterHref}>
-                      <Music />
-                      <span>Noter</span>
-                    </Link>
-                  </SidebarMenuButton>
-                ) : (
-                  <SidebarMenuButton tooltip="Noter" disabled>
-                    <Music />
-                    <span>Noter</span>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                {peopleHref ? (
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Personer"
-                    isActive={pathname === peopleHref}
-                  >
-                    <Link href={peopleHref}>
-                      <Users />
-                      <span>Personer</span>
-                    </Link>
-                  </SidebarMenuButton>
-                ) : (
-                  <SidebarMenuButton tooltip="Personer" disabled>
-                    <Users />
-                    <span>Personer</span>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                {setListsHref ? (
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Repertoarer"
-                    isActive={pathname === setListsHref}
-                  >
-                    <Link href={setListsHref}>
-                      <ListMusic />
-                      <span>Repertoarer</span>
-                    </Link>
-                  </SidebarMenuButton>
-                ) : (
-                  <SidebarMenuButton tooltip="Repertoarer" disabled>
-                    <ListMusic />
-                    <span>Repertoarer</span>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
-
+              <NavItem
+                href={noterHref}
+                label="Noter"
+                icon={<Music />}
+                isActive={pathname === noterHref}
+              />
+              <NavItem
+                href={peopleHref}
+                label="Personer"
+                icon={<Users />}
+                isActive={pathname === peopleHref}
+              />
+              <NavItem
+                href={setListsHref}
+                label="Repertoarer"
+                icon={<ListMusic />}
+                isActive={pathname === setListsHref}
+              />
               {membersHref ? (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip="Medlemmar"
-                    isActive={pathname === membersHref}
-                  >
-                    <Link href={membersHref}>
-                      <UserPlus />
-                      <span>Medlemmar</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <NavItem
+                  href={membersHref}
+                  label="Medlemmar"
+                  icon={<UserPlus />}
+                  isActive={pathname === membersHref}
+                />
               ) : null}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -185,21 +164,15 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
           <SidebarGroupLabel>Inställningar</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Mina grupper"
-                  isActive={
-                    pathname === groupsHref ||
-                    pathname.startsWith(`${groupsHref}/`)
-                  }
-                >
-                  <Link href={groupsHref}>
-                    <Boxes />
-                    <span>Mina grupper</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <NavItem
+                href={groupsHref}
+                label="Mina grupper"
+                icon={<Boxes />}
+                isActive={
+                  pathname === groupsHref ||
+                  pathname.startsWith(`${groupsHref}/`)
+                }
+              />
               <SidebarMenuItem>
                 <SidebarMenuButton
                   tooltip="Logga ut"
