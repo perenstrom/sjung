@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { appTitle, getAppEnvironment } from "@/lib/app-environment";
+import { appIcons, appTitle, getAppEnvironment } from "@/lib/app-environment";
 
 describe("getAppEnvironment", () => {
   afterEach(() => {
@@ -77,4 +77,29 @@ describe("appTitle", () => {
       template: "%s · Sjung",
     });
   });
+});
+
+describe("appIcons", () => {
+  it("uses the production icons in production", () => {
+    expect(appIcons("production")).toEqual({
+      icon: [
+        { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+        { url: "/icons/production/icon.svg", type: "image/svg+xml" },
+      ],
+      apple: "/icons/production/apple-icon.png",
+    });
+  });
+
+  it.each(["staging", "local"] as const)(
+    "uses the staging icons on %s",
+    (environment) => {
+      expect(appIcons(environment)).toEqual({
+        icon: [
+          { url: "/icons/staging/favicon.ico", sizes: "16x16 32x32 48x48" },
+          { url: "/icons/staging/icon.svg", type: "image/svg+xml" },
+        ],
+        apple: "/icons/staging/apple-icon.png",
+      });
+    },
+  );
 });

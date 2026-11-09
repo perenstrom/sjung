@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { connection } from "next/server";
 import { Toaster } from "@/components/ui/sonner";
-import { appTitle, getAppEnvironment } from "@/lib/app-environment";
+import { appIcons, appTitle, getAppEnvironment } from "@/lib/app-environment";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,9 +20,12 @@ export async function generateMetadata(): Promise<Metadata> {
   // the build-time value into prerendered pages.
   await connection();
 
+  const environment = getAppEnvironment();
+
   return {
-    title: appTitle(getAppEnvironment()),
+    title: appTitle(environment),
     description: "Notbibliotek",
+    icons: appIcons(environment),
   };
 }
 
