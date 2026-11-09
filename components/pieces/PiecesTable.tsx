@@ -19,6 +19,7 @@ import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
+import { pieceHref } from "@/lib/pieces/href";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
@@ -136,7 +137,7 @@ export function PiecesTable({
             <div className={FIRST_LINE_CLASS}>
               <Link
                 className="underline"
-                href={`/app/${groupSlug}/pieces/${row.original.piece.id}`}
+                href={pieceHref(groupSlug, row.original.piece.id, { fromSetListId: setListId })}
               >
                 {row.original.piece.name}
               </Link>

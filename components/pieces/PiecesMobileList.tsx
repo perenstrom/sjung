@@ -18,6 +18,7 @@ import {
   MobileListExpandableRow,
 } from "@/components/ui/mobile-list";
 import { formatCreditsLine } from "@/lib/pieces/credits";
+import { pieceHref } from "@/lib/pieces/href";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import type { Person } from "@/types/piece-credit-dialog";
@@ -140,7 +141,7 @@ export function PiecesMobileList({
                   />
                 ) : null}
                 <Link
-                  href={`/app/${groupSlug}/pieces/${piece.id}`}
+                  href={pieceHref(groupSlug, piece.id, { fromSetListId: setList?.id })}
                   className="inline-flex min-h-11 items-center px-1 text-sm underline underline-offset-4"
                 >
                   Öppna stycket

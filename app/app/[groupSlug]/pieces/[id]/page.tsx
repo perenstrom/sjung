@@ -10,15 +10,17 @@ import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
 import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
-import { createGroupAncestor } from "@/lib/breadcrumbs";
+import { pieceDetailTrail } from "@/lib/breadcrumbs";
+import { fromSetListIdParam } from "@/lib/pieces/href";
 import { notFound } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ groupSlug: string; id: string }>;
+  searchParams: Promise<{ setlist?: string | string[] }>;
 };
 
-export default async function TenantPieceDetailPage({ params }: PageProps) {
-  const { groupSlug, id } = await params;
+export default async function TenantPieceDetailPage({ params, searchParams }: PageProps) {
+  const [{ groupSlug, id }, { setlist }] = await Promise.all([params, searchParams]);
   const [piece, people, setLists, groups] = await Promise.all([
     getPieceDetail(groupSlug, id),
     getPeople(groupSlug),
@@ -35,14 +37,13 @@ export default async function TenantPieceDetailPage({ params }: PageProps) {
     <EditModeProvider>
       <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
-          trail={{
-            visibility: "visible",
-            ancestors: [
-              createGroupAncestor(groupSlug, groupName),
-              { label: "Noter", href: `/app/${groupSlug}` },
-            ],
-            tail: { kind: "static", label: piece.name || "Notstycke" },
-          }}
+          trail={pieceDetailTrail({
+            groupSlug,
+            groupName,
+            pieceName: piece.name,
+            setLists,
+            fromSetListId: fromSetListIdParam(setlist),
+          })}
         />
         <PieceMetadataSection
           key={piece.id}
