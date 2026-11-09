@@ -7,7 +7,7 @@ import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { requireCreatorGroupById, requireMemberManagerGroupBySlug } from "@/lib/actions/guards";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
-import { inviteToGroup } from "@/lib/invitations/invitations";
+import { inviteToGroup, type InviteToGroupResult } from "@/lib/invitations/invitations";
 import {
   inviteEmailSchema,
   parseGroupClaimsFromFormData,
@@ -231,19 +231,21 @@ export async function inviteMemberToGroup(
   const email = parsed.data;
 
   const result = await inviteToGroup({ groupId, email, invitedById: userId });
+  if (result.status === "sent") {
+    return { status: "sent", email };
+  }
+  return { status: "error", error: inviteFailureMessage(result), values: { email } };
+}
+
+/** What to tell the inviter when an Invitation couldn't be sent. */
+function inviteFailureMessage(result: Exclude<InviteToGroupResult, { status: "sent" }>): string {
   switch (result.status) {
-    case "sent":
-      return { status: "sent", email };
     case "already-member":
-      return { status: "error", error: "Användaren är redan medlem i gruppen", values: { email } };
+      return "Användaren är redan medlem i gruppen";
     case "cooldown":
-      return {
-        status: "error",
-        error: `Vänta ${result.retryAfterSeconds} sekunder innan du skickar inbjudan igen`,
-        values: { email },
-      };
+      return `Vänta ${result.retryAfterSeconds} sekunder innan du skickar inbjudan igen`;
     case "send-failed":
-      return { status: "error", error: "Kunde inte skicka inbjudan, försök igen", values: { email } };
+      return "Kunde inte skicka inbjudan, försök igen";
   }
 }
 
