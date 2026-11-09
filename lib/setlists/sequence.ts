@@ -1,68 +1,130 @@
-import type { SetListSequenceStep } from "@/lib/setlists/types";
+import type { Prisma } from "@/app/generated/prisma/client";
+import prisma from "@/lib/prisma";
+import { pieceWithRelationsInclude } from "@/lib/pieces/types";
+import { SetListPositions } from "@/lib/setlists/sequence-positions";
+import type { SetListSequenceStep, SetListStep } from "@/lib/setlists/types";
 
-const INVALID_ORDER_ERROR = "Ogiltig ordning";
+export type NewSetListStep = { kind: "piece"; pieceId: string } | { kind: "note"; content: string };
 
-function sortByPosition(steps: SetListSequenceStep[]): SetListSequenceStep[] {
-  return [...steps].sort((a, b) => a.position - b.position);
+type OrderedStep = { position: number; createdAt: Date };
+
+function byPositionThenCreation(a: OrderedStep, b: OrderedStep): number {
+  return a.position - b.position || a.createdAt.getTime() - b.createdAt.getTime();
 }
 
 /**
- * The single owner of the Set list step position sequence: Set list pieces and Running-order
- * notes share one interleaved `position` column, so any code that renumbers one without the
- * other risks two steps colliding on the same position. Everything that appends, removes, or
- * reorders a step goes through here.
+ * Positions span two tables, so no unique constraint can stop two writers from claiming the same
+ * one. Every write to a set list's order locks its `set_lists` row first, so writes to one set
+ * list run one at a time.
+ */
+async function lockSetList(tx: Prisma.TransactionClient, setListId: string): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM set_lists WHERE id = ${setListId} FOR UPDATE`;
+}
+
+async function readSequenceSteps(
+  tx: Prisma.TransactionClient,
+  setListId: string
+): Promise<SetListSequenceStep[]> {
+  const [pieces, notes] = await Promise.all([
+    tx.setListPiece.findMany({ where: { setListId }, select: { id: true, position: true } }),
+    tx.setListNote.findMany({ where: { setListId }, select: { id: true, position: true } }),
+  ]);
+
+  return [
+    ...pieces.map((entry) => ({ kind: "piece" as const, id: entry.id, position: entry.position })),
+    ...notes.map((entry) => ({ kind: "note" as const, id: entry.id, position: entry.position })),
+  ];
+}
+
+/**
+ * The single owner of a Set list's running order. Set list pieces and Running-order notes live in
+ * two tables but share one order, so everything that reads that order, appends a Set list step or
+ * reorders the steps goes through here. Only relative order matters: removing a step is a plain
+ * delete by the caller and leaves a harmless gap.
+ *
+ * Callers must already have checked that the set list belongs to the acting user's Group.
  */
 export const SetListSequence = {
-  /** Position for a newly appended step, given the current max position in each table. */
-  nextPosition(maxPiecePosition: number | null, maxNotePosition: number | null): number {
-    return Math.max(maxPiecePosition ?? 0, maxNotePosition ?? 0) + 1;
+  /** The set list's steps in running order. Steps sharing a position fall back to creation order. */
+  async steps(setListId: string): Promise<SetListStep[]> {
+    const [pieces, notes] = await Promise.all([
+      prisma.setListPiece.findMany({
+        where: { setListId },
+        select: {
+          id: true,
+          pieceId: true,
+          position: true,
+          createdAt: true,
+          piece: { include: pieceWithRelationsInclude },
+        },
+      }),
+      prisma.setListNote.findMany({
+        where: { setListId },
+        select: { id: true, content: true, position: true, createdAt: true },
+      }),
+    ]);
+
+    const ordered: (OrderedStep & { step: SetListStep })[] = [
+      ...pieces.map(({ createdAt, ...step }) => ({
+        position: step.position,
+        createdAt,
+        step: { ...step, kind: "piece" as const },
+      })),
+      ...notes.map(({ createdAt, ...step }) => ({
+        position: step.position,
+        createdAt,
+        step: { ...step, kind: "note" as const },
+      })),
+    ];
+
+    return ordered.sort(byPositionThenCreation).map(({ step }) => step);
   },
 
-  /** Renumbers the steps left after one was removed so positions stay contiguous from 1. */
-  positionsAfterRemoval(remainingSteps: SetListSequenceStep[]): SetListSequenceStep[] {
-    const updates: SetListSequenceStep[] = [];
-    sortByPosition(remainingSteps).forEach((step, index) => {
-      const position = index + 1;
-      if (step.position !== position) {
-        updates.push({ kind: step.kind, id: step.id, position });
+  /** Adds a step after every existing step. */
+  async append(setListId: string, step: NewSetListStep, userId: string): Promise<SetListSequenceStep> {
+    return prisma.$transaction(async (tx) => {
+      await lockSetList(tx, setListId);
+      const [maxPiece, maxNote] = await Promise.all([
+        tx.setListPiece.aggregate({ where: { setListId }, _max: { position: true } }),
+        tx.setListNote.aggregate({ where: { setListId }, _max: { position: true } }),
+      ]);
+      const position = SetListPositions.nextPosition(maxPiece._max.position, maxNote._max.position);
+      const audit = { setListId, position, createdById: userId, updatedById: userId };
+
+      if (step.kind === "piece") {
+        const created = await tx.setListPiece.create({
+          data: { ...audit, pieceId: step.pieceId },
+          select: { id: true },
+        });
+        return { kind: "piece" as const, id: created.id, position };
       }
+
+      const created = await tx.setListNote.create({
+        data: { ...audit, content: step.content },
+        select: { id: true },
+      });
+      return { kind: "note" as const, id: created.id, position };
     });
-    return updates;
   },
 
   /**
-   * Renumbers every step (pieces and notes alike) to match `orderedStepIds`.
-   * Throws when the ids aren't exactly a permutation of `steps`.
+   * Puts the steps in the order of `orderedStepIds`.
+   * Throws "Ogiltig ordning" when the ids aren't exactly the set list's current steps.
    */
-  positionsAfterReorder(
-    steps: SetListSequenceStep[],
-    orderedStepIds: string[]
-  ): SetListSequenceStep[] {
-    if (orderedStepIds.length !== steps.length) {
-      throw new Error(INVALID_ORDER_ERROR);
-    }
+  async reorder(setListId: string, orderedStepIds: string[], userId: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await lockSetList(tx, setListId);
+      const steps = await readSequenceSteps(tx, setListId);
+      const updates = SetListPositions.positionsAfterReorder(steps, orderedStepIds);
 
-    const stepById = new Map(steps.map((step) => [step.id, step]));
-    const seen = new Set<string>();
-    const updates: SetListSequenceStep[] = [];
-
-    orderedStepIds.forEach((id, index) => {
-      if (seen.has(id)) {
-        throw new Error(INVALID_ORDER_ERROR);
-      }
-      seen.add(id);
-
-      const step = stepById.get(id);
-      if (!step) {
-        throw new Error(INVALID_ORDER_ERROR);
-      }
-
-      const position = index + 1;
-      if (step.position !== position) {
-        updates.push({ kind: step.kind, id: step.id, position });
+      for (const update of updates) {
+        const data = { position: update.position, updatedById: userId };
+        if (update.kind === "piece") {
+          await tx.setListPiece.update({ where: { id: update.id }, data });
+        } else {
+          await tx.setListNote.update({ where: { id: update.id }, data });
+        }
       }
     });
-
-    return updates;
   },
 };

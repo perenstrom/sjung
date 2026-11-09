@@ -67,6 +67,10 @@ _Avoid_: Role on its own — always say "Credit role" to avoid confusion with an
 An ordered rehearsal/performance program for a Group: an interleaved sequence of Set list pieces and Running-order notes. Swedish UI: _Repertoar_ / _Repertoarer_.
 _Avoid_: Repertoire (English) — keep "Set list" as the English name even though the Swedish UI says _Repertoar_; Program.
 
+**Set list step**:
+One entry in a Set list's running order: either a Set list piece or a Running-order note. Steps of both kinds share one order; only their relative order matters, not the numbers stored for it. A newly added step goes last. Swedish UI: _Ordning_ (the running order as a whole).
+_Avoid_: Item, Entry, Slot.
+
 **Set list piece**:
 One occurrence of a Piece within a Set list, at a specific position. A Piece may appear more than once in the same Set list, each occurrence with its own position and Performance notes. Swedish UI: _Repertoarpost_.
 
