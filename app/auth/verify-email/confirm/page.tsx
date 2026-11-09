@@ -35,7 +35,7 @@ export default async function ConfirmEmailPage({ searchParams }: ConfirmEmailPag
             </div>
             <input type="hidden" name="token" value={token} />
             <Button type="submit" className="w-full">
-              Bekräfta e-postadressen för {tokenState.email}
+              Bekräfta e-postadressen
             </Button>
           </form>
         )}
