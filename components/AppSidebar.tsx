@@ -14,6 +14,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Boxes, ListMusic, LogOut, Music, UserPlus, Users } from "lucide-react";
 import {
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { setActiveGroup } from "@/app/actions/groups";
 import { logOut } from "@/app/actions/auth";
-import { getThrownMessage } from "@/lib/getThrownMessage";
+import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
 
 type GroupOption = {
   id: string;
@@ -50,11 +51,13 @@ type NavItemProps = {
 };
 
 function NavItem({ href, label, icon, isActive }: NavItemProps) {
+  const sidebar = useSidebar();
+
   return (
     <SidebarMenuItem>
       {href ? (
         <SidebarMenuButton asChild tooltip={label} isActive={isActive}>
-          <Link href={href}>
+          <Link href={href} onClick={() => closeMobileSidebar(sidebar)}>
             {icon}
             <span>{label}</span>
           </Link>
@@ -77,6 +80,7 @@ type AppSidebarProps = {
 export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const sidebar = useSidebar();
   const [groupSwitchError, setGroupSwitchError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isLoggingOut, startLogOutTransition] = useTransition();
@@ -101,12 +105,12 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
 
     startTransition(async () => {
       setGroupSwitchError(null);
-      try {
-        await setActiveGroup(nextGroupSlug);
-        router.push(`/app/${nextGroupSlug}`);
-      } catch (err) {
-        setGroupSwitchError(getThrownMessage(err, "Kunde inte byta grupp"));
-      }
+      const error = await switchGroup(nextGroupSlug, {
+        setActiveGroup,
+        navigate: (href) => router.push(href),
+        onSwitched: () => closeMobileSidebar(sidebar),
+      });
+      setGroupSwitchError(error);
     });
   }
 
