@@ -90,7 +90,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const currentGroup = groups.find((group) => group.slug === currentGroupSlug);
   const hasActiveGroup = Boolean(currentGroupSlug);
 
-  const noterHref = hasActiveGroup ? `/app/${currentGroupSlug}` : null;
+  const piecesHref = hasActiveGroup ? `/app/${currentGroupSlug}` : null;
   const peopleHref = hasActiveGroup ? `/app/${currentGroupSlug}/people` : null;
   const setListsHref = hasActiveGroup ? `/app/${currentGroupSlug}/setlists` : null;
   const membersHref = currentGroup?.canManageMembers
@@ -136,10 +136,10 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <NavItem
-                href={noterHref}
+                href={piecesHref}
                 label="Noter"
                 icon={<Music />}
-                isActive={pathname === noterHref}
+                isActive={pathname === piecesHref}
               />
               <NavItem
                 href={peopleHref}
