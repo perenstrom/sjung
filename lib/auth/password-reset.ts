@@ -4,6 +4,7 @@ import { UserTokenPurpose } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
 import { PASSWORD_RESET_EMAIL_SUBJECT, PasswordResetEmail } from "@/lib/auth/password-reset-email";
 import { NEW_PASSWORD_PATH } from "@/lib/auth/routes";
+import { markVerified } from "@/lib/auth/verified";
 import { sendEmail } from "@/lib/email";
 import { userLinks } from "@/lib/email-links/email-links";
 import { normalizeEmail } from "@/lib/normalize-email";
@@ -89,10 +90,7 @@ export async function completePasswordReset(
     if (!userId) {
       return { ok: false };
     }
-    await tx.user.updateMany({
-      where: { id: userId, emailVerifiedAt: null },
-      data: { emailVerifiedAt: now },
-    });
+    await markVerified(tx, userId, now);
     await tx.user.update({
       where: { id: userId },
       data: { passwordHash, sessionVersion: { increment: 1 } },

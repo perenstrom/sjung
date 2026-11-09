@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { Prisma } from "@/app/generated/prisma/client";
 import { appUrl } from "@/lib/app-base-url";
+import { markVerified } from "@/lib/auth/verified";
 import { sendEmail } from "@/lib/email";
 import { type IssueLinkResult, invitationLinks } from "@/lib/email-links/email-links";
 import { tokenStatus } from "@/lib/email-links/tokens";
@@ -270,10 +271,7 @@ export async function acceptInvitation(
       data: [{ userId: viewer.id, groupId: lookup.invitation.group.id }],
       skipDuplicates: true,
     });
-    await tx.user.updateMany({
-      where: { id: viewer.id, emailVerifiedAt: null },
-      data: { emailVerifiedAt: now },
-    });
+    await markVerified(tx, viewer.id, now);
     return { ok: true as const, groupSlug: lookup.invitation.group.slug };
   });
 }
