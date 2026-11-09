@@ -188,7 +188,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  tooltip="Grupper"
+                  tooltip="Mina grupper"
                   isActive={
                     pathname === groupsHref ||
                     pathname.startsWith(`${groupsHref}/`)
@@ -196,7 +196,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
                 >
                   <Link href={groupsHref}>
                     <Boxes />
-                    <span>Grupphantering</span>
+                    <span>Mina grupper</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

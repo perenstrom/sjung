@@ -1,7 +1,6 @@
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
-import { CreateGroupDialog } from "@/components/CreateGroupDialog";
-import { MyGroupsTable } from "@/components/groups/MyGroupsTable";
+import { MyGroupsView } from "@/components/groups/MyGroupsView";
 
 export default async function GroupsPage() {
   const groups = await getGroups();
@@ -12,15 +11,10 @@ export default async function GroupsPage() {
         trail={{
           visibility: "visible",
           ancestors: [],
-          tail: { kind: "static", label: "Grupphantering" },
+          tail: { kind: "static", label: "Mina grupper" },
         }}
       />
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Grupper</h1>
-        <CreateGroupDialog />
-      </div>
-
-      <MyGroupsTable groups={groups} />
+      <MyGroupsView groups={groups} />
     </div>
   );
 }
