@@ -35,6 +35,14 @@ const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 // Filer columns.
 const NOTE_COL_SPAN = 4;
 
+// A long piece name wraps instead of widening the Namn column: it turns the
+// table cell's nowrap back off and caps the width. The link also needs
+// min-w-0, or as a flex item it won't shrink below an unbroken word. The
+// vertical padding keeps a wrapped name's first line where a one-line name
+// sits in the 32px first line. Set on the piece-name content only, so a
+// spanning Running-order note row keeps its full width.
+const PIECE_NAME_WRAP_CLASS = "max-w-xs py-1.5 whitespace-normal break-words";
+
 // A row is a piece or, in set list mode, a Running-order note. Set list rows
 // carry the step id, so the same piece can appear in several rows.
 type PieceRow = { kind: "piece"; id: string; piece: PieceWithRelations };
@@ -134,9 +142,9 @@ export function PiecesTable({
               {row.original.content}
             </div>
           ) : (
-            <div className={FIRST_LINE_CLASS}>
+            <div className={cn(FIRST_LINE_CLASS, PIECE_NAME_WRAP_CLASS)}>
               <Link
-                className="underline"
+                className="min-w-0 underline"
                 href={pieceHref(groupSlug, row.original.piece.id, { fromSetListId: setListId })}
               >
                 {row.original.piece.name}
