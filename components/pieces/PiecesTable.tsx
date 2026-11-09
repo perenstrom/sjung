@@ -13,8 +13,8 @@ import {
   DataTable,
   DataTableColumnHeader,
 } from "@/components/data-table";
-import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
-import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
+import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
+import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
@@ -31,9 +31,14 @@ import type { Person } from "@/types/piece-credit-dialog";
 const FIRST_LINE_CLASS = "flex min-h-8 items-center";
 const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 
-// A Running-order note row's text spans the Namn, Medverkande, Länkar and
-// Filer columns.
-const NOTE_COL_SPAN = 4;
+// A Running-order note row's text spans the Namn, Medverkande and Filer och
+// länkar columns.
+const NOTE_COL_SPAN = 3;
+
+// Files and links share one column, capped like Namn so a few of them, or
+// one long file name, can't push Åtgärder off-screen. Names and labels
+// truncate inside it.
+const FILES_AND_LINKS_WIDTH_CLASS = "min-w-56 max-w-xs";
 
 // A long piece name wraps instead of widening the Namn column: it turns the
 // table cell's nowrap back off and caps the width. The link also needs
@@ -177,53 +182,19 @@ export function PiecesTable({
         }),
       },
       {
-        id: "links",
+        id: "filesAndLinks",
         enableSorting: false,
-        header: () => (
-          <span className="w-[1%] whitespace-nowrap">Länkar</span>
-        ),
+        header: () => "Filer och länkar",
         cell: pieceCell((piece) => {
           return (
-            <div className={LIST_CELL_OFFSET_CLASS}>
-              <PieceInlineLinksCell
+            <div className={cn(FILES_AND_LINKS_WIDTH_CLASS, LIST_CELL_OFFSET_CLASS)}>
+              <PieceInlineFilesAndLinksCell
                 readOnly={!isEditing}
                 groupSlug={groupSlug}
                 pieceId={piece.id}
                 pieceName={piece.name}
-                links={piece.links.map((link) => ({
-                  id: link.id,
-                  url: link.url,
-                  label: link.label,
-                }))}
-              />
-            </div>
-          );
-        }),
-      },
-      {
-        id: "files",
-        enableSorting: false,
-        header: () => (
-          <span className="w-[1%] whitespace-nowrap">Filer</span>
-        ),
-        cell: pieceCell((piece) => {
-          return (
-            <div
-              className={cn(
-                "flex min-w-[12rem] items-start",
-                LIST_CELL_OFFSET_CLASS
-              )}
-            >
-              <PieceInlineFilesCell
-                readOnly={!isEditing}
-                groupSlug={groupSlug}
-                pieceId={piece.id}
-                pieceName={piece.name}
-                files={piece.files.map((file) => ({
-                  id: file.id,
-                  displayName: file.displayName,
-                  size: file.size,
-                }))}
+                files={toInlineFiles(piece)}
+                links={toInlineLinks(piece)}
               />
             </div>
           );

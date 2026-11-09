@@ -8,6 +8,7 @@ import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
 import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
+import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
@@ -234,16 +235,6 @@ function PieceEditSections({
         {piece.credits.length > 0 ? <PieceCreditsList credits={piece.credits} /> : null}
       </section>
       <section className="space-y-1">
-        <SectionHeading>Länkar</SectionHeading>
-        <PieceInlineLinksCell
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          links={toInlineLinks(piece)}
-        />
-      </section>
-      <section className="space-y-1">
         <SectionHeading>Filer</SectionHeading>
         <PieceInlineFilesCell
           touch
@@ -251,6 +242,16 @@ function PieceEditSections({
           pieceId={piece.id}
           pieceName={piece.name}
           files={toInlineFiles(piece)}
+        />
+      </section>
+      <section className="space-y-1">
+        <SectionHeading>Länkar</SectionHeading>
+        <PieceInlineLinksCell
+          touch
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          links={toInlineLinks(piece)}
         />
       </section>
     </div>
@@ -261,16 +262,4 @@ function SectionHeading({ children }: { children: ReactNode }) {
   return (
     <h3 className="text-muted-foreground text-xs font-medium uppercase">{children}</h3>
   );
-}
-
-function toInlineFiles(piece: PieceWithRelations) {
-  return piece.files.map((file) => ({
-    id: file.id,
-    displayName: file.displayName,
-    size: file.size,
-  }));
-}
-
-function toInlineLinks(piece: PieceWithRelations) {
-  return piece.links.map((link) => ({ id: link.id, url: link.url, label: link.label }));
 }

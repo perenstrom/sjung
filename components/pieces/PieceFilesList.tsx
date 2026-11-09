@@ -8,6 +8,7 @@ import {
   deletePieceFile,
 } from "@/app/actions/files";
 import { metadataForFile } from "@/components/pieces/fileMetadata";
+import { splitForMiddleTruncation } from "@/components/pieces/middleTruncation";
 import { ReplacePieceFilePopover } from "@/components/pieces/ReplacePieceFilePopover";
 import type { PieceFileListItem } from "@/components/pieces/types";
 import { TruncatedTooltip } from "@/components/TruncatedTooltip";
@@ -144,23 +145,27 @@ export function PieceFilesList({
                   className="size-3.5 shrink-0 text-muted-foreground"
                   aria-hidden
                 />
-                <button
-                  type="button"
-                  onClick={() => handleDownload(file.id)}
-                  disabled={
-                    downloadingFileId === file.id ||
-                    deletingFileId === file.id ||
-                    disabled
-                  }
-                  className={cn(
-                    "min-w-0 flex-1 truncate text-left text-primary underline-offset-4 hover:underline disabled:opacity-50",
-                    touch && "leading-10"
-                  )}
-                >
-                  {downloadingFileId === file.id
-                    ? "Hämtar..."
-                    : file.displayName}
-                </button>
+                <TruncatedTooltip content={file.displayName}>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(file.id)}
+                    disabled={
+                      downloadingFileId === file.id ||
+                      deletingFileId === file.id ||
+                      disabled
+                    }
+                    className={cn(
+                      "flex min-w-0 flex-1 overflow-hidden text-left text-primary underline-offset-4 hover:underline disabled:opacity-50",
+                      touch && "leading-10"
+                    )}
+                  >
+                    {downloadingFileId === file.id ? (
+                      "Hämtar..."
+                    ) : (
+                      <MiddleTruncatedText text={file.displayName} />
+                    )}
+                  </button>
+                </TruncatedTooltip>
                 {readOnly ? null : (
                   <>
                     {renderFileActions?.(file)}
@@ -247,5 +252,27 @@ export function PieceFilesList({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Cuts a name in the middle, so its end (e.g. a file extension) stays
+ * visible. The start truncates and is what `TruncatedTooltip` measures.
+ */
+function MiddleTruncatedText({ text }: { text: string }) {
+  const { start, end } = splitForMiddleTruncation(text);
+  // A space at the split would collapse at the edge of its span, so it
+  // becomes a non-breaking one.
+  return (
+    <>
+      <span data-truncates className="min-w-0 truncate">
+        {start.replace(/ $/, "\u00a0")}
+      </span>
+      {end ? (
+        <span className="shrink-0 whitespace-nowrap">
+          {end.replace(/^ /, "\u00a0")}
+        </span>
+      ) : null}
+    </>
   );
 }

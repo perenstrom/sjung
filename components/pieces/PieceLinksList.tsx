@@ -94,51 +94,56 @@ export function PieceLinksList({
         // with neighbouring table cells; read-only drops the gap to keep its
         // pitch.
         <ul className={cn("text-sm", !readOnly && !touch && "space-y-2")}>
-          {links.map((link) => (
-            <li
-              key={link.id}
-              className={cn(
-                "flex min-w-0 items-center gap-1",
-                touch ? "min-h-10" : "min-h-7"
-              )}
-            >
-              <ExternalLink
-                className="size-3.5 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
+          {links.map((link) => {
+            const label = labelForLink(link);
+            return (
+              <li
+                key={link.id}
                 className={cn(
-                  "min-w-0 flex-1 truncate text-primary underline-offset-4 hover:underline",
-                  touch && "leading-10"
+                  "flex min-w-0 items-center gap-1",
+                  touch ? "min-h-10" : "min-h-7"
                 )}
               >
-                {labelForLink(link)}
-                <span className="sr-only">, öppnas i ny flik</span>
-              </a>
-              {readOnly ? null : (
-                <>
-                  <EditPieceLinkPopover
-                    {...editPopoverProps(link)}
-                    triggerClassName="size-7 shrink-0"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 shrink-0"
-                    onClick={() => handleRemove(link.id)}
-                    disabled={isRemoveDisabled(link)}
-                    aria-label={`Ta bort länk ${labelForLink(link)}`}
+                <ExternalLink
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+                <TruncatedTooltip content={label}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-primary underline-offset-4 hover:underline",
+                      touch && "leading-10"
+                    )}
                   >
-                    <Trash2 className="size-3.5" aria-hidden="true" />
-                  </Button>
-                </>
-              )}
-            </li>
-          ))}
+                    {label}
+                    <span className="sr-only">, öppnas i ny flik</span>
+                  </a>
+                </TruncatedTooltip>
+                {readOnly ? null : (
+                  <>
+                    <EditPieceLinkPopover
+                      {...editPopoverProps(link)}
+                      triggerClassName="size-7 shrink-0"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 shrink-0"
+                      onClick={() => handleRemove(link.id)}
+                      disabled={isRemoveDisabled(link)}
+                      aria-label={`Ta bort länk ${label}`}
+                    >
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <ul className="space-y-2 text-sm">
