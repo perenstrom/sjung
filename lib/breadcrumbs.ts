@@ -45,3 +45,36 @@ export function closestBreadcrumb(
     href: parent.href,
   };
 }
+
+/**
+ * A Piece's trail. Opened from a Set list (`fromSetListId`, the `setlist`
+ * search param), it leads back to that Set list.
+ */
+export function pieceDetailTrail({
+  groupSlug,
+  groupName,
+  pieceName,
+  setLists,
+  fromSetListId,
+}: {
+  groupSlug: string;
+  groupName: string;
+  pieceName: string;
+  setLists: { id: string; name: string }[];
+  fromSetListId: string | undefined;
+}): AppBreadcrumbStaticTrail {
+  const setList = setLists.find((candidate) => candidate.id === fromSetListId);
+  return {
+    visibility: "visible",
+    ancestors: [
+      createGroupAncestor(groupSlug, groupName),
+      ...(setList
+        ? [
+            { label: "Repertoarer", href: `/app/${groupSlug}/setlists` },
+            { label: setList.name || "Repertoar", href: `/app/${groupSlug}/setlists/${setList.id}` },
+          ]
+        : [{ label: "Noter", href: `/app/${groupSlug}` }]),
+    ],
+    tail: { kind: "static", label: pieceName || "Notstycke" },
+  };
+}
