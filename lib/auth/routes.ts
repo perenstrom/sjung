@@ -17,5 +17,10 @@ export const REQUEST_PASSWORD_RESET_PATH = "/auth/reset-password";
 /** The emailed reset link's target. Opening it changes nothing; see its page. */
 export const NEW_PASSWORD_PATH = "/auth/reset-password/new";
 
+/** The login page, returning to `next` (an internal path) after logging in. */
+export function loginPath(next: string): string {
+  return `/auth/login?next=${encodeURIComponent(next)}`;
+}
+
 /** Clears a revoked session's cookie and sends the browser to the login page. */
 export const SESSION_ENDED_PATH = "/auth/session-ended";

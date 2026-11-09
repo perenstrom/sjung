@@ -17,6 +17,33 @@ export function hashToken(token: string): string {
 
 const MS_PER_HOUR = 60 * 60 * 1000;
 
+/** When a token issued at `now` and valid for `validForHours` stops working. */
+export function tokenExpiresAt(now: Date, validForHours: number): Date {
+  return new Date(now.getTime() + validForHours * MS_PER_HOUR);
+}
+
+/** The columns every emailed-link token table shares. */
+type TokenTimestamps = { usedAt: Date | null; invalidatedAt: Date | null; expiresAt: Date };
+
+/**
+ * What a stored token is at `now`: "used" once redeemed, "invalid" when
+ * superseded or expired, otherwise "usable".
+ */
+export function tokenStatus(row: TokenTimestamps, now: Date): "usable" | "used" | "invalid" {
+  if (row.usedAt) {
+    return "used";
+  }
+  if (row.invalidatedAt || row.expiresAt <= now) {
+    return "invalid";
+  }
+  return "usable";
+}
+
+/** A `where` filter matching only tokens `tokenStatus` calls "usable". */
+export function usableTokenWhere(now: Date) {
+  return { usedAt: null, invalidatedAt: null, expiresAt: { gt: now } };
+}
+
 /**
  * Issues a new token for `purpose` and hands the raw value to `deliver` (which
  * emails the link). Only once delivery succeeds are the User's earlier unused
@@ -38,7 +65,7 @@ export async function issueUserToken(
       purpose,
       tokenHash: hashToken(token),
       createdAt: now,
-      expiresAt: new Date(now.getTime() + validForHours * MS_PER_HOUR),
+      expiresAt: tokenExpiresAt(now, validForHours),
     },
     select: { id: true },
   });
@@ -74,13 +101,8 @@ export async function lookUpUserToken(
   if (!row || row.purpose !== purpose) {
     return { status: "invalid" };
   }
-  if (row.usedAt) {
-    return { status: "used", userId: row.userId };
-  }
-  if (row.invalidatedAt || row.expiresAt <= now) {
-    return { status: "invalid" };
-  }
-  return { status: "usable", userId: row.userId };
+  const status = tokenStatus(row, now);
+  return status === "invalid" ? { status } : { status, userId: row.userId };
 }
 
 /**
@@ -96,7 +118,7 @@ export async function redeemUserToken(
 ): Promise<string | null> {
   const tokenHash = hashToken(token);
   const { count } = await tx.userToken.updateMany({
-    where: { tokenHash, purpose, usedAt: null, invalidatedAt: null, expiresAt: { gt: now } },
+    where: { tokenHash, purpose, ...usableTokenWhere(now) },
     data: { usedAt: now },
   });
   if (count === 0) {
@@ -112,9 +134,18 @@ export async function redeemUserToken(
 const RESEND_COOLDOWN_SECONDS = 60;
 
 /**
- * Seconds left before another `purpose` token may be emailed to the User: a
- * new link at most every 60 seconds. 0 when one may go out now.
+ * Seconds left before another link may be emailed, given when the latest one
+ * was issued: a new link at most every 60 seconds. 0 when one may go out now.
  */
+export function cooldownSecondsLeft(latestIssuedAt: Date | null, now: Date): number {
+  if (!latestIssuedAt) {
+    return 0;
+  }
+  const elapsedSeconds = (now.getTime() - latestIssuedAt.getTime()) / 1000;
+  return Math.max(0, Math.ceil(RESEND_COOLDOWN_SECONDS - elapsedSeconds));
+}
+
+/** `cooldownSecondsLeft` for the User's latest `purpose` token. */
 export async function resendCooldownSeconds(
   userId: string,
   purpose: UserTokenPurpose,
@@ -125,9 +156,5 @@ export async function resendCooldownSeconds(
     orderBy: { createdAt: "desc" },
     select: { createdAt: true },
   });
-  if (!latest) {
-    return 0;
-  }
-  const elapsedSeconds = (now.getTime() - latest.createdAt.getTime()) / 1000;
-  return Math.max(0, Math.ceil(RESEND_COOLDOWN_SECONDS - elapsedSeconds));
+  return cooldownSecondsLeft(latest?.createdAt ?? null, now);
 }

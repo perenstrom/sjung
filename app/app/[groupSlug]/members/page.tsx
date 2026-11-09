@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getGroups, listGroupMembers } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
-import { AddGroupMemberForm } from "@/components/AddGroupMemberForm";
+import { InviteGroupMemberForm } from "@/components/InviteGroupMemberForm";
 import { GroupMembersTable } from "@/components/members/GroupMembersTable";
 import { canManageGroupMembers } from "@/lib/actions/guards";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
@@ -34,11 +34,11 @@ export default async function GroupMembersPage({ params }: PageProps) {
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Medlemmar</h1>
         <p className="text-sm text-muted-foreground">
-          Lägg till befintliga användare med exakt e-postadress.
+          Bjud in någon med sin e-postadress. De blir medlemmar när de har tackat ja via länken i mejlet.
         </p>
       </div>
 
-      <AddGroupMemberForm groupSlug={groupSlug} />
+      <InviteGroupMemberForm groupSlug={groupSlug} />
 
       <GroupMembersTable groupSlug={groupSlug} members={members} viewerUserId={userId} />
     </div>

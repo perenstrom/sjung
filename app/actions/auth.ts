@@ -5,6 +5,7 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import prisma from "@/lib/prisma";
+import { normalizeEmail } from "@/lib/normalize-email";
 import { signIn, signOut } from "@/auth";
 import {
   confirmEmailVerification,
@@ -15,6 +16,7 @@ import { completePasswordReset, requestPasswordReset } from "@/lib/auth/password
 import { getSessionUser } from "@/lib/auth/require-user";
 import {
   CONFIRM_EMAIL_PATH,
+  loginPath,
   NEW_PASSWORD_PATH,
   VERIFY_EMAIL_PATH,
   VERIFY_EMAIL_SEND_FAILED_PATH,
@@ -83,7 +85,7 @@ export async function signUp(
   // `next` is not used: a new User is held on the verify-email page until Verified.
   const { name, email, password } = parsed.data;
 
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
   const existingUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
     select: { id: true },
@@ -132,7 +134,7 @@ export async function resendVerification(
 ): Promise<ResendVerificationState> {
   const user = await getSessionUser();
   if (!user) {
-    redirect(`/auth/login?next=${encodeURIComponent(VERIFY_EMAIL_PATH)}`);
+    redirect(loginPath(VERIFY_EMAIL_PATH));
   }
   if (user.emailVerifiedAt) {
     redirect("/app");

@@ -10,8 +10,9 @@ import { testPrisma } from "../support/db";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createUser, grantClaims } from "../support/fixtures";
+import { failEmailsTo, sentEmails } from "../support/fake-email";
 import {
-  addMemberToGroup,
+  inviteMemberToGroup,
   deleteGroup,
   getGroups,
   listGroupMembers,
@@ -87,13 +88,91 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     expect(byId.get(other.id)).toMatchObject({ isCreator: false, claims: [] });
   });
 
-  it("invites an existing user by email", async () => {
+  it("invites an existing user by email without adding them yet", async () => {
     const { group, manager, nonMember } = await createManagerScenario();
     actAs(manager.id);
 
-    await addMemberToGroup(formData({ groupSlug: group.slug, email: nonMember.email }));
+    await expect(
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email }))
+    ).resolves.toEqual({ status: "sent", email: nonMember.email });
 
-    expect(await isMember(nonMember.id, group.id)).toBe(true);
+    expect(sentEmails().map((email) => email.to)).toEqual([nonMember.email]);
+    expect(await isMember(nonMember.id, group.id)).toBe(false);
+  });
+
+  it("answers the same for an address with no account as for one with an account", async () => {
+    const { group, manager } = await createManagerScenario();
+    await createUser({ email: "har-konto@example.com" });
+    actAs(manager.id);
+
+    const known = await inviteMemberToGroup(
+      null,
+      formData({ groupSlug: group.slug, email: "har-konto@example.com" })
+    );
+    const unknown = await inviteMemberToGroup(
+      null,
+      formData({ groupSlug: group.slug, email: "saknar-konto@example.com" })
+    );
+
+    expect(known).toEqual({ status: "sent", email: "har-konto@example.com" });
+    expect(unknown).toEqual({ status: "sent", email: "saknar-konto@example.com" });
+  });
+
+  it("refuses to invite a current Member", async () => {
+    const { group, manager, other } = await createManagerScenario();
+    actAs(manager.id);
+
+    await expect(
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: other.email }))
+    ).resolves.toEqual({
+      status: "error",
+      error: "Användaren är redan medlem i gruppen",
+      values: { email: other.email },
+    });
+    expect(sentEmails()).toHaveLength(0);
+  });
+
+  it("refuses a second invitation to the same address within a minute", async () => {
+    const { group, manager } = await createManagerScenario();
+    actAs(manager.id);
+    const invite = () =>
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" }));
+
+    await invite();
+
+    await expect(invite()).resolves.toMatchObject({
+      status: "error",
+      error: expect.stringMatching(/^Vänta \d+ sekunder innan du skickar inbjudan igen$/),
+    });
+    expect(sentEmails()).toHaveLength(1);
+  });
+
+  it("asks the inviter to try again when the email can't be sent", async () => {
+    const { group, manager } = await createManagerScenario();
+    failEmailsTo("ny@example.com");
+    actAs(manager.id);
+
+    await expect(
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" }))
+    ).resolves.toEqual({
+      status: "error",
+      error: "Kunde inte skicka inbjudan, försök igen",
+      values: { email: "ny@example.com" },
+    });
+  });
+
+  it("rejects something that isn't an email address", async () => {
+    const { group, manager } = await createManagerScenario();
+    actAs(manager.id);
+
+    await expect(
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "inte en adress" }))
+    ).resolves.toEqual({
+      status: "error",
+      error: "Ange en giltig e-postadress",
+      values: { email: "inte en adress" },
+    });
+    expect(sentEmails()).toHaveLength(0);
   });
 
   it("removes a non-creator member", async () => {
@@ -117,13 +196,14 @@ describe("membership management by a member without MANAGE_MEMBERS", () => {
 
     await expect(listGroupMembers(group.slug)).rejects.toThrow(FORBIDDEN);
     await expect(
-      addMemberToGroup(formData({ groupSlug: group.slug, email: nonMember.email }))
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email }))
     ).rejects.toThrow(FORBIDDEN);
     await expect(
       removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))
     ).rejects.toThrow(FORBIDDEN);
 
     expect(await isMember(nonMember.id, group.id)).toBe(false);
+    expect(sentEmails()).toHaveLength(0);
   });
 });
 

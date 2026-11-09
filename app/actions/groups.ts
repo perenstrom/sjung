@@ -7,11 +7,12 @@ import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { requireCreatorGroupById, requireMemberManagerGroupBySlug } from "@/lib/actions/guards";
 import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
+import { inviteToGroup } from "@/lib/invitations/invitations";
 import {
+  inviteEmailSchema,
   parseGroupClaimsFromFormData,
   parseGroupIdFromFormData,
   parseGroupNameFromFormData,
-  parseInviteEmailFromFormData,
   parseMemberUserIdFromFormData,
   parseMembershipGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
@@ -202,40 +203,48 @@ export async function listGroupMembers(groupSlug: string) {
   }));
 }
 
-export async function addMemberToGroup(formData: FormData) {
+/** `useActionState` state for the members page's "Bjud in" form. */
+export type InviteMemberState =
+  | { status: "sent"; email: string }
+  | { status: "error"; error: string; values: { email: string } }
+  | null;
+
+/**
+ * "Bjud in": creates an Invitation for the address, or re-sends the pending
+ * one, and emails it. Nobody joins until they accept. The answer doesn't
+ * reveal whether the address has a Sjung account.
+ */
+export async function inviteMemberToGroup(
+  _prevState: InviteMemberState,
+  formData: FormData
+): Promise<InviteMemberState> {
   const groupSlug = parseMembershipGroupSlugFromFormData(formData);
-  const email = parseInviteEmailFromFormData(formData);
-  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
+  const { userId, groupId } = await requireMemberManagerGroupBySlug(groupSlug);
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true },
-  });
-  if (!user) {
-    throw new Error("Ingen användare med den e-posten hittades");
+  const emailRaw = formData.get("email");
+  const typed = typeof emailRaw === "string" ? emailRaw.trim() : "";
+  const parsed = inviteEmailSchema.safeParse(typed);
+  if (!parsed.success) {
+    const error = parsed.error.issues[0]?.message ?? "Ange en giltig e-postadress";
+    return { status: "error", error, values: { email: typed } };
   }
+  const email = parsed.data;
 
-  const exists = await prisma.usersToGroups.findUnique({
-    where: {
-      userId_groupId: {
-        userId: user.id,
-        groupId,
-      },
-    },
-    select: { userId: true },
-  });
-  if (exists) {
-    throw new Error("Användaren är redan medlem i gruppen");
+  const result = await inviteToGroup({ groupId, email, invitedById: userId });
+  switch (result.status) {
+    case "sent":
+      return { status: "sent", email };
+    case "already-member":
+      return { status: "error", error: "Användaren är redan medlem i gruppen", values: { email } };
+    case "cooldown":
+      return {
+        status: "error",
+        error: `Vänta ${result.retryAfterSeconds} sekunder innan du skickar inbjudan igen`,
+        values: { email },
+      };
+    case "send-failed":
+      return { status: "error", error: "Kunde inte skicka inbjudan, försök igen", values: { email } };
   }
-
-  await prisma.usersToGroups.create({
-    data: {
-      userId: user.id,
-      groupId,
-    },
-  });
-
-  revalidateGroupMembersRoutes(groupSlug);
 }
 
 export async function removeMemberFromGroup(formData: FormData) {

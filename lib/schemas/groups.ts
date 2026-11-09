@@ -17,6 +17,7 @@ export const inviteEmailSchema = z
   .string()
   .trim()
   .min(1, { error: "E-post krävs" })
+  .pipe(z.email({ error: "Ange en giltig e-postadress" }))
   .transform((s) => s.toLowerCase());
 
 export const memberUserIdSchema = z
@@ -60,14 +61,6 @@ export function parseMembershipGroupSlugFromFormData(
   );
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Ogiltig grupp");
-  }
-  return result.data;
-}
-
-export function parseInviteEmailFromFormData(formData: FormData): string {
-  const result = inviteEmailSchema.safeParse(formDataString(formData, "email"));
-  if (!result.success) {
-    throw new Error(result.error.issues[0]?.message ?? "E-post krävs");
   }
   return result.data;
 }

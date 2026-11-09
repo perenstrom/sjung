@@ -3,7 +3,7 @@ import { logOut } from "@/app/actions/auth";
 import { ResendVerificationForm } from "@/components/ResendVerificationForm";
 import { Button } from "@/components/ui/button";
 import { getSessionUser } from "@/lib/auth/require-user";
-import { isSendFailedFlag, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
+import { isSendFailedFlag, loginPath, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 
 type VerifyEmailPageProps = {
   searchParams: Promise<{
@@ -15,7 +15,7 @@ type VerifyEmailPageProps = {
 export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageProps) {
   const user = await getSessionUser();
   if (!user) {
-    redirect(`/auth/login?next=${encodeURIComponent(VERIFY_EMAIL_PATH)}`);
+    redirect(loginPath(VERIFY_EMAIL_PATH));
   }
   if (user.emailVerifiedAt) {
     redirect("/app");
