@@ -21,6 +21,15 @@ export function createGroupAncestor(
   };
 }
 
+export function createSetListsAncestor(groupSlug: string): AppBreadcrumbAncestor {
+  return { label: "Repertoarer", href: `/app/${groupSlug}/setlists` };
+}
+
+/** A Set list's crumb label: its name, or "Repertoar" when it has none. */
+export function setListCrumbLabel(setListName: string): string {
+  return setListName || "Repertoar";
+}
+
 export type ClosestBreadcrumb =
   | { kind: "back"; label: string; href: string }
   | { kind: "parent"; label: string; href: string }
@@ -70,8 +79,11 @@ export function pieceDetailTrail({
       createGroupAncestor(groupSlug, groupName),
       ...(setList
         ? [
-            { label: "Repertoarer", href: `/app/${groupSlug}/setlists` },
-            { label: setList.name || "Repertoar", href: `/app/${groupSlug}/setlists/${setList.id}` },
+            createSetListsAncestor(groupSlug),
+            {
+              label: setListCrumbLabel(setList.name),
+              href: `/app/${groupSlug}/setlists/${setList.id}`,
+            },
           ]
         : [{ label: "Noter", href: `/app/${groupSlug}` }]),
     ],

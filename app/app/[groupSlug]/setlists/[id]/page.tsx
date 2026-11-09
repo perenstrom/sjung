@@ -11,7 +11,11 @@ import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { PageHeader } from "@/components/PageHeader";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
 import { SetListPiecePicker } from "@/components/SetListPiecePicker";
-import { createGroupAncestor } from "@/lib/breadcrumbs";
+import {
+  createGroupAncestor,
+  createSetListsAncestor,
+  setListCrumbLabel,
+} from "@/lib/breadcrumbs";
 import { formatDate } from "@/lib/format-date";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,9 +47,9 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
             visibility: "visible",
             ancestors: [
               createGroupAncestor(groupSlug, groupName),
-              { label: "Repertoarer", href: `/app/${groupSlug}/setlists` },
+              createSetListsAncestor(groupSlug),
             ],
-            tail: { kind: "static", label: setList.name || "Repertoar" },
+            tail: { kind: "static", label: setListCrumbLabel(setList.name) },
           }}
         />
         <div className="space-y-2">
