@@ -6,9 +6,12 @@ import { testPrisma } from "../support/db";
 import { inviteToNewGroup } from "../support/invitations";
 import {
   acceptInvitation,
+  findGroupInvitations,
   getInvitationSignup,
   getInvitationView,
   inviteToGroup,
+  resendInvitation,
+  revokeInvitation,
   signUpFromInvitation,
 } from "@/lib/invitations/invitations";
 import { hashToken } from "@/lib/auth/tokens";
@@ -435,5 +438,168 @@ describe("what an Invitation outlives", () => {
 
     expect(await testPrisma.invitation.count()).toBe(0);
     expect(await testPrisma.invitationToken.count()).toBe(0);
+  });
+});
+
+/** Fixed send time for the list and re-send tests, and offsets from it. */
+const listSentAt = new Date("2026-11-01T12:00:00Z");
+const secondsAfterSend = (seconds: number) => new Date(listSentAt.getTime() + seconds * 1000);
+const daysAfterSend = (n: number) => secondsAfterSend(n * 24 * 60 * 60);
+
+describe("findGroupInvitations", () => {
+  const sentAt = listSentAt;
+  const days = daysAfterSend;
+
+  it("lists a pending Invitation with its address, sender and expiry", async () => {
+    const { group, creator } = await inviteToNewGroup("anna@example.com", sentAt);
+
+    await expect(findGroupInvitations(group.id, days(1))).resolves.toEqual([
+      {
+        id: expect.any(String),
+        email: "anna@example.com",
+        senderName: creator.name,
+        expiresAt: days(14),
+        expired: false,
+      },
+    ]);
+  });
+
+  it("keeps an expired Invitation in the list, marked expired", async () => {
+    const { group } = await inviteToNewGroup("anna@example.com", sentAt);
+
+    await expect(findGroupInvitations(group.id, days(14))).resolves.toMatchObject([
+      { email: "anna@example.com", expiresAt: days(14), expired: true },
+    ]);
+  });
+
+  it("leaves out an accepted Invitation", async () => {
+    const anna = await createUser({ email: "anna@example.com" });
+    const { group, token } = await inviteToNewGroup("anna@example.com", sentAt);
+    await acceptInvitation(token, viewer(anna), days(1));
+
+    await expect(findGroupInvitations(group.id, days(1))).resolves.toEqual([]);
+  });
+
+  it("lists an Invitation whose only email failed as expired, with no expiry", async () => {
+    const { group, creator } = await createAccessScenario();
+    failEmailsTo("ny@example.com");
+    await inviteToGroup({ groupId: group.id, email: "ny@example.com", invitedById: creator.id }, sentAt);
+
+    await expect(findGroupInvitations(group.id, days(1))).resolves.toMatchObject([
+      { email: "ny@example.com", expiresAt: null, expired: true },
+    ]);
+  });
+
+  it("keeps the name of a sender who left the Group, and has none for a deleted sender", async () => {
+    const { group, member: leaver } = await createAccessScenario();
+    const deleted = await createUser();
+    await testPrisma.usersToGroups.create({ data: { userId: deleted.id, groupId: group.id } });
+    await inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: leaver.id }, sentAt);
+    await inviteToGroup({ groupId: group.id, email: "bertil@example.com", invitedById: deleted.id }, sentAt);
+
+    await testPrisma.usersToGroups.delete({
+      where: { userId_groupId: { userId: leaver.id, groupId: group.id } },
+    });
+    await testPrisma.user.delete({ where: { id: deleted.id } });
+
+    await expect(findGroupInvitations(group.id, days(1))).resolves.toMatchObject([
+      { email: "anna@example.com", senderName: leaver.name },
+      { email: "bertil@example.com", senderName: null },
+    ]);
+  });
+
+  it("only lists the Group's own Invitations", async () => {
+    await inviteToNewGroup("anna@example.com", sentAt);
+    const { group } = await createAccessScenario();
+
+    await expect(findGroupInvitations(group.id, days(1))).resolves.toEqual([]);
+  });
+});
+
+describe("revokeInvitation", () => {
+  it("deletes the Invitation and its tokens, so its link is no longer valid", async () => {
+    const anna = await createUser({ email: "anna@example.com" });
+    const { group, token } = await inviteToNewGroup("anna@example.com");
+    const [invitation] = await findGroupInvitations(group.id);
+
+    await expect(revokeInvitation(group.id, invitation.id)).resolves.toBe(true);
+
+    expect(await testPrisma.invitation.count()).toBe(0);
+    expect(await testPrisma.invitationToken.count()).toBe(0);
+    await expect(getInvitationView(token, viewer(anna))).resolves.toEqual({ state: "invalid" });
+    await expect(acceptInvitation(token, viewer(anna))).resolves.toEqual({ ok: false });
+    expect(await isMember(anna.id, group.id)).toBe(false);
+  });
+
+  it("refuses another Group's Invitation", async () => {
+    const { group: invitingGroup } = await inviteToNewGroup("anna@example.com");
+    const [invitation] = await findGroupInvitations(invitingGroup.id);
+    const { group: otherGroup } = await createAccessScenario();
+
+    await expect(revokeInvitation(otherGroup.id, invitation.id)).resolves.toBe(false);
+    expect(await testPrisma.invitation.count()).toBe(1);
+  });
+});
+
+describe("resendInvitation", () => {
+  const sentAt = listSentAt;
+  const after = secondsAfterSend;
+  const days = daysAfterSend;
+
+  async function invitedAnna() {
+    const scenario = await inviteToNewGroup("anna@example.com", sentAt);
+    const [invitation] = await findGroupInvitations(scenario.group.id, sentAt);
+    const resend = (at: Date) =>
+      resendInvitation({ groupId: scenario.group.id, invitationId: invitation.id, invitedById: scenario.creator.id }, at);
+    return { ...scenario, invitation, resend };
+  }
+
+  it("sends one new link that replaces the old one and restarts the 14 days", async () => {
+    const anna = await createUser({ email: "anna@example.com" });
+    const { group, token: oldToken, resend } = await invitedAnna();
+    resetFakeEmail();
+
+    await expect(resend(days(1))).resolves.toEqual({ status: "sent", email: "anna@example.com" });
+
+    expect(sentEmails().map((email) => email.to)).toEqual(["anna@example.com"]);
+    await expect(getInvitationView(oldToken, viewer(anna), days(1))).resolves.toEqual({ state: "invalid" });
+    await expect(findGroupInvitations(group.id, days(1))).resolves.toMatchObject([
+      { expiresAt: days(15), expired: false },
+    ]);
+  });
+
+  it("refuses within 60 seconds of the latest link", async () => {
+    const { resend } = await invitedAnna();
+
+    await expect(resend(after(30))).resolves.toMatchObject({ status: "cooldown", retryAfterSeconds: 30 });
+    expect(sentEmails()).toHaveLength(1);
+  });
+
+  it("makes an expired Invitation pending again", async () => {
+    const { group, resend } = await invitedAnna();
+
+    await expect(resend(days(20))).resolves.toMatchObject({ status: "sent" });
+
+    await expect(findGroupInvitations(group.id, days(20))).resolves.toMatchObject([
+      { expiresAt: days(34), expired: false },
+    ]);
+  });
+
+  it("says when sending fails", async () => {
+    const { resend } = await invitedAnna();
+    failEmailsTo("anna@example.com");
+
+    await expect(resend(days(1))).resolves.toMatchObject({ status: "send-failed" });
+  });
+
+  it("refuses another Group's Invitation and sends nothing", async () => {
+    const { invitation } = await invitedAnna();
+    const { group: otherGroup, creator } = await createAccessScenario();
+    resetFakeEmail();
+
+    await expect(
+      resendInvitation({ groupId: otherGroup.id, invitationId: invitation.id, invitedById: creator.id }, days(1))
+    ).resolves.toEqual({ status: "not-found" });
+    expect(sentEmails()).toHaveLength(0);
   });
 });

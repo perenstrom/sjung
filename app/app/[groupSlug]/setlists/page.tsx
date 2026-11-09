@@ -6,7 +6,7 @@ import { EditModeProvider } from "@/components/EditModeContext";
 import { PageHeader } from "@/components/PageHeader";
 import { SetListsTable } from "@/components/setlists/SetListsTable";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import { formatSetListDate } from "@/lib/setlists/date";
+import { formatDate } from "@/lib/format-date";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;
@@ -38,7 +38,7 @@ export default async function TenantSetListsPage({ params }: PageProps) {
             id: setList.id,
             name: setList.name,
             date: setList.date,
-            dateLabel: formatSetListDate(setList.date),
+            dateLabel: formatDate(setList.date),
           }))}
         />
       </div>

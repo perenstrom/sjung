@@ -112,6 +112,88 @@ export async function inviteToGroup(
   return { status: "sent" };
 }
 
+/** `email`: the Invitation's address, for telling the sender where it went. */
+export type ResendInvitationResult = (InviteToGroupResult & { email: string }) | { status: "not-found" };
+
+/**
+ * "Skicka igen" on a listed Invitation: the same re-send as inviting its
+ * address again (see `inviteToGroup`). "not-found" unless the Invitation
+ * belongs to `groupId`. The caller must already have checked that
+ * `invitedById` may manage the Group's members.
+ */
+export async function resendInvitation(
+  { groupId, invitationId, invitedById }: { groupId: string; invitationId: string; invitedById: string },
+  now: Date = new Date()
+): Promise<ResendInvitationResult> {
+  const invitation = await prisma.invitation.findFirst({
+    where: { id: invitationId, groupId },
+    select: { email: true },
+  });
+  if (!invitation) {
+    return { status: "not-found" };
+  }
+  const { email } = invitation;
+  return { ...(await inviteToGroup({ groupId, email, invitedById }, now)), email };
+}
+
+/**
+ * Revokes one of the Group's Invitations: deletes it and its tokens, so its
+ * links stop working at once. False if the Group has no such Invitation.
+ */
+export async function revokeInvitation(groupId: string, invitationId: string): Promise<boolean> {
+  const { count } = await prisma.invitation.deleteMany({ where: { id: invitationId, groupId } });
+  return count > 0;
+}
+
+export type GroupInvitation = {
+  id: string;
+  email: string;
+  /** Null once the sender's User is deleted; kept if they only left the Group. */
+  senderName: string | null;
+  /** When the newest link stops working; null if no link was ever delivered. */
+  expiresAt: Date | null;
+  /** No working link: past `expiresAt`, or never delivered. Re-sending fixes both. */
+  expired: boolean;
+};
+
+/**
+ * The Group's Invitations that haven't been accepted, pending and expired,
+ * by address. Read-only. The caller must already have checked that the
+ * viewer may manage the Group's members.
+ */
+export async function findGroupInvitations(groupId: string, now: Date = new Date()): Promise<GroupInvitation[]> {
+  const invitations = await prisma.invitation.findMany({
+    where: { groupId },
+    orderBy: { email: "asc" },
+    select: {
+      id: true,
+      email: true,
+      invitedBy: { select: { name: true } },
+      // Only the newest link can be in use: a re-send invalidates the rest.
+      tokens: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { usedAt: true, invalidatedAt: true, expiresAt: true },
+      },
+    },
+  });
+
+  return invitations.flatMap(({ id, email, invitedBy, tokens: [latest] }) => {
+    if (latest?.usedAt) {
+      return [];
+    }
+    return [
+      {
+        id,
+        email,
+        senderName: invitedBy?.name ?? null,
+        expiresAt: latest?.expiresAt ?? null,
+        expired: !latest || tokenStatus(latest, now) !== "usable",
+      },
+    ];
+  });
+}
+
 type InvitationTokenLookup =
   | {
       status: "usable" | "used";
