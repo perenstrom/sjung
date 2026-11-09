@@ -35,8 +35,8 @@ describe("closestBreadcrumb", () => {
       closestBreadcrumb({
         visibility: "visible",
         ancestors: [],
-        tail: { kind: "static", label: "Grupphantering" },
+        tail: { kind: "static", label: "Mina grupper" },
       })
-    ).toEqual({ kind: "current", label: "Grupphantering" });
+    ).toEqual({ kind: "current", label: "Mina grupper" });
   });
 });

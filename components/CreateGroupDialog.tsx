@@ -6,15 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function CreateGroupDialog() {
+const CREATE_GROUP_LABEL = "Skapa ny grupp";
+
+/** A "Skapa ny grupp" button that opens a dialog for naming and creating a Group. */
+export function CreateGroupDialog({
+  triggerVariant = "default",
+}: {
+  triggerVariant?: "default" | "outline";
+}) {
   return (
     <EntityFormDialog.Root fallbackSv="Kunde inte skapa grupp">
       <EntityFormDialog.Trigger asChild>
-        <Button>Lägg till</Button>
+        <Button variant={triggerVariant}>{CREATE_GROUP_LABEL}</Button>
       </EntityFormDialog.Trigger>
       <EntityFormDialog.Content>
         <EntityFormDialog.Header>
-          <EntityFormDialog.Title>Lägg till grupp</EntityFormDialog.Title>
+          <EntityFormDialog.Title>{CREATE_GROUP_LABEL}</EntityFormDialog.Title>
         </EntityFormDialog.Header>
         <EntityFormDialog.Form
           action={async (formData) => {
@@ -28,7 +35,7 @@ export function CreateGroupDialog() {
           </div>
           <EntityFormDialog.Error />
           <EntityFormDialog.Footer>
-            <Button type="submit">Spara</Button>
+            <Button type="submit">Skapa</Button>
           </EntityFormDialog.Footer>
         </EntityFormDialog.Form>
       </EntityFormDialog.Content>

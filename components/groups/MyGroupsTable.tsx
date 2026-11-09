@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
+import { MobileList, MobileListRow } from "@/components/ui/mobile-list";
 import {
   Table,
   TableBody,
@@ -32,24 +32,21 @@ export type MyGroupsTableRow = {
   canManageMembers: boolean;
 };
 
-const EMPTY_LABEL = "Inga grupper ännu.";
-
-/** My groups as a table from `md` up and as the shared mobile list below it. */
+/**
+ * My groups as a table from `md` up and as the shared mobile list below it.
+ * Expects at least one group; `MyGroupsView` shows an empty state instead.
+ */
 export function MyGroupsTable({ groups }: { groups: MyGroupsTableRow[] }) {
   return (
     <>
       <MobileList>
-        {groups.length === 0 ? (
-          <MobileListEmpty>{EMPTY_LABEL}</MobileListEmpty>
-        ) : (
-          groups.map((group) => (
-            <MobileListRow
-              key={group.id}
-              primary={group.name}
-              trailing={<MyGroupActionsMenu group={group} />}
-            />
-          ))
-        )}
+        {groups.map((group) => (
+          <MobileListRow
+            key={group.id}
+            primary={group.name}
+            trailing={<MyGroupActionsMenu group={group} />}
+          />
+        ))}
       </MobileList>
 
       <div className="max-md:hidden">
@@ -61,22 +58,14 @@ export function MyGroupsTable({ groups }: { groups: MyGroupsTableRow[] }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {groups.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={2} className="text-muted-foreground">
-                  {EMPTY_LABEL}
+            {groups.map((group) => (
+              <TableRow key={group.id}>
+                <TableCell>{group.name}</TableCell>
+                <TableCell className="text-right">
+                  <MyGroupActionButtons group={group} />
                 </TableCell>
               </TableRow>
-            ) : (
-              groups.map((group) => (
-                <TableRow key={group.id}>
-                  <TableCell>{group.name}</TableCell>
-                  <TableCell className="text-right">
-                    <MyGroupActionButtons group={group} />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
