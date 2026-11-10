@@ -41,7 +41,7 @@ describe("deleteGroup", () => {
     } as never);
 
     const formData = new FormData();
-    formData.set("id", group.id);
+    formData.set("groupSlug", group.slug);
 
     await deleteGroup(formData);
 

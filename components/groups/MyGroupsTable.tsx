@@ -22,15 +22,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { myGroupActions, type MyGroupAction } from "@/lib/groups";
 
 export type MyGroupsTableRow = {
   id: string;
   name: string;
   slug: string;
-  isCreator: boolean;
   canManageMembers: boolean;
+  canManageGroup: boolean;
 };
+
+type MyGroupAction = "members" | "edit" | "delete";
+
+/** The row's actions in display order, from what the viewer may do in the Group. */
+function myGroupActions(group: MyGroupsTableRow): MyGroupAction[] {
+  return [
+    ...(group.canManageMembers ? (["members"] as const) : []),
+    ...(group.canManageGroup ? (["edit", "delete"] as const) : []),
+  ];
+}
 
 /**
  * My groups as a table from `md` up and as the shared mobile list below it.

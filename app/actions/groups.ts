@@ -1,11 +1,10 @@
 "use server";
 
-import { GroupClaim } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
-import { requireCreatorGroupById, requireMemberManagerGroupBySlug } from "@/lib/actions/guards";
-import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
+import { changeMember, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
+import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import {
   findGroupInvitations,
@@ -17,11 +16,10 @@ import {
 import {
   inviteEmailSchema,
   parseGroupClaimsFromFormData,
-  parseGroupIdFromFormData,
   parseGroupNameFromFormData,
   parseInvitationIdFromFormData,
   parseMemberUserIdFromFormData,
-  parseMembershipGroupSlugFromFormData,
+  parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
 import {
   revalidateAppAndMyGroupsRoutes,
@@ -29,43 +27,14 @@ import {
   revalidateGroupMembersRoutes,
 } from "@/lib/revalidate/group-routes";
 
+/** The viewer's Groups by name, with what they may do in each. */
 export async function getGroups() {
-  const user = await requireUser();
-  const groups = await prisma.group.findMany({
-    where: {
-      users: {
-        some: { userId: user.id },
-      },
-    },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      createdById: true,
-      users: {
-        where: { userId: user.id },
-        select: {
-          claims: { select: { claim: true } },
-        },
-      },
-    },
-  });
-
-  return groups.map((g) => {
-    const isCreator = g.createdById === user.id;
-    return {
-      id: g.id,
-      name: g.name,
-      slug: g.slug,
-      isCreator,
-      canManageMembers:
-        isCreator ||
-        g.users.some((membership) =>
-          membership.claims.some(({ claim }) => claim === GroupClaim.MANAGE_MEMBERS)
-        ),
-    };
-  });
+  const groups = await listGroupAccess();
+  return groups.map((access) => ({
+    ...access.group,
+    canManageMembers: access.can("manageMembers"),
+    canManageGroup: access.can("manageGroup"),
+  }));
 }
 
 export async function setActiveGroup(groupSlug: string) {
@@ -134,55 +103,53 @@ export async function createGroup(formData: FormData) {
 }
 
 export async function updateGroup(formData: FormData) {
-  const user = await requireUser();
-  const id = parseGroupIdFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const name = parseGroupNameFromFormData(formData);
 
-  const existing = await requireCreatorGroupById(id, user.id, {
-    forbiddenMessage: "Du har inte behörighet att redigera den här gruppen",
-    select: { slug: true },
-  });
-
-  await prisma.group.update({
-    where: { id },
-    data: {
-      name,
-      updatedById: user.id,
-    },
-  });
-
-  if (existing.slug) {
-    revalidateAppAndMyGroupsWithGroupRoute(existing.slug);
-    return;
-  }
-  revalidateAppAndMyGroupsRoutes();
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) =>
+      access.require("manageGroup", {
+        lacksManageGroup: "Du har inte behörighet att redigera den här gruppen",
+      }),
+    async ({ userId, groupId }) => {
+      await prisma.group.update({
+        where: { id: groupId },
+        data: {
+          name,
+          updatedById: userId,
+        },
+      });
+      revalidateAppAndMyGroupsWithGroupRoute(groupSlug);
+    }
+  );
 }
 
 export async function deleteGroup(formData: FormData) {
-  const user = await requireUser();
-  const id = parseGroupIdFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
 
-  const existing = await requireCreatorGroupById(id, user.id, {
-    forbiddenMessage: "Du har inte behörighet att ta bort den här gruppen",
-    select: { slug: true },
-  });
-
-  await prisma.group.delete({
-    where: { id },
-  });
-
-  if (existing.slug) {
-    revalidateAppAndMyGroupsWithGroupRoute(existing.slug);
-    return;
-  }
-  revalidateAppAndMyGroupsRoutes();
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) =>
+      access.require("manageGroup", {
+        lacksManageGroup: "Du har inte behörighet att ta bort den här gruppen",
+      }),
+    async ({ groupId }) => {
+      await prisma.group.delete({
+        where: { id: groupId },
+      });
+      revalidateAppAndMyGroupsWithGroupRoute(groupSlug);
+    }
+  );
 }
 
+/** The Group's Members with their Claims, and whether the viewer may change each one. */
 export async function listGroupMembers(groupSlug: string) {
-  const { groupId, creatorId } = await requireMemberManagerGroupBySlug(groupSlug);
+  const access = await requireGroupAccess(groupSlug);
+  access.require("manageMembers");
 
   const rows = await prisma.usersToGroups.findMany({
-    where: { groupId },
+    where: { groupId: access.group.id },
     select: {
       user: {
         select: {
@@ -195,6 +162,7 @@ export async function listGroupMembers(groupSlug: string) {
         select: { claim: true },
         orderBy: { claim: "asc" },
       },
+      group: { select: { createdById: true } },
     },
     orderBy: {
       user: {
@@ -205,7 +173,9 @@ export async function listGroupMembers(groupSlug: string) {
 
   return rows.map((row) => ({
     ...row.user,
-    isCreator: row.user.id === creatorId,
+    // Shown as a badge on the Member; access itself is decided by `access`.
+    isCreator: row.user.id === row.group.createdById,
+    canChange: access.can(changeMember(row.user.id)),
     claims: row.claims.map(({ claim }) => claim),
   }));
 }
@@ -225,25 +195,30 @@ export async function inviteMemberToGroup(
   _prevState: InviteMemberState,
   formData: FormData
 ): Promise<InviteMemberState> {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
-  const { userId, groupId } = await requireMemberManagerGroupBySlug(groupSlug);
+  const groupSlug = parseGroupSlugFromFormData(formData);
 
-  const emailRaw = formData.get("email");
-  const typed = typeof emailRaw === "string" ? emailRaw.trim() : "";
-  const parsed = inviteEmailSchema.safeParse(typed);
-  if (!parsed.success) {
-    const error = parsed.error.issues[0]?.message ?? "Ange en giltig e-postadress";
-    return { status: "error", error, values: { email: typed } };
-  }
-  const email = parsed.data;
+  return runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageMembers"),
+    async ({ userId, groupId }): Promise<InviteMemberState> => {
+      const emailRaw = formData.get("email");
+      const typed = typeof emailRaw === "string" ? emailRaw.trim() : "";
+      const parsed = inviteEmailSchema.safeParse(typed);
+      if (!parsed.success) {
+        const error = parsed.error.issues[0]?.message ?? "Ange en giltig e-postadress";
+        return { status: "error", error, values: { email: typed } };
+      }
+      const email = parsed.data;
 
-  const result = await inviteToGroup({ groupId, email, invitedById: userId });
-  // The page lists Invitations; even a failed first email leaves one there.
-  revalidateGroupMembersRoutes(groupSlug);
-  if (result.status === "sent") {
-    return { status: "sent", email };
-  }
-  return { status: "error", error: inviteFailureMessage(result), values: { email } };
+      const result = await inviteToGroup({ groupId, email, invitedById: userId });
+      // The page lists Invitations; even a failed first email leaves one there.
+      revalidateGroupMembersRoutes(groupSlug);
+      if (result.status === "sent") {
+        return { status: "sent", email };
+      }
+      return { status: "error", error: inviteFailureMessage(result), values: { email } };
+    }
+  );
 }
 
 /** What to tell the inviter when an Invitation couldn't be sent. */
@@ -260,76 +235,88 @@ function inviteFailureMessage(result: Exclude<InviteToGroupResult, { status: "se
 
 /** The Group's pending and expired Invitations, for the members page. */
 export async function listGroupInvitations(groupSlug: string) {
-  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
-  return findGroupInvitations(groupId);
+  const access = await requireGroupAccess(groupSlug);
+  access.require("manageMembers");
+  return findGroupInvitations(access.group.id);
 }
 
 const INVITATION_NOT_FOUND = "Inbjudan hittades inte";
 
 /** "Ta bort" on a listed Invitation: deletes it, so its link stops working. */
 export async function revokeGroupInvitation(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const invitationId = parseInvitationIdFromFormData(formData);
-  const { groupId } = await requireMemberManagerGroupBySlug(groupSlug);
 
-  if (!(await revokeInvitation(groupId, invitationId))) {
-    throw new Error(INVITATION_NOT_FOUND);
-  }
-
-  revalidateGroupMembersRoutes(groupSlug);
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageMembers"),
+    async ({ groupId }) => {
+      if (!(await revokeInvitation(groupId, invitationId))) {
+        throw new Error(INVITATION_NOT_FOUND);
+      }
+      revalidateGroupMembersRoutes(groupSlug);
+    }
+  );
 }
 
 export type ResendGroupInvitationResult = { ok: true; email: string } | { ok: false; error: string };
 
 /** "Skicka igen" on a listed Invitation, pending or expired: the same re-send as "Bjud in". */
 export async function resendGroupInvitation(formData: FormData): Promise<ResendGroupInvitationResult> {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const invitationId = parseInvitationIdFromFormData(formData);
-  const { userId, groupId } = await requireMemberManagerGroupBySlug(groupSlug);
 
-  const result = await resendInvitation({ groupId, invitationId, invitedById: userId });
-  if (result.status === "not-found") {
-    return { ok: false, error: INVITATION_NOT_FOUND };
-  }
-  if (result.status !== "sent") {
-    return { ok: false, error: inviteFailureMessage(result) };
-  }
+  return runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageMembers"),
+    async ({ userId, groupId }): Promise<ResendGroupInvitationResult> => {
+      const result = await resendInvitation({ groupId, invitationId, invitedById: userId });
+      if (result.status === "not-found") {
+        return { ok: false, error: INVITATION_NOT_FOUND };
+      }
+      if (result.status !== "sent") {
+        return { ok: false, error: inviteFailureMessage(result) };
+      }
 
-  revalidateGroupMembersRoutes(groupSlug);
-  return { ok: true, email: result.email };
+      revalidateGroupMembersRoutes(groupSlug);
+      return { ok: true, email: result.email };
+    }
+  );
 }
 
 export async function removeMemberFromGroup(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const memberUserId = parseMemberUserIdFromFormData(formData);
 
-  const { userId, groupId, creatorId } = await requireMemberManagerGroupBySlug(groupSlug);
-  if (memberUserId === userId) {
-    throw new Error("Du kan inte ta bort dig själv från gruppen");
-  }
-  if (memberUserId === creatorId) {
-    throw new Error("Gruppens administratör kan inte tas bort från gruppen");
-  }
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) =>
+      access.require(changeMember(memberUserId), {
+        targetIsSelf: "Du kan inte ta bort dig själv från gruppen",
+        targetIsCreator: "Gruppens administratör kan inte tas bort från gruppen",
+      }),
+    async ({ groupId }) => {
+      await requireGroupMembership(memberUserId, groupId);
 
-  await requireGroupMembership(memberUserId, groupId);
+      const memberCount = await prisma.usersToGroups.count({
+        where: { groupId },
+      });
+      if (memberCount <= 1) {
+        throw new Error("Kan inte ta bort sista medlemmen i gruppen");
+      }
 
-  const memberCount = await prisma.usersToGroups.count({
-    where: { groupId },
-  });
-  if (memberCount <= 1) {
-    throw new Error("Kan inte ta bort sista medlemmen i gruppen");
-  }
+      await prisma.usersToGroups.delete({
+        where: {
+          userId_groupId: {
+            userId: memberUserId,
+            groupId,
+          },
+        },
+      });
 
-  await prisma.usersToGroups.delete({
-    where: {
-      userId_groupId: {
-        userId: memberUserId,
-        groupId,
-      },
-    },
-  });
-
-  revalidateGroupMembersRoutes(groupSlug);
+      revalidateGroupMembersRoutes(groupSlug);
+    }
+  );
 }
 
 /**
@@ -337,40 +324,42 @@ export async function removeMemberFromGroup(formData: FormData) {
  * The caller must manage members, and may not target the Creator or themselves.
  */
 export async function setMemberClaims(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const memberUserId = parseMemberUserIdFromFormData(formData);
   const claims = parseGroupClaimsFromFormData(formData);
 
-  const { userId, groupId, creatorId } = await requireMemberManagerGroupBySlug(groupSlug);
-  // Creator status implies every Claim and is never stored as a Claim row.
-  if (memberUserId === creatorId) {
-    throw new Error("Gruppens administratör har alltid alla behörigheter");
-  }
-  if (memberUserId === userId) {
-    throw new Error("Du kan inte ändra dina egna behörigheter");
-  }
+  await runGroupMutation(
+    groupSlug,
+    // Creator status implies every Claim and is never stored as a Claim row.
+    async ({ access }) =>
+      access.require(changeMember(memberUserId), {
+        targetIsCreator: "Gruppens administratör har alltid alla behörigheter",
+        targetIsSelf: "Du kan inte ändra dina egna behörigheter",
+      }),
+    async ({ groupId }) => {
+      await prisma.$transaction(async (tx) => {
+        // Locking the membership row queues concurrent saves for this Member, so the
+        // last one replaces the set instead of merging with it. It also proves membership.
+        const membership = await tx.$queryRaw<unknown[]>`
+          SELECT 1 FROM users_to_groups
+          WHERE user_id = ${memberUserId} AND group_id = ${groupId}
+          FOR UPDATE
+        `;
+        if (membership.length === 0) {
+          throw new Error("Medlemmen finns inte i gruppen");
+        }
 
-  await prisma.$transaction(async (tx) => {
-    // Locking the membership row queues concurrent saves for this Member, so the
-    // last one replaces the set instead of merging with it. It also proves membership.
-    const membership = await tx.$queryRaw<unknown[]>`
-      SELECT 1 FROM users_to_groups
-      WHERE user_id = ${memberUserId} AND group_id = ${groupId}
-      FOR UPDATE
-    `;
-    if (membership.length === 0) {
-      throw new Error("Medlemmen finns inte i gruppen");
+        await tx.groupMemberClaim.deleteMany({
+          where: { userId: memberUserId, groupId },
+        });
+        await tx.groupMemberClaim.createMany({
+          data: claims.map((claim) => ({ userId: memberUserId, groupId, claim })),
+        });
+      });
+
+      revalidateGroupMembersRoutes(groupSlug);
     }
-
-    await tx.groupMemberClaim.deleteMany({
-      where: { userId: memberUserId, groupId },
-    });
-    await tx.groupMemberClaim.createMany({
-      data: claims.map((claim) => ({ userId: memberUserId, groupId, claim })),
-    });
-  });
-
-  revalidateGroupMembersRoutes(groupSlug);
+  );
 }
 
 async function requireGroupMembership(memberUserId: string, groupId: string) {

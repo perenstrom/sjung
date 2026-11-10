@@ -261,7 +261,7 @@ describe("getGroups", () => {
     const groups = await getGroups();
 
     expect(groups.find((g) => g.id === group.id)).toMatchObject({
-      isCreator: false,
+      canManageGroup: false,
       canManageMembers: expected,
     });
   });
@@ -273,7 +273,7 @@ describe("getGroups", () => {
     const groups = await getGroups();
 
     expect(groups.find((g) => g.id === group.id)).toMatchObject({
-      isCreator: true,
+      canManageGroup: true,
       canManageMembers: true,
     });
   });
@@ -298,10 +298,10 @@ describe("renaming and deleting the Group", () => {
     const { group, manager } = await createManagerScenario(["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
     actAs(manager.id);
 
-    await expect(updateGroup(formData({ id: group.id, name: "Nytt namn" }))).rejects.toThrow(
+    await expect(updateGroup(formData({ groupSlug: group.slug, name: "Nytt namn" }))).rejects.toThrow(
       "Du har inte behörighet att redigera den här gruppen"
     );
-    await expect(deleteGroup(formData({ id: group.id }))).rejects.toThrow(
+    await expect(deleteGroup(formData({ groupSlug: group.slug }))).rejects.toThrow(
       "Du har inte behörighet att ta bort den här gruppen"
     );
 

@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
-import { getGroups, listGroupInvitations, listGroupMembers } from "@/app/actions/groups";
+import { listGroupInvitations, listGroupMembers } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { InviteGroupMemberForm } from "@/components/InviteGroupMemberForm";
 import { GroupInvitationsTable } from "@/components/members/GroupInvitationsTable";
 import { GroupMembersTable } from "@/components/members/GroupMembersTable";
-import { canManageGroupMembers } from "@/lib/actions/guards";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import { requireTenantGroup } from "@/lib/tenant-group";
+import { findGroupAccess } from "@/lib/group-access";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;
@@ -14,25 +13,23 @@ type PageProps = {
 
 export default async function GroupMembersPage({ params }: PageProps) {
   const { groupSlug } = await params;
-  const { userId, groupId } = await requireTenantGroup(groupSlug);
-
-  if (!(await canManageGroupMembers(groupId, userId))) {
+  // Loaded once per request: the list actions below reuse it.
+  const access = await findGroupAccess(groupSlug);
+  if (!access?.can("manageMembers")) {
     notFound();
   }
 
-  const [members, invitations, groups] = await Promise.all([
+  const [members, invitations] = await Promise.all([
     listGroupMembers(groupSlug),
     listGroupInvitations(groupSlug),
-    getGroups(),
   ]);
-  const groupName = groups.find((groupOption) => groupOption.slug === groupSlug)?.name ?? groupSlug;
 
   return (
     <div className="space-y-4 md:space-y-6">
       <BreadcrumbRegistrar
         trail={{
           visibility: "visible",
-          ancestors: [createGroupAncestor(groupSlug, groupName)],
+          ancestors: [createGroupAncestor(groupSlug, access.group.name)],
           tail: { kind: "static", label: "Medlemmar" },
         }}
       />
@@ -45,7 +42,7 @@ export default async function GroupMembersPage({ params }: PageProps) {
 
       <InviteGroupMemberForm groupSlug={groupSlug} />
 
-      <GroupMembersTable groupSlug={groupSlug} members={members} viewerUserId={userId} />
+      <GroupMembersTable groupSlug={groupSlug} members={members} />
 
       <GroupInvitationsTable groupSlug={groupSlug} invitations={invitations} />
     </div>

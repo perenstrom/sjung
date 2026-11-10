@@ -78,13 +78,11 @@ Use this scope as the baseline coverage matrix:
 3. Resource-in-group guards (`lib/actions/guards.ts`)
    - Allow: entity exists and belongs to the caller's resolved group.
    - Deny: entity missing or outside tenant group (expect "not found"/forbidden-style action error).
-4. Creator-only operations (`requireCreatorGroupById`) — renaming and deleting the Group
-   - Allow: user is the group creator.
-   - Deny: user is member but not creator, even when holding Claims.
-5. Membership management (`requireMemberManagerGroupBySlug`) — list/invite/remove members, grant/revoke Claims
-   - Allow: user is the group creator, or a member holding `MANAGE_MEMBERS` in that Group.
-   - Deny: member holding no Claim or only `MANAGE_CONTENT`; the Creator can never be removed or have Claims granted/revoked.
-6. Representative server-action surfaces (`app/actions/*`)
+4. Group access capabilities (`lib/group-access.ts`). One table of Member kinds × capabilities in `__tests__/integration/group-access.test.ts` covers them.
+   - `manageGroup` (rename and delete the Group): allow the Creator only; deny a Member even when holding Claims.
+   - `manageMembers` (list/invite/remove members, grant/revoke Claims): allow the Creator, or a Member holding `MANAGE_MEMBERS` in that Group; deny a Member holding no Claim or only `MANAGE_CONTENT`.
+   - `changeMember(target)`: `manageMembers`, and the target is neither the Creator nor the viewer, so the Creator can never be removed or have Claims granted/revoked.
+5. Representative server-action surfaces (`app/actions/*`)
    - Allow: valid member/creator calls succeed and mutate/read as expected.
    - Deny: cross-tenant or under-privileged calls fail before writes.
 

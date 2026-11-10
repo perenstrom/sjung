@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 type GroupRow = {
   id: string;
   name: string;
+  slug: string;
 };
 
 export function EditGroupDialog({
@@ -45,7 +46,7 @@ export function EditGroupDialog({
           }}
           className="space-y-4"
         >
-          <input type="hidden" name="id" value={group.id} />
+          <input type="hidden" name="groupSlug" value={group.slug} />
           <div className="space-y-2">
             <Label htmlFor={`edit-group-name-${group.id}`}>Gruppnamn</Label>
             <Input

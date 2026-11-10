@@ -6,9 +6,7 @@ export const groupNameSchema = z
   .trim()
   .min(1, { error: "Gruppnamn krävs" });
 
-export const groupIdSchema = z.uuid({ error: "Ogiltig grupp" });
-
-export const membershipGroupSlugSchema = z
+export const groupSlugSchema = z
   .string()
   .trim()
   .min(1, { error: "Ogiltig grupp" });
@@ -44,21 +42,10 @@ export function parseGroupNameFromFormData(formData: FormData): string {
   return result.data;
 }
 
-export function parseGroupIdFromFormData(
-  formData: FormData,
-  field = "id"
-): string {
-  const result = groupIdSchema.safeParse(formDataString(formData, field));
-  if (!result.success) {
-    throw new Error(result.error.issues[0]?.message ?? "Ogiltig grupp");
-  }
-  return result.data;
-}
-
-export function parseMembershipGroupSlugFromFormData(
+export function parseGroupSlugFromFormData(
   formData: FormData
 ): string {
-  const result = membershipGroupSlugSchema.safeParse(
+  const result = groupSlugSchema.safeParse(
     formDataString(formData, "groupSlug")
   );
   if (!result.success) {

@@ -1,23 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-
-// lib/actions/guards.ts imports getWritableGroupIdForSlug (for the by-slug
-// guards), which transitively imports the real NextAuth setup; stub it out
-// rather than pull NextAuth into this DB-only test. Tests that need a session
-// set one on the mock.
-vi.mock("@/auth", () => ({ auth: vi.fn() }));
+import { describe, expect, it } from "vitest";
 
 import { testPrisma } from "../support/db";
-import { actAs } from "../support/session";
+import { createGroup, createPiece } from "../support/fixtures";
 import {
-  createAccessScenario,
-  createGroup,
-  createPiece,
-  createUser,
-  grantClaims,
-} from "../support/fixtures";
-import {
-  requireCreatorGroupById,
-  requireMemberManagerGroupBySlug,
   requireFileInGroup,
   requireLinkInGroup,
   requirePieceInGroup,
@@ -170,93 +155,6 @@ describe("requirePieceNoteInGroup", () => {
     const otherGroup = await createGroup();
     await expect(requirePieceNoteInGroup(note.id, otherGroup.id)).rejects.toThrow(
       "Anteckning hittades inte"
-    );
-  });
-});
-
-describe("requireCreatorGroupById", () => {
-  it("allows the group's creator and denies a non-creator member", async () => {
-    const creator = await createUser();
-    const member = await createUser();
-    const group = await createGroup({ createdById: creator.id, updatedById: creator.id });
-    await testPrisma.usersToGroups.create({ data: { userId: member.id, groupId: group.id } });
-
-    const resolved = await requireCreatorGroupById(group.id, creator.id, {
-      forbiddenMessage: "Ej behörig",
-    });
-    expect(resolved.slug).toBe(group.slug);
-
-    await expect(
-      requireCreatorGroupById(group.id, member.id, { forbiddenMessage: "Ej behörig" })
-    ).rejects.toThrow("Ej behörig");
-  });
-});
-
-describe("requireMemberManagerGroupBySlug", () => {
-  const FORBIDDEN = "Du har inte behörighet att hantera medlemmar i gruppen";
-
-  it("allows the group's creator without any stored Claim", async () => {
-    const { group, creator } = await createAccessScenario();
-    actAs(creator.id);
-
-    await expect(requireMemberManagerGroupBySlug(group.slug)).resolves.toEqual({
-      userId: creator.id,
-      groupId: group.id,
-      creatorId: creator.id,
-    });
-  });
-
-  it("allows a non-creator member holding MANAGE_MEMBERS", async () => {
-    const { group, creator, member } = await createAccessScenario();
-    await grantClaims(member.id, group.id, ["MANAGE_MEMBERS"]);
-    actAs(member.id);
-
-    await expect(requireMemberManagerGroupBySlug(group.slug)).resolves.toEqual({
-      userId: member.id,
-      groupId: group.id,
-      creatorId: creator.id,
-    });
-  });
-
-  it("denies a member holding only MANAGE_CONTENT", async () => {
-    const { group, member } = await createAccessScenario();
-    await grantClaims(member.id, group.id, ["MANAGE_CONTENT"]);
-    actAs(member.id);
-
-    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
-      FORBIDDEN
-    );
-  });
-
-  it("denies a member holding no Claim", async () => {
-    const { group, member } = await createAccessScenario();
-    actAs(member.id);
-
-    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
-      FORBIDDEN
-    );
-  });
-
-  it("denies a member whose MANAGE_MEMBERS is held in a different group", async () => {
-    const { group, member } = await createAccessScenario();
-    const otherGroup = await createGroup();
-    await testPrisma.usersToGroups.create({
-      data: { userId: member.id, groupId: otherGroup.id },
-    });
-    await grantClaims(member.id, otherGroup.id, ["MANAGE_MEMBERS"]);
-    actAs(member.id);
-
-    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
-      FORBIDDEN
-    );
-  });
-
-  it("denies a non-member", async () => {
-    const { group, nonMember } = await createAccessScenario();
-    actAs(nonMember.id);
-
-    await expect(requireMemberManagerGroupBySlug(group.slug)).rejects.toThrow(
-      "Ogiltig grupp eller saknad behörighet"
     );
   });
 });
