@@ -4,11 +4,11 @@ import {
   groupNameSchema,
   inviteEmailSchema,
   memberUserIdSchema,
-  membershipGroupSlugSchema,
+  groupSlugSchema,
   parseGroupClaimsFromFormData,
   parseGroupNameFromFormData,
   parseMemberUserIdFromFormData,
-  parseMembershipGroupSlugFromFormData,
+  parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
 
 function createFormData(values: Record<string, string>): FormData {
@@ -58,20 +58,20 @@ describe("parseGroupNameFromFormData", () => {
   });
 });
 
-describe("membershipGroupSlugSchema", () => {
+describe("groupSlugSchema", () => {
   it("accepts trimmed non-empty slug", () => {
-    expect(membershipGroupSlugSchema.parse("  my-slug  ")).toBe("my-slug");
+    expect(groupSlugSchema.parse("  my-slug  ")).toBe("my-slug");
   });
 
   it("rejects empty with Ogiltig grupp", () => {
-    expect(() => membershipGroupSlugSchema.parse("")).toThrowError(
+    expect(() => groupSlugSchema.parse("")).toThrowError(
       expect.objectContaining({
         issues: expect.arrayContaining([
           expect.objectContaining({ message: "Ogiltig grupp" }),
         ]),
       })
     );
-    expect(() => membershipGroupSlugSchema.parse("   ")).toThrowError(
+    expect(() => groupSlugSchema.parse("   ")).toThrowError(
       expect.objectContaining({
         issues: expect.arrayContaining([
           expect.objectContaining({ message: "Ogiltig grupp" }),
@@ -128,18 +128,18 @@ describe("memberUserIdSchema", () => {
   });
 });
 
-describe("parseMembershipGroupSlugFromFormData", () => {
+describe("parseGroupSlugFromFormData", () => {
   it("parses groupSlug", () => {
     const fd = createFormData({ groupSlug: "  choir-1  " });
-    expect(parseMembershipGroupSlugFromFormData(fd)).toBe("choir-1");
+    expect(parseGroupSlugFromFormData(fd)).toBe("choir-1");
   });
 
   it("throws Ogiltig grupp when missing or blank", () => {
-    expect(() => parseMembershipGroupSlugFromFormData(createFormData({}))).toThrow(
+    expect(() => parseGroupSlugFromFormData(createFormData({}))).toThrow(
       "Ogiltig grupp"
     );
     expect(() =>
-      parseMembershipGroupSlugFromFormData(
+      parseGroupSlugFromFormData(
         createFormData({ groupSlug: "   " })
       )
     ).toThrow("Ogiltig grupp");

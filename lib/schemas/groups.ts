@@ -6,7 +6,7 @@ export const groupNameSchema = z
   .trim()
   .min(1, { error: "Gruppnamn krävs" });
 
-export const membershipGroupSlugSchema = z
+export const groupSlugSchema = z
   .string()
   .trim()
   .min(1, { error: "Ogiltig grupp" });
@@ -42,10 +42,10 @@ export function parseGroupNameFromFormData(formData: FormData): string {
   return result.data;
 }
 
-export function parseMembershipGroupSlugFromFormData(
+export function parseGroupSlugFromFormData(
   formData: FormData
 ): string {
-  const result = membershipGroupSlugSchema.safeParse(
+  const result = groupSlugSchema.safeParse(
     formDataString(formData, "groupSlug")
   );
   if (!result.success) {

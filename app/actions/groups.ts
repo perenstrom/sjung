@@ -19,7 +19,7 @@ import {
   parseGroupNameFromFormData,
   parseInvitationIdFromFormData,
   parseMemberUserIdFromFormData,
-  parseMembershipGroupSlugFromFormData,
+  parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
 import {
   revalidateAppAndMyGroupsRoutes,
@@ -103,7 +103,7 @@ export async function createGroup(formData: FormData) {
 }
 
 export async function updateGroup(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const name = parseGroupNameFromFormData(formData);
 
   await runGroupMutation(
@@ -126,7 +126,7 @@ export async function updateGroup(formData: FormData) {
 }
 
 export async function deleteGroup(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
 
   await runGroupMutation(
     groupSlug,
@@ -195,7 +195,7 @@ export async function inviteMemberToGroup(
   _prevState: InviteMemberState,
   formData: FormData
 ): Promise<InviteMemberState> {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
 
   return runGroupMutation(
     groupSlug,
@@ -244,7 +244,7 @@ const INVITATION_NOT_FOUND = "Inbjudan hittades inte";
 
 /** "Ta bort" on a listed Invitation: deletes it, so its link stops working. */
 export async function revokeGroupInvitation(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const invitationId = parseInvitationIdFromFormData(formData);
 
   await runGroupMutation(
@@ -263,7 +263,7 @@ export type ResendGroupInvitationResult = { ok: true; email: string } | { ok: fa
 
 /** "Skicka igen" on a listed Invitation, pending or expired: the same re-send as "Bjud in". */
 export async function resendGroupInvitation(formData: FormData): Promise<ResendGroupInvitationResult> {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const invitationId = parseInvitationIdFromFormData(formData);
 
   return runGroupMutation(
@@ -285,7 +285,7 @@ export async function resendGroupInvitation(formData: FormData): Promise<ResendG
 }
 
 export async function removeMemberFromGroup(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const memberUserId = parseMemberUserIdFromFormData(formData);
 
   await runGroupMutation(
@@ -324,7 +324,7 @@ export async function removeMemberFromGroup(formData: FormData) {
  * The caller must manage members, and may not target the Creator or themselves.
  */
 export async function setMemberClaims(formData: FormData) {
-  const groupSlug = parseMembershipGroupSlugFromFormData(formData);
+  const groupSlug = parseGroupSlugFromFormData(formData);
   const memberUserId = parseMemberUserIdFromFormData(formData);
   const claims = parseGroupClaimsFromFormData(formData);
 
