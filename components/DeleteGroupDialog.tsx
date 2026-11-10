@@ -18,6 +18,7 @@ import {
 type GroupRow = {
   id: string;
   name: string;
+  slug: string;
 };
 
 export function DeleteGroupDialog({
@@ -64,7 +65,7 @@ export function DeleteGroupDialog({
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit}>
-          <input type="hidden" name="id" value={group.id} />
+          <input type="hidden" name="groupSlug" value={group.slug} />
           {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

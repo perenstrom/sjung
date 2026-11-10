@@ -11,13 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { GroupClaim } from "@/app/generated/prisma/enums";
-import { canChangeMember } from "@/lib/groups";
 
 export type GroupMembersTableRow = {
   id: string;
   name: string;
   email: string;
   isCreator: boolean;
+  /** Whether the viewer may change this Member's Claims or remove them. */
+  canChange: boolean;
   claims: GroupClaim[];
 };
 
@@ -27,11 +28,9 @@ const EMPTY_LABEL = "Inga medlemmar hittades.";
 export function GroupMembersTable({
   groupSlug,
   members,
-  viewerUserId,
 }: {
   groupSlug: string;
   members: GroupMembersTableRow[];
-  viewerUserId: string;
 }) {
   return (
     <>
@@ -45,7 +44,7 @@ export function GroupMembersTable({
               primary={member.name}
               secondary={member.email}
               trailing={
-                canChangeMember(member, viewerUserId) ? (
+                member.canChange ? (
                   <MemberActions groupSlug={groupSlug} member={member} />
                 ) : null
               }
@@ -82,7 +81,7 @@ export function GroupMembersTable({
                     <GroupMemberClaimBadges member={member} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {canChangeMember(member, viewerUserId) ? (
+                    {member.canChange ? (
                       <div className="flex justify-end">
                         <MemberActions groupSlug={groupSlug} member={member} />
                       </div>

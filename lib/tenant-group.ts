@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import prisma from "@/lib/prisma";
-import { requireUser } from "@/lib/auth/require-user";
+import { findGroupAccess, requireGroupAccess, type GroupAccess } from "@/lib/group-access";
 
 export type TenantGroupContext = {
   userId: string;
@@ -12,40 +11,25 @@ export type TenantGroupContext = {
 export async function requireTenantGroup(
   groupSlug: string
 ): Promise<TenantGroupContext> {
-  const user = await requireUser();
-  const group = await prisma.group.findFirst({
-    where: {
-      slug: groupSlug,
-      users: { some: { userId: user.id } },
-    },
-    select: { id: true, slug: true },
-  });
-  if (!group) {
+  const access = await findGroupAccess(groupSlug);
+  if (!access) {
     notFound();
   }
-  return { userId: user.id, groupId: group.id, groupSlug: group.slug };
+  return { userId: access.userId, groupId: access.group.id, groupSlug: access.group.slug };
 }
 
 /** Same membership check as {@link requireTenantGroup}, but throws on bad slug for server actions. */
 export async function getWritableGroupIdForSlug(groupSlug: string) {
-  const user = await requireUser();
-  const group = await prisma.group.findFirst({
-    where: {
-      slug: groupSlug,
-      users: { some: { userId: user.id } },
-    },
-    select: { id: true },
-  });
-  if (!group) {
-    throw new Error("Ogiltig grupp eller saknad behörighet");
-  }
-  return { userId: user.id, groupId: group.id };
+  const access = await requireGroupAccess(groupSlug);
+  return { userId: access.userId, groupId: access.group.id };
 }
 
 export type GroupMutationContext = {
   userId: string;
   groupId: string;
   groupSlug: string;
+  /** What the User may do in the Group; guards call `access.require(...)`. */
+  access: GroupAccess;
 };
 
 /**
@@ -59,8 +43,13 @@ export async function runGroupMutation<TGuard, TResult>(
   guard: (ctx: GroupMutationContext) => Promise<TGuard>,
   mutation: (ctx: GroupMutationContext, guarded: TGuard) => Promise<TResult>
 ): Promise<TResult> {
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const ctx: GroupMutationContext = { userId, groupId, groupSlug };
+  const access = await requireGroupAccess(groupSlug);
+  const ctx: GroupMutationContext = {
+    userId: access.userId,
+    groupId: access.group.id,
+    groupSlug,
+    access,
+  };
   const guarded = await guard(ctx);
   return mutation(ctx, guarded);
 }
