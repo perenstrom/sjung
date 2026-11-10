@@ -46,6 +46,10 @@ _Avoid_: Admin, Owner, Role.
 A specific elevated capability a Member can hold within a Group, independent of Creator status. Today: `MANAGE_MEMBERS` (invite/remove members, grant/revoke Claims on other members) and `MANAGE_CONTENT` (write access to all of the Group's content, bypassing the default that a Member may only edit/delete content they created). A Member may hold neither, either, or both. See ADR-0002. Swedish UI: _Behörighet_ / _Behörigheter_ — _Hantera medlemmar_ (`MANAGE_MEMBERS`), _Hantera innehåll_ (`MANAGE_CONTENT`).
 _Avoid_: Role, Permission, Admin — "Claim" is this model's term.
 
+**Group access**:
+What one User may do in one Group: whether they are a Member at all, and which capabilities they have there (manage members, rename or delete the Group, change a given Member). Derived from membership, Creator status and Claims — never stored.
+_Avoid_: Permissions, Role, Rights.
+
 **Person**:
 A credited contributor (composer, arranger, lyricist, …) scoped to a Group — deliberately not a login account. A Person may be credited on Pieces without ever holding a Sjung account, and a User is not automatically a Person.
 _Avoid_: User, Contributor, Member.
