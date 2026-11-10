@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  groupIdSchema,
   groupNameSchema,
   inviteEmailSchema,
   memberUserIdSchema,
   membershipGroupSlugSchema,
   parseGroupClaimsFromFormData,
-  parseGroupIdFromFormData,
   parseGroupNameFromFormData,
   parseMemberUserIdFromFormData,
   parseMembershipGroupSlugFromFormData,
@@ -44,31 +42,6 @@ describe("groupNameSchema", () => {
   });
 });
 
-describe("groupIdSchema", () => {
-  it("accepts a valid UUID", () => {
-    expect(
-      groupIdSchema.parse("550e8400-e29b-41d4-a716-446655440000")
-    ).toBe("550e8400-e29b-41d4-a716-446655440000");
-  });
-
-  it("rejects invalid ids with Ogiltig grupp", () => {
-    expect(() => groupIdSchema.parse("")).toThrowError(
-      expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Ogiltig grupp" }),
-        ]),
-      })
-    );
-    expect(() => groupIdSchema.parse("not-a-uuid")).toThrowError(
-      expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Ogiltig grupp" }),
-        ]),
-      })
-    );
-  });
-});
-
 describe("parseGroupNameFromFormData", () => {
   it("parses name from FormData", () => {
     const fd = createFormData({ name: "  Test  " });
@@ -82,20 +55,6 @@ describe("parseGroupNameFromFormData", () => {
     expect(() =>
       parseGroupNameFromFormData(createFormData({ name: "  " }))
     ).toThrow("Gruppnamn krävs");
-  });
-});
-
-describe("parseGroupIdFromFormData", () => {
-  it("parses id from FormData", () => {
-    const id = "550e8400-e29b-41d4-a716-446655440000";
-    const fd = createFormData({ id });
-    expect(parseGroupIdFromFormData(fd)).toBe(id);
-  });
-
-  it("throws Ogiltig grupp for invalid id", () => {
-    expect(() =>
-      parseGroupIdFromFormData(createFormData({ id: "x" }))
-    ).toThrow("Ogiltig grupp");
   });
 });
 

@@ -1,6 +1,5 @@
-import { GroupClaim, type Prisma } from "@/app/generated/prisma/client";
+import type { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
-import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
 
 /** For `runGroupMutation` callers whose mutation needs no guarded resource. */
 export async function noGuard(): Promise<undefined> {
@@ -18,7 +17,6 @@ const DEFAULT_SET_LIST_NOTE_SELECT = { id: true, setListId: true } satisfies Pri
 const DEFAULT_FILE_SELECT = { id: true } satisfies Prisma.FileSelect;
 const DEFAULT_LINK_SELECT = { id: true } satisfies Prisma.LinkSelect;
 const DEFAULT_PIECE_NOTE_SELECT = { id: true, pieceId: true } satisfies Prisma.PieceNoteSelect;
-const DEFAULT_GROUP_SELECT = { slug: true } satisfies Prisma.GroupSelect;
 
 type PieceGuardOptions<TSelect extends Prisma.PieceSelect> = {
   notFoundMessage?: string;
@@ -57,11 +55,6 @@ type LinkGuardOptions<TSelect extends Prisma.LinkSelect> = {
 
 type PieceNoteGuardOptions<TSelect extends Prisma.PieceNoteSelect> = {
   notFoundMessage?: string;
-  select?: TSelect;
-};
-
-type GroupCreatorByIdGuardOptions<TSelect extends Prisma.GroupSelect> = {
-  forbiddenMessage: string;
   select?: TSelect;
 };
 
@@ -233,65 +226,4 @@ export async function requirePieceNoteInGroup<
   }
 
   return note;
-}
-
-/** Matches the group only if `userId` is its Creator or holds `MANAGE_MEMBERS` in it. */
-function memberManagerGroupWhere(groupId: string, userId: string): Prisma.GroupWhereInput {
-  return {
-    id: groupId,
-    OR: [
-      { createdById: userId },
-      {
-        users: {
-          some: { userId, claims: { some: { claim: GroupClaim.MANAGE_MEMBERS } } },
-        },
-      },
-    ],
-  };
-}
-
-export async function canManageGroupMembers(groupId: string, userId: string): Promise<boolean> {
-  const group = await prisma.group.findFirst({
-    where: memberManagerGroupWhere(groupId, userId),
-    select: { id: true },
-  });
-  return group !== null;
-}
-
-/**
- * Membership-management guard: the Creator or any `MANAGE_MEMBERS` holder.
- * Returns the Group's `creatorId` so callers can refuse to target the Creator.
- */
-export async function requireMemberManagerGroupBySlug(groupSlug: string) {
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const group = await prisma.group.findFirst({
-    where: memberManagerGroupWhere(groupId, userId),
-    select: { createdById: true },
-  });
-
-  if (!group) {
-    throw new Error("Du har inte behörighet att hantera medlemmar i gruppen");
-  }
-
-  return { userId, groupId, creatorId: group.createdById };
-}
-
-export async function requireCreatorGroupById<
-  TSelect extends Prisma.GroupSelect = typeof DEFAULT_GROUP_SELECT,
->(
-  groupId: string,
-  userId: string,
-  options: GroupCreatorByIdGuardOptions<TSelect>
-): Promise<Prisma.GroupGetPayload<{ select: TSelect }>> {
-  const select = (options.select ?? DEFAULT_GROUP_SELECT) as TSelect;
-  const group = await prisma.group.findFirst({
-    where: { id: groupId, createdById: userId },
-    select,
-  });
-
-  if (!group) {
-    throw new Error(options.forbiddenMessage);
-  }
-
-  return group;
 }
