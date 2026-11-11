@@ -1,12 +1,6 @@
 "use server";
 
-import {
-  noGuard,
-  requirePieceInGroup,
-  requireSetListInGroup,
-  requireSetListNoteInGroup,
-  requireSetListPieceInGroup,
-} from "@/lib/actions/guards";
+import { findInGroup } from "@/lib/find-in-group";
 import prisma from "@/lib/prisma";
 import { parsePieceIdFromFormData } from "@/lib/schemas/pieces";
 import {
@@ -27,7 +21,7 @@ import {
   revalidateGroupSetListDetailRoutes,
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
-import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
+import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 import { SetListSequence } from "@/lib/setlists/sequence";
 import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
 
@@ -98,7 +92,7 @@ export async function createSetList(formData: FormData) {
   const name = parseSetListNameFromFormData(formData);
   const date = parseOptionalSetListDateFromFormData(formData);
 
-  await runGroupMutation(groupSlug, noGuard, async ({ userId, groupId }) => {
+  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     await prisma.setList.create({
       data: {
         name,
@@ -119,39 +113,33 @@ export async function updateSetList(formData: FormData) {
   const name = parseSetListNameFromFormData(formData);
   const date = parseOptionalSetListDateFromFormData(formData);
 
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) => requireSetListInGroup(setListId, groupId),
-    async ({ userId }, existing) => {
-      await prisma.setList.update({
-        where: { id: existing.id },
-        data: {
-          name,
-          date,
-          updatedById: userId,
-        },
-      });
+  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const existing = await findInGroup(groupId, "setList", setListId);
+    await prisma.setList.update({
+      where: { id: existing.id },
+      data: {
+        name,
+        date,
+        updatedById: userId,
+      },
+    });
 
-      revalidateGroupSetListsRoutes(groupSlug);
-    }
-  );
+    revalidateGroupSetListsRoutes(groupSlug);
+  });
 }
 
 export async function deleteSetList(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListId = parseSetListIdFromFormData(formData);
 
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) => requireSetListInGroup(setListId, groupId),
-    async (_ctx, existing) => {
-      await prisma.setList.delete({
-        where: { id: existing.id },
-      });
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const existing = await findInGroup(groupId, "setList", setListId);
+    await prisma.setList.delete({
+      where: { id: existing.id },
+    });
 
-      revalidateGroupSetListsRoutes(groupSlug);
-    }
-  );
+    revalidateGroupSetListsRoutes(groupSlug);
+  });
 }
 
 export async function addPieceToSetList(formData: FormData) {
@@ -159,41 +147,33 @@ export async function addPieceToSetList(formData: FormData) {
   const setListId = parseSetListIdFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
 
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) =>
-      Promise.all([
-        requireSetListInGroup(setListId, groupId),
-        requirePieceInGroup(pieceId, groupId),
-      ]),
-    async ({ userId }, [setList, piece]) => {
-      await SetListSequence.append(setList.id, { kind: "piece", pieceId: piece.id }, userId);
+  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const [setList, piece] = await Promise.all([
+      findInGroup(groupId, "setList", setListId),
+      findInGroup(groupId, "piece", pieceId),
+    ]);
+    await SetListSequence.append(setList.id, { kind: "piece", pieceId: piece.id }, userId);
 
-      revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
-      revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
-    }
-  );
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+    revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+  });
 }
 
 export async function removePieceFromSetList(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListPieceId = parseSetListPieceIdFromFormData(formData);
 
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) =>
-      requireSetListPieceInGroup(setListPieceId, groupId, {
-        select: { id: true, setListId: true, pieceId: true },
-      }),
-    async (_ctx, setListPiece) => {
-      await prisma.setListPiece.delete({
-        where: { id: setListPiece.id },
-      });
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const setListPiece = await findInGroup(groupId, "setListPiece", setListPieceId, {
+      select: { id: true, setListId: true, pieceId: true },
+    });
+    await prisma.setListPiece.delete({
+      where: { id: setListPiece.id },
+    });
 
-      revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
-      revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
-    }
-  );
+    revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
+    revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
+  });
 }
 
 export async function reorderSetListSteps(formData: FormData) {
@@ -201,15 +181,12 @@ export async function reorderSetListSteps(formData: FormData) {
   const setListId = parseSetListIdFromFormData(formData);
   const orderedSetListStepIds = parseOrderedSetListStepIdsFromFormData(formData);
 
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) => requireSetListInGroup(setListId, groupId),
-    async ({ userId }, setList) => {
-      await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
+  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const setList = await findInGroup(groupId, "setList", setListId);
+    await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
 
-      revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
-    }
-  );
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+  });
 }
 
 export async function appendSetListNote(formData: FormData) {
@@ -217,33 +194,26 @@ export async function appendSetListNote(formData: FormData) {
   const setListId = parseSetListIdFromFormData(formData);
   const content = parseSetListNoteContentFromFormData(formData);
 
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) => requireSetListInGroup(setListId, groupId),
-    async ({ userId }, setList) => {
-      await SetListSequence.append(setList.id, { kind: "note", content }, userId);
+  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const setList = await findInGroup(groupId, "setList", setListId);
+    await SetListSequence.append(setList.id, { kind: "note", content }, userId);
 
-      revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
-    }
-  );
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+  });
 }
 
 export async function deleteSetListNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListNoteId = parseSetListNoteIdFromFormData(formData);
 
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) =>
-      requireSetListNoteInGroup(setListNoteId, groupId, {
-        select: { id: true, setListId: true },
-      }),
-    async (_ctx, note) => {
-      await prisma.setListNote.delete({
-        where: { id: note.id },
-      });
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const note = await findInGroup(groupId, "setListNote", setListNoteId, {
+      select: { id: true, setListId: true },
+    });
+    await prisma.setListNote.delete({
+      where: { id: note.id },
+    });
 
-      revalidateGroupSetListDetailRoutes(groupSlug, note.setListId);
-    }
-  );
+    revalidateGroupSetListDetailRoutes(groupSlug, note.setListId);
+  });
 }
