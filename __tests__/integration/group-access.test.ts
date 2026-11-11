@@ -5,7 +5,7 @@ vi.mock("@/auth", () => ({ auth: vi.fn() }));
 import type { GroupClaim } from "@/app/generated/prisma/client";
 import { testPrisma } from "../support/db";
 import { actAs } from "../support/session";
-import { createAccessScenario, createGroup, createUser, grantClaims } from "../support/fixtures";
+import { createAccessScenario, createGroup, createMember, grantClaims } from "../support/fixtures";
 import {
   changeMember,
   findGroupAccess,
@@ -27,11 +27,7 @@ async function createViewer(kind: MemberKind) {
   if (kind === "non-Member") {
     return { group, creator, target, viewer: nonMember };
   }
-  const viewer = await createUser();
-  await testPrisma.usersToGroups.create({ data: { userId: viewer.id, groupId: group.id } });
-  if (kind !== "plain Member") {
-    await grantClaims(viewer.id, group.id, [kind satisfies GroupClaim]);
-  }
+  const viewer = await createMember(group, kind === "plain Member" ? [] : [kind satisfies GroupClaim]);
   return { group, creator, target, viewer };
 }
 

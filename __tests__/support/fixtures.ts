@@ -95,6 +95,14 @@ export async function grantClaims(
   );
 }
 
+/** A new User who is a Member of the Group, holding `claims`. */
+export async function createMember(group: Group, claims: GroupClaim[] = []): Promise<User> {
+  const member = await createUser();
+  await testPrisma.usersToGroups.create({ data: { userId: member.id, groupId: group.id } });
+  await grantClaims(member.id, group.id, claims);
+  return member;
+}
+
 type CreatePieceOptions = Partial<{
   id: string;
   name: string;
