@@ -6,6 +6,12 @@ import type {
   GroupMemberClaim,
   Piece,
   PieceNote,
+  Person,
+  SetList,
+  SetListPiece,
+  SetListNote,
+  File,
+  Link,
 } from "@/app/generated/prisma/client";
 
 let userCounter = 0;
@@ -147,6 +153,77 @@ export async function createPieceNote({
       updatedById: createdById,
       ...(updatedAt !== undefined ? { updatedAt } : {}),
     },
+  });
+}
+
+/** A Person in the Group, created by the Group's Creator. */
+export async function createPerson(group: Group, name = "Test Person"): Promise<Person> {
+  return testPrisma.person.create({
+    data: { name, groupId: group.id, createdById: group.createdById, updatedById: group.createdById },
+  });
+}
+
+/** A Set list in the Group, created by the Group's Creator. */
+export async function createSetList(group: Group, name = "Test Set List"): Promise<SetList> {
+  return testPrisma.setList.create({
+    data: { name, groupId: group.id, createdById: group.createdById, updatedById: group.createdById },
+  });
+}
+
+/** Adds the Piece to the Set list at `position`, by the Set list's creator. */
+export async function createSetListPiece(
+  setList: SetList,
+  piece: Piece,
+  position = 1000,
+): Promise<SetListPiece> {
+  return testPrisma.setListPiece.create({
+    data: {
+      setListId: setList.id,
+      pieceId: piece.id,
+      position,
+      createdById: setList.createdById,
+      updatedById: setList.createdById,
+    },
+  });
+}
+
+/** Adds a note step to the Set list at `position`, by the Set list's creator. */
+export async function createSetListNote(
+  setList: SetList,
+  content = "Test set list note",
+  position = 1000,
+): Promise<SetListNote> {
+  return testPrisma.setListNote.create({
+    data: {
+      setListId: setList.id,
+      content,
+      position,
+      createdById: setList.createdById,
+      updatedById: setList.createdById,
+    },
+  });
+}
+
+/** A File row on the Piece; nothing is uploaded to storage. */
+export async function createFile(piece: Piece): Promise<File> {
+  return testPrisma.file.create({
+    data: {
+      pieceId: piece.id,
+      displayName: "Score",
+      fileName: "score.pdf",
+      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/score.pdf`,
+      mimeType: "application/pdf",
+      size: 1024,
+      createdById: piece.createdById,
+      updatedById: piece.createdById,
+    },
+  });
+}
+
+/** A Link on the Piece, by the Piece's creator. */
+export async function createLink(piece: Piece, url = "https://example.com"): Promise<Link> {
+  return testPrisma.link.create({
+    data: { pieceId: piece.id, url, createdById: piece.createdById, updatedById: piece.createdById },
   });
 }
 

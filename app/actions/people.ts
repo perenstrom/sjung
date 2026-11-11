@@ -7,7 +7,7 @@ import {
   parseWritableGroupSlugParam,
 } from "@/lib/schemas/people";
 import { revalidateGroupPeopleRoutes } from "@/lib/revalidate/group-routes";
-import { getWritableGroupIdForSlug } from "@/lib/tenant-group";
+import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 
 export async function getPeople(groupSlug: string) {
   const slug = parseWritableGroupSlugParam(groupSlug);
@@ -20,20 +20,20 @@ export async function getPeople(groupSlug: string) {
 
 export async function createPerson(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
-  const { userId, groupId } = await getWritableGroupIdForSlug(groupSlug);
-
   const name = parsePersonNameFromFormData(formData);
 
-  const person = await prisma.person.create({
-    data: {
-      name,
-      groupId,
-      createdById: userId,
-      updatedById: userId,
-    },
-    select: { id: true, name: true },
-  });
+  return runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const person = await prisma.person.create({
+      data: {
+        name,
+        groupId,
+        createdById: userId,
+        updatedById: userId,
+      },
+      select: { id: true, name: true },
+    });
 
-  revalidateGroupPeopleRoutes(groupSlug);
-  return person;
+    revalidateGroupPeopleRoutes(groupSlug);
+    return person;
+  });
 }

@@ -8,7 +8,6 @@ import {
   parseSetListNoteContentFromFormData,
   parseSetListNoteIdFromFormData,
   parseSetListPieceIdFromFormData,
-  parseSetListPieceNoteIdFromFormData,
 } from "@/lib/schemas/setlists";
 
 function createFormData(values: Record<string, string>): FormData {
@@ -49,17 +48,6 @@ describe("id field parsers", () => {
     ).toBe("id-2");
     expect(() => parseSetListPieceIdFromFormData(createFormData({}))).toThrow(
       "Repertoarpost saknas"
-    );
-  });
-
-  it("returns trimmed setListPieceNoteId and throws Anteckning saknas when empty", () => {
-    expect(
-      parseSetListPieceNoteIdFromFormData(
-        createFormData({ setListPieceNoteId: "  id-3  " })
-      )
-    ).toBe("id-3");
-    expect(() => parseSetListPieceNoteIdFromFormData(createFormData({}))).toThrow(
-      "Anteckning saknas"
     );
   });
 

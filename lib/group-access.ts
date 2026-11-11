@@ -29,6 +29,7 @@ const NOT_A_MEMBER = "Ogiltig grupp eller saknad behörighet";
 const DEFAULT_MESSAGES: Record<GroupAccessDenial, string> = {
   lacksManageMembers: "Du har inte behörighet att hantera medlemmar i gruppen",
   lacksManageGroup: "Du har inte behörighet att hantera gruppen",
+  lacksManageContent: "Du har inte behörighet att ändra innehåll i gruppen",
   targetIsSelf: "Du kan inte ändra ditt eget medlemskap",
   targetIsCreator: "Gruppens administratör kan inte ändras",
 };

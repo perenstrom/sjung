@@ -28,15 +28,16 @@ export type GroupMutationContext = {
   userId: string;
   groupId: string;
   groupSlug: string;
-  /** What the User may do in the Group; guards call `access.require(...)`. */
+  /** What the User may do in the Group. */
   access: GroupAccess;
 };
 
 /**
- * Shared server-action prelude: resolve tenant membership, run a guard against
- * the resolved group, then run the mutation against the guarded resource.
- * Callers that need no guard pass `noGuard` from `@/lib/actions/guards`;
- * callers that need to revalidate do so as the last step of `mutation`.
+ * Server-action prelude for the Group and its Members: resolve tenant
+ * membership, run a guard (usually `access.require(...)`), then run the
+ * mutation against what the guard returned. Content changes use
+ * {@link runContentMutation} instead. Callers that need to revalidate do so as
+ * the last step of `mutation`.
  */
 export async function runGroupMutation<TGuard, TResult>(
   groupSlug: string,
@@ -52,4 +53,21 @@ export async function runGroupMutation<TGuard, TResult>(
   };
   const guarded = await guard(ctx);
   return mutation(ctx, guarded);
+}
+
+/**
+ * The one entry point for changing a Group's content (Pieces, Set lists,
+ * People and everything under them): resolve the User's Group access, require
+ * `manageContent` once, then run the mutation. The mutation looks up the rows
+ * it touches with `findInGroup`, and revalidates as its last step.
+ */
+export async function runContentMutation<TResult>(
+  groupSlug: string,
+  mutation: (ctx: GroupMutationContext) => Promise<TResult>
+): Promise<TResult> {
+  return runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageContent"),
+    (ctx) => mutation(ctx)
+  );
 }

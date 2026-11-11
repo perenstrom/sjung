@@ -36,6 +36,7 @@ async function createViewer(kind: MemberKind) {
 }
 
 type Expected = {
+  manageContent: boolean;
   manageMembers: boolean;
   manageGroup: boolean;
   changeOtherMember: boolean;
@@ -44,6 +45,7 @@ type Expected = {
 };
 
 const NOTHING: Expected = {
+  manageContent: false,
   manageMembers: false,
   manageGroup: false,
   changeOtherMember: false,
@@ -54,10 +56,23 @@ const NOTHING: Expected = {
 describe("Group access by Member kind", () => {
   it.each<[MemberKind, Expected]>([
     ["non-Member", NOTHING],
-    ["plain Member", NOTHING],
-    ["MANAGE_CONTENT", NOTHING],
-    ["MANAGE_MEMBERS", { ...NOTHING, manageMembers: true, changeOtherMember: true }],
-    ["Creator", { ...NOTHING, manageMembers: true, manageGroup: true, changeOtherMember: true }],
+    // Every Member may manage content until PER-305 switches the rule on.
+    ["plain Member", { ...NOTHING, manageContent: true }],
+    ["MANAGE_CONTENT", { ...NOTHING, manageContent: true }],
+    [
+      "MANAGE_MEMBERS",
+      { ...NOTHING, manageContent: true, manageMembers: true, changeOtherMember: true },
+    ],
+    [
+      "Creator",
+      {
+        ...NOTHING,
+        manageContent: true,
+        manageMembers: true,
+        manageGroup: true,
+        changeOtherMember: true,
+      },
+    ],
   ])("%s", async (kind, expected) => {
     const { group, creator, target, viewer } = await createViewer(kind);
     actAs(viewer.id);
@@ -71,6 +86,7 @@ describe("Group access by Member kind", () => {
     for (const entry of [access, listed]) {
       const can = entry?.can.bind(entry) ?? (() => false);
       expect({
+        manageContent: can("manageContent"),
         manageMembers: can("manageMembers"),
         manageGroup: can("manageGroup"),
         changeOtherMember: can(changeMember(target.id)),

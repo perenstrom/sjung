@@ -6,7 +6,7 @@ vi.mock("@/lib/group-access", () => ({
 }));
 
 import { requireGroupAccess, type GroupAccess } from "@/lib/group-access";
-import { runGroupMutation } from "@/lib/tenant-group";
+import { runContentMutation, runGroupMutation } from "@/lib/tenant-group";
 
 const mockRequireGroupAccess = vi.mocked(requireGroupAccess);
 
@@ -66,6 +66,53 @@ describe("runGroupMutation", () => {
       "Ogiltig grupp eller saknad behörighet"
     );
     expect(guard).not.toHaveBeenCalled();
+    expect(mutation).not.toHaveBeenCalled();
+  });
+});
+
+describe("runContentMutation", () => {
+  it("requires manageContent, then runs the mutation with the Group's context", async () => {
+    const calls: string[] = [];
+    const contentAccess = {
+      ...access,
+      require: vi.fn((capability) => {
+        calls.push(`require:${capability}`);
+      }),
+    } satisfies GroupAccess;
+    mockRequireGroupAccess.mockResolvedValue(contentAccess);
+
+    const result = await runContentMutation("kor", async (ctx) => {
+      calls.push("mutation");
+      expect(ctx).toEqual({ ...expectedCtx, access: contentAccess });
+      return "mutation-result";
+    });
+
+    expect(result).toBe("mutation-result");
+    expect(calls).toEqual(["require:manageContent", "mutation"]);
+  });
+
+  it("refuses without running the mutation when the Member may not manage content", async () => {
+    mockRequireGroupAccess.mockResolvedValue({
+      ...access,
+      require: () => {
+        throw new Error("Du har inte behörighet att ändra innehåll i gruppen");
+      },
+    });
+    const mutation = vi.fn();
+
+    await expect(runContentMutation("kor", mutation)).rejects.toThrow(
+      "Du har inte behörighet att ändra innehåll i gruppen"
+    );
+    expect(mutation).not.toHaveBeenCalled();
+  });
+
+  it("refuses without running the mutation when the User isn't a Member", async () => {
+    mockRequireGroupAccess.mockRejectedValue(new Error("Ogiltig grupp eller saknad behörighet"));
+    const mutation = vi.fn();
+
+    await expect(runContentMutation("okand-grupp", mutation)).rejects.toThrow(
+      "Ogiltig grupp eller saknad behörighet"
+    );
     expect(mutation).not.toHaveBeenCalled();
   });
 });

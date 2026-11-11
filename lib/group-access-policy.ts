@@ -9,6 +9,12 @@ import { GroupClaim } from "@/app/generated/prisma/enums";
 export type GroupCapability =
   /** Invite, list and remove Members, and set their Claims: the Creator or `MANAGE_MEMBERS`. */
   | "manageMembers"
+  /**
+   * Create, edit or delete any of the Group's content (ADR-0004). Depends only
+   * on the Member, never on the content row. Every Member has it for now:
+   * PER-305 narrows it to the Creator or `MANAGE_CONTENT`.
+   */
+  | "manageContent"
   /** Rename or delete the Group: the Creator only. */
   | "manageGroup"
   /** Change or remove one Member: `manageMembers`, and the target is neither the Creator nor the viewer. */
@@ -24,6 +30,7 @@ export function changeMember(targetUserId: string): ChangeMember {
 export type GroupAccessDenial =
   | "lacksManageMembers"
   | "lacksManageGroup"
+  | "lacksManageContent"
   | "targetIsSelf"
   | "targetIsCreator";
 
@@ -44,6 +51,9 @@ export function groupAccessDenial(
 
   if (capability === "manageMembers") {
     return managesMembers ? null : "lacksManageMembers";
+  }
+  if (capability === "manageContent") {
+    return null;
   }
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";
