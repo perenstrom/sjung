@@ -10,8 +10,8 @@ describe("attachmentDisposition", () => {
   });
 
   it("handles a name with quotes and å/ä/ö", () => {
-    expect(attachmentDisposition(`Så "ända" vår.pdf`)).toBe(
-      `attachment; filename="Sa _anda_ var.pdf"; filename*=UTF-8''S%C3%A5%20%22%C3%A4nda%22%20v%C3%A5r.pdf`
+    expect(attachmentDisposition(`Så "ända" hörde.pdf`)).toBe(
+      `attachment; filename="Sa _anda_ horde.pdf"; filename*=UTF-8''S%C3%A5%20%22%C3%A4nda%22%20h%C3%B6rde.pdf`
     );
   });
 
