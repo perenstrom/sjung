@@ -23,9 +23,7 @@ export function PageHeader({
           </div>
         </EditOnly>
       ) : null}
-      <div className="shrink-0">
-        <EditModeToggle />
-      </div>
+      <EditModeToggle />
     </div>
   );
 }

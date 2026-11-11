@@ -14,7 +14,7 @@ export function EditModeToggle() {
       type="button"
       variant={isEditing ? "default" : "outline"}
       // Match the outline variant's border so switching variants keeps the width.
-      className={cn(isEditing && "border border-transparent")}
+      className={cn("shrink-0", isEditing && "border border-transparent")}
       aria-pressed={isEditing}
       aria-label={isEditing ? "Klar" : "Redigera"}
       onClick={() => setIsEditing(!isEditing)}
