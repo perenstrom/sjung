@@ -145,6 +145,13 @@ Environment expectations:
 - **Failure injection**: `failEmailsTo(address)` makes every later send to that recipient throw, like a real Resend error. Sends to other recipients still go through.
 - **Unit tests** that reach `sendEmail` mock `@/lib/email` per file, the same way they mock `@/auth`.
 
+## Object storage in tests
+
+- **Module**: all R2 access goes through `lib/object-storage.ts` (sign a PUT or GET, head, delete keys, delete a prefix). Features reach it through the Piece file store (`lib/pieces/file-store.ts`), never directly.
+- **Fake**: `__tests__/support/fake-object-storage.ts` replaces `@/lib/object-storage` for every integration test through `vi.mock` in `__tests__/support/setup.ts`, so no integration test can reach real storage, even with the `R2_*` variables in `.env`. It is reset in the same `beforeEach` as the database.
+- **Uploading**: signed URLs are only recognisable strings. To stand in for the browser's PUT, sign the upload through the action and then call `putStoredObject(storagePath, { size, contentType })`. `storedKeys()` lists what is left in storage.
+- **Failure injection**: `failDeletesOf(key)` makes every later delete of that key fail, like a real R2 error. The object stays.
+
 ## Playwright first slice
 
 After the Vitest pilot lands, add one browser smoke scenario:
