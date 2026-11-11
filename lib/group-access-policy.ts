@@ -10,9 +10,8 @@ export type GroupCapability =
   /** Invite, list and remove Members, and set their Claims: the Creator or `MANAGE_MEMBERS`. */
   | "manageMembers"
   /**
-   * Create, edit or delete any of the Group's content (ADR-0004). Depends only
-   * on the Member, never on the content row. Every Member has it for now:
-   * PER-305 narrows it to the Creator or `MANAGE_CONTENT`.
+   * Create, edit or delete any of the Group's content (ADR-0004): the Creator
+   * or `MANAGE_CONTENT`. Depends only on the Member, never on the content row.
    */
   | "manageContent"
   /** Rename or delete the Group: the Creator only. */
@@ -53,7 +52,7 @@ export function groupAccessDenial(
     return managesMembers ? null : "lacksManageMembers";
   }
   if (capability === "manageContent") {
-    return null;
+    return isCreator || facts.claims.includes(GroupClaim.MANAGE_CONTENT) ? null : "lacksManageContent";
   }
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";

@@ -3,6 +3,7 @@ import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreatePersonDialog } from "@/components/CreatePersonDialog";
 import { EditModeProvider } from "@/components/EditModeContext";
+import { findGroupAccess } from "@/lib/group-access";
 import { PageHeader } from "@/components/PageHeader";
 import {
   Table,
@@ -21,11 +22,15 @@ type PageProps = {
 
 export default async function TenantPeoplePage({ params }: PageProps) {
   const { groupSlug } = await params;
-  const [people, groups] = await Promise.all([getPeople(groupSlug), getGroups()]);
+  const [people, groups, access] = await Promise.all([
+    getPeople(groupSlug),
+    getGroups(),
+    findGroupAccess(groupSlug),
+  ]);
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider>
+    <EditModeProvider canEdit={access?.can("manageContent") ?? false}>
       <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
           trail={{

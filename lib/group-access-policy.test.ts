@@ -12,18 +12,20 @@ const VIEWER = "viewer";
 const OTHER = "other";
 const CREATOR = "creator";
 
-function facts(kind: "plain" | GroupClaim | "creator"): GroupAccessFacts {
+function facts(kind: "plain" | GroupClaim | "both" | "creator"): GroupAccessFacts {
   if (kind === "creator") {
     return { userId: CREATOR, creatorId: CREATOR, claims: [] };
+  }
+  if (kind === "both") {
+    return { userId: VIEWER, creatorId: CREATOR, claims: ["MANAGE_MEMBERS", "MANAGE_CONTENT"] };
   }
   return { userId: VIEWER, creatorId: CREATOR, claims: kind === "plain" ? [] : [kind] };
 }
 
 describe("groupAccessDenial", () => {
-  // Every Member may manage content until PER-305 switches the rule on.
   it.each<[string, GroupAccessFacts, GroupCapability, GroupAccessDenial | null]>([
     ["plain Member: manageMembers", facts("plain"), "manageMembers", "lacksManageMembers"],
-    ["plain Member: manageContent", facts("plain"), "manageContent", null],
+    ["plain Member: manageContent", facts("plain"), "manageContent", "lacksManageContent"],
     ["plain Member: manageGroup", facts("plain"), "manageGroup", "lacksManageGroup"],
     ["plain Member: changeMember(other)", facts("plain"), changeMember(OTHER), "lacksManageMembers"],
 
@@ -33,11 +35,15 @@ describe("groupAccessDenial", () => {
     ["MANAGE_CONTENT: changeMember(other)", facts("MANAGE_CONTENT"), changeMember(OTHER), "lacksManageMembers"],
 
     ["MANAGE_MEMBERS: manageMembers", facts("MANAGE_MEMBERS"), "manageMembers", null],
-    ["MANAGE_MEMBERS: manageContent", facts("MANAGE_MEMBERS"), "manageContent", null],
+    ["MANAGE_MEMBERS: manageContent", facts("MANAGE_MEMBERS"), "manageContent", "lacksManageContent"],
     ["MANAGE_MEMBERS: manageGroup", facts("MANAGE_MEMBERS"), "manageGroup", "lacksManageGroup"],
     ["MANAGE_MEMBERS: changeMember(other)", facts("MANAGE_MEMBERS"), changeMember(OTHER), null],
     ["MANAGE_MEMBERS: changeMember(Creator)", facts("MANAGE_MEMBERS"), changeMember(CREATOR), "targetIsCreator"],
     ["MANAGE_MEMBERS: changeMember(self)", facts("MANAGE_MEMBERS"), changeMember(VIEWER), "targetIsSelf"],
+
+    ["both Claims: manageMembers", facts("both"), "manageMembers", null],
+    ["both Claims: manageContent", facts("both"), "manageContent", null],
+    ["both Claims: manageGroup", facts("both"), "manageGroup", "lacksManageGroup"],
 
     ["Creator: manageMembers", facts("creator"), "manageMembers", null],
     ["Creator: manageContent", facts("creator"), "manageContent", null],

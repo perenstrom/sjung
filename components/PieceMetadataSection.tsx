@@ -24,9 +24,7 @@ export function PieceMetadataSection(props: PieceMetadataSectionProps) {
       <section className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <h1 className="min-w-0 flex-1 text-2xl font-semibold break-words">{props.initialName}</h1>
-          <div className="shrink-0">
-            <EditModeToggle />
-          </div>
+          <EditModeToggle />
         </div>
       </section>
     );
@@ -109,9 +107,7 @@ function PieceNameEditor({
             </Button>
           </form>
         )}
-        <div className="shrink-0">
-          <EditModeToggle />
-        </div>
+        <EditModeToggle />
       </div>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
