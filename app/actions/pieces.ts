@@ -58,6 +58,7 @@ export async function createPiece(formData: FormData) {
   assertNoDuplicateCredits(credits);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    await Promise.all(credits.map((c) => findInGroup(groupId, "person", c.personId)));
     const created = await prisma.piece.create({
       data: {
         name: name.trim(),
@@ -167,11 +168,12 @@ export async function addCredit(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
+    const person = await findInGroup(groupId, "person", personId);
     try {
       await prisma.personToPiece.create({
         data: {
           pieceId: piece.id,
-          personId,
+          personId: person.id,
           role,
         },
       });
