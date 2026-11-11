@@ -56,27 +56,6 @@ export async function getPieceDetail(
   return getPieceDetailForGroup(groupId, pieceId);
 }
 
-/** Minimal title read for navigation; returns null when the piece is missing or inaccessible. */
-export async function getPieceTitleForBreadcrumb(
-  groupSlug: string,
-  pieceId: string
-): Promise<{ title: string } | null> {
-  try {
-    const slug = parseWritableGroupSlugParam(groupSlug);
-    const { groupId } = await getWritableGroupIdForSlug(slug);
-    const piece = await prisma.piece.findFirst({
-      where: { id: pieceId, groupId },
-      select: { name: true },
-    });
-    if (!piece) {
-      return null;
-    }
-    return { title: piece.name };
-  } catch {
-    return null;
-  }
-}
-
 export async function createPiece(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const name = parsePieceNameFromFormData(formData);
@@ -106,28 +85,6 @@ export async function createPiece(formData: FormData) {
 }
 
 export async function updatePiece(formData: FormData) {
-  const groupSlug = parseWritableGroupSlugFromFormData(formData);
-  const pieceId = parsePieceIdFromFormData(formData);
-  const name = parsePieceNameFromFormData(formData);
-
-  await runGroupMutation(
-    groupSlug,
-    ({ groupId }) => requirePieceInGroup(pieceId, groupId),
-    async ({ userId }, piece) => {
-      await prisma.piece.update({
-        where: { id: piece.id },
-        data: {
-          name: name.trim(),
-          updatedById: userId,
-        },
-      });
-
-      await revalidatePieceRoutes(groupSlug, piece.id);
-    }
-  );
-}
-
-export async function updatePieceMetadata(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const name = parsePieceNameFromFormData(formData);

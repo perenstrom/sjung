@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { updatePieceMetadata } from "@/app/actions/pieces";
+import { updatePiece } from "@/app/actions/pieces";
 import { useEditMode } from "@/components/EditModeContext";
 import { EditModeToggle } from "@/components/EditModeToggle";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,7 @@ function PieceNameEditor({
 
     startTransition(async () => {
       try {
-        await updatePieceMetadata(formData);
+        await updatePiece(formData);
         const nextName = String(formData.get("name") ?? "").trim();
         setSavedName(nextName);
         setDraftName(nextName);
