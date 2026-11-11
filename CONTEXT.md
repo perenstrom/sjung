@@ -61,7 +61,7 @@ The catalog entry for a musical work: a name plus its Credits, Files, Links and 
 _Avoid_: Song, Sheet music, Score — those name the physical artifact (see File), not the work entry itself.
 
 **File**:
-An uploaded document (e.g. a score PDF) attached to a Piece, stored in object storage.
+An uploaded document (e.g. a score PDF) attached to a Piece, stored in object storage. Deleting a File, its Piece or its Group also deletes its stored content. Replacing a File gives it new content but keeps it the same File: its display name and its place on the Piece stay. See ADR-0005.
 _Avoid_: Score, Sheet music, Attachment — reserve those for casual conversation; "File" is the model.
 
 **Link**:
