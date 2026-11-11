@@ -27,7 +27,7 @@ import {
   getSetListIdsContainingPiece,
   toPieceNoteListItem,
 } from "@/lib/pieces/queries";
-import { deletePieceFiles } from "@/lib/pieces/file-store";
+import { deletePieceFiles, STORE_PIECE_SELECT } from "@/lib/pieces/file-store";
 import {
   pieceNoteListItemSelect,
   type PieceDetail,
@@ -285,9 +285,7 @@ export async function deletePiece(formData: FormData) {
   const pieceId = parsePieceIdFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
-    const piece = await findInGroup(groupId, "piece", pieceId, {
-      select: { id: true, groupId: true },
-    });
+    const piece = await findInGroup(groupId, "piece", pieceId, { select: STORE_PIECE_SELECT });
     // Look up before deleting: the delete cascades to the piece's set list entries.
     const setListIds = await getSetListIdsContainingPiece(piece.id);
 

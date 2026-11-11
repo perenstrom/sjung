@@ -15,22 +15,13 @@ import {
 import { revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 
-/** A File with what the store needs to replace or delete it. */
-const STORE_FILE_SELECT = {
-  id: true,
-  storagePath: true,
-  piece: { select: { id: true, groupId: true } },
-} as const;
-
 export async function createPieceFileUploadUrl(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const { pieceId, fileName, mimeType, size } =
     parseCreatePieceFileUploadFromFormData(formData);
 
   return runContentMutation(groupSlug, async ({ groupId }) => {
-    const piece = await findInGroup(groupId, "piece", pieceId, {
-      select: { id: true, groupId: true },
-    });
+    const piece = await findInGroup(groupId, "piece", pieceId, { select: fileStore.STORE_PIECE_SELECT });
     return fileStore.signUpload(piece, { fileName, mimeType, size });
   });
 }
@@ -41,9 +32,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
     parseFinalizePieceFileUploadFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const piece = await findInGroup(groupId, "piece", pieceId, {
-      select: { id: true, groupId: true },
-    });
+    const piece = await findInGroup(groupId, "piece", pieceId, { select: fileStore.STORE_PIECE_SELECT });
     await fileStore.addFile(
       piece,
       { storagePath, fileName },
@@ -60,7 +49,7 @@ export async function createPieceFileReplaceUploadUrl(formData: FormData) {
     parseCreatePieceFileReplaceUploadFromFormData(formData);
 
   return runContentMutation(groupSlug, async ({ groupId }) => {
-    const file = await findInGroup(groupId, "file", fileId, { select: STORE_FILE_SELECT });
+    const file = await findInGroup(groupId, "file", fileId, { select: fileStore.STORE_FILE_SELECT });
     return fileStore.signUpload(file.piece, { fileName, mimeType, size });
   });
 }
@@ -70,7 +59,7 @@ export async function finalizePieceFileReplace(formData: FormData) {
   const { fileId, fileName, storagePath } = parseFinalizePieceFileReplaceFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const file = await findInGroup(groupId, "file", fileId, { select: STORE_FILE_SELECT });
+    const file = await findInGroup(groupId, "file", fileId, { select: fileStore.STORE_FILE_SELECT });
     await fileStore.replaceFile(file, { storagePath, fileName }, userId);
 
     await revalidatePieceRoutes(groupSlug, file.piece.id);
@@ -115,7 +104,7 @@ export async function deletePieceFile(formData: FormData) {
   const fileId = parseFileIdFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
-    const file = await findInGroup(groupId, "file", fileId, { select: STORE_FILE_SELECT });
+    const file = await findInGroup(groupId, "file", fileId, { select: fileStore.STORE_FILE_SELECT });
     await fileStore.deleteFile(file);
 
     await revalidatePieceRoutes(groupSlug, file.piece.id);

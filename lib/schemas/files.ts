@@ -184,6 +184,21 @@ export function parseFinalizePieceFileReplaceFromFormData(formData: FormData): {
   return result.data;
 }
 
+/**
+ * Checks a stored upload's type and size against the same rules as the
+ * upload request, throwing the same Swedish message.
+ */
+export function assertAllowedStoredFile({ contentType, size }: { contentType: string; size: number }) {
+  for (const result of [
+    mimeTypeFieldSchema.safeParse(contentType),
+    sizeFieldSchema.safeParse(String(size)),
+  ]) {
+    if (!result.success) {
+      throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
+    }
+  }
+}
+
 export function parseFileIdFromFormData(formData: FormData): string {
   const result = fileIdSchema.safeParse(formDataString(formData, "fileId"));
   if (!result.success) {

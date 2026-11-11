@@ -12,7 +12,7 @@ import {
   type StoredObject,
 } from "@/lib/object-storage";
 import prisma from "@/lib/prisma";
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/schemas/files";
+import { assertAllowedStoredFile } from "@/lib/schemas/files";
 
 /**
  * The Piece file store: everything about a File's stored content. It owns the
@@ -33,6 +33,16 @@ export type StorePiece = { id: string; groupId: string };
 
 /** A File as the store needs it. */
 export type StoreFile = { id: string; storagePath: string; piece: StorePiece };
+
+/** Selects a Piece as the store needs it, e.g. for `findInGroup`. */
+export const STORE_PIECE_SELECT = { id: true, groupId: true } as const;
+
+/** Selects a File as the store needs it, e.g. for `findInGroup`. */
+export const STORE_FILE_SELECT = {
+  id: true,
+  storagePath: true,
+  piece: { select: STORE_PIECE_SELECT },
+} as const;
 
 /**
  * What the browser says it uploaded, as reported back at finalize. Its size
@@ -163,15 +173,7 @@ async function verifyUpload(piece: StorePiece, storagePath: string): Promise<Sto
   if (!stored) {
     throw new Error("Filen hittades inte i lagringen");
   }
-  if (!ALLOWED_MIME_TYPES.has(stored.contentType)) {
-    throw new Error("Filtypen stöds inte");
-  }
-  if (stored.size <= 0) {
-    throw new Error("Ogiltig filstorlek");
-  }
-  if (stored.size > MAX_FILE_SIZE_BYTES) {
-    throw new Error("Filen är för stor (max 50 MB)");
-  }
+  assertAllowedStoredFile(stored);
   return stored;
 }
 
