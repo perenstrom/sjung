@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { Prisma } from "@/app/generated/prisma/client";
+import { attachmentDisposition } from "@/lib/content-disposition";
 import {
   deleteObjects,
   deletePrefix,
@@ -133,7 +134,7 @@ export async function deleteGroupFiles(groupId: string) {
 export async function signDownload(file: { storagePath: string; fileName: string; mimeType: string }) {
   return signGet(file.storagePath, {
     contentType: file.mimeType,
-    contentDisposition: `attachment; filename="${file.fileName}"`,
+    contentDisposition: attachmentDisposition(file.fileName),
     expiresInSeconds: DOWNLOAD_URL_EXPIRES_SECONDS,
   });
 }

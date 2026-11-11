@@ -8,6 +8,7 @@ vi.mock("next/cache", () => ({
 import type { File, Group, Piece } from "@/app/generated/prisma/client";
 import { GroupClaim } from "@/app/generated/prisma/enums";
 import {
+  createPieceFileDownloadUrl,
   createPieceFileReplaceUploadUrl,
   createPieceFileUploadUrl,
   deletePieceFile,
@@ -241,5 +242,21 @@ describe("deleting a Piece", () => {
 
     expect(await testPrisma.piece.findUnique({ where: { id: piece.id } })).toBeNull();
     expect(storedKeys()).toEqual([failing.storagePath]);
+  });
+});
+
+describe("downloading a File", () => {
+  it("names the download with the File's name, encoded for any character", async () => {
+    const file = await testPrisma.file.update({
+      where: { id: (await storedFile()).id },
+      data: { fileName: `Så "ända".pdf` },
+    });
+
+    const { downloadUrl } = await createPieceFileDownloadUrl(
+      formData({ groupSlug: group.slug, fileId: file.id })
+    );
+
+    const disposition = new URL(downloadUrl).searchParams.get("disposition");
+    expect(disposition).toContain(`filename*=UTF-8''S%C3%A5%20%22%C3%A4nda%22.pdf`);
   });
 });
