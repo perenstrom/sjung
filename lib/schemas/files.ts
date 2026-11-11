@@ -92,8 +92,6 @@ const finalizePieceFileUploadFormSchema = z.object({
   pieceId: pieceIdSchema,
   fileName: fileNameSchema,
   storagePath: storagePathSchema,
-  mimeType: mimeTypeFieldSchema,
-  size: sizeFieldSchema,
   displayName: optionalDisplayNameSchema,
 });
 
@@ -108,8 +106,6 @@ const finalizePieceFileReplaceFormSchema = z.object({
   fileId: fileIdSchema,
   fileName: fileNameSchema,
   storagePath: storagePathSchema,
-  mimeType: mimeTypeFieldSchema,
-  size: sizeFieldSchema,
 });
 
 export function parseCreatePieceFileUploadFromFormData(formData: FormData): {
@@ -135,16 +131,12 @@ export function parseFinalizePieceFileUploadFromFormData(formData: FormData): {
   pieceId: string;
   fileName: string;
   storagePath: string;
-  mimeType: string;
-  size: number;
   displayName: string | null;
 } {
   const raw = {
     pieceId: formDataString(formData, "pieceId"),
     fileName: formDataString(formData, "fileName"),
     storagePath: formDataString(formData, "storagePath"),
-    mimeType: formDataString(formData, "mimeType"),
-    size: formDataString(formData, "size"),
     displayName: formData.get("displayName"),
   };
   const result = finalizePieceFileUploadFormSchema.safeParse(raw);
@@ -179,15 +171,11 @@ export function parseFinalizePieceFileReplaceFromFormData(formData: FormData): {
   fileId: string;
   fileName: string;
   storagePath: string;
-  mimeType: string;
-  size: number;
 } {
   const raw = {
     fileId: formDataString(formData, "fileId"),
     fileName: formDataString(formData, "fileName"),
     storagePath: formDataString(formData, "storagePath"),
-    mimeType: formDataString(formData, "mimeType"),
-    size: formDataString(formData, "size"),
   };
   const result = finalizePieceFileReplaceFormSchema.safeParse(raw);
   if (!result.success) {

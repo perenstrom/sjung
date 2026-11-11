@@ -12,6 +12,7 @@ import {
   createPieceFileUploadUrl,
   deletePieceFile,
   finalizePieceFileReplace,
+  finalizePieceFileUpload,
 } from "@/app/actions/files";
 import { deletePiece } from "@/app/actions/pieces";
 import { testPrisma } from "../support/db";
@@ -58,11 +59,81 @@ function replace(file: File, storagePath: string) {
       fileId: file.id,
       fileName: "ny.pdf",
       storagePath,
-      mimeType: "application/pdf",
-      size: "2048",
     })
   );
 }
+
+/** Signs an upload to the Piece as the browser would ask for it; nothing is put in storage yet. */
+async function signUploadToPiece(declared = { mimeType: "application/pdf", size: "1024" }) {
+  const { storagePath } = await createPieceFileUploadUrl(
+    formData({ groupSlug: group.slug, pieceId: piece.id, fileName: "Stämma 1.pdf", ...declared })
+  );
+  return storagePath;
+}
+
+function finalizeUpload(storagePath: string) {
+  return finalizePieceFileUpload(
+    formData({ groupSlug: group.slug, pieceId: piece.id, fileName: "Stämma 1.pdf", storagePath })
+  );
+}
+
+describe("adding a File", () => {
+  it("creates a File whose size and type come from the stored object", async () => {
+    const storagePath = await signUploadToPiece();
+    putStoredObject(storagePath, { size: 4321, contentType: "image/png" });
+
+    await finalizeUpload(storagePath);
+
+    expect(await testPrisma.file.findMany({ where: { pieceId: piece.id } })).toEqual([
+      expect.objectContaining({
+        storagePath,
+        fileName: "Stämma 1.pdf",
+        displayName: "Stämma 1.pdf",
+        size: 4321,
+        mimeType: "image/png",
+      }),
+    ]);
+  });
+
+  it("is rejected when nothing was uploaded", async () => {
+    const storagePath = await signUploadToPiece();
+
+    await expect(finalizeUpload(storagePath)).rejects.toThrow("Filen hittades inte i lagringen");
+    expect(await testPrisma.file.count()).toBe(0);
+  });
+
+  it("is rejected for a path outside the Piece", async () => {
+    const otherPiece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    const storagePath = `groups/${group.id}/pieces/${otherPiece.id}/stolen.pdf`;
+    putStoredObject(storagePath);
+
+    await expect(finalizeUpload(storagePath)).rejects.toThrow("Ogiltig filsökväg");
+    expect(await testPrisma.file.count()).toBe(0);
+  });
+
+  it("is rejected for a path another File already uses", async () => {
+    const existing = await storedFile();
+
+    await expect(finalizeUpload(existing.storagePath)).rejects.toThrow("Filen finns redan");
+    expect(await testPrisma.file.count()).toBe(1);
+  });
+
+  it("is rejected when the stored object's type isn't allowed", async () => {
+    const storagePath = await signUploadToPiece();
+    putStoredObject(storagePath, { size: 1024, contentType: "text/html" });
+
+    await expect(finalizeUpload(storagePath)).rejects.toThrow("Filtypen stöds inte");
+    expect(await testPrisma.file.count()).toBe(0);
+  });
+
+  it("is rejected when the stored object is too large", async () => {
+    const storagePath = await signUploadToPiece();
+    putStoredObject(storagePath, { size: 50 * 1024 * 1024 + 1, contentType: "application/pdf" });
+
+    await expect(finalizeUpload(storagePath)).rejects.toThrow("Filen är för stor (max 50 MB)");
+    expect(await testPrisma.file.count()).toBe(0);
+  });
+});
 
 describe("replacing a File", () => {
   it("points the File at the new object and deletes the old one", async () => {
@@ -74,8 +145,33 @@ describe("replacing a File", () => {
     expect(await testPrisma.file.findUniqueOrThrow({ where: { id: file.id } })).toMatchObject({
       storagePath: newPath,
       fileName: "ny.pdf",
+      size: 2048,
     });
     expect(storedKeys()).toEqual([newPath]);
+  });
+
+  it("is rejected when nothing was uploaded, and keeps the old content", async () => {
+    const file = await storedFile();
+    const { storagePath } = await createPieceFileReplaceUploadUrl(
+      formData({
+        groupSlug: group.slug,
+        fileId: file.id,
+        fileName: "ny.pdf",
+        mimeType: "application/pdf",
+        size: "2048",
+      })
+    );
+
+    await expect(replace(file, storagePath)).rejects.toThrow("Filen hittades inte i lagringen");
+    expect(await testPrisma.file.findUniqueOrThrow({ where: { id: file.id } })).toEqual(file);
+    expect(storedKeys()).toEqual([file.storagePath]);
+  });
+
+  it("is rejected for its own current path, and keeps its content", async () => {
+    const file = await storedFile();
+
+    await expect(replace(file, file.storagePath)).rejects.toThrow("Filen finns redan");
+    expect(storedKeys()).toEqual([file.storagePath]);
   });
 
   it("still succeeds when the old object can't be deleted", async () => {

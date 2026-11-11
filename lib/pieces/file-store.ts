@@ -1,13 +1,17 @@
 import { randomUUID } from "node:crypto";
 
+import { Prisma } from "@/app/generated/prisma/client";
 import {
   deleteObjects,
   deletePrefix,
+  headObject,
   signGet,
   signPut,
   type DeleteObjectsResult,
+  type StoredObject,
 } from "@/lib/object-storage";
 import prisma from "@/lib/prisma";
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/schemas/files";
 
 /**
  * The Piece file store: everything about a File's stored content. It owns the
@@ -29,13 +33,13 @@ export type StorePiece = { id: string; groupId: string };
 /** A File as the store needs it. */
 export type StoreFile = { id: string; storagePath: string; piece: StorePiece };
 
-/** What the browser uploaded, as reported back at finalize. */
-export type FinishedUpload = {
-  storagePath: string;
-  fileName: string;
-  mimeType: string;
-  size: number;
-};
+/**
+ * What the browser says it uploaded, as reported back at finalize. Its size
+ * and type are read from storage, never taken from the client.
+ */
+export type FinishedUpload = { storagePath: string; fileName: string };
+
+const PATH_IN_USE = "Filen finns redan";
 
 /** A presigned PUT for a new object under the Piece's prefix. */
 export async function signUpload(
@@ -63,36 +67,40 @@ export async function addFile(
   upload: FinishedUpload,
   { displayName, userId }: { displayName: string; userId: string }
 ) {
-  assertUnderPiece(piece, upload.storagePath);
+  const stored = await verifyUpload(piece, upload.storagePath);
 
-  await prisma.file.create({
-    data: {
-      pieceId: piece.id,
-      displayName,
-      fileName: upload.fileName,
-      storagePath: upload.storagePath,
-      mimeType: upload.mimeType,
-      size: upload.size,
-      createdById: userId,
-      updatedById: userId,
-    },
-  });
+  await rejectingReusedPath(() =>
+    prisma.file.create({
+      data: {
+        pieceId: piece.id,
+        displayName,
+        fileName: upload.fileName,
+        storagePath: upload.storagePath,
+        mimeType: stored.contentType,
+        size: stored.size,
+        createdById: userId,
+        updatedById: userId,
+      },
+    })
+  );
 }
 
-/** Points the File at a finished upload and removes its old content. */
+/** Points the File at a finished upload, then removes its old content. */
 export async function replaceFile(file: StoreFile, upload: FinishedUpload, userId: string) {
-  assertUnderPiece(file.piece, upload.storagePath);
+  const stored = await verifyUpload(file.piece, upload.storagePath);
 
-  await prisma.file.update({
-    where: { id: file.id },
-    data: {
-      fileName: upload.fileName,
-      mimeType: upload.mimeType,
-      size: upload.size,
-      storagePath: upload.storagePath,
-      updatedById: userId,
-    },
-  });
+  await rejectingReusedPath(() =>
+    prisma.file.update({
+      where: { id: file.id },
+      data: {
+        fileName: upload.fileName,
+        mimeType: stored.contentType,
+        size: stored.size,
+        storagePath: upload.storagePath,
+        updatedById: userId,
+      },
+    })
+  );
 
   await cleanUp("replaceFile", { fileId: file.id }, () => deleteObjects([file.storagePath]));
 }
@@ -138,9 +146,43 @@ function pieceStoragePrefix(piece: StorePiece): string {
   return `${groupStoragePrefix(piece.groupId)}pieces/${piece.id}/`;
 }
 
-function assertUnderPiece(piece: StorePiece, storagePath: string) {
+/**
+ * The stored object a finalize points at, once it is known to be a new,
+ * allowed upload under the Piece. Throws a Swedish refusal otherwise.
+ */
+async function verifyUpload(piece: StorePiece, storagePath: string): Promise<StoredObject> {
   if (!storagePath.startsWith(pieceStoragePrefix(piece))) {
     throw new Error("Ogiltig filsökväg");
+  }
+  if (await prisma.file.findUnique({ where: { storagePath }, select: { id: true } })) {
+    throw new Error(PATH_IN_USE);
+  }
+
+  const stored = await headObject(storagePath);
+  if (!stored) {
+    throw new Error("Filen hittades inte i lagringen");
+  }
+  if (!ALLOWED_MIME_TYPES.has(stored.contentType)) {
+    throw new Error("Filtypen stöds inte");
+  }
+  if (stored.size <= 0) {
+    throw new Error("Ogiltig filstorlek");
+  }
+  if (stored.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error("Filen är för stor (max 50 MB)");
+  }
+  return stored;
+}
+
+/** Runs a File write, turning a lost race for the same `storagePath` into the reuse refusal. */
+async function rejectingReusedPath<T>(write: () => Promise<T>): Promise<T> {
+  try {
+    return await write();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error(PATH_IN_USE);
+    }
+    throw error;
   }
 }
 

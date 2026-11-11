@@ -126,15 +126,20 @@ describe("parseFinalizePieceFileUploadFromFormData", () => {
     pieceId: "p1",
     fileName: "f.pdf",
     storagePath: "groups/g1/pieces/p1/key-f.pdf",
-    mimeType: "application/pdf",
-    size: "100",
   };
 
   it("parses all fields and null displayName when absent", () => {
     const fd = createFormData(validFinalize);
-    expect(parseFinalizePieceFileUploadFromFormData(fd)).toMatchObject({
+    expect(parseFinalizePieceFileUploadFromFormData(fd)).toEqual({
       ...validFinalize,
-      size: 100,
+      displayName: null,
+    });
+  });
+
+  it("ignores a size and type from the client", () => {
+    const fd = createFormData({ ...validFinalize, mimeType: "text/html", size: "-1" });
+    expect(parseFinalizePieceFileUploadFromFormData(fd)).toEqual({
+      ...validFinalize,
       displayName: null,
     });
   });
@@ -222,16 +227,11 @@ describe("parseFinalizePieceFileReplaceFromFormData", () => {
     fileId: "file-1",
     fileName: "f.pdf",
     storagePath: "groups/g1/pieces/p1/key-f.pdf",
-    mimeType: "application/pdf",
-    size: "100",
   };
 
   it("parses all fields", () => {
     const fd = createFormData(validFinalizeReplace);
-    expect(parseFinalizePieceFileReplaceFromFormData(fd)).toEqual({
-      ...validFinalizeReplace,
-      size: 100,
-    });
+    expect(parseFinalizePieceFileReplaceFromFormData(fd)).toEqual(validFinalizeReplace);
   });
 
   it("throws Fil saknas when fileId is empty", () => {
