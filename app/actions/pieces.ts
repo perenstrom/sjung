@@ -288,14 +288,13 @@ export async function deletePiece(formData: FormData) {
     const piece = await findInGroup(groupId, "piece", pieceId, {
       select: { id: true, groupId: true },
     });
-    await deletePieceFiles(piece);
-
     // Look up before deleting: the delete cascades to the piece's set list entries.
     const setListIds = await getSetListIdsContainingPiece(piece.id);
 
     await prisma.piece.delete({
       where: { id: piece.id },
     });
+    await deletePieceFiles(piece);
 
     await revalidatePieceRoutes(groupSlug, piece.id, setListIds);
   });

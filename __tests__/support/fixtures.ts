@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { testPrisma } from "./db";
 import type {
   User,
@@ -212,14 +213,14 @@ export async function createSetListNote(
   });
 }
 
-/** A File row on the Piece; nothing is uploaded to storage. */
+/** A File row on the Piece, at its own key under the Piece; nothing is uploaded to storage. */
 export async function createFile(piece: Piece): Promise<File> {
   return testPrisma.file.create({
     data: {
       pieceId: piece.id,
       displayName: "Score",
       fileName: "score.pdf",
-      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/score.pdf`,
+      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/${randomUUID()}-score.pdf`,
       mimeType: "application/pdf",
       size: 1024,
       createdById: piece.createdById,

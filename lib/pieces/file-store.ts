@@ -1,12 +1,22 @@
 import { randomUUID } from "node:crypto";
 
-import { deleteObjects, signGet, signPut } from "@/lib/object-storage";
+import {
+  deleteObjects,
+  deletePrefix,
+  signGet,
+  signPut,
+  type DeleteObjectsResult,
+} from "@/lib/object-storage";
 import prisma from "@/lib/prisma";
 
 /**
  * The Piece file store: everything about a File's stored content. It owns the
  * key layout, signed URLs, and the order of File row writes and object
  * deletes. Callers check access and find the rows; the store does the rest.
+ *
+ * The database comes first (ADR-0005): a removal writes the database, then
+ * deletes the old objects as best effort. A failed object delete is logged,
+ * never thrown, so it leaves an invisible orphan rather than a broken File.
  */
 
 const UPLOAD_URL_EXPIRES_SECONDS = 60 * 10;
@@ -73,8 +83,6 @@ export async function addFile(
 export async function replaceFile(file: StoreFile, upload: FinishedUpload, userId: string) {
   assertUnderPiece(file.piece, upload.storagePath);
 
-  await deleteOrThrow([file.storagePath], "Kunde inte ta bort den gamla filen från lagringen");
-
   await prisma.file.update({
     where: { id: file.id },
     data: {
@@ -85,23 +93,23 @@ export async function replaceFile(file: StoreFile, upload: FinishedUpload, userI
       updatedById: userId,
     },
   });
+
+  await cleanUp("replaceFile", { fileId: file.id }, () => deleteObjects([file.storagePath]));
 }
 
 /** Deletes the File and its stored content. */
 export async function deleteFile(file: Pick<StoreFile, "id" | "storagePath">) {
-  await deleteOrThrow([file.storagePath], "Kunde inte ta bort filen från lagringen");
   await prisma.file.delete({ where: { id: file.id } });
+  await cleanUp("deleteFile", { fileId: file.id }, () => deleteObjects([file.storagePath]));
 }
 
-/** Deletes the stored content of every File on the Piece. */
+/**
+ * Deletes everything stored under a Piece the caller has just deleted,
+ * including uploads that were never finalized.
+ */
 export async function deletePieceFiles(piece: StorePiece) {
-  const files = await prisma.file.findMany({
-    where: { pieceId: piece.id },
-    select: { storagePath: true },
-  });
-  await deleteOrThrow(
-    files.map((file) => file.storagePath),
-    "Kunde inte ta bort en eller flera filer från lagringen"
+  await cleanUp("deletePieceFiles", { pieceId: piece.id }, () =>
+    deletePrefix(pieceStoragePrefix(piece))
   );
 }
 
@@ -124,15 +132,24 @@ function assertUnderPiece(piece: StorePiece, storagePath: string) {
   }
 }
 
-async function deleteOrThrow(keys: string[], errorMessage: string) {
-  const result = await deleteObjects(keys);
-  if (result.failedCount > 0) {
-    console.error("Failed to remove one or more stored objects", {
-      failedCount: result.failedCount,
-      totalCount: result.totalCount,
-      failedKeysSample: result.failedKeys.slice(0, FAILED_KEYS_LOG_SAMPLE_SIZE),
-    });
-    throw new Error(errorMessage);
+/** Runs a best-effort storage delete, logging what it couldn't remove instead of throwing. */
+async function cleanUp(
+  operation: string,
+  context: Record<string, string>,
+  run: () => Promise<DeleteObjectsResult>
+) {
+  try {
+    const result = await run();
+    if (result.failedCount > 0) {
+      console.error(`${operation} left objects in storage`, {
+        ...context,
+        failedCount: result.failedCount,
+        totalCount: result.totalCount,
+        failedKeysSample: result.failedKeys.slice(0, FAILED_KEYS_LOG_SAMPLE_SIZE),
+      });
+    }
+  } catch (error) {
+    console.error(`${operation} could not clean up storage`, { ...context, error });
   }
 }
 
