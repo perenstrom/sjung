@@ -18,8 +18,8 @@ Sjung has no static seam catalog — per the `tdd` skill, seams are agreed live 
 - There is no `middleware.ts` route guard layer today.
 - Protection is implemented in server code, mainly through:
   - `requireUser()` in `lib/auth/require-user.ts`
-  - Tenant membership checks in `lib/tenant-group.ts`
-  - Resource/group guard helpers in `lib/actions/guards.ts`
+  - Tenant membership checks, and `runContentMutation` for every content change, in `lib/tenant-group.ts`
+  - The in-Group content lookup `findInGroup` in `lib/find-in-group.ts`
   - Server actions in `app/actions/*`
   - Tenant layout gating in `app/app/[groupSlug]/layout.tsx`
 - `lib/roles.ts` is for music credit roles (for example `Kompositor` and `Arrangor`) and is not RBAC for app authorization.
@@ -75,10 +75,11 @@ Use this scope as the baseline coverage matrix:
 2. Tenant membership (`requireTenantGroup`, `getWritableGroupIdForSlug`)
    - Allow: user is a member of the target group slug.
    - Deny: non-member or invalid slug (expect not-found or explicit permission error depending on helper).
-3. Resource-in-group guards (`lib/actions/guards.ts`)
-   - Allow: entity exists and belongs to the caller's resolved group.
-   - Deny: entity missing or outside tenant group (expect "not found"/forbidden-style action error).
+3. In-Group content lookup (`findInGroup` in `lib/find-in-group.ts`). One table of content kinds × (in this Group / in another Group / missing) in `__tests__/integration/find-in-group.test.ts` covers it.
+   - Allow: the row exists and belongs to the caller's resolved group.
+   - Deny: the row is missing or in another Group (expect its Swedish "hittades inte" error).
 4. Group access capabilities (`lib/group-access.ts`). One table of Member kinds × capabilities in `__tests__/integration/group-access.test.ts` covers them.
+   - `manageContent` (create, edit or delete the Group's content, checked once per action by `runContentMutation`): allow every Member for now; PER-305 narrows it to the Creator or `MANAGE_CONTENT` (ADR-0004).
    - `manageGroup` (rename and delete the Group): allow the Creator only; deny a Member even when holding Claims.
    - `manageMembers` (list/invite/remove members, grant/revoke Claims): allow the Creator, or a Member holding `MANAGE_MEMBERS` in that Group; deny a Member holding no Claim or only `MANAGE_CONTENT`.
    - `changeMember(target)`: `manageMembers`, and the target is neither the Creator nor the viewer, so the Creator can never be removed or have Claims granted/revoked.
@@ -161,7 +162,7 @@ This validates session cookies + routing + layout protection in one high-value c
 2. `PER-XXX: Add tenant-membership integration tests for requireTenantGroup and getWritableGroupIdForSlug`
    - Scope: member vs non-member cases, deterministic auth mock/seam, fixture helpers.
 3. `PER-XXX: Add guard-level integration tests for resource-in-group helpers`
-   - Scope: representative guard helpers in `lib/actions/guards.ts`, cross-tenant deny cases.
+   - Scope: `findInGroup` (`lib/find-in-group.ts`, formerly `lib/actions/guards.ts`), cross-tenant deny cases.
 4. `PER-XXX: Add creator-only authorization integration tests for group management paths`
    - Scope: creator allow vs member deny for creator-only helpers and related actions.
 5. `PER-XXX: Add Playwright auth smoke for protected tenant route`
