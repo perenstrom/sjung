@@ -20,22 +20,27 @@ function facts(kind: "plain" | GroupClaim | "creator"): GroupAccessFacts {
 }
 
 describe("groupAccessDenial", () => {
+  // Every Member may manage content until PER-305 switches the rule on.
   it.each<[string, GroupAccessFacts, GroupCapability, GroupAccessDenial | null]>([
     ["plain Member: manageMembers", facts("plain"), "manageMembers", "lacksManageMembers"],
+    ["plain Member: manageContent", facts("plain"), "manageContent", null],
     ["plain Member: manageGroup", facts("plain"), "manageGroup", "lacksManageGroup"],
     ["plain Member: changeMember(other)", facts("plain"), changeMember(OTHER), "lacksManageMembers"],
 
     ["MANAGE_CONTENT: manageMembers", facts("MANAGE_CONTENT"), "manageMembers", "lacksManageMembers"],
+    ["MANAGE_CONTENT: manageContent", facts("MANAGE_CONTENT"), "manageContent", null],
     ["MANAGE_CONTENT: manageGroup", facts("MANAGE_CONTENT"), "manageGroup", "lacksManageGroup"],
     ["MANAGE_CONTENT: changeMember(other)", facts("MANAGE_CONTENT"), changeMember(OTHER), "lacksManageMembers"],
 
     ["MANAGE_MEMBERS: manageMembers", facts("MANAGE_MEMBERS"), "manageMembers", null],
+    ["MANAGE_MEMBERS: manageContent", facts("MANAGE_MEMBERS"), "manageContent", null],
     ["MANAGE_MEMBERS: manageGroup", facts("MANAGE_MEMBERS"), "manageGroup", "lacksManageGroup"],
     ["MANAGE_MEMBERS: changeMember(other)", facts("MANAGE_MEMBERS"), changeMember(OTHER), null],
     ["MANAGE_MEMBERS: changeMember(Creator)", facts("MANAGE_MEMBERS"), changeMember(CREATOR), "targetIsCreator"],
     ["MANAGE_MEMBERS: changeMember(self)", facts("MANAGE_MEMBERS"), changeMember(VIEWER), "targetIsSelf"],
 
     ["Creator: manageMembers", facts("creator"), "manageMembers", null],
+    ["Creator: manageContent", facts("creator"), "manageContent", null],
     ["Creator: manageGroup", facts("creator"), "manageGroup", null],
     ["Creator: changeMember(other)", facts("creator"), changeMember(OTHER), null],
     ["Creator: changeMember(self)", facts("creator"), changeMember(CREATOR), "targetIsSelf"],

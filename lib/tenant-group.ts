@@ -53,3 +53,20 @@ export async function runGroupMutation<TGuard, TResult>(
   const guarded = await guard(ctx);
   return mutation(ctx, guarded);
 }
+
+/**
+ * The one entry point for changing a Group's content (Pieces, Set lists,
+ * People and everything under them): resolve the User's Group access, require
+ * `manageContent` once, then run the mutation. The mutation looks up the rows
+ * it touches with `findInGroup`, and revalidates as its last step.
+ */
+export async function runContentMutation<TResult>(
+  groupSlug: string,
+  mutation: (ctx: GroupMutationContext) => Promise<TResult>
+): Promise<TResult> {
+  return runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageContent"),
+    (ctx) => mutation(ctx)
+  );
+}
