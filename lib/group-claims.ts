@@ -14,6 +14,6 @@ export const GROUP_CLAIM_OPTIONS: {
   {
     claim: GroupClaim.MANAGE_CONTENT,
     label: "Hantera innehåll",
-    description: "Kan redigera och ta bort allt innehåll i gruppen, även andras.",
+    description: "Kan skapa, redigera och ta bort gruppens innehåll.",
   },
 ];

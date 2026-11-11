@@ -79,7 +79,7 @@ Use this scope as the baseline coverage matrix:
    - Allow: the row exists and belongs to the caller's resolved group.
    - Deny: the row is missing or in another Group (expect its Swedish "hittades inte" error).
 4. Group access capabilities (`lib/group-access.ts`). One table of Member kinds × capabilities in `__tests__/integration/group-access.test.ts` covers them.
-   - `manageContent` (create, edit or delete the Group's content, checked once per action by `runContentMutation`): allow every Member for now; PER-305 narrows it to the Creator or `MANAGE_CONTENT` (ADR-0004).
+   - `manageContent` (create, edit or delete the Group's content, checked once per action by `runContentMutation`): allow the Creator, or a Member holding `MANAGE_CONTENT` in that Group; deny a Member holding no Claim or only `MANAGE_MEMBERS` (ADR-0004). `__tests__/integration/manage-content.test.ts` sweeps every exported content action, so an action that skips `runContentMutation` fails there.
    - `manageGroup` (rename and delete the Group): allow the Creator only; deny a Member even when holding Claims.
    - `manageMembers` (list/invite/remove members, grant/revoke Claims): allow the Creator, or a Member holding `MANAGE_MEMBERS` in that Group; deny a Member holding no Claim or only `MANAGE_CONTENT`.
    - `changeMember(target)`: `manageMembers`, and the target is neither the Creator nor the viewer, so the Creator can never be removed or have Claims granted/revoked.

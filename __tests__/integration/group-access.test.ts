@@ -52,12 +52,11 @@ const NOTHING: Expected = {
 describe("Group access by Member kind", () => {
   it.each<[MemberKind, Expected]>([
     ["non-Member", NOTHING],
-    // Every Member may manage content until PER-305 switches the rule on.
-    ["plain Member", { ...NOTHING, manageContent: true }],
+    ["plain Member", NOTHING],
     ["MANAGE_CONTENT", { ...NOTHING, manageContent: true }],
     [
       "MANAGE_MEMBERS",
-      { ...NOTHING, manageContent: true, manageMembers: true, changeOtherMember: true },
+      { ...NOTHING, manageMembers: true, changeOtherMember: true },
     ],
     [
       "Creator",

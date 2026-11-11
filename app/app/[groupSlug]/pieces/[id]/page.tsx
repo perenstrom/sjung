@@ -4,6 +4,7 @@ import { getSetLists } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
+import { findGroupAccess } from "@/lib/group-access";
 import { PieceDetailCreditsSection } from "@/components/PieceDetailCreditsSection";
 import { PieceDetailFilesSection } from "@/components/PieceDetailFilesSection";
 import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
@@ -21,11 +22,12 @@ type PageProps = {
 
 export default async function TenantPieceDetailPage({ params, searchParams }: PageProps) {
   const [{ groupSlug, id }, { setlist }] = await Promise.all([params, searchParams]);
-  const [piece, people, setLists, groups] = await Promise.all([
+  const [piece, people, setLists, groups, access] = await Promise.all([
     getPieceDetail(groupSlug, id),
     getPeople(groupSlug),
     getSetLists(groupSlug),
     getGroups(),
+    findGroupAccess(groupSlug),
   ]);
 
   if (!piece) {
@@ -34,7 +36,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider>
+    <EditModeProvider canEdit={access?.can("manageContent") ?? false}>
       <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
           trail={pieceDetailTrail({
