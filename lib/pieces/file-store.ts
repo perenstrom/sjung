@@ -113,6 +113,14 @@ export async function deletePieceFiles(piece: StorePiece) {
   );
 }
 
+/**
+ * Deletes everything stored under a Group the caller has just deleted,
+ * including uploads that were never finalized.
+ */
+export async function deleteGroupFiles(groupId: string) {
+  await cleanUp("deleteGroupFiles", { groupId }, () => deletePrefix(groupStoragePrefix(groupId)));
+}
+
 /** A presigned GET that downloads the File under its original name. */
 export async function signDownload(file: { storagePath: string; fileName: string; mimeType: string }) {
   return signGet(file.storagePath, {
@@ -122,8 +130,12 @@ export async function signDownload(file: { storagePath: string; fileName: string
   });
 }
 
+function groupStoragePrefix(groupId: string): string {
+  return `groups/${groupId}/`;
+}
+
 function pieceStoragePrefix(piece: StorePiece): string {
-  return `groups/${piece.groupId}/pieces/${piece.id}/`;
+  return `${groupStoragePrefix(piece.groupId)}pieces/${piece.id}/`;
 }
 
 function assertUnderPiece(piece: StorePiece, storagePath: string) {
