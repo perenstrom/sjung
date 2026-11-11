@@ -1,16 +1,9 @@
 "use server";
 
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import { findInGroup } from "@/lib/find-in-group";
-import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
+import { deleteObjects, signGet, signPut } from "@/lib/object-storage";
 import prisma from "@/lib/prisma";
-import { getR2Bucket, getR2Client, sanitizeFileName } from "@/lib/r2";
 import { parseWritableGroupSlugFromFormData } from "@/lib/schemas/people";
 import {
   parseCreatePieceFileReplaceUploadFromFormData,
@@ -97,10 +90,10 @@ export async function finalizePieceFileReplace(formData: FormData) {
       throw new Error("Ogiltig filsökväg");
     }
 
-    await deleteR2ObjectsOrThrow(
-      [file.storagePath],
-      "Kunde inte ta bort den gamla filen från lagringen"
-    );
+    const deleted = await deleteObjects([file.storagePath]);
+    if (deleted.failedCount > 0) {
+      throw new Error("Kunde inte ta bort den gamla filen från lagringen");
+    }
 
     await prisma.file.update({
       where: { id: file.id },
@@ -126,14 +119,10 @@ export async function createPieceFileDownloadUrl(formData: FormData) {
   const file = await findInGroup(groupId, "file", fileId, {
     select: { storagePath: true, fileName: true, mimeType: true },
   });
-  const command = new GetObjectCommand({
-    Bucket: getR2Bucket(),
-    Key: file.storagePath,
-    ResponseContentType: file.mimeType,
-    ResponseContentDisposition: `attachment; filename="${file.fileName}"`,
-  });
-  const downloadUrl = await getSignedUrl(getR2Client(), command, {
-    expiresIn: DOWNLOAD_URL_EXPIRES_SECONDS,
+  const downloadUrl = await signGet(file.storagePath, {
+    contentType: file.mimeType,
+    contentDisposition: `attachment; filename="${file.fileName}"`,
+    expiresInSeconds: DOWNLOAD_URL_EXPIRES_SECONDS,
   });
 
   return { downloadUrl };
@@ -167,14 +156,8 @@ export async function deletePieceFile(formData: FormData) {
     const file = await findInGroup(groupId, "file", fileId, {
       select: { id: true, storagePath: true, pieceId: true },
     });
-    try {
-      await getR2Client().send(
-        new DeleteObjectCommand({
-          Bucket: getR2Bucket(),
-          Key: file.storagePath,
-        })
-      );
-    } catch {
+    const deleted = await deleteObjects([file.storagePath]);
+    if (deleted.failedCount > 0) {
       throw new Error("Kunde inte ta bort filen från lagringen");
     }
 
@@ -188,14 +171,10 @@ export async function deletePieceFile(formData: FormData) {
 
 /** A presigned PUT for one upload to `storagePath`. */
 async function signUpload(storagePath: string, mimeType: string, size: number) {
-  const command = new PutObjectCommand({
-    Bucket: getR2Bucket(),
-    Key: storagePath,
-    ContentType: mimeType,
-    ContentLength: size,
-  });
-  const uploadUrl = await getSignedUrl(getR2Client(), command, {
-    expiresIn: UPLOAD_URL_EXPIRES_SECONDS,
+  const uploadUrl = await signPut(storagePath, {
+    contentType: mimeType,
+    size,
+    expiresInSeconds: UPLOAD_URL_EXPIRES_SECONDS,
   });
 
   return {
@@ -206,4 +185,14 @@ async function signUpload(storagePath: string, mimeType: string, size: number) {
     },
     expiresInSeconds: UPLOAD_URL_EXPIRES_SECONDS,
   };
+}
+
+function sanitizeFileName(fileName: string): string {
+  return fileName
+    .normalize("NFKD")
+    .replace(/[^\w.\- ]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
 }

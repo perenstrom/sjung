@@ -27,7 +27,7 @@ import {
   getSetListIdsContainingPiece,
   toPieceNoteListItem,
 } from "@/lib/pieces/queries";
-import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
+import { deleteObjects } from "@/lib/object-storage";
 import {
   pieceNoteListItemSelect,
   type PieceDetail,
@@ -290,25 +290,16 @@ export async function deletePiece(formData: FormData) {
     const piece = await findInGroup(groupId, "piece", pieceId, {
       select: { id: true, files: { select: { storagePath: true } } },
     });
-    await deleteR2ObjectsOrThrow(
-      piece.files.map((file) => file.storagePath),
-      "Kunde inte ta bort en eller flera filer från lagringen",
-      {
-        concurrency: 5,
-        onFailure: (result) => {
-          const failedKeySample = result.failedKeys.slice(
-            0,
-            DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE
-          );
-          console.error("deletePiece failed to remove one or more R2 objects", {
-            pieceId: piece.id,
-            failedCount: result.failedCount,
-            totalCount: result.totalCount,
-            failedKeysSample: failedKeySample,
-          });
-        },
-      }
-    );
+    const deleted = await deleteObjects(piece.files.map((file) => file.storagePath));
+    if (deleted.failedCount > 0) {
+      console.error("deletePiece failed to remove one or more R2 objects", {
+        pieceId: piece.id,
+        failedCount: deleted.failedCount,
+        totalCount: deleted.totalCount,
+        failedKeysSample: deleted.failedKeys.slice(0, DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE),
+      });
+      throw new Error("Kunde inte ta bort en eller flera filer från lagringen");
+    }
 
     // Look up before deleting: the delete cascades to the piece's set list entries.
     const setListIds = await getSetListIdsContainingPiece(piece.id);
