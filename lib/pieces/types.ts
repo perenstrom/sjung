@@ -33,7 +33,8 @@ export type PieceNoteListItemQueryResult = Prisma.PieceNoteGetPayload<{
 }>;
 
 export type PieceNoteListItem = Omit<PieceNoteListItemQueryResult, "createdBy"> & {
-  createdByName: PieceNoteListItemQueryResult["createdBy"]["name"];
+  /** `null` once the author has deleted their account; show it with `authorName`. */
+  createdByName: string | null;
 };
 
 export const pieceDetailSelect = {

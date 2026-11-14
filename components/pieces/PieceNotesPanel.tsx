@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import type { PieceNoteListItem } from "@/lib/pieces/types";
+import { authorName } from "@/lib/users/author-name";
 import { cn } from "@/lib/utils";
 
 const NOTE_MAX_LENGTH = 2000;
@@ -328,7 +329,7 @@ export function PieceNotesPanel({
                       </p>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs text-muted-foreground">
-                          {note.createdByName} · uppdaterad{" "}
+                          {authorName(note.createdByName)} · uppdaterad{" "}
                           {formatNoteTimestamp(note.updatedAt)}
                         </p>
                         {readOnly ? null : (

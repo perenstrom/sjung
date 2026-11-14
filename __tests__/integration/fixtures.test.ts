@@ -66,7 +66,7 @@ describe("createPiece", () => {
 
     const membership = await testPrisma.usersToGroups.findUnique({
       where: {
-        userId_groupId: { userId: piece.createdById, groupId: piece.groupId },
+        userId_groupId: { userId: group!.createdById, groupId: piece.groupId },
       },
     });
     expect(membership).not.toBeNull();
