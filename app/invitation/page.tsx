@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth/require-user";
 import { loginPath } from "@/lib/auth/routes";
 import { getInvitationView, type InvitationView } from "@/lib/invitations/invitations";
 import { invitationPagePath, invitationSignupPath } from "@/lib/invitations/routes";
+import { groupPath } from "@/lib/groups/routes";
 
 type InvitationPageProps = {
   searchParams: Promise<{
@@ -82,7 +83,7 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
               Inbjudan är redan använd och du är medlem i gruppen.
             </Heading>
             <Button asChild className="w-full">
-              <Link href={`/app/${view.groupSlug}`}>Gå till {view.groupName}</Link>
+              <Link href={groupPath(view.groupSlug)}>Gå till {view.groupName}</Link>
             </Button>
           </>
         )}

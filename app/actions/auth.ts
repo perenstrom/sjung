@@ -33,6 +33,7 @@ import {
   type NewPasswordParseError,
   type SignupFormValues,
 } from "@/lib/schemas/auth";
+import { groupPath } from "@/lib/groups/routes";
 
 /** `useActionState` state for the login form: `null` until a submit fails. */
 export type LoginFormState = {
@@ -162,7 +163,7 @@ export async function signUpFromInvitationForm(
 
   await setActiveGroupSlugCookie(result.groupSlug);
   revalidateAppAndMyGroupsWithGroupRoute(result.groupSlug);
-  await signIn("credentials", { email: result.email, password, redirectTo: `/app/${result.groupSlug}` });
+  await signIn("credentials", { email: result.email, password, redirectTo: groupPath(result.groupSlug) });
   return null;
 }
 
