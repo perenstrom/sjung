@@ -25,6 +25,10 @@ function iconsDir(variant: IconVariant) {
   return `/icons/${variant}`;
 }
 
+// The Sjung brand mark shown in the app itself. It is always the production
+// navy icon; the environment marker is for the browser tab only.
+export const brandMarkSrc = `${iconsDir("production")}/icon.svg`;
+
 // Production gets the navy icon; staging and local share the amber one so a
 // non-production tab stands out even when its title is cut off. The .ico is a
 // fallback for browsers without SVG favicons.

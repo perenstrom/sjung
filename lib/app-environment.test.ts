@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { appIcons, appTitle, getAppEnvironment } from "@/lib/app-environment";
+import {
+  appIcons,
+  appTitle,
+  brandMarkSrc,
+  getAppEnvironment,
+} from "@/lib/app-environment";
 
 describe("getAppEnvironment", () => {
   afterEach(() => {
@@ -102,4 +107,14 @@ describe("appIcons", () => {
       });
     },
   );
+});
+
+describe("brandMarkSrc", () => {
+  it("matches the production SVG favicon", () => {
+    const productionSvg = appIcons("production").icon.find(
+      (icon) => icon.type === "image/svg+xml",
+    );
+
+    expect(brandMarkSrc).toBe(productionSvg?.url);
+  });
 });
