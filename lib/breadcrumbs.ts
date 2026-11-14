@@ -1,3 +1,10 @@
+import {
+  groupPath,
+  groupPiecesPath,
+  groupSetListPath,
+  groupSetListsPath,
+} from "@/lib/groups/routes";
+
 export type AppBreadcrumbAncestor = {
   label: string;
   href: string;
@@ -17,12 +24,16 @@ export function createGroupAncestor(
 ): AppBreadcrumbAncestor {
   return {
     label: groupName,
-    href: `/app/${groupSlug}`,
+    href: groupPath(groupSlug),
   };
 }
 
 export function createSetListsAncestor(groupSlug: string): AppBreadcrumbAncestor {
-  return { label: "Repertoarer", href: `/app/${groupSlug}/setlists` };
+  return { label: "Repertoarer", href: groupSetListsPath(groupSlug) };
+}
+
+export function createPiecesAncestor(groupSlug: string): AppBreadcrumbAncestor {
+  return { label: "Noter", href: groupPiecesPath(groupSlug) };
 }
 
 /** A Set list's crumb label: its name, or "Repertoar" when it has none. */
@@ -82,10 +93,10 @@ export function pieceDetailTrail({
             createSetListsAncestor(groupSlug),
             {
               label: setListCrumbLabel(setList.name),
-              href: `/app/${groupSlug}/setlists/${setList.id}`,
+              href: groupSetListPath(groupSlug, setList.id),
             },
           ]
-        : [{ label: "Noter", href: `/app/${groupSlug}` }]),
+        : [createPiecesAncestor(groupSlug)]),
     ],
     tail: { kind: "static", label: pieceName || "Notstycke" },
   };

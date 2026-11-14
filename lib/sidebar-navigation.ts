@@ -1,4 +1,42 @@
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import {
+  groupMembersPath,
+  groupPath,
+  groupPeoplePath,
+  groupPiecesPath,
+  groupSetListsPath,
+} from "@/lib/groups/routes";
+
+export type GroupNavItem = {
+  key: "setLists" | "pieces" | "people" | "members";
+  label: string;
+  /** `null` when there is no active group: the item shows disabled. */
+  href: string | null;
+};
+
+/**
+ * The sidebar's links into the active group, in order. Repertoarer comes
+ * first, as it's the group's start page; Medlemmar only shows to those who
+ * can manage members.
+ */
+export function groupNavItems({
+  groupSlug,
+  canManageMembers,
+}: {
+  groupSlug: string | null;
+  canManageMembers: boolean;
+}): GroupNavItem[] {
+  const href = (path: (slug: string) => string) => (groupSlug ? path(groupSlug) : null);
+  const items: GroupNavItem[] = [
+    { key: "setLists", label: "Repertoarer", href: href(groupSetListsPath) },
+    { key: "pieces", label: "Noter", href: href(groupPiecesPath) },
+    { key: "people", label: "Personer", href: href(groupPeoplePath) },
+  ];
+  if (groupSlug && canManageMembers) {
+    items.push({ key: "members", label: "Medlemmar", href: groupMembersPath(groupSlug) });
+  }
+  return items;
+}
 
 type MobileSidebar = {
   isMobile: boolean;
@@ -34,7 +72,7 @@ export async function switchGroup(
   } catch (err) {
     return getThrownMessage(err, "Kunde inte byta grupp");
   }
-  navigate(`/app/${slug}`);
+  navigate(groupPath(slug));
   onSwitched();
   return null;
 }

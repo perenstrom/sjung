@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { closestBreadcrumb, createGroupAncestor, pieceDetailTrail } from "@/lib/breadcrumbs";
+import {
+  closestBreadcrumb,
+  createGroupAncestor,
+  createPiecesAncestor,
+  pieceDetailTrail,
+} from "@/lib/breadcrumbs";
+
+describe("createPiecesAncestor", () => {
+  it("links Noter to the group's pieces page", () => {
+    expect(createPiecesAncestor("kor")).toEqual({ label: "Noter", href: "/app/kor/pieces" });
+  });
+});
 
 describe("closestBreadcrumb", () => {
   it("returns null for a hidden trail", () => {
@@ -71,7 +82,7 @@ describe("pieceDetailTrail", () => {
     visibility: "visible",
     ancestors: [
       { label: "Kören", href: "/app/kor" },
-      { label: "Noter", href: "/app/kor" },
+      { label: "Noter", href: "/app/kor/pieces" },
     ],
     tail: { kind: "static", label: "Vem kan segla" },
   };

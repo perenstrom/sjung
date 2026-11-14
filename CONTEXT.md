@@ -39,7 +39,7 @@ A pending offer for one email address to become a Member of one Group, made by a
 _Avoid_: Invite (as a noun), Pending member — an Invitation is not a membership yet. Group manager — there is no such role; any Member holding `MANAGE_MEMBERS` can invite.
 
 **Default group**:
-The Group a User lands in when opening the app — whichever Group they last switched to. Belongs to the User, not to the browser or the login session, so it survives logging out.
+The Group a User lands in when opening the app, on its Repertoarer page — whichever Group they last switched to. Belongs to the User, not to the browser or the login session, so it survives logging out.
 _Avoid_: Active group, Current group.
 
 **Creator**:
