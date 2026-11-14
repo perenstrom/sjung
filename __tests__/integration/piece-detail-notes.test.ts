@@ -54,4 +54,14 @@ describe("piece detail includes the piece's Piece notes", () => {
     ]);
     expect(detail?.notes).toEqual(await listPieceNotes(group.slug, piece.id));
   });
+
+  it("returns no author name for a Piece note whose author deleted their account", async () => {
+    const author = await createUser({ name: "Anna Andersson" });
+    await createPieceNote({ piece, createdById: author.id, content: "Kvar" });
+    await testPrisma.user.delete({ where: { id: author.id } });
+
+    const detail = await getPieceDetail(group.slug, piece.id);
+
+    expect(detail?.notes.map((note) => [note.content, note.createdByName])).toEqual([["Kvar", null]]);
+  });
 });

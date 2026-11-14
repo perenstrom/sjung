@@ -17,7 +17,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Boxes, ListMusic, LogOut, Music, UserPlus, Users } from "lucide-react";
+import { Boxes, CircleUser, ListMusic, LogOut, Music, UserPlus, Users } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -30,6 +30,8 @@ import { logOut } from "@/app/actions/auth";
 import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { brandMarkSrc } from "@/lib/app-environment";
+import { ACCOUNT_PATH } from "@/lib/account/routes";
+import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 
 type GroupOption = {
   id: string;
@@ -99,7 +101,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const membersHref = currentGroup?.canManageMembers
     ? `/app/${currentGroupSlug}/members`
     : null;
-  const groupsHref = "/app/me/groups";
+  const groupsHref = MY_GROUPS_PATH;
 
   function handleGroupChange(nextGroupSlug: string) {
     if (!nextGroupSlug || nextGroupSlug === currentGroupSlug) {
@@ -202,6 +204,12 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
                   pathname === groupsHref ||
                   pathname.startsWith(`${groupsHref}/`)
                 }
+              />
+              <NavItem
+                href={ACCOUNT_PATH}
+                label="Mitt konto"
+                icon={<CircleUser />}
+                isActive={pathname === ACCOUNT_PATH}
               />
               <SidebarMenuItem>
                 <SidebarMenuButton

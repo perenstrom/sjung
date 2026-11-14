@@ -88,14 +88,17 @@ model Group {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  // Required: it is what makes someone Creator (ADR-0002), so Account
+  // deletion deletes or is blocked by the Group rather than clearing it.
   createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  // Like every other audit column, cleared when that User is deleted (ADR-0006).
+  updatedById String?  @map("updated_by_id")
 
   name String
   slug String @unique @map("slug")
 
   createdBy User @relation("GroupCreatedBy", fields: [createdById], references: [id])
-  updatedBy User @relation("GroupUpdatedBy", fields: [updatedById], references: [id])
+  updatedBy User? @relation("GroupUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
   users      UsersToGroups[]
   pieces     Piece[]
@@ -186,14 +189,14 @@ model Piece {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   name    String
   groupId String @map("group_id")
 
-  createdBy      User            @relation("PieceCreatedBy", fields: [createdById], references: [id])
-  updatedBy      User            @relation("PieceUpdatedBy", fields: [updatedById], references: [id])
+  createdBy      User?           @relation("PieceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy      User?           @relation("PieceUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   group          Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
   files          File[]
   credits        PersonToPiece[]
@@ -208,16 +211,16 @@ model Link {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   url   String
   label String?
 
   pieceId String @map("piece_id")
 
-  createdBy User  @relation("LinkCreatedBy", fields: [createdById], references: [id])
-  updatedBy User  @relation("LinkUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User? @relation("LinkCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("LinkUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   piece     Piece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
   @@map("links")
@@ -227,8 +230,8 @@ model File {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   displayName String @map("display_name")
   fileName    String @map("file_name")
@@ -237,8 +240,8 @@ model File {
   size        Int
 
   pieceId   String @map("piece_id")
-  createdBy User   @relation("FileCreatedBy", fields: [createdById], references: [id])
-  updatedBy User   @relation("FileUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User?  @relation("FileCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?  @relation("FileUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   piece     Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
   @@map("files")
@@ -248,14 +251,14 @@ model Person {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   name    String
   groupId String @map("group_id")
 
-  createdBy User            @relation("PersonCreatedBy", fields: [createdById], references: [id])
-  updatedBy User            @relation("PersonUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User?           @relation("PersonCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?           @relation("PersonUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
   credits   PersonToPiece[]
 
@@ -278,15 +281,15 @@ model SetList {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   name    String
   date    DateTime?
   groupId String    @map("group_id")
 
-  createdBy User           @relation("SetListCreatedBy", fields: [createdById], references: [id])
-  updatedBy User           @relation("SetListUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User?          @relation("SetListCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?          @relation("SetListUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   pieces    SetListPiece[]
   notes     SetListNote[]
@@ -298,15 +301,15 @@ model SetListPiece {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   setListId String @map("set_list_id")
   pieceId   String @map("piece_id")
   position  Int
 
-  createdBy User    @relation("SetListPieceCreatedBy", fields: [createdById], references: [id])
-  updatedBy User    @relation("SetListPieceUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User?   @relation("SetListPieceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?   @relation("SetListPieceUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   setList   SetList @relation(fields: [setListId], references: [id], onDelete: Cascade)
   piece     Piece   @relation(fields: [pieceId], references: [id], onDelete: Cascade)
   notes     SetListPieceNote[]
@@ -318,15 +321,15 @@ model PieceNote {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   content String @db.Text
   pieceId String @map("piece_id")
   groupId String @map("group_id")
 
-  createdBy User  @relation("PieceNoteCreatedBy", fields: [createdById], references: [id])
-  updatedBy User  @relation("PieceNoteUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User? @relation("PieceNoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("PieceNoteUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   piece     Piece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
   group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
@@ -338,15 +341,15 @@ model SetListPieceNote {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   content      String @db.Text
   setListPieceId String @map("set_list_piece_id")
   groupId      String @map("group_id")
 
-  createdBy    User         @relation("SetListPieceNoteCreatedBy", fields: [createdById], references: [id])
-  updatedBy    User         @relation("SetListPieceNoteUpdatedBy", fields: [updatedById], references: [id])
+  createdBy    User?        @relation("SetListPieceNoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy    User?        @relation("SetListPieceNoteUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   setListPiece SetListPiece @relation(fields: [setListPieceId], references: [id], onDelete: Cascade)
   group        Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
@@ -358,15 +361,15 @@ model SetListNote {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  createdById String   @map("created_by_id")
-  updatedById String   @map("updated_by_id")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
 
   content   String @db.Text
   setListId String @map("set_list_id")
   position  Int
 
-  createdBy User    @relation("SetListNoteCreatedBy", fields: [createdById], references: [id])
-  updatedBy User    @relation("SetListNoteUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User?   @relation("SetListNoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?   @relation("SetListNoteUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   setList   SetList @relation(fields: [setListId], references: [id], onDelete: Cascade)
 
   @@map("set_list_notes")

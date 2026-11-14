@@ -50,7 +50,7 @@ export function toPieceNoteListItem({
   createdBy,
   ...note
 }: PieceNoteListItemQueryResult): PieceNoteListItem {
-  return { ...note, createdByName: createdBy.name };
+  return { ...note, createdByName: createdBy?.name ?? null };
 }
 
 /** Distinct ids of the set lists that contain the piece at least once. */

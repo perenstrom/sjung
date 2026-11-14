@@ -1,5 +1,5 @@
 import type { Prisma, UserTokenPurpose } from "@/app/generated/prisma/client";
-import prisma from "@/lib/prisma";
+import prisma, { type Db } from "@/lib/prisma";
 import {
   cooldownSecondsLeft,
   generateToken,
@@ -39,8 +39,6 @@ export type EmailLinks = {
    */
   redeem(tx: Prisma.TransactionClient, token: string, now?: Date): Promise<string | null>;
 };
-
-type Db = typeof prisma | Prisma.TransactionClient;
 
 /** Where one kind of link's tokens are stored, phrased in terms of its subject. */
 type TokenTable = {

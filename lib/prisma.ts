@@ -1,4 +1,4 @@
-import { PrismaClient } from "@/app/generated/prisma/client";
+import { PrismaClient, type Prisma } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as {
@@ -14,3 +14,6 @@ const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export default prisma;
+
+/** The client, or a transaction, for code that can run either way. */
+export type Db = typeof prisma | Prisma.TransactionClient;
