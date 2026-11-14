@@ -1,10 +1,9 @@
 import argon2 from "argon2";
 import { createElement } from "react";
-import type { Prisma } from "@/app/generated/prisma/client";
 import { ACCOUNT_DELETED_EMAIL_SUBJECT, AccountDeletedEmail } from "@/lib/account/account-deleted-email";
 import { sendEmail } from "@/lib/email";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
-import prisma from "@/lib/prisma";
+import prisma, { type Db } from "@/lib/prisma";
 
 /**
  * Account deletion (CONTEXT.md, ADR-0006). The User's content stays with its
@@ -21,8 +20,6 @@ export type CreatorGroups = {
   /** Creator with other Members: blocks Account deletion. */
   sharedGroups: CreatorGroup[];
 };
-
-type Db = Prisma.TransactionClient | typeof prisma;
 
 /** The Groups the User is Creator of, by name, split by what Account deletion does with them. */
 export async function findCreatorGroups(userId: string, db: Db = prisma): Promise<CreatorGroups> {
