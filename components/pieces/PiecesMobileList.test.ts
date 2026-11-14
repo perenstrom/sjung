@@ -56,8 +56,8 @@ describe("PiecesMobileList", () => {
     });
 
     it("shows no file or link counts", () => {
-      expect(html).not.toContain("lucide-file-text");
-      expect(html).not.toContain("lucide-external-link");
+      // The chevron is the row's only icon.
+      expect(html.split("<svg").length - 1).toBe(1);
       expect(textOf(html)).not.toMatch(/\d (fil|filer|länk|länkar)\b/);
     });
   });
