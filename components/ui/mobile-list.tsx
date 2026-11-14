@@ -103,8 +103,6 @@ type MobileListExpandableRowProps = {
   primary: React.ReactNode
   /** Optional line below the primary line, truncated while closed. Omit rather than pass a placeholder. */
   secondary?: React.ReactNode
-  /** Non-interactive trailing content shown before the chevron, e.g. counts. */
-  trailing?: React.ReactNode
   open: boolean
   onOpenChange: (open: boolean) => void
   /** What the row shows below its summary when open. Unmounted while closed. */
@@ -120,7 +118,6 @@ function MobileListExpandableRow({
   leading,
   primary,
   secondary,
-  trailing,
   open,
   onOpenChange,
   children,
@@ -148,15 +145,15 @@ function MobileListExpandableRow({
             </span>
           ) : null}
         </span>
-        <span className="text-muted-foreground flex shrink-0 items-center gap-2 text-xs">
-          {trailing}
-          {/* Rotate a wrapper, not the svg: Safari ignores `rotate` on svg elements. */}
-          <span
-            className={cn("inline-flex transition-transform", open && "rotate-180")}
-            aria-hidden="true"
-          >
-            <ChevronDown className="size-4" />
-          </span>
+        {/* Rotate a wrapper, not the svg: Safari ignores `rotate` on svg elements. */}
+        <span
+          className={cn(
+            "text-muted-foreground inline-flex shrink-0 transition-transform",
+            open && "rotate-180",
+          )}
+          aria-hidden="true"
+        >
+          <ChevronDown className="size-4" />
         </span>
       </button>
       {open ? (

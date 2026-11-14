@@ -1,6 +1,5 @@
 "use client";
 
-import { ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 
@@ -114,7 +113,6 @@ export function PiecesMobileList({
               primary={<span className="font-medium">{piece.name}</span>}
               // Edit mode lists the credits in its Medverkande section instead.
               secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
-              trailing={<FileAndLinkCounts piece={piece} />}
             >
               {isEditing ? (
                 <PieceEditSections piece={piece} people={people} groupSlug={groupSlug} />
@@ -153,27 +151,6 @@ export function PiecesMobileList({
         })
       )}
     </MobileList>
-  );
-}
-
-function FileAndLinkCounts({ piece }: { piece: PieceWithRelations }) {
-  return (
-    <>
-      {piece.files.length > 0 ? (
-        <span className="inline-flex items-center gap-0.5">
-          <FileText className="size-3.5" aria-hidden="true" />
-          {piece.files.length}
-          <span className="sr-only">{piece.files.length === 1 ? " fil" : " filer"}</span>
-        </span>
-      ) : null}
-      {piece.links.length > 0 ? (
-        <span className="inline-flex items-center gap-0.5">
-          <ExternalLink className="size-3.5" aria-hidden="true" />
-          {piece.links.length}
-          <span className="sr-only">{piece.links.length === 1 ? " länk" : " länkar"}</span>
-        </span>
-      ) : null}
-    </>
   );
 }
 
