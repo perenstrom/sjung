@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { textOf } from "@/lib/testing/markup";
 import { MyGroupsView } from "./MyGroupsView";
 import type { MyGroupsTableRow } from "./MyGroupsTable";
 
@@ -18,10 +19,6 @@ const EMPTY_BODY =
 
 function render(groups: MyGroupsTableRow[]): string {
   return renderToStaticMarkup(createElement(MyGroupsView, { groups }));
-}
-
-function textOf(html: string): string {
-  return html.replace(/<[^>]+>/g, "");
 }
 
 function countOccurrences(haystack: string, needle: string): number {
