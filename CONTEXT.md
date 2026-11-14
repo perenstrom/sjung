@@ -22,6 +22,10 @@ _Avoid_: Active, Activated, Pending — "active" is already rejected wording aro
 A User proving control of their email address, via an emailed single-use link, in order to set a new password. Completing one also makes the User Verified and logs out all of that User's sessions. Swedish UI: _Glömt lösenord_ (the entry link), _Återställ lösenord_ (the flow).
 _Avoid_: Password recovery, Forgot password (as the concept name — it's only the link label).
 
+**Account deletion**:
+A Verified user permanently erasing their own User, confirmed by re-entering their password. Their Group content stays with the Group, no longer attributed to anyone; Groups where they are the Creator and the only Member are deleted with them, while Creator of a Group with other Members blocks it until they delete that Group. Invitations sent to their address stay. A receipt is emailed to the address just before it's erased. See ADR-0006. Swedish UI: _Ta bort konto_.
+_Avoid_: Deactivate, Close account — nothing is kept to restore.
+
 **Emailed link**:
 A single-use, time-limited link sent to an email address, used for Password reset, email verification and Invitations. Only the newest link of its kind works: sending a new one makes the earlier ones invalid, and a new one can go out at most once a minute. Opening the link never changes anything; only pressing its button does. A link whose email failed to send never counts.
 _Avoid_: Magic link (nothing logs in by opening it), Token (the secret inside the link, not the link itself).
