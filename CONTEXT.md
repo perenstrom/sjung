@@ -97,3 +97,11 @@ A freestanding entry in a Set list's ordered sequence that isn't tied to any Pie
 **Feedback**:
 A free-text message a Verified user sends to the people running Sjung, about the app itself (bugs, ideas, confusion) — never addressed to a Group or its Members. Sending it promises no reply. Swedish UI: _Feedback_ (_Skicka feedback_ on the button).
 _Avoid_: Support, Ticket, Bug report — nothing tracks or guarantees an answer.
+
+**Privacy policy**:
+The public statement of what personal data Sjung keeps, why, who it is shared with, and how a User gets it erased. Users are informed of it, never asked to accept it. Swedish UI: _Integritetspolicy_.
+_Avoid_: Privacy notice, GDPR page.
+
+**Terms of use**:
+The public rules for using Sjung — chiefly that Files may only be uploaded by someone with the right to store them digitally. Separate from the Privacy policy, which is about personal data only. Swedish UI: _Användarvillkor_.
+_Avoid_: Terms of service, EULA, Copyright policy.
