@@ -48,6 +48,15 @@ describe("sendEmail", () => {
     });
   });
 
+  it("passes replyTo through to Resend", async () => {
+    const sendEmail = await loadSendEmail();
+    const react = createElement("p", null, "Hej!");
+
+    await sendEmail({ to: "team@example.com", subject: "Feedback", react, replyTo: "anna@example.com" });
+
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ replyTo: "anna@example.com" }));
+  });
+
   it("throws when Resend reports an error", async () => {
     send.mockResolvedValue({
       data: null,
@@ -88,6 +97,21 @@ describe("sendEmail", () => {
       expect(printed).toContain("Sjung <noreply@per.fyi>");
       expect(printed).toContain("Bekräfta din e-post");
       expect(printed).toContain("http://localhost:3000/auth/verify?token=abc");
+    });
+
+    it("prints the reply-to address when there is one", async () => {
+      vi.stubEnv("RESEND_API_KEY", "");
+      const info = captureConsole();
+      const sendEmail = await loadSendEmail();
+
+      await sendEmail({
+        to: "team@example.com",
+        subject: "Feedback",
+        react: verifyEmail,
+        replyTo: "anna@example.com",
+      });
+
+      expect(String(info.mock.calls[0][0])).toMatch(/Svar till:\s+anna@example\.com/);
     });
 
     it("prints a placeholder sender when EMAIL_FROM is missing too", async () => {
@@ -161,4 +185,55 @@ describe("sendEmail", () => {
       );
     }
   );
+});
+
+async function loadEmailRecipientFromEnv() {
+  vi.resetModules();
+  const { emailRecipientFromEnv } = await import("@/lib/email");
+  return emailRecipientFromEnv;
+}
+
+describe("emailRecipientFromEnv", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns the trimmed address from the variable", async () => {
+    vi.stubEnv("FEEDBACK_EMAIL_TO", "  team@example.com ");
+    const emailRecipientFromEnv = await loadEmailRecipientFromEnv();
+
+    expect(emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toBe("team@example.com");
+  });
+
+  it("returns a placeholder locally when emails are only printed", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("FEEDBACK_EMAIL_TO", "");
+    const emailRecipientFromEnv = await loadEmailRecipientFromEnv();
+
+    expect(emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toBe("(FEEDBACK_EMAIL_TO saknas)");
+  });
+
+  it("throws locally when emails are really sent", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    vi.stubEnv("FEEDBACK_EMAIL_TO", "");
+    const emailRecipientFromEnv = await loadEmailRecipientFromEnv();
+
+    expect(() => emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toThrow(
+      "Saknar miljövariabel: FEEDBACK_EMAIL_TO"
+    );
+  });
+
+  it.each(["staging", "production"])("throws on %s when the variable is missing", async (appEnv) => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_ENV", appEnv);
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("FEEDBACK_EMAIL_TO", "");
+    const emailRecipientFromEnv = await loadEmailRecipientFromEnv();
+
+    expect(() => emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toThrow(
+      "Saknar miljövariabel: FEEDBACK_EMAIL_TO"
+    );
+  });
 });

@@ -28,6 +28,7 @@ import {
 import { setActiveGroup } from "@/app/actions/groups";
 import { logOut } from "@/app/actions/auth";
 import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { brandMarkSrc } from "@/lib/app-environment";
 
 type GroupOption = {
@@ -246,6 +247,9 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
             ) : null}
           </div>
         ) : null}
+        <SidebarMenu>
+          <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} />
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

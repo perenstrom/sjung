@@ -1,9 +1,5 @@
 import { z } from "zod";
-
-function formDataString(formData: FormData, field: string): string {
-  const raw = formData.get(field);
-  return typeof raw === "string" ? raw : "";
-}
+import { formDataString } from "@/lib/schemas/form-data";
 
 const setListNameSchema = z.string().trim().min(1, { error: "Namn krävs" });
 

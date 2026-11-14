@@ -30,6 +30,7 @@ Required variables (from `.env.example`):
 - `R2_PUBLIC_BASE_URL`
 - `RESEND_API_KEY` (optional locally — see "Emails in local development" below)
 - `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`; optional locally)
+- `FEEDBACK_EMAIL_TO` (inbox that Feedback sent from the app goes to; optional locally)
 - `APP_BASE_URL` (origin for links in emails, e.g. `https://www.sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 
@@ -50,11 +51,11 @@ App runs at `http://localhost:3000`.
 
 ### Emails in local development
 
-With `npm run dev` and no `RESEND_API_KEY`, emails aren't sent. Each one is printed to the terminal running the dev server instead: sender, recipient, subject and the email as plain text, so links such as the verification link can be opened from there. `EMAIL_FROM` can be left empty too.
+With `npm run dev` and no `RESEND_API_KEY`, emails aren't sent. Each one is printed to the terminal running the dev server instead: sender, recipient, subject and the email as plain text, so links such as the verification link can be opened from there. `EMAIL_FROM` and `FEEDBACK_EMAIL_TO` can be left empty too.
 
-To test real delivery locally, set `RESEND_API_KEY` and `EMAIL_FROM` in `.env`; emails then go through Resend as on staging and production.
+To test real delivery locally, set `RESEND_API_KEY` and `EMAIL_FROM` in `.env`; emails then go through Resend as on staging and production. Set `FEEDBACK_EMAIL_TO` too to send Feedback.
 
-Staging and production never print emails: if either variable is missing there, sending an email fails with an error.
+Staging and production never print emails: if either variable is missing there, sending an email fails with an error. The same goes for `FEEDBACK_EMAIL_TO` when sending Feedback.
 
 ## Useful commands
 
@@ -89,13 +90,14 @@ Config lives in the `staging` and `production` GitHub environments: variables `C
 
 Each Coolify app sets the runtime variable `APP_ENV`: `staging` on `sjung-staging` and `production` on `sjung-production`. It decides the environment label in the browser tab title (`[staging] Sjung` on staging, plain `Sjung` in production; `npm run dev` always shows `[local] Sjung`). An unset or unknown value counts as production.
 
-Both apps also set three runtime variables for email. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
+Both apps also set four runtime variables for email. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
 
 | Variable | `sjung-staging` | `sjung-production` |
 | --- | --- | --- |
 | `RESEND_API_KEY` | Resend key `sjung-staging` | Resend key `sjung-production` |
 | `EMAIL_FROM` | `Sjung <noreply@per.fyi>` | `Sjung <noreply@per.fyi>` |
 | `APP_BASE_URL` | `https://staging.sjung.app` | `https://www.sjung.app` |
+| `FEEDBACK_EMAIL_TO` | Inbox for Feedback | Inbox for Feedback |
 
 Each app has its own sending-only Resend key, so either can be revoked alone. The sender must be on a domain verified in Resend. Production uses `www` because `sjung.app` redirects there, and links in emails shouldn't go through a redirect. Set them as runtime variables, not build variables; a restart picks up a change.
 
