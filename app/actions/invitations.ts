@@ -8,6 +8,7 @@ import { loginPath } from "@/lib/auth/routes";
 import { acceptInvitation } from "@/lib/invitations/invitations";
 import { INVITATION_PATH, invitationPagePath } from "@/lib/invitations/routes";
 import { revalidateAppAndMyGroupsWithGroupRoute } from "@/lib/revalidate/group-routes";
+import { groupPath } from "@/lib/groups/routes";
 
 function tokenFrom(formData: FormData): string | null {
   const token = formData.get("token");
@@ -39,7 +40,7 @@ export async function acceptGroupInvitation(formData: FormData) {
   // The new Group becomes the User's Default group.
   await setActiveGroupSlugCookie(result.groupSlug);
   revalidateAppAndMyGroupsWithGroupRoute(result.groupSlug);
-  redirect(`/app/${result.groupSlug}`);
+  redirect(groupPath(result.groupSlug));
 }
 
 /** "Logga ut" on an Invitation sent to another address: log out, then show the link again. */

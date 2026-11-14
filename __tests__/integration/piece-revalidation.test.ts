@@ -69,7 +69,7 @@ describe("piece mutations revalidate every page that shows the piece", () => {
     const paths = revalidatedPaths();
     expect(new Set(paths)).toEqual(
       new Set([
-        `/app/${group.slug}`,
+        `/app/${group.slug}/pieces`,
         `/app/${group.slug}/pieces/${piece.id}`,
         `/app/${group.slug}/setlists/${twice.id}`,
         `/app/${group.slug}/setlists/${once.id}`,
@@ -89,7 +89,7 @@ describe("piece mutations revalidate every page that shows the piece", () => {
     await deletePiece(formData);
 
     const paths = revalidatedPaths();
-    expect(paths).toContain(`/app/${group.slug}`);
+    expect(paths).toContain(`/app/${group.slug}/pieces`);
     expect(paths).toContain(`/app/${group.slug}/setlists/${containing.id}`);
     expect(paths).not.toContain(`/app/${group.slug}/setlists/${without.id}`);
     expect(paths).not.toContain(`/app/${group.slug}/setlists`);

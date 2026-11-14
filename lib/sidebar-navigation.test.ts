@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { closeMobileSidebar, switchGroup } from "./sidebar-navigation";
+import { closeMobileSidebar, groupNavItems, switchGroup } from "./sidebar-navigation";
 
 describe("closeMobileSidebar", () => {
   it("closes the sheet on mobile", () => {
@@ -62,5 +62,30 @@ describe("switchGroup", () => {
     });
 
     expect(error).toBe("Kunde inte byta grupp");
+  });
+});
+
+describe("groupNavItems", () => {
+  it("lists Repertoarer first, then Noter, Personer and Medlemmar", () => {
+    expect(groupNavItems({ groupSlug: "kor", canManageMembers: true })).toEqual([
+      { key: "setLists", label: "Repertoarer", href: "/app/kor/setlists" },
+      { key: "pieces", label: "Noter", href: "/app/kor/pieces" },
+      { key: "people", label: "Personer", href: "/app/kor/people" },
+      { key: "members", label: "Medlemmar", href: "/app/kor/members" },
+    ]);
+  });
+
+  it("leaves out Medlemmar for those who can't manage members", () => {
+    expect(
+      groupNavItems({ groupSlug: "kor", canManageMembers: false }).map((item) => item.label)
+    ).toEqual(["Repertoarer", "Noter", "Personer"]);
+  });
+
+  it("disables the items when there is no active group", () => {
+    expect(groupNavItems({ groupSlug: null, canManageMembers: false })).toEqual([
+      { key: "setLists", label: "Repertoarer", href: null },
+      { key: "pieces", label: "Noter", href: null },
+      { key: "people", label: "Personer", href: null },
+    ]);
   });
 });

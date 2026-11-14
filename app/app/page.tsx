@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getGroups } from "@/app/actions/groups";
 import { requireUser } from "@/lib/auth/require-user";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
-import { MY_GROUPS_PATH } from "@/lib/groups/routes";
+import { MY_GROUPS_PATH, groupPath } from "@/lib/groups/routes";
 
 export default async function AppHubPage() {
   await requireUser();
@@ -18,5 +18,5 @@ export default async function AppHubPage() {
     : null;
   const fallbackGroup = groups[0];
   const selectedGroup = cookieGroup ?? fallbackGroup;
-  redirect(`/app/${selectedGroup.slug}`);
+  redirect(groupPath(selectedGroup.slug));
 }

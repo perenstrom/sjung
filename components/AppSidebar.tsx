@@ -27,12 +27,24 @@ import {
 } from "@/components/ui/select";
 import { setActiveGroup } from "@/app/actions/groups";
 import { logOut } from "@/app/actions/auth";
-import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
+import {
+  closeMobileSidebar,
+  groupNavItems,
+  switchGroup,
+  type GroupNavItem,
+} from "@/lib/sidebar-navigation";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { brandMarkSrc } from "@/lib/app-environment";
 import { ACCOUNT_PATH } from "@/lib/account/routes";
 import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 import { PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from "@/lib/legal/routes";
+
+const navItemIcons: Record<GroupNavItem["key"], ReactNode> = {
+  setLists: <ListMusic />,
+  pieces: <Music />,
+  people: <Users />,
+  members: <UserPlus />,
+};
 
 type GroupOption = {
   id: string;
@@ -94,14 +106,11 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const currentGroupSlug =
     tenantSlug ?? activeGroupSlug ?? groups[0]?.slug ?? "";
   const currentGroup = groups.find((group) => group.slug === currentGroupSlug);
-  const hasActiveGroup = Boolean(currentGroupSlug);
 
-  const piecesHref = hasActiveGroup ? `/app/${currentGroupSlug}` : null;
-  const peopleHref = hasActiveGroup ? `/app/${currentGroupSlug}/people` : null;
-  const setListsHref = hasActiveGroup ? `/app/${currentGroupSlug}/setlists` : null;
-  const membersHref = currentGroup?.canManageMembers
-    ? `/app/${currentGroupSlug}/members`
-    : null;
+  const navItems = groupNavItems({
+    groupSlug: currentGroupSlug || null,
+    canManageMembers: currentGroup?.canManageMembers ?? false,
+  });
   const groupsHref = MY_GROUPS_PATH;
 
   function handleGroupChange(nextGroupSlug: string) {
@@ -164,32 +173,15 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <NavItem
-                href={piecesHref}
-                label="Noter"
-                icon={<Music />}
-                isActive={pathname === piecesHref}
-              />
-              <NavItem
-                href={peopleHref}
-                label="Personer"
-                icon={<Users />}
-                isActive={pathname === peopleHref}
-              />
-              <NavItem
-                href={setListsHref}
-                label="Repertoarer"
-                icon={<ListMusic />}
-                isActive={pathname === setListsHref}
-              />
-              {membersHref ? (
+              {navItems.map((item) => (
                 <NavItem
-                  href={membersHref}
-                  label="Medlemmar"
-                  icon={<UserPlus />}
-                  isActive={pathname === membersHref}
+                  key={item.key}
+                  href={item.href}
+                  label={item.label}
+                  icon={navItemIcons[item.key]}
+                  isActive={pathname === item.href}
                 />
-              ) : null}
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
