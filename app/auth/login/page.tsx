@@ -1,3 +1,4 @@
+import { PublicPageShell } from "@/components/PublicPageShell";
 import { LoginForm } from "@/components/LoginForm";
 import { parseRedirectPathFromValue } from "@/lib/schemas/auth";
 
@@ -24,8 +25,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     undefined;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 md:px-6">
+    <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">
       <LoginForm nextPath={nextPath} notice={notice} />
-    </main>
+    </PublicPageShell>
   );
 }

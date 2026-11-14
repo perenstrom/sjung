@@ -1,3 +1,4 @@
+import { PublicPageShell } from "@/components/PublicPageShell";
 import { InvalidLinkNotice } from "@/components/InvalidLinkNotice";
 import { NewPasswordForm } from "@/components/NewPasswordForm";
 import { getPasswordResetTokenState } from "@/lib/auth/password-reset";
@@ -19,7 +20,7 @@ export default async function NewPasswordPage({ searchParams }: NewPasswordPageP
     : { state: "invalid" as const };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 md:px-6">
+    <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">
       <div className="w-full space-y-6 rounded-xl border p-6">
         {tokenState.state === "valid" && token ? (
           <NewPasswordForm token={token} email={tokenState.email} />
@@ -30,6 +31,6 @@ export default async function NewPasswordPage({ searchParams }: NewPasswordPageP
           />
         )}
       </div>
-    </main>
+    </PublicPageShell>
   );
 }
