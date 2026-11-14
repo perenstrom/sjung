@@ -91,3 +91,9 @@ A note scoped to one Set list piece — one specific appearance of a Piece withi
 
 **Running-order note**:
 A freestanding entry in a Set list's ordered sequence that isn't tied to any Piece at all (e.g. a pause or an announcement slot) — ordered via the same position sequence as Set list pieces.
+
+### About Sjung itself
+
+**Feedback**:
+A free-text message a Verified user sends to the people running Sjung, about the app itself (bugs, ideas, confusion) — never addressed to a Group or its Members. Sending it promises no reply. Swedish UI: _Feedback_ (_Skicka feedback_ on the button).
+_Avoid_: Support, Ticket, Bug report — nothing tracks or guarantees an answer.
