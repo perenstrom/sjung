@@ -7,7 +7,10 @@ vi.mock("next/cache", () => ({
 
 import { auth } from "@/auth";
 import { testPrisma } from "../support/db";
-import { createGroup, createPiece } from "../support/fixtures";
+import { failDeletesOf, putStoredObject, storedKeys } from "../support/fake-object-storage";
+import { createFile, createGroup, createPiece } from "../support/fixtures";
+import { formData } from "../support/form-data";
+import { actAs } from "../support/session";
 import { deleteGroup } from "@/app/actions/groups";
 
 const mockAuth = vi.mocked(auth);
@@ -54,5 +57,36 @@ describe("deleteGroup", () => {
     ).toBeNull();
     // The piece's own group was untouched by this deletion.
     expect(await testPrisma.piece.findUnique({ where: { id: piece.id } })).not.toBeNull();
+  });
+
+  it("removes the Group's stored content, finalized or not, and leaves other Groups' alone", async () => {
+    const group = await createGroup();
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    const file = await createFile(piece);
+    putStoredObject(file.storagePath);
+    const unfinalized = `groups/${group.id}/pieces/${piece.id}/never-finalized.pdf`;
+    putStoredObject(unfinalized);
+    const otherFile = await createFile(await createPiece());
+    putStoredObject(otherFile.storagePath);
+    actAs(group.createdById);
+
+    await deleteGroup(formData({ groupSlug: group.slug }));
+
+    expect(await testPrisma.file.findUnique({ where: { id: file.id } })).toBeNull();
+    expect(storedKeys()).toEqual([otherFile.storagePath]);
+  });
+
+  it("still deletes the Group when some of its objects can't be deleted", async () => {
+    const group = await createGroup();
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    const file = await createFile(piece);
+    putStoredObject(file.storagePath);
+    failDeletesOf(file.storagePath);
+    actAs(group.createdById);
+
+    await deleteGroup(formData({ groupSlug: group.slug }));
+
+    expect(await testPrisma.group.findUnique({ where: { id: group.id } })).toBeNull();
+    expect(storedKeys()).toEqual([file.storagePath]);
   });
 });

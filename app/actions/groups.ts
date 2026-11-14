@@ -6,6 +6,7 @@ import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { changeMember, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
+import { deleteGroupFiles } from "@/lib/pieces/file-store";
 import {
   findGroupInvitations,
   inviteToGroup,
@@ -138,6 +139,7 @@ export async function deleteGroup(formData: FormData) {
       await prisma.group.delete({
         where: { id: groupId },
       });
+      await deleteGroupFiles(groupId);
       revalidateAppAndMyGroupsWithGroupRoute(groupSlug);
     }
   );

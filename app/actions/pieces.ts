@@ -27,7 +27,7 @@ import {
   getSetListIdsContainingPiece,
   toPieceNoteListItem,
 } from "@/lib/pieces/queries";
-import { deleteR2ObjectsOrThrow } from "@/lib/pieces/storage-delete";
+import { deletePieceFiles, STORE_PIECE_SELECT } from "@/lib/pieces/file-store";
 import {
   pieceNoteListItemSelect,
   type PieceDetail,
@@ -35,8 +35,6 @@ import {
 } from "@/lib/pieces/types";
 import { revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
-
-const DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
 
 export async function getPieces(groupSlug: string) {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
@@ -287,35 +285,14 @@ export async function deletePiece(formData: FormData) {
   const pieceId = parsePieceIdFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
-    const piece = await findInGroup(groupId, "piece", pieceId, {
-      select: { id: true, files: { select: { storagePath: true } } },
-    });
-    await deleteR2ObjectsOrThrow(
-      piece.files.map((file) => file.storagePath),
-      "Kunde inte ta bort en eller flera filer från lagringen",
-      {
-        concurrency: 5,
-        onFailure: (result) => {
-          const failedKeySample = result.failedKeys.slice(
-            0,
-            DELETE_PIECE_FAILED_KEYS_LOG_SAMPLE_SIZE
-          );
-          console.error("deletePiece failed to remove one or more R2 objects", {
-            pieceId: piece.id,
-            failedCount: result.failedCount,
-            totalCount: result.totalCount,
-            failedKeysSample: failedKeySample,
-          });
-        },
-      }
-    );
-
+    const piece = await findInGroup(groupId, "piece", pieceId, { select: STORE_PIECE_SELECT });
     // Look up before deleting: the delete cascades to the piece's set list entries.
     const setListIds = await getSetListIdsContainingPiece(piece.id);
 
     await prisma.piece.delete({
       where: { id: piece.id },
     });
+    await deletePieceFiles(piece);
 
     await revalidatePieceRoutes(groupSlug, piece.id, setListIds);
   });

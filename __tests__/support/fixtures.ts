@@ -16,6 +16,7 @@ import type {
 
 let userCounter = 0;
 let groupCounter = 0;
+let fileCounter = 0;
 
 type CreateUserOptions = Partial<{
   id: string;
@@ -212,14 +213,15 @@ export async function createSetListNote(
   });
 }
 
-/** A File row on the Piece; nothing is uploaded to storage. */
+/** A File row on the Piece, at its own key under the Piece; nothing is uploaded to storage. */
 export async function createFile(piece: Piece): Promise<File> {
+  fileCounter += 1;
   return testPrisma.file.create({
     data: {
       pieceId: piece.id,
       displayName: "Score",
       fileName: "score.pdf",
-      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/score.pdf`,
+      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/score-${fileCounter}.pdf`,
       mimeType: "application/pdf",
       size: 1024,
       createdById: piece.createdById,

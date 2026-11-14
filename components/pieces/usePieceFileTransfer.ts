@@ -110,8 +110,6 @@ export function usePieceFileTransfer({
       finalizeData.set(adapter.idField, adapter.idValue);
       finalizeData.set("fileName", selectedFile.name);
       finalizeData.set("storagePath", uploadData.storagePath);
-      finalizeData.set("mimeType", selectedFile.type);
-      finalizeData.set("size", String(selectedFile.size));
       finalizeData.set("displayName", selectedFile.name);
       await adapter.finalize(finalizeData);
 
