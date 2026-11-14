@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formDataString } from "@/lib/schemas/form-data";
 
 export const personNameSchema = z
   .string()
@@ -9,11 +10,6 @@ export const writableGroupSlugSchema = z
   .string()
   .trim()
   .min(1, { error: "Saknar grupp" });
-
-function formDataString(formData: FormData, field: string): string {
-  const raw = formData.get(field);
-  return typeof raw === "string" ? raw : "";
-}
 
 export function parsePersonNameFromFormData(formData: FormData): string {
   const result = personNameSchema.safeParse(formDataString(formData, "name"));

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formDataString } from "@/lib/schemas/form-data";
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
@@ -17,11 +18,6 @@ const ACCEPT_ATTR_EXTENSION_OVERRIDES: Partial<Record<string, string>> = {
 export const PIECE_FILE_ACCEPT_ATTR = Array.from(ALLOWED_MIME_TYPES)
   .map((mimeType) => ACCEPT_ATTR_EXTENSION_OVERRIDES[mimeType] ?? mimeType)
   .join(",");
-
-function formDataString(formData: FormData, field: string): string {
-  const raw = formData.get(field);
-  return typeof raw === "string" ? raw : "";
-}
 
 const pieceIdSchema = z.string().trim().min(1, { error: "Stycke saknas" });
 

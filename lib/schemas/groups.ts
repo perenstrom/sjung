@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { GroupClaim } from "@/app/generated/prisma/enums";
+import { formDataString } from "@/lib/schemas/form-data";
 
 export const groupNameSchema = z
   .string()
@@ -28,11 +29,6 @@ export const invitationIdSchema = z.uuid({ error: "Ogiltig inbjudan" });
 export const groupClaimSchema = z.enum(GroupClaim, {
   error: "Ogiltig behörighet",
 });
-
-function formDataString(formData: FormData, field: string): string {
-  const raw = formData.get(field);
-  return typeof raw === "string" ? raw : "";
-}
 
 export function parseGroupNameFromFormData(formData: FormData): string {
   const result = groupNameSchema.safeParse(formDataString(formData, "name"));
