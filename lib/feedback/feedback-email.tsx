@@ -1,3 +1,4 @@
+import { EmailLayout } from "@/lib/email-layout";
 import type { AppEnvironment } from "@/lib/app-environment";
 
 export function feedbackEmailSubject(environment: AppEnvironment, senderName: string): string {
@@ -32,16 +33,14 @@ export function FeedbackEmail({
   ];
 
   return (
-    <html lang="sv">
-      <body style={{ fontFamily: "system-ui, sans-serif", color: "#111", lineHeight: 1.5 }}>
-        <p style={{ whiteSpace: "pre-wrap" }}>{message}</p>
-        <hr />
-        {details.map(([label, value]) => (
-          <p key={label} style={{ margin: 0, color: "#666" }}>
-            {label}: {value}
-          </p>
-        ))}
-      </body>
-    </html>
+    <EmailLayout>
+      <p style={{ whiteSpace: "pre-wrap" }}>{message}</p>
+      <hr />
+      {details.map(([label, value]) => (
+        <p key={label} style={{ margin: 0, color: "#666" }}>
+          {label}: {value}
+        </p>
+      ))}
+    </EmailLayout>
   );
 }
