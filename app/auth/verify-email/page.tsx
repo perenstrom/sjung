@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PublicPageShell } from "@/components/PublicPageShell";
 import { logOut } from "@/app/actions/auth";
 import { ResendVerificationForm } from "@/components/ResendVerificationForm";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
   const sendFailed = isSendFailedFlag(skickat);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 md:px-6">
+    <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">
       <div className="w-full space-y-6 rounded-xl border p-6">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold">Bekräfta din e-postadress</h1>
@@ -49,6 +50,6 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
           </Button>
         </form>
       </div>
-    </main>
+    </PublicPageShell>
   );
 }

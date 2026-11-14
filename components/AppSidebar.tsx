@@ -17,7 +17,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Boxes, CircleUser, ListMusic, LogOut, Music, UserPlus, Users } from "lucide-react";
+import { Boxes, CircleUser, ListMusic, LogOut, Music, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,6 +32,7 @@ import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { brandMarkSrc } from "@/lib/app-environment";
 import { ACCOUNT_PATH } from "@/lib/account/routes";
 import { MY_GROUPS_PATH } from "@/lib/groups/routes";
+import { PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from "@/lib/legal/routes";
 
 type GroupOption = {
   id: string;
@@ -257,6 +258,18 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
         ) : null}
         <SidebarMenu>
           <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} />
+          <NavItem
+            href={PRIVACY_POLICY_PATH}
+            label="Integritetspolicy"
+            icon={<ShieldCheck />}
+            isActive={false}
+          />
+          <NavItem
+            href={TERMS_OF_USE_PATH}
+            label="Användarvillkor"
+            icon={<ScrollText />}
+            isActive={false}
+          />
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

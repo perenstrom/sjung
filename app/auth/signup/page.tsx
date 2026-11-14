@@ -1,3 +1,4 @@
+import { PublicPageShell } from "@/components/PublicPageShell";
 import { InvalidInvitationNotice } from "@/components/InvalidInvitationNotice";
 import { SignupForm } from "@/components/SignupForm";
 import { getInvitationSignup } from "@/lib/invitations/invitations";
@@ -19,7 +20,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
     const token = typeof invitationParam === "string" && invitationParam !== "" ? invitationParam : null;
     const invitation = token ? await getInvitationSignup(token) : null;
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 md:px-6">
+      <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">
         {token && invitation?.ok ? (
           <SignupForm invitation={{ token, email: invitation.email, groupName: invitation.groupName }} />
         ) : (
@@ -27,13 +28,13 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
             <InvalidInvitationNotice />
           </div>
         )}
-      </main>
+      </PublicPageShell>
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 md:px-6">
+    <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">
       <SignupForm nextPath={parseRedirectPathFromValue(next)} />
-    </main>
+    </PublicPageShell>
   );
 }

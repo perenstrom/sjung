@@ -33,7 +33,7 @@ export function FeedbackEmail({
   ];
 
   return (
-    <EmailLayout>
+    <EmailLayout legalFooter={false}>
       <p style={{ whiteSpace: "pre-wrap" }}>{message}</p>
       <hr />
       {details.map(([label, value]) => (

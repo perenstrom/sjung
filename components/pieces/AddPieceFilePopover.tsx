@@ -16,6 +16,7 @@ import {
   FormPopoverTrigger,
 } from "@/components/ui/form-popover";
 import { Spinner } from "@/components/ui/spinner";
+import { FileRightsReminder } from "@/components/legal/FileRightsReminder";
 import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 
 export function AddPieceFilePopover({
@@ -89,6 +90,7 @@ export function AddPieceFilePopover({
               required
               disabled={isTransferring}
             />
+            <FileRightsReminder />
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

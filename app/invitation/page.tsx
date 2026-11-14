@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PublicPageShell } from "@/components/PublicPageShell";
 import { acceptGroupInvitation, logOutFromInvitation } from "@/app/actions/invitations";
 import { InvalidInvitationNotice } from "@/components/InvalidInvitationNotice";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
   const view: InvitationView = token ? await getInvitationView(token, viewer) : { state: "invalid" };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 md:px-6">
+    <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">
       <div className="w-full space-y-6 rounded-xl border p-6">
         {view.state === "can-accept" && (
           <form action={acceptGroupInvitation} className="space-y-6">
@@ -88,7 +89,7 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
 
         {view.state === "invalid" && <InvalidInvitationNotice />}
       </div>
-    </main>
+    </PublicPageShell>
   );
 }
 

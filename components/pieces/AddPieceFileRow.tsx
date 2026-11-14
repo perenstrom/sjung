@@ -8,6 +8,7 @@ import { pickDroppedFile } from "@/components/pieces/droppedFile";
 import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { FileRightsReminder } from "@/components/legal/FileRightsReminder";
 import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
 import { cn } from "@/lib/utils";
 
@@ -128,6 +129,7 @@ export function AddPieceFileRow({
         )}
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <FileRightsReminder />
     </div>
   );
 }

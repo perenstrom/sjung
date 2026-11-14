@@ -8,6 +8,7 @@ import { invitationPagePath } from "@/lib/invitations/routes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SignupTermsNotice } from "@/components/legal/SignupTermsNotice";
 import { PASSWORD_MIN_LENGTH } from "@/lib/schemas/auth";
 
 type SignupFormProps =
@@ -113,9 +114,12 @@ export function SignupForm({ nextPath, invitation }: SignupFormProps) {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        Skapa konto
-      </Button>
+      <div className="space-y-2">
+        <Button type="submit" className="w-full" disabled={isPending}>
+          Skapa konto
+        </Button>
+        <SignupTermsNotice />
+      </div>
 
       <p className="text-center text-sm text-muted-foreground">
         Har du redan konto?{" "}
