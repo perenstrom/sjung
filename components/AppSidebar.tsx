@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Sidebar,
@@ -27,6 +28,7 @@ import {
 import { setActiveGroup } from "@/app/actions/groups";
 import { logOut } from "@/app/actions/auth";
 import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
+import { brandMarkSrc } from "@/lib/app-environment";
 
 type GroupOption = {
   id: string;
@@ -123,10 +125,33 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <Music className="size-4" />
-          <span className="text-sm font-semibold">Sjung</span>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            {/* A menu button only for its collapse behaviour: the logo isn't
+                interactive, so it renders as a div without hover styles. */}
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              className="hover:bg-transparent hover:text-sidebar-foreground active:bg-transparent active:text-sidebar-foreground"
+            >
+              <div>
+                <Image
+                  src={brandMarkSrc}
+                  alt="Sjung"
+                  width={32}
+                  height={32}
+                  className="size-8 shrink-0"
+                />
+                <span
+                  aria-hidden="true"
+                  className="font-semibold group-data-[collapsible=icon]:hidden"
+                >
+                  Sjung
+                </span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="flex flex-col">
         <SidebarGroup>

@@ -19,19 +19,30 @@ export function appTitle(environment: AppEnvironment) {
   };
 }
 
+type IconVariant = "production" | "staging";
+
+function iconsDir(variant: IconVariant) {
+  return `/icons/${variant}`;
+}
+
+// The Sjung brand mark shown in the app itself. It is always the production
+// navy icon; the environment marker is for the browser tab only.
+export const brandMarkSrc = `${iconsDir("production")}/icon.svg`;
+
 // Production gets the navy icon; staging and local share the amber one so a
 // non-production tab stands out even when its title is cut off. The .ico is a
 // fallback for browsers without SVG favicons.
 export function appIcons(environment: AppEnvironment) {
-  const variant = environment === "production" ? "production" : "staging";
-  const ico =
-    variant === "production" ? "/favicon.ico" : `/icons/${variant}/favicon.ico`;
+  const variant: IconVariant =
+    environment === "production" ? "production" : "staging";
+  const dir = iconsDir(variant);
+  const ico = variant === "production" ? "/favicon.ico" : `${dir}/favicon.ico`;
 
   return {
     icon: [
       { url: ico, sizes: "16x16 32x32 48x48" },
-      { url: `/icons/${variant}/icon.svg`, type: "image/svg+xml" },
+      { url: `${dir}/icon.svg`, type: "image/svg+xml" },
     ],
-    apple: `/icons/${variant}/apple-icon.png`,
+    apple: `${dir}/apple-icon.png`,
   };
 }
