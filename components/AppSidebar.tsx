@@ -31,6 +31,7 @@ import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { brandMarkSrc } from "@/lib/app-environment";
 import { ACCOUNT_PATH } from "@/lib/account/routes";
+import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 
 type GroupOption = {
   id: string;
@@ -100,7 +101,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
   const membersHref = currentGroup?.canManageMembers
     ? `/app/${currentGroupSlug}/members`
     : null;
-  const groupsHref = "/app/me/groups";
+  const groupsHref = MY_GROUPS_PATH;
 
   function handleGroupChange(nextGroupSlug: string) {
     if (!nextGroupSlug || nextGroupSlug === currentGroupSlug) {

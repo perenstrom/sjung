@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getSetListIdsContainingPiece } from "@/lib/pieces/queries";
+import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 
 export function revalidateGroupRoute(groupSlug: string) {
   revalidatePath(`/app/${groupSlug}`);
@@ -22,7 +23,7 @@ export function revalidateGroupSetListDetailRoutes(groupSlug: string, setListId:
 }
 
 export function revalidateGroupMembersRoutes(groupSlug: string) {
-  revalidatePath("/app/me/groups");
+  revalidatePath(MY_GROUPS_PATH);
   revalidateGroupRoute(groupSlug);
   revalidatePath(`/app/${groupSlug}/members`);
 }
@@ -52,7 +53,7 @@ export async function revalidatePieceRoutes(
 
 export function revalidateAppAndMyGroupsRoutes() {
   revalidatePath("/app");
-  revalidatePath("/app/me/groups");
+  revalidatePath(MY_GROUPS_PATH);
 }
 
 export function revalidateAppAndMyGroupsWithGroupRoute(groupSlug: string) {

@@ -7,9 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CreatorGroup, CreatorGroups } from "@/lib/account/account-deletion";
-
-/** Where a Creator deletes a Group: the row menu on My groups. */
-const DELETE_GROUP_HREF = "/app/me/groups";
+import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 
 /**
  * "Ta bort konto" on the account page: says what Account deletion does, and
@@ -40,7 +38,7 @@ export function AccountDeletionSection({ soloGroups, sharedGroups }: CreatorGrou
           <GroupList
             intro="Du är administratör för grupper som har andra medlemmar. Administratör går inte att lämna över än, så du behöver ta bort de här grupperna innan du kan ta bort kontot:"
             groups={sharedGroups}
-            linkTo={DELETE_GROUP_HREF}
+            linkTo={MY_GROUPS_PATH}
           />
         </div>
       ) : null}
