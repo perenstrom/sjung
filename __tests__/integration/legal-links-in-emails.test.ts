@@ -1,8 +1,10 @@
+import argon2 from "argon2";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createUser } from "../support/fixtures";
 import { sentEmails } from "../support/fake-email";
 import { inviteToNewGroup } from "../support/invitations";
+import { deleteAccount } from "@/lib/account/account-deletion";
 import { sendVerificationEmail } from "@/lib/auth/email-verification";
 import { requestPasswordReset } from "@/lib/auth/password-reset";
 import { sendFeedbackEmail } from "@/lib/feedback/feedback";
@@ -24,6 +26,13 @@ describe("emails sent to Users and invited addresses", () => {
       },
     ],
     ["an Invitation", async () => void (await inviteToNewGroup("bertil@example.com"))],
+    [
+      "the Account deletion receipt",
+      async () => {
+        const user = await createUser({ passwordHash: await argon2.hash("ett långt lösenord") });
+        await deleteAccount(user.id, "ett långt lösenord");
+      },
+    ],
   ])("link to the Privacy policy and Terms of use: %s", async (_kind, send) => {
     await send();
 

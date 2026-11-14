@@ -78,8 +78,8 @@ export default function PrivacyPolicyPage() {
 
       <h2>Hur länge vi sparar dem och hur du får dem raderade</h2>
       <p>
-        Vi sparar dina uppgifter så länge du har ett konto. Du tar själv bort ditt konto under <em>Ta bort konto</em>{" "}
-        på din kontosida och bekräftar med ditt lösenord. Då händer det här:
+        Vi sparar dina uppgifter så länge du har ett konto. Du tar själv bort ditt konto under <em>Mitt konto</em>,
+        med knappen <em>Ta bort konto</em>, och bekräftar med ditt lösenord. Då händer det här:
       </p>
       <ul>
         <li>Ditt namn, din e-postadress och ditt lösenord raderas direkt, och du loggas ut överallt.</li>
@@ -93,8 +93,12 @@ export default function PrivacyPolicyPage() {
           gruppen.
         </li>
         <li>Inbjudningar som har skickats till din e-postadress finns kvar hos gruppen som skickade dem.</li>
-        <li>Du får ett kvitto på e-post precis innan adressen raderas.</li>
+        <li>Du får ett kvitto på e-post när kontot är borttaget.</li>
       </ul>
+      <p>
+        Har du inte bekräftat din e-postadress kan du inte ta bort kontot själv. Mejla då <ContactLink /> så tar vi
+        bort det åt dig.
+      </p>
       <p>
         En inbjudan som inte har tagits emot finns kvar tills gruppen tar tillbaka den, och en mottagen inbjudan finns
         kvar så länge gruppen finns. Innehåll och filer raderas när någon i gruppen tar bort dem.
