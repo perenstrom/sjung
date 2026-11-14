@@ -1,5 +1,5 @@
 import argon2 from "argon2";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn(), signOut: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -32,6 +32,10 @@ const PASSWORD = "rätt-lösenord-123";
 
 beforeEach(() => {
   mockSignOut.mockClear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 /** A Verified user with a known password, acting as themselves. */
@@ -119,19 +123,23 @@ describe("deleteOwnAccount", () => {
     await deleteWith(PASSWORD);
 
     const audit = { createdById: true, updatedById: true } as const;
+    const remaining = {
+      piece: await testPrisma.piece.findUnique({ where: { id: piece.id }, select: audit }),
+      file: await testPrisma.file.findUnique({ where: { id: file.id }, select: audit }),
+      link: await testPrisma.link.findUnique({ where: { id: link.id }, select: audit }),
+      pieceNote: await testPrisma.pieceNote.findUnique({ where: { id: pieceNote.id }, select: audit }),
+      person: await testPrisma.person.findUnique({ where: { id: person.id }, select: audit }),
+      setList: await testPrisma.setList.findUnique({ where: { id: setList.id }, select: audit }),
+      setListPiece: await testPrisma.setListPiece.findUnique({ where: { id: setListPiece.id }, select: audit }),
+      setListNote: await testPrisma.setListNote.findUnique({ where: { id: setListNote.id }, select: audit }),
+      setListPieceNote: await testPrisma.setListPieceNote.findUnique({
+        where: { id: setListPieceNote.id },
+        select: audit,
+      }),
+      otherUser: await testPrisma.user.findUnique({ where: { id: otherUser.id }, select: audit }),
+    };
     const cleared = { createdById: null, updatedById: null };
-    expect(await testPrisma.piece.findUnique({ where: { id: piece.id }, select: audit })).toEqual(cleared);
-    expect(await testPrisma.file.findUnique({ where: { id: file.id }, select: audit })).toEqual(cleared);
-    expect(await testPrisma.link.findUnique({ where: { id: link.id }, select: audit })).toEqual(cleared);
-    expect(await testPrisma.pieceNote.findUnique({ where: { id: pieceNote.id }, select: audit })).toEqual(cleared);
-    expect(await testPrisma.person.findUnique({ where: { id: person.id }, select: audit })).toEqual(cleared);
-    expect(await testPrisma.setList.findUnique({ where: { id: setList.id }, select: audit })).toEqual(cleared);
-    expect(await testPrisma.setListPiece.findUnique({ where: { id: setListPiece.id }, select: audit })).toEqual(cleared);
-    expect(await testPrisma.setListNote.findUnique({ where: { id: setListNote.id }, select: audit })).toEqual(cleared);
-    expect(
-      await testPrisma.setListPieceNote.findUnique({ where: { id: setListPieceNote.id }, select: audit })
-    ).toEqual(cleared);
-    expect(await testPrisma.user.findUnique({ where: { id: otherUser.id }, select: audit })).toEqual(cleared);
+    expect(remaining).toEqual(Object.fromEntries(Object.keys(remaining).map((row) => [row, cleared])));
     expect(await testPrisma.group.findUnique({ where: { id: group.id }, select: { updatedById: true } })).toEqual({
       updatedById: null,
     });
@@ -225,7 +233,6 @@ describe("deleteOwnAccount", () => {
     expect(state).toBeNull();
     expect(await testPrisma.user.findUnique({ where: { id: user.id } })).toBeNull();
     expect(consoleError).toHaveBeenCalled();
-    consoleError.mockRestore();
   });
 });
 

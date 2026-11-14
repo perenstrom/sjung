@@ -15,7 +15,7 @@ export async function getAccountDeletionPlan() {
 /** `useActionState` state for the "Ta bort konto" form: `null` until a submit fails. */
 export type DeleteAccountState = { error: string } | null;
 
-const BLOCKED = "Du är administratör för en grupp med andra medlemmar. Ta bort gruppen först.";
+const BLOCKED_BY_SHARED_GROUP_ERROR = "Du är administratör för en grupp med andra medlemmar. Ta bort gruppen först.";
 
 /**
  * "Ta bort konto", confirmed with the User's password. On success this
@@ -33,7 +33,7 @@ export async function deleteOwnAccount(
     return { error: "Fel lösenord" };
   }
   if (result.status === "blocked") {
-    return { error: BLOCKED };
+    return { error: BLOCKED_BY_SHARED_GROUP_ERROR };
   }
 
   await signOut({ redirectTo: ACCOUNT_DELETED_PATH });

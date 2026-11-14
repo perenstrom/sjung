@@ -40,7 +40,7 @@ export async function findCreatorGroups(userId: string, db: Db = prisma): Promis
 export type DeleteAccountResult =
   | { status: "deleted" }
   | { status: "wrong-password" }
-  | { status: "blocked"; sharedGroups: CreatorGroup[] };
+  | { status: "blocked" };
 
 /**
  * Deletes the User if `password` is theirs and no Group blocks it, along with
@@ -57,13 +57,15 @@ export async function deleteAccount(userId: string, password: string): Promise<D
   }
 
   const outcome = await prisma.$transaction(async (tx) => {
-    // Locking the User's Creator Groups makes a concurrent join wait (adding a
-    // Member key-share locks its Group), so the check below sees every Member
-    // who joined before the deletion commits.
+    // Row locks make concurrent writes wait for this transaction: creating a
+    // Group key-share locks its creator's User row, and adding a Member its
+    // Group's row. So the check below sees every Group created and every
+    // Member who joined before the deletion commits, and none can slip in after.
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM groups WHERE created_by_id = ${userId} FOR UPDATE`;
     const { soloGroups, sharedGroups } = await findCreatorGroups(userId, tx);
     if (sharedGroups.length > 0) {
-      return { status: "blocked" as const, sharedGroups };
+      return { status: "blocked" as const };
     }
 
     await tx.group.deleteMany({ where: { id: { in: soloGroups.map(({ id }) => id) } } });
