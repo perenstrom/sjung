@@ -13,7 +13,7 @@ type PageProps = {
   params: Promise<{ groupSlug: string }>;
 };
 
-export default async function TenantNoterPage({ params }: PageProps) {
+export default async function GroupPiecesPage({ params }: PageProps) {
   const { groupSlug } = await params;
   const [pieces, people, groups, access] = await Promise.all([
     getPieces(groupSlug),
@@ -30,11 +30,11 @@ export default async function TenantNoterPage({ params }: PageProps) {
           trail={{
             visibility: "visible",
             ancestors: [createGroupAncestor(groupSlug, groupName)],
-            tail: { kind: "static", label: "Noter" },
+            tail: { kind: "static", label: "Alla noter" },
           }}
         />
         <PageHeader
-          title="Noter"
+          title="Alla noter"
           editActions={<CreatePieceDialog people={people} groupSlug={groupSlug} />}
         />
 

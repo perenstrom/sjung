@@ -11,7 +11,7 @@ import {
 } from "@/lib/groups/routes";
 import { pieceHref } from "@/lib/pieces/href";
 
-/** Noter: the page listing the Group's Pieces. */
+/** Alla noter: the page listing the Group's Pieces. */
 export function revalidateGroupPiecesRoute(groupSlug: string) {
   revalidatePath(groupPiecesPath(groupSlug));
 }

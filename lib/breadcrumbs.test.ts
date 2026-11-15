@@ -8,8 +8,8 @@ import {
 } from "@/lib/breadcrumbs";
 
 describe("createPiecesAncestor", () => {
-  it("links Noter to the group's pieces page", () => {
-    expect(createPiecesAncestor("kor")).toEqual({ label: "Noter", href: "/app/kor/pieces" });
+  it("links Alla noter to the group's pieces page", () => {
+    expect(createPiecesAncestor("kor")).toEqual({ label: "Alla noter", href: "/app/kor/pieces" });
   });
 });
 
@@ -23,7 +23,7 @@ describe("closestBreadcrumb", () => {
       closestBreadcrumb({
         visibility: "visible",
         ancestors: [createGroupAncestor("kor", "Kören")],
-        tail: { kind: "static", label: "Noter" },
+        tail: { kind: "static", label: "Alla noter" },
       })
     ).toEqual({ kind: "parent", label: "Kören", href: "/app/kor" });
   });
@@ -78,16 +78,16 @@ describe("pieceDetailTrail", () => {
     });
   });
 
-  const noterTrail = {
+  const piecesTrail = {
     visibility: "visible",
     ancestors: [
       { label: "Kören", href: "/app/kor" },
-      { label: "Noter", href: "/app/kor/pieces" },
+      { label: "Alla noter", href: "/app/kor/pieces" },
     ],
     tail: { kind: "static", label: "Vem kan segla" },
   };
 
-  it("leads back to Noter when not opened from a set list", () => {
+  it("leads back to Alla noter when not opened from a set list", () => {
     expect(
       pieceDetailTrail({
         groupSlug: "kor",
@@ -96,10 +96,10 @@ describe("pieceDetailTrail", () => {
         setLists,
         fromSetListId: undefined,
       })
-    ).toEqual(noterTrail);
+    ).toEqual(piecesTrail);
   });
 
-  it("leads back to Noter when the set list isn't one of this group's", () => {
+  it("leads back to Alla noter when the set list isn't one of this group's", () => {
     expect(
       pieceDetailTrail({
         groupSlug: "kor",
@@ -108,7 +108,7 @@ describe("pieceDetailTrail", () => {
         setLists,
         fromSetListId: "sl-from-another-group",
       })
-    ).toEqual(noterTrail);
+    ).toEqual(piecesTrail);
   });
 
   it("labels an unnamed set list Repertoar", () => {

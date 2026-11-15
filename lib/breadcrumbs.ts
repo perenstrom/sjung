@@ -33,7 +33,7 @@ export function createSetListsAncestor(groupSlug: string): AppBreadcrumbAncestor
 }
 
 export function createPiecesAncestor(groupSlug: string): AppBreadcrumbAncestor {
-  return { label: "Noter", href: groupPiecesPath(groupSlug) };
+  return { label: "Alla noter", href: groupPiecesPath(groupSlug) };
 }
 
 /** A Set list's crumb label: its name, or "Repertoar" when it has none. */
