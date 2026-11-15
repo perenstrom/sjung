@@ -39,7 +39,7 @@ const KINDS: Record<ContentKind, { create: (group: Group) => Promise<{ id: strin
       createPieceNote({ piece: await pieceIn(group), createdById: group.createdById }),
     notFound: "Anteckning hittades inte",
   },
-  person: { create: (group) => createPerson(group), notFound: "Person hittades inte" },
+  person: { create: (group) => createPerson(group), notFound: "Upphovsperson hittades inte" },
 };
 
 describe.each(Object.entries(KINDS) as [ContentKind, (typeof KINDS)[ContentKind]][])(

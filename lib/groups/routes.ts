@@ -14,7 +14,7 @@ export function groupPiecesPath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/pieces`;
 }
 
-/** Personer. */
+/** Upphovspersoner. */
 export function groupPeoplePath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/people`;
 }

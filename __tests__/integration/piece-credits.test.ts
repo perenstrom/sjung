@@ -48,7 +48,7 @@ describe("Credits only name People in the Piece's Group", () => {
           role: "Kompositör",
         })
       )
-    ).rejects.toThrow("Person hittades inte");
+    ).rejects.toThrow("Upphovsperson hittades inte");
 
     expect(await testPrisma.personToPiece.count({ where: { pieceId: piece.id } })).toBe(0);
   });
@@ -65,7 +65,7 @@ describe("Credits only name People in the Piece's Group", () => {
           ]),
         })
       )
-    ).rejects.toThrow("Person hittades inte");
+    ).rejects.toThrow("Upphovsperson hittades inte");
 
     expect(await testPrisma.piece.count({ where: { groupId: group.id } })).toBe(0);
     expect(await testPrisma.personToPiece.count()).toBe(0);

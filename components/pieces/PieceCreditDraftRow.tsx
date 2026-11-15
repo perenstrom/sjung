@@ -20,6 +20,7 @@ import {
   type CreditForDisplay,
   creditRolesHeldBy,
   EMPTY_CREDIT_DRAFT,
+  MISSING_CREDIT_FIELDS_ERROR,
 } from "@/lib/pieces/credits";
 import { ROLES } from "@/lib/roles";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
@@ -80,7 +81,7 @@ export function PieceCreditDraftRow({
   async function handleAdd() {
     const person = allPeople.find((candidate) => candidate.id === draft.personId);
     if (!person || !draft.role) {
-      setError("Välj person och roll.");
+      setError(MISSING_CREDIT_FIELDS_ERROR);
       return;
     }
 
@@ -102,7 +103,7 @@ export function PieceCreditDraftRow({
       <div className="flex flex-wrap items-center gap-2">
         <PersonCombobox
           ref={personPickerRef}
-          aria-label="Person"
+          aria-label="Upphovsperson"
           people={allPeople}
           value={draft.personId}
           onValueChange={selectPerson}

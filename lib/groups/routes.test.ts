@@ -13,7 +13,7 @@ describe("group routes", () => {
   it.each([
     ["the group", groupPath, "/app/kor"],
     ["Noter", groupPiecesPath, "/app/kor/pieces"],
-    ["Personer", groupPeoplePath, "/app/kor/people"],
+    ["Upphovspersoner", groupPeoplePath, "/app/kor/people"],
     ["Repertoarer", groupSetListsPath, "/app/kor/setlists"],
     ["Medlemmar", groupMembersPath, "/app/kor/members"],
   ])("addresses %s", (_what, path, expected) => {

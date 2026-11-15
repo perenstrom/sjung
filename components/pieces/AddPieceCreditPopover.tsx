@@ -26,11 +26,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import { MISSING_CREDIT_FIELDS_ERROR } from "@/lib/pieces/credits";
 import { ROLES } from "@/lib/roles";
 import type { Person } from "@/types/piece-credit-dialog";
 
 const NO_PEOPLE_TOOLTIP =
-  "Inga personer tillagda ännu. Lägg till personer under Personer först.";
+  "Inga upphovspersoner tillagda ännu. Lägg till upphovspersoner under Upphovspersoner först.";
 
 export function AddPieceCreditPopover({
   groupSlug,
@@ -67,7 +68,7 @@ export function AddPieceCreditPopover({
 
   async function handleSubmit(formData: FormData) {
     if (!personId || !role) {
-      setError("Välj person och roll.");
+      setError(MISSING_CREDIT_FIELDS_ERROR);
       return;
     }
 
@@ -118,10 +119,10 @@ export function AddPieceCreditPopover({
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>Person</Label>
+              <Label>Upphovsperson</Label>
               <Select value={personId} onValueChange={setPersonId}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Person" />
+                  <SelectValue placeholder="Upphovsperson" />
                 </SelectTrigger>
                 <SelectContent>
                   {people.map((person) => (
