@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * A piece's credits, one row per Person (name + a badge per Credit role), in
- * display order. Callers render their own empty state.
+ * display order. A row that doesn't fit wraps its badges under the name.
+ * Callers render their own empty state.
  */
 export function PieceCreditsList({
   credits,
@@ -24,9 +25,9 @@ export function PieceCreditsList({
       {groupCreditsByPerson(credits).map((person) => (
         <li
           key={person.personId}
-          className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1 sm:flex-nowrap"
+          className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1"
         >
-          <span className="font-medium">{person.name}</span>
+          <span className="min-w-0 font-medium break-words">{person.name}</span>
           {person.roles.map((role) => (
             <span
               key={role}
