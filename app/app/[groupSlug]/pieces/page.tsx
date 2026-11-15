@@ -6,6 +6,8 @@ import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
 import { PageHeader } from "@/components/PageHeader";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
+import { PrototypeSwitcher } from "@/components/PrototypeSwitcher";
+import { LETTER_DIVIDER_VARIANTS } from "@/components/pieces/letterDividers.prototype";
 import { getGroups } from "@/app/actions/groups";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 
@@ -39,6 +41,8 @@ export default async function GroupPiecesPage({ params }: PageProps) {
         />
 
         <PiecesTable pieces={pieces} people={people} groupSlug={groupSlug} />
+        {/* PROTOTYPE (PER-417) */}
+        <PrototypeSwitcher variants={LETTER_DIVIDER_VARIANTS} />
       </div>
     </EditModeProvider>
   );

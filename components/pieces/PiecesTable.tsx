@@ -20,7 +20,13 @@ import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
-import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
+import {
+  dividerBefore,
+  LetterDividerTableRow,
+  useLetterDividerVariant,
+  withDemoPieces,
+} from "@/components/pieces/letterDividers.prototype";
+import { caseInsensitiveSortingFn, compareCaseInsensitive } from "@/lib/data-table/sorting";
 import { pieceHref } from "@/lib/pieces/href";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
@@ -146,13 +152,19 @@ export function PiecesTable({
   | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
 )) {
   const { isEditing } = useEditMode();
-  const { pieces, setList } = props;
+  // PROTOTYPE (PER-417): sort pieces in Swedish order so the letter groups hold.
+  const variant = useLetterDividerVariant();
+  const { setList } = props;
+  const pieces = useMemo(
+    () => props.pieces && withDemoPieces([...props.pieces]).sort((a, b) => compareCaseInsensitive(a.name, b.name)),
+    [props.pieces]
+  );
   const setListId = setList?.id;
   const rows = useMemo<PiecesTableRow[]>(
     () =>
       setList
         ? setList.steps
-        : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece })),
+        : (pieces ?? []).map((piece) => ({ kind: "piece", id: piece.id, piece })),
     [pieces, setList]
   );
   const cellContext = useMemo(
@@ -312,7 +324,7 @@ export function PiecesTable({
   return (
     <PiecesTableCellContext.Provider value={cellContext}>
       <PiecesMobileList
-        {...props}
+        {...(setList ? { setList } : { pieces: pieces ?? [], letterDividerVariant: variant })}
         people={people}
         groupSlug={groupSlug}
         isEditing={isEditing}
@@ -324,6 +336,18 @@ export function PiecesTable({
         enableSorting={!setList}
         cellAlign="top"
         getRowId={getRowId}
+        renderRowDivider={
+          setList
+            ? undefined
+            : (row, previousRow, colSpan) => {
+                if (row.kind !== "piece") return null;
+                const previousName = previousRow?.kind === "piece" ? previousRow.piece.name : undefined;
+                const letter = dividerBefore(row.piece.name, previousName);
+                return letter ? (
+                  <LetterDividerTableRow letter={letter} colSpan={colSpan} variant={variant} />
+                ) : null;
+              }
+        }
         emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
       />
     </PiecesTableCellContext.Provider>

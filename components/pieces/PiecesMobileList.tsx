@@ -2,7 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
@@ -14,6 +14,11 @@ import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
+import {
+  dividerBefore,
+  LetterDividerListItem,
+  type LetterDividerVariant,
+} from "@/components/pieces/letterDividers.prototype";
 import {
   MobileList,
   MobileListEmpty,
@@ -42,11 +47,14 @@ export function PiecesMobileList({
   people,
   groupSlug,
   isEditing,
+  letterDividerVariant,
   ...props
 }: {
   people: Person[];
   groupSlug: string;
   isEditing: boolean;
+  /** PROTOTYPE (PER-417) */
+  letterDividerVariant?: LetterDividerVariant;
 } & (
   | { pieces: PieceWithRelations[]; setList?: undefined }
   | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
@@ -106,9 +114,18 @@ export function PiecesMobileList({
           }
 
           const { piece } = row;
+          const previous = rows[index - 1];
+          const letter =
+            letterDividerVariant && !setList
+              ? dividerBefore(piece.name, previous?.kind === "piece" ? previous.piece.name : undefined)
+              : null;
           return (
+            <Fragment key={row.id}>
+            {letter && letterDividerVariant ? (
+              <LetterDividerListItem letter={letter} variant={letterDividerVariant} />
+            ) : null}
             <MobileListExpandableRow
-              key={row.id}
+              key={`row-${row.id}`}
               open={openIds.has(row.id)}
               onOpenChange={(open) => setOpen(row.id, open)}
               leading={number}
@@ -125,6 +142,7 @@ export function PiecesMobileList({
                 stepActions={stepActions}
               />
             </MobileListExpandableRow>
+            </Fragment>
           );
         })
       )}

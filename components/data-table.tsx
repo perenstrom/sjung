@@ -41,7 +41,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +82,8 @@ export interface DataTableProps<TData, TValue> {
    * stays with that row when sorting or new data moves it. Default: the index.
    */
   getRowId?: (row: TData) => string;
+  /** PROTOTYPE (PER-417): a row rendered before `row`, given the row shown above it. */
+  renderRowDivider?: (row: TData, previousRow: TData | undefined, colSpan: number) => ReactNode;
   className?: string;
 }
 
@@ -92,6 +94,7 @@ export function DataTable<TData, TValue>({
   emptyMessage = "Inga rader.",
   cellAlign = "middle",
   getRowId,
+  renderRowDivider,
   className,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -129,8 +132,10 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.length > 0 ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+            table.getRowModel().rows.map((row, index, rows) => (
+              <Fragment key={row.id}>
+              {renderRowDivider?.(row.original, rows[index - 1]?.original, columns.length)}
+              <TableRow>
                 {spanCells(
                   row.getVisibleCells(),
                   (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1
@@ -144,6 +149,7 @@ export function DataTable<TData, TValue>({
                   </TableCell>
                 ))}
               </TableRow>
+              </Fragment>
             ))
           ) : (
             <TableRow>
