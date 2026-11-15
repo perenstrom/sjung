@@ -33,7 +33,7 @@ const notes = [
 
 function renderPieces(isEditing: boolean): string {
   return renderMarkup(
-    createElement(PiecesMobileList, { people: [], groupSlug: "koren", isEditing, pieces: [piece] }),
+    createElement(PiecesMobileList, { people: [], groupSlug: "koren", isEditing, emptyMessage: "", pieces: [piece] }),
   );
 }
 
@@ -44,6 +44,7 @@ function renderSetList(isEditing: boolean): string {
       people: [],
       groupSlug: "koren",
       isEditing,
+      emptyMessage: "",
       setList: { id: "setlist-1", steps },
     }),
   );
@@ -92,6 +93,7 @@ describe("PiecesMobileList letter dividers", () => {
           people: [],
           groupSlug: "koren",
           isEditing,
+          emptyMessage: "",
           pieces: ["1700-tal", "Abendlied", "Ave verum", "Bred dina vida vingar", "Änglamark", "Över berg och dal"].map(
             namedPiece,
           ),
@@ -125,6 +127,7 @@ describe("PiecesMobileList letter dividers", () => {
           people: [],
           groupSlug: "koren",
           isEditing,
+          emptyMessage: "",
           setList: { id: "setlist-1", steps },
         }),
       );

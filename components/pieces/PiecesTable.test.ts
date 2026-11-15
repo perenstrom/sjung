@@ -165,6 +165,79 @@ describe("PiecesTable letter dividers", () => {
   });
 });
 
+describe("PiecesTable search on Alla noter", () => {
+  const credited = {
+    ...namedPiece("Cantique de Jean Racine"),
+    credits: [{ personId: "person-2", role: "Kompositör", person: { name: "Gabriel Fauré" } }],
+  } as unknown as PieceWithRelations;
+  const arranged = {
+    ...namedPiece("Pavane"),
+    credits: [{ personId: "person-2", role: "Arrangör", person: { name: "Gabriel Fauré" } }],
+  } as unknown as PieceWithRelations;
+  const allPieces = [...unsortedNames.map(namedPiece), credited, arranged];
+  const allNames = allPieces.map((p) => p.name);
+
+  function renderSearch(search: string): string {
+    return renderMarkup(
+      createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: allPieces, search }),
+    );
+  }
+
+  describe.each([
+    ["edit", true],
+    ["read", false],
+  ])("in %s mode", (_, isEditing) => {
+    beforeEach(() => {
+      editMode.isEditing = isEditing;
+    });
+
+    describe.each([
+      ["desktop table", desktopTable],
+      ["mobile list", mobileList],
+    ])("in the %s", (_, part) => {
+      it("shows only matching pieces, with dividers for their letter groups only", () => {
+        expect(shownSequence(part(renderSearch("av")), allNames)).toEqual([
+          "A",
+          "Ave verum",
+          "P",
+          "Pavane",
+        ]);
+      });
+
+      it("lists every piece a credited Person is on, whatever the role", () => {
+        expect(shownSequence(part(renderSearch("faure")), allNames)).toEqual([
+          "C",
+          "Cantique de Jean Racine",
+          "P",
+          "Pavane",
+        ]);
+      });
+
+      it("says nothing matches, quoting the trimmed text", () => {
+        const text = textOf(part(renderSearch("  zzz ")));
+
+        expect(text).toContain('Inga stycken matchar "zzz"');
+        expect(text).not.toContain("Inga noter tillagda ännu.");
+      });
+
+      it("shows every piece for whitespace-only text", () => {
+        const shown = shownSequence(part(renderSearch("  ")), allNames);
+
+        expect(shown).toEqual(shownSequence(part(renderSearch("")), allNames));
+        expect(shown.filter((text) => allNames.includes(text))).toHaveLength(allNames.length);
+      });
+    });
+  });
+
+  it("keeps the empty-Group message when there are no pieces at all", () => {
+    const html = renderMarkup(
+      createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: [], search: "" }),
+    );
+
+    expect(textOf(html)).toContain("Inga noter tillagda ännu.");
+  });
+});
+
 describe.each([
   ["Noter", renderPieces],
   ["set list", renderSetList],

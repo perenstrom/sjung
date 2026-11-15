@@ -6,9 +6,13 @@ export function renderMarkup(element: ReactElement): string {
   return renderToStaticMarkup(element);
 }
 
-/** The text a reader sees in `html`: tags dropped, apostrophes decoded and whitespace collapsed. */
+/** The text a reader sees in `html`: tags dropped, quotes decoded and whitespace collapsed. */
 export function textOf(html: string): string {
-  return html.replace(/<[^>]+>/g, "").replace(/&#x27;/g, "'").replace(/\s+/g, " ");
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&#x27;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ");
 }
 
 /** Whether `html` has a link to `href` whose text is exactly `label`. */

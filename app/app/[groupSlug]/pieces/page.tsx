@@ -5,7 +5,7 @@ import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
 import { PageHeader } from "@/components/PageHeader";
-import { PiecesTable } from "@/components/pieces/PiecesTable";
+import { SearchablePiecesTable } from "@/components/pieces/SearchablePiecesTable";
 import { getGroups } from "@/app/actions/groups";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 
@@ -38,7 +38,7 @@ export default async function GroupPiecesPage({ params }: PageProps) {
           editActions={<CreatePieceDialog people={people} groupSlug={groupSlug} />}
         />
 
-        <PiecesTable pieces={pieces} people={people} groupSlug={groupSlug} />
+        <SearchablePiecesTable pieces={pieces} people={people} groupSlug={groupSlug} />
       </div>
     </EditModeProvider>
   );

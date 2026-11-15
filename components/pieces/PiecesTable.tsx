@@ -24,6 +24,7 @@ import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { caseInsensitiveSortingFn, compareCaseInsensitive } from "@/lib/data-table/sorting";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
+import { pieceMatchesSearch } from "@/lib/pieces/search";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
@@ -148,7 +149,7 @@ function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
  * show a set list's steps in position order: adds a `#` column and the step
  * reorder/remove actions, turns off sorting and drops the delete-piece action.
  * Without `setList` (Alla noter) the pieces are shown in Swedish order, under
- * a letter heading per first letter.
+ * a letter heading per first letter, narrowed to those matching `search`.
  */
 export function PiecesTable({
   people,
@@ -158,18 +159,28 @@ export function PiecesTable({
   people: Person[];
   groupSlug: string;
 } & (
-  | { pieces: PieceWithRelations[]; setList?: undefined }
-  | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
+  | { pieces: PieceWithRelations[]; search?: string; setList?: undefined }
+  | { pieces?: undefined; search?: undefined; setList: { id: string; steps: SetListStep[] } }
 )) {
   const { isEditing } = useEditMode();
-  const { setList } = props;
+  const { setList, search = "" } = props;
   const setListId = setList?.id;
   // The database's order may not be Swedish, so Alla noter sorts on the client:
   // first load, the table and the mobile list then agree, and the letter groups hold.
-  const pieces = useMemo(
+  const sortedPieces = useMemo(
     () => props.pieces && [...props.pieces].sort((a, b) => compareCaseInsensitive(a.name, b.name)),
     [props.pieces]
   );
+  // Filtered before rows are made, so the letter dividers follow the matches.
+  const pieces = useMemo(
+    () => sortedPieces?.filter((piece) => pieceMatchesSearch(piece, search)),
+    [sortedPieces, search]
+  );
+  const emptyMessage = setList
+    ? "Inga steg i repertoaren ännu."
+    : sortedPieces?.length
+      ? `Inga stycken matchar "${search.trim()}"`
+      : "Inga noter tillagda ännu.";
   const rows = useMemo<PiecesTableRow[]>(
     () =>
       setList
@@ -338,6 +349,7 @@ export function PiecesTable({
         people={people}
         groupSlug={groupSlug}
         isEditing={isEditing}
+        emptyMessage={emptyMessage}
       />
       <DataTable
         className="max-md:hidden"
@@ -347,7 +359,7 @@ export function PiecesTable({
         cellAlign="top"
         getRowId={getRowId}
         renderRowDivider={setList ? undefined : renderLetterDivider}
-        emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
+        emptyMessage={emptyMessage}
       />
     </PiecesTableCellContext.Provider>
   );

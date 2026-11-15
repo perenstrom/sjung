@@ -42,16 +42,20 @@ const STEP_NUMBER_CLASS = "text-muted-foreground w-6 shrink-0 font-mono text-xs"
  *
  * Without `setList` (Alla noter) a letter heading comes before the first piece
  * of each letter group; pass `pieces` already in the order to show.
+ *
+ * `emptyMessage` is the one line shown when there are no rows.
  */
 export function PiecesMobileList({
   people,
   groupSlug,
   isEditing,
+  emptyMessage,
   ...props
 }: {
   people: Person[];
   groupSlug: string;
   isEditing: boolean;
+  emptyMessage: string;
 } & (
   | { pieces: PieceWithRelations[]; setList?: undefined }
   | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
@@ -77,9 +81,7 @@ export function PiecesMobileList({
   return (
     <MobileList>
       {rows.length === 0 ? (
-        <MobileListEmpty>
-          {setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
-        </MobileListEmpty>
+        <MobileListEmpty>{emptyMessage}</MobileListEmpty>
       ) : (
         rows.map((row, index) => {
           const number = setList ? <span className={STEP_NUMBER_CLASS}>{index + 1}</span> : null;
