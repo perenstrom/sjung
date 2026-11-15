@@ -35,6 +35,8 @@ Required variables (from `.env.example`):
 - `APP_BASE_URL` (origin for links in emails, e.g. `https://www.sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 
+Not in `.env.example`: `EMAIL_OUTBOX_DIR` makes the app write emails to files in that folder instead of sending them. Only the Playwright server sets it (see `docs/testing-access-rights.md`); it is refused alongside `RESEND_API_KEY`, so it never applies in staging or production.
+
 ## Local bootstrap
 
 Run these commands from project root:

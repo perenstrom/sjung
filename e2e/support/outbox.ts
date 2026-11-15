@@ -36,11 +36,15 @@ export async function latestEmailTo(address: string): Promise<ReceivedEmail> {
     }
 
     if (Date.now() >= deadline) {
+      // The folder outlives runs, so a reused server started without the flag
+      // usually shows up as "no email" rather than "no folder": hint at it in both.
+      const hint =
+        "Was the server started with EMAIL_OUTBOX_DIR=.e2e-outbox? " +
+        "Playwright reuses a server you started yourself on port 3100.";
       throw new Error(
         names
-          ? `Inget mejl till ${address} i ${E2E_OUTBOX_DIR} inom ${WAIT_MS / 1000} s.`
-          : `Hittar inte ${E2E_OUTBOX_DIR}. Startades servern med EMAIL_OUTBOX_DIR=.e2e-outbox? ` +
-              "Playwright återanvänder en server du själv startat på port 3100."
+          ? `No email to ${address} in ${E2E_OUTBOX_DIR} within ${WAIT_MS / 1000} s. ${hint}`
+          : `Can't find ${E2E_OUTBOX_DIR}. ${hint}`
       );
     }
     await new Promise((done) => setTimeout(done, POLL_MS));
