@@ -205,7 +205,7 @@ export function PiecesTable({
         header: () => "Medverkande",
         cell: pieceCell((piece) => {
           return (
-            <div className="flex items-start gap-2">
+            <div className={cn(LIST_COLUMN_WIDTH_CLASS, "flex items-start gap-2 whitespace-normal")}>
               <div className={cn("min-w-0 flex-1", LIST_CELL_OFFSET_CLASS)}>
                 {piece.credits.length === 0 ? null : isEditing ? (
                   <RemovableCreditsList

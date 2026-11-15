@@ -55,6 +55,27 @@ describe.each([
   ["Noter", renderPieces],
   ["set list", renderSetList],
 ])("PiecesTable for %s", (_, render) => {
+  describe.each([
+    ["edit", true],
+    ["read", false],
+  ])("in %s mode", (_, isEditing) => {
+    beforeEach(() => {
+      editMode.isEditing = isEditing;
+    });
+
+    it("caps Medverkande at the width of the other list columns and lets it wrap", () => {
+      const cell = render()
+        .split("<td")
+        .slice(1)
+        .find((td) => td.includes("Anna Andersson"));
+      const contentClasses = cell?.match(/^[^>]*>\s*<div class="([^"]*)"/)?.[1].split(" ");
+
+      expect(contentClasses).toEqual(
+        expect.arrayContaining(["min-w-56", "max-w-xs", "whitespace-normal"]),
+      );
+    });
+  });
+
   describe("in edit mode", () => {
     beforeEach(() => {
       editMode.isEditing = true;
