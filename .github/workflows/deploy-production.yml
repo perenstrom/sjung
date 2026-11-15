@@ -40,7 +40,7 @@ jobs:
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
         run: |
-          for job in "build" "Integration Tests"; do
+          for job in "build" "Integration Tests" "e2e"; do
             conclusion=$(gh api --method GET "repos/$REPO/commits/$SHA/check-runs" -f check_name="$job" \
               --jq ".check_runs | sort_by(.started_at) | last | .conclusion")
             if [ "$conclusion" != "success" ]; then
