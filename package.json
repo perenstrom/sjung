@@ -12,11 +12,13 @@
     "test:unit:watch": "vitest",
     "test:integration": "npm run db:migrate:deploy:test && vitest run --config vitest.integration.config.ts",
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
+    "test:e2e": "npm run db:migrate:deploy:e2e && playwright test",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:deploy:test": "tsx scripts/migrate-test-db.ts",
+    "db:migrate:deploy:test": "tsx scripts/migrate-db.ts TEST_DATABASE_URL",
+    "db:migrate:deploy:e2e": "tsx scripts/migrate-db.ts E2E_DATABASE_URL",
     "db:migrate:reset": "prisma migrate reset",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
@@ -52,6 +54,7 @@
     "zod": "^4.4.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.2.4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^22.19.0",

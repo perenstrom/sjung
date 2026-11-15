@@ -42,9 +42,9 @@ Server actions and route handlers called directly against a real, disposable Pos
 - Mutations and their side effects: rows written or removed, emails sent, objects stored or deleted, failure paths through `failEmailsTo` / `failDeletesOf`.
 - Build data with the builders in `__tests__/support/fixtures.ts`; each test starts from an empty database.
 
-### End-to-end (Playwright, being set up)
+### End-to-end (`npm run test:e2e`)
 
-Playwright is not installed yet. The rollout is tracked under PER-429 in Linear: the auth smoke (PER-194) first, then CI (PER-347), reading sent email (PER-424), and the journeys and interactions in PER-425, PER-426 and PER-428.
+Playwright in Chromium against a production build and its own database, under `e2e/` (setup in `docs/testing-access-rights.md`). The only test so far is the auth smoke. The rest of the rollout is tracked under PER-429 in Linear: CI (PER-347), reading sent email (PER-424), and the journeys and interactions in PER-425, PER-426 and PER-428.
 
 E2E covers only what the lower layers cannot see because it happens in the browser: sign-in cookies and redirects, multi-page journeys that click through an email link, drag-and-drop and other client interactions, and the phone-width layout. Each e2e test is one user **journey** that ends on something a user sees. The many cases of a rule (every role, every content kind) stay in the integration tables; e2e checks one case to prove the parts are connected.
 
