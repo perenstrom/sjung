@@ -128,6 +128,27 @@ describe("PieceRowDetails, an open piece row", () => {
 
       expect(text).toMatch(/Anteckningar.*Lägg till anteckning/);
     });
+
+    it("has no Redigera button", () => {
+      expect(renderDetails(true)).not.toMatch(/>Redigera</);
+    });
+
+    it("starts with a Namn section that offers to rename the piece", () => {
+      const html = renderDetails(true);
+
+      expect(textOf(html)).toMatch(/^Namn\s*Vem kan segla\s*Medverkande/);
+      expect(html).toContain('aria-label="Byt namn på Vem kan segla"');
+    });
+
+    it("lets each Credit role be removed on its own", () => {
+      const html = renderDetails(true, {
+        credits: [
+          { personId: "person-1", role: "Kompositör", person: { name: "Anna Andersson" } },
+        ],
+      } as unknown as Partial<PieceWithRelations>);
+
+      expect(html).toContain('aria-label="Ta bort Anna Andersson som Kompositör"');
+    });
   });
 
   describe.each([

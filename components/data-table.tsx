@@ -77,6 +77,11 @@ export interface DataTableProps<TData, TValue> {
   emptyMessage?: string;
   /** Vertical alignment of body cells. Default "middle". */
   cellAlign?: "middle" | "top";
+  /**
+   * A stable id per row. Rows are keyed by it, so state inside a row's cells
+   * stays with that row when sorting or new data moves it. Default: the index.
+   */
+  getRowId?: (row: TData) => string;
   className?: string;
 }
 
@@ -86,6 +91,7 @@ export function DataTable<TData, TValue>({
   enableSorting = true,
   emptyMessage = "Inga rader.",
   cellAlign = "middle",
+  getRowId,
   className,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -99,6 +105,7 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
     enableSorting,
     sortingFns: caseInsensitiveSortingFns,
+    getRowId,
   });
 
   return (

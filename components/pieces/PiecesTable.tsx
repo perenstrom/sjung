@@ -5,10 +5,11 @@ import { type ComponentProps, createContext, type ReactNode, useContext, useMemo
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
-import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
 import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
+import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
+import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import {
   DataTable,
   DataTableColumnHeader,
@@ -68,11 +69,6 @@ const PiecesTableCellContext = createContext<{
   orderedStepIds: string[];
 }>({ people: [], orderedStepIds: [] });
 
-function EditPieceAction(props: Omit<ComponentProps<typeof EditPieceDialog>, "people">) {
-  const { people } = useContext(PiecesTableCellContext);
-  return <EditPieceDialog people={people} {...props} />;
-}
-
 function AddCreditAction(props: Omit<ComponentProps<typeof AddPieceCreditPopover>, "people">) {
   const { people } = useContext(PiecesTableCellContext);
   return <AddPieceCreditPopover people={people} {...props} />;
@@ -81,6 +77,48 @@ function AddCreditAction(props: Omit<ComponentProps<typeof AddPieceCreditPopover
 function StepActions(props: Omit<ComponentProps<typeof SetListStepActions>, "orderedStepIds">) {
   const { orderedStepIds } = useContext(PiecesTableCellContext);
   return <SetListStepActions orderedStepIds={orderedStepIds} {...props} />;
+}
+
+// Rows keep their cells' state (e.g. an open name editor) when a rename re-sorts them.
+function getRowId(row: PiecesTableRow): string {
+  return row.id;
+}
+
+/** The piece's name as a link to piece detail; in edit mode with a pencil to rename it. */
+function PieceNameCell({
+  piece,
+  groupSlug,
+  setListId,
+  isEditing,
+}: {
+  piece: PieceWithRelations;
+  groupSlug: string;
+  setListId: string | undefined;
+  isEditing: boolean;
+}) {
+  const href = pieceHref(groupSlug, piece.id, { fromSetListId: setListId });
+  const renderName = (name: string) => (
+    <Link className="min-w-0 underline" href={href}>
+      {name}
+    </Link>
+  );
+
+  return (
+    <div className={cn(FIRST_LINE_CLASS, PIECE_NAME_WRAP_CLASS)}>
+      {isEditing ? (
+        <PieceNameEditor
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          name={piece.name}
+          renderName={renderName}
+          // The Namn column is narrow; keep the input wide enough to type in.
+          inputClassName="min-w-40"
+        />
+      ) : (
+        renderName(piece.name)
+      )}
+    </div>
+  );
 }
 
 /** Cell renderer for piece-only columns; note rows never reach it (spanned) but render nothing. */
@@ -153,14 +191,12 @@ export function PiecesTable({
               {row.original.content}
             </div>
           ) : (
-            <div className={cn(FIRST_LINE_CLASS, PIECE_NAME_WRAP_CLASS)}>
-              <Link
-                className="min-w-0 underline"
-                href={pieceHref(groupSlug, row.original.piece.id, { fromSetListId: setListId })}
-              >
-                {row.original.piece.name}
-              </Link>
-            </div>
+            <PieceNameCell
+              piece={row.original.piece}
+              groupSlug={groupSlug}
+              setListId={setListId}
+              isEditing={isEditing}
+            />
           ),
       },
       {
@@ -171,7 +207,13 @@ export function PiecesTable({
           return (
             <div className="flex items-start gap-2">
               <div className={cn("min-w-0 flex-1", LIST_CELL_OFFSET_CLASS)}>
-                {piece.credits.length === 0 ? null : (
+                {piece.credits.length === 0 ? null : isEditing ? (
+                  <RemovableCreditsList
+                    groupSlug={groupSlug}
+                    pieceId={piece.id}
+                    credits={piece.credits}
+                  />
+                ) : (
                   <PieceCreditsList credits={piece.credits} />
                 )}
               </div>
@@ -251,16 +293,6 @@ export function PiecesTable({
                         />
                       </div>
                     ) : null}
-                    {piece ? (
-                      <EditPieceAction
-                        groupSlug={groupSlug}
-                        piece={{
-                          id: piece.id,
-                          name: piece.name,
-                          credits: piece.credits,
-                        }}
-                      />
-                    ) : null}
                     {piece && !setListId ? (
                       <DeletePieceDialog
                         groupSlug={groupSlug}
@@ -291,6 +323,7 @@ export function PiecesTable({
         data={rows}
         enableSorting={!setList}
         cellAlign="top"
+        getRowId={getRowId}
         emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
       />
     </PiecesTableCellContext.Provider>
