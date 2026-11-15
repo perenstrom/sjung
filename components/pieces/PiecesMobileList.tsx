@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 
@@ -11,6 +12,7 @@ import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
+import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import {
   MobileList,
@@ -114,38 +116,14 @@ export function PiecesMobileList({
               // Edit mode lists the credits in its Medverkande section instead.
               secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
             >
-              {isEditing ? (
-                <PieceEditSections piece={piece} people={people} groupSlug={groupSlug} />
-              ) : (
-                <PieceMaterial piece={piece} groupSlug={groupSlug} />
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                {stepActions}
-                {isEditing ? (
-                  <EditPieceDialog
-                    people={people}
-                    groupSlug={groupSlug}
-                    piece={{ id: piece.id, name: piece.name, credits: piece.credits }}
-                  />
-                ) : null}
-                <PieceNotesDialog
-                  readOnly={!isEditing}
-                  groupSlug={groupSlug}
-                  piece={{ id: piece.id, name: piece.name }}
-                />
-                {isEditing && !setList ? (
-                  <DeletePieceDialog
-                    groupSlug={groupSlug}
-                    piece={{ id: piece.id, name: piece.name }}
-                  />
-                ) : null}
-                <Link
-                  href={pieceHref(groupSlug, piece.id, { fromSetListId: setList?.id })}
-                  className="inline-flex min-h-11 items-center px-1 text-sm underline underline-offset-4"
-                >
-                  Öppna stycket
-                </Link>
-              </div>
+              <PieceRowDetails
+                piece={piece}
+                people={people}
+                groupSlug={groupSlug}
+                isEditing={isEditing}
+                setListId={setList?.id}
+                stepActions={stepActions}
+              />
             </MobileListExpandableRow>
           );
         })
@@ -154,7 +132,58 @@ export function PiecesMobileList({
   );
 }
 
-/** Read mode: Files, then Links, as 40px full-width lines. */
+/**
+ * What an open piece row shows: its Files, Links and Piece notes (or, in edit
+ * mode, their edit sections), then the row's actions and the Detaljsida link.
+ * In a set list (`setListId`) the step actions replace delete-piece.
+ */
+export function PieceRowDetails({
+  piece,
+  people,
+  groupSlug,
+  isEditing,
+  setListId,
+  stepActions,
+}: {
+  piece: PieceWithRelations;
+  people: Person[];
+  groupSlug: string;
+  isEditing: boolean;
+  setListId?: string;
+  stepActions?: ReactNode;
+}) {
+  return (
+    <>
+      {isEditing ? (
+        <PieceEditSections piece={piece} people={people} groupSlug={groupSlug} />
+      ) : (
+        <PieceMaterial piece={piece} groupSlug={groupSlug} />
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {stepActions}
+        {isEditing ? (
+          <EditPieceDialog
+            people={people}
+            groupSlug={groupSlug}
+            piece={{ id: piece.id, name: piece.name, credits: piece.credits }}
+          />
+        ) : null}
+        {isEditing && !setListId ? (
+          <DeletePieceDialog groupSlug={groupSlug} piece={{ id: piece.id, name: piece.name }} />
+        ) : null}
+        <Link
+          href={pieceHref(groupSlug, piece.id, { fromSetListId: setListId })}
+          className="inline-flex min-h-11 items-center gap-1 px-1 text-sm underline underline-offset-4"
+        >
+          Detaljsida
+          <ChevronRight className="size-4" aria-hidden="true" />
+        </Link>
+      </div>
+    </>
+  );
+}
+
+/** Read mode: Files, then Links, as 40px full-width lines, then the Piece notes. */
 function PieceMaterial({
   piece,
   groupSlug,
@@ -162,29 +191,39 @@ function PieceMaterial({
   piece: PieceWithRelations;
   groupSlug: string;
 }) {
+  const notes = piece.notes.length > 0 ? <PieceNotesSection notes={piece.notes} /> : null;
+
   if (piece.files.length === 0 && piece.links.length === 0) {
-    return <p className="text-muted-foreground text-sm">Inga filer eller länkar.</p>;
+    return (
+      <>
+        <p className="text-muted-foreground text-sm">Inga filer eller länkar.</p>
+        {notes}
+      </>
+    );
   }
 
   return (
-    <div>
-      <PieceInlineFilesCell
-        readOnly
-        touch
-        groupSlug={groupSlug}
-        pieceId={piece.id}
-        pieceName={piece.name}
-        files={toInlineFiles(piece)}
-      />
-      <PieceInlineLinksCell
-        readOnly
-        touch
-        groupSlug={groupSlug}
-        pieceId={piece.id}
-        pieceName={piece.name}
-        links={toInlineLinks(piece)}
-      />
-    </div>
+    <>
+      <div>
+        <PieceInlineFilesCell
+          readOnly
+          touch
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          files={toInlineFiles(piece)}
+        />
+        <PieceInlineLinksCell
+          readOnly
+          touch
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          links={toInlineLinks(piece)}
+        />
+      </div>
+      {notes}
+    </>
   );
 }
 
@@ -231,7 +270,33 @@ function PieceEditSections({
           links={toInlineLinks(piece)}
         />
       </section>
+      <PieceNotesSection notes={piece.notes}>
+        <PieceNotesDialog
+          groupSlug={groupSlug}
+          piece={{ id: piece.id, name: piece.name }}
+          hasNotes={piece.notes.length > 0}
+          // A touch target, like the Detaljsida link.
+          triggerClassName="inline-flex min-h-11 items-center"
+        />
+      </PieceNotesSection>
     </div>
+  );
+}
+
+/** The Piece notes under their heading, then (in edit mode) the dialog trigger. */
+function PieceNotesSection({
+  notes,
+  children,
+}: {
+  notes: PieceWithRelations["notes"];
+  children?: ReactNode;
+}) {
+  return (
+    <section className="space-y-1">
+      <SectionHeading>Anteckningar</SectionHeading>
+      <PieceNotesList notes={notes} />
+      {children}
+    </section>
   );
 }
 

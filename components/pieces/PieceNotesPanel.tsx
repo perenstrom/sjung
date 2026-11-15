@@ -85,6 +85,7 @@ export function PieceNotesPanel({
   pieceId,
   list,
   listClassName,
+  onMutationSuccess,
 }: {
   /** Notes can still be read, but not added, edited or deleted. */
   readOnly: boolean;
@@ -92,6 +93,8 @@ export function PieceNotesPanel({
   pieceId: string;
   list: PieceNotesState;
   listClassName?: string;
+  /** Called after a note is added, edited or deleted. */
+  onMutationSuccess?: () => void;
 }) {
   const { notes, isLoading, loadError, reload, removeNote } = list;
 
@@ -141,6 +144,7 @@ export function PieceNotesPanel({
 
     try {
       await createPieceNote(formData);
+      onMutationSuccess?.();
       setNewContent("");
       await reload();
     } catch (err) {
@@ -172,6 +176,7 @@ export function PieceNotesPanel({
 
     try {
       await updatePieceNote(formData);
+      onMutationSuccess?.();
       setEditingNoteId(null);
       setEditContent("");
       await reload();
@@ -199,6 +204,7 @@ export function PieceNotesPanel({
 
     try {
       await deletePieceNote(formData);
+      onMutationSuccess?.();
       removeNote(noteId);
       if (editingNoteId === noteId) {
         cancelEditing();

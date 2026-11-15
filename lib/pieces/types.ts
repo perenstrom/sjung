@@ -12,6 +12,11 @@ export const pieceWithRelationsInclude = {
   links: {
     orderBy: { createdAt: "desc" },
   },
+  // Text only: the list shows no author or date, those stay on piece detail.
+  notes: {
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, content: true },
+  },
 } as const satisfies Prisma.PieceFindManyArgs["include"];
 
 export type PieceWithRelations = Prisma.PieceGetPayload<{
