@@ -26,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import { MISSING_CREDIT_FIELDS_ERROR } from "@/lib/pieces/credits";
 import { ROLES } from "@/lib/roles";
 import type { Person } from "@/types/piece-credit-dialog";
 
@@ -67,7 +68,7 @@ export function AddPieceCreditPopover({
 
   async function handleSubmit(formData: FormData) {
     if (!personId || !role) {
-      setError("Välj upphovsperson och roll.");
+      setError(MISSING_CREDIT_FIELDS_ERROR);
       return;
     }
 

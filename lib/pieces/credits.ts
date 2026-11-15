@@ -53,6 +53,7 @@ export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", role: "" };
 
 export const MISSING_CREDIT_ROLE_ERROR = "Välj en roll eller rensa medverkande.";
 export const MISSING_CREDIT_PERSON_ERROR = "Välj en upphovsperson eller rensa medverkande.";
+export const MISSING_CREDIT_FIELDS_ERROR = "Välj upphovsperson och roll.";
 
 /**
  * The Credits to save with a new Piece: the staged ones, plus the add row's
