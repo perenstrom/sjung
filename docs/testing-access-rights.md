@@ -1,6 +1,6 @@
 # Access rights and the integration harness
 
-What the access-rights tests cover, and how the integration harness works: identity, test database lifecycle, and the email and object-storage fakes. Which layer a test belongs in and how much to test is in `docs/testing.md`.
+What the access-rights tests cover, and how the integration harness works: identity, test database lifecycle, and the email and object-storage fakes. The last section covers the Playwright smoke test. Which layer a test belongs in and how much to test is in `docs/testing.md`.
 
 ## Seam agreement
 
@@ -88,3 +88,14 @@ Environment expectations:
 - **Fake**: `__tests__/support/fake-object-storage.ts` replaces `@/lib/object-storage` for every integration test through `vi.mock` in `__tests__/support/setup.ts`, so no integration test can reach real storage, even with the `R2_*` variables in `.env`. It is reset in the same `beforeEach` as the database.
 - **Uploading**: signed URLs are only recognisable strings. To stand in for the browser's PUT, sign the upload through the action and then call `putStoredObject(storagePath, { size, contentType })`. `storedKeys()` lists what is left in storage.
 - **Failure injection**: `failDeletesOf(key)` makes every later delete of that key fail, like a real R2 error. The object stays.
+
+## Playwright smoke
+
+One browser test, `e2e/auth-smoke.spec.ts`, covers what the integration suite can't: the session cookie and the redirects around login. An anonymous visitor opens a Group's address, `proxy.ts` sends them to `/auth/login?next=/app/<groupSlug>`, they sign in through the real form, and they land on the Group's start page (Repertoarer). Other access rules (non-Members, Claims, cross-Group isolation) stay in the integration tables.
+
+- **Database**: Playwright uses its own disposable Postgres, set by `E2E_DATABASE_URL` in `.env` (for example `sjung_e2e`, created once with `createdb sjung_e2e`). It is separate from `TEST_DATABASE_URL` because the integration suite truncates that one, and the two suites would wipe each other's rows. Neither the tests nor the server they start touch `DATABASE_URL`'s dev data: `playwright.config.ts` sets the server's `DATABASE_URL` to `E2E_DATABASE_URL`, and fails fast if it is unset. The same guard, `requireDisposableDatabaseUrl` in `lib/testing/disposable-database-url.ts`, protects the integration harness and `scripts/migrate-db.ts`, which accepts only `TEST_DATABASE_URL` or `E2E_DATABASE_URL`.
+- **Migrations**: `npm run test:e2e` runs `db:migrate:deploy:e2e` first, which applies `prisma migrate deploy` against `E2E_DATABASE_URL`.
+- **Server**: Playwright's `webServer` runs `npm run build && npm run start` on port 3100, a production build, so a first run takes a minute or two. It is not port 3000, so a running `npm run dev` on the dev database is never mistaken for it. Locally, a server already listening on 3100 is reused (start one yourself with `E2E_DATABASE_URL` as `DATABASE_URL` to skip the build between runs); in CI it is always started fresh. The server needs `AUTH_SECRET`; the config sets `AUTH_TRUST_HOST=true`, which Auth.js requires under `next start`. R2 and Resend are not needed on this path.
+- **Data**: there is no seed. Each test creates exactly the rows it needs with `createVerifiedCreator()` in `e2e/support/members.ts`: a Verified user (verification is set in the database, so no email is read) with a known password, argon2-hashed as the credentials provider expects, who is Creator, and so a Member, of their own Group. The e2e database is never reset, so emails and slugs are random UUIDs rather than the integration fixtures' counters, and rows pile up across runs, which is fine for a disposable database. The helper writes with `pg` rather than Prisma because Prisma's generated client is ES-module-only and Playwright loads the repo's TypeScript as CommonJS.
+- **Running**: `npm run test:e2e`. Chromium only (install it once with `npx playwright install chromium`), no retries locally, two in CI with a trace on the first retry. Specs live in `e2e/*.spec.ts`; Vitest ignores the folder. `test-results/` and `playwright-report/` are gitignored.
+- **CI**: not run in CI yet. PER-347 adds an `e2e` job to `.github/workflows/ci.yml` with a Postgres service container, a placeholder `AUTH_SECRET` and `E2E_DATABASE_URL`, and the HTML report uploaded on failure.

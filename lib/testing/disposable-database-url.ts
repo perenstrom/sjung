@@ -1,5 +1,5 @@
 /** Env vars naming a disposable Postgres database that test tooling may migrate, write to or wipe. */
-export const DISPOSABLE_DATABASE_ENV_VARS = ["TEST_DATABASE_URL"] as const;
+export const DISPOSABLE_DATABASE_ENV_VARS = ["TEST_DATABASE_URL", "E2E_DATABASE_URL"] as const;
 
 export type DisposableDatabaseEnvVar = (typeof DISPOSABLE_DATABASE_ENV_VARS)[number];
 

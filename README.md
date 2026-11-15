@@ -21,6 +21,7 @@ Required variables (from `.env.example`):
 
 - `DATABASE_URL`
 - `TEST_DATABASE_URL` (only needed for `npm run test:integration` — see "Testing Strategy" below)
+- `E2E_DATABASE_URL` (only needed for `npm run test:e2e` — see "Testing Strategy" below)
 - `AUTH_SECRET`
 - `R2_ACCOUNT_ID`
 - `R2_ACCESS_KEY_ID`
@@ -68,6 +69,8 @@ Staging and production never print emails: if either variable is missing there, 
 - `npm run test:unit:watch` - run unit tests in watch mode
 - `npm run test:integration` - apply migrations to `TEST_DATABASE_URL` and run the DB-backed integration suite once
 - `npm run test:integration:watch` - run the integration suite in watch mode (run `test:integration` at least once first)
+- `npm run test:e2e` - apply migrations to `E2E_DATABASE_URL`, build and start the app on port 3100, and run the Playwright suite (Chromium)
+- `npm run db:migrate:deploy:e2e` - apply migrations to `E2E_DATABASE_URL` only
 - `npm run db:migrate:dev` - create/apply development migration
 - `npm run db:migrate:deploy` - apply migrations in deploy environments
 - `npm run db:migrate:reset` - reset database and re-apply migrations
@@ -130,7 +133,7 @@ Don't attribute PRs to Claude and don't link the session that produced them — 
 
 ## Testing Strategy
 
-Unit tests (`npm run test:unit`) run in Node next to the code they test. Integration tests (`npm run test:integration`) call server actions against a disposable Postgres set by `TEST_DATABASE_URL`. Playwright end-to-end tests are being set up.
+Unit tests (`npm run test:unit`) run in Node next to the code they test. Integration tests (`npm run test:integration`) call server actions against a disposable Postgres set by `TEST_DATABASE_URL`. Playwright end-to-end tests (`npm run test:e2e`) drive a production build in Chromium against a third disposable Postgres set by `E2E_DATABASE_URL`.
 
-See `docs/testing.md` for which layer a test belongs in, what to assert and the test budget, and `docs/testing-access-rights.md` for the integration harness.
+See `docs/testing.md` for which layer a test belongs in, what to assert and the test budget, and `docs/testing-access-rights.md` for the integration harness and the Playwright setup.
 
