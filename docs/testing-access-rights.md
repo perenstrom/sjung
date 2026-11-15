@@ -1,13 +1,6 @@
-# Testing strategy for integration and access rights
+# Access rights and the integration harness
 
-This document defines a practical, phased strategy to test authentication and access rights in Sjung. The goal is to combine fast server-side confidence with a small number of browser-level checks for session and routing behavior.
-
-## Goals
-
-- Verify access control behavior for protected code paths with clear allow/deny expectations.
-- Keep day-to-day feedback fast for developers.
-- Add browser-level confidence where unit/integration tests cannot fully simulate real navigation and session behavior.
-- Keep setup and CI cost proportional to value.
+What the access-rights tests cover, and how the integration harness works: identity, test database lifecycle, and the email and object-storage fakes. Which layer a test belongs in and how much to test is in `docs/testing.md`.
 
 ## Seam agreement
 
@@ -15,54 +8,14 @@ Sjung has no static seam catalog — per the `tdd` skill, seams are agreed live 
 
 ## Current architecture notes
 
-- There is no `middleware.ts` route guard layer today.
-- Protection is implemented in server code, mainly through:
+- `proxy.ts` (Next's route guard, formerly `middleware.ts`) redirects anonymous requests under `/app` to login, checking only that a session token exists. Its unit test is `proxy.test.ts`.
+- Authorization is implemented in server code, mainly through:
   - `requireUser()` in `lib/auth/require-user.ts`
   - Tenant membership checks, and `runContentMutation` for every content change, in `lib/tenant-group.ts`
   - The in-Group content lookup `findInGroup` in `lib/find-in-group.ts`
   - Server actions in `app/actions/*`
   - Tenant layout gating in `app/app/[groupSlug]/layout.tsx`
 - `lib/roles.ts` is for music credit roles (for example `Kompositor` and `Arrangor`) and is not RBAC for app authorization.
-
-## Vitest + Prisma vs Playwright
-
-### Vitest + Prisma (integration-style server tests)
-
-Best for:
-- Server authz logic in `requireUser`, tenant/group checks, and action guards.
-- Fast, deterministic allow/deny matrix testing over many cases.
-- Verifying that actions reject unauthorized access before mutation.
-
-Strengths:
-- Fast runtime and low flake risk.
-- Precise assertions on thrown errors/not-found behavior.
-- Easy to cover many combinations in a table-driven style.
-
-Tradeoffs:
-- Does not execute full browser navigation.
-- Requires a predictable test database lifecycle (migrations + seed + cleanup).
-- Requires an explicit test seam for authenticated identity.
-
-### Playwright (browser E2E)
-
-Best for:
-- Session cookie/login flow and protected-route smoke behavior.
-- Regression checks involving redirects and real app bootstrapping.
-
-Strengths:
-- Highest fidelity (real browser + routing + cookies).
-- Catches integration gaps between auth, rendering, and navigation.
-
-Tradeoffs:
-- Slower and costlier in CI.
-- Higher flake risk if overused.
-- Harder to maintain broad matrix assertions compared with server-side tests.
-
-### Recommended phased adoption
-
-1. Start with Vitest + Prisma for access-right correctness.
-2. Add a minimal Playwright smoke slice for login/protected route verification.
-3. Expand Playwright only when user journeys justify browser-level coverage.
 
 ## Access-right scope and allow/deny intent
 
@@ -103,22 +56,6 @@ Why:
 - Makes guard-path tests focused on authorization logic instead of login mechanics.
 - Avoids coupling every integration test to browser/session setup.
 
-## Pilot implementation after this document
-
-First implementation slice: tenant membership authorization.
-
-Pilot target:
-- Prove a member can resolve tenant group context.
-- Prove a non-member cannot resolve tenant group context.
-
-Suggested first assertions:
-- `requireTenantGroup(groupSlug)`:
-  - member -> returns `{ userId, groupId, groupSlug }`
-  - non-member/invalid -> triggers not-found path
-- `getWritableGroupIdForSlug(groupSlug)`:
-  - member -> returns `{ userId, groupId }`
-  - non-member/invalid -> throws `Ogiltig grupp eller saknad behorighet`
-
 ## Tooling and scripts
 
 - `npm run test:unit` for pure unit tests (fast, always required).
@@ -151,33 +88,3 @@ Environment expectations:
 - **Fake**: `__tests__/support/fake-object-storage.ts` replaces `@/lib/object-storage` for every integration test through `vi.mock` in `__tests__/support/setup.ts`, so no integration test can reach real storage, even with the `R2_*` variables in `.env`. It is reset in the same `beforeEach` as the database.
 - **Uploading**: signed URLs are only recognisable strings. To stand in for the browser's PUT, sign the upload through the action and then call `putStoredObject(storagePath, { size, contentType })`. `storedKeys()` lists what is left in storage.
 - **Failure injection**: `failDeletesOf(key)` makes every later delete of that key fail, like a real R2 error. The object stays.
-
-## Playwright first slice
-
-After the Vitest pilot lands, add one browser smoke scenario:
-
-1. Seed test credentials and tenant data.
-2. Sign in through the real login UI.
-3. Open one protected tenant URL (for example `app/[groupSlug]`).
-4. Assert user is not bounced to login and protected content loads.
-
-This validates session cookies + routing + layout protection in one high-value check without building a large E2E matrix early.
-
-## Follow-up ticket titles (implementation-ready)
-
-1. `PER-190: Scaffold Vitest integration harness with TEST_DATABASE_URL and DB lifecycle` — done, see "DB lifecycle for integration tests" above.
-2. `PER-XXX: Add tenant-membership integration tests for requireTenantGroup and getWritableGroupIdForSlug`
-   - Scope: member vs non-member cases, deterministic auth mock/seam, fixture helpers.
-3. `PER-XXX: Add guard-level integration tests for resource-in-group helpers`
-   - Scope: `findInGroup` (`lib/find-in-group.ts`, formerly `lib/actions/guards.ts`), cross-tenant deny cases.
-4. `PER-XXX: Add creator-only authorization integration tests for group management paths`
-   - Scope: creator allow vs member deny for creator-only helpers and related actions.
-5. `PER-XXX: Add Playwright auth smoke for protected tenant route`
-   - Scope: login flow + one protected page assertion, optional CI job behind environment availability.
-
-## Decision summary
-
-- Primary access-right correctness should be tested with Vitest + Prisma integration tests.
-- Browser checks should start small with one Playwright auth smoke.
-- Keep unit and integration commands separate to preserve fast feedback.
-- Start with tenant-membership pilot, then expand to guard and creator-only coverage.

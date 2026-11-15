@@ -130,18 +130,7 @@ Don't attribute PRs to Claude and don't link the session that produced them — 
 
 ## Testing Strategy
 
-Unit tests in Sjung focus on deterministic logic first: pure helpers, parsing, transformations,
-and domain rules that do not require network, database, or framework runtime.
+Unit tests (`npm run test:unit`) run in Node next to the code they test. Integration tests (`npm run test:integration`) call server actions against a disposable Postgres set by `TEST_DATABASE_URL`. Playwright end-to-end tests are being set up.
 
-- Test first: `lib/*` modules with pure or mostly pure logic.
-- Prefer not mocking for unit tests; only mock when isolating unavoidable external boundaries.
-- When what a page shows is the behaviour under test (e.g. an empty state instead of a list), render its view component with `renderToStaticMarkup` from `react-dom/server` and assert on the text. Mock the server-actions module the view's dialogs import, since it reaches the database.
-- Keep tests co-located as `*.test.ts` next to the implementation file.
-- Use the canonical CI/local command: `npm run test:unit`.
-- Use watch mode while developing: `npm run test:unit:watch`.
+See `docs/testing.md` for which layer a test belongs in, what to assert and the test budget, and `docs/testing-access-rights.md` for the integration harness.
 
-Integration tests cover DB-backed access-rights/authz logic against a real, disposable Postgres database. See `docs/testing-access-rights.md` for the full strategy and DB lifecycle (migrations, per-test reset, and shared fixture builders).
-
-- Keep tests under `__tests__/integration/**/*.test.ts`; shared support code (test DB client, fixtures, the fake email sender, the fake object storage) lives in `__tests__/support/`.
-- Set `TEST_DATABASE_URL` in `.env` before running them.
-- Use `npm run test:integration`.
