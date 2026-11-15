@@ -12,6 +12,10 @@ Default vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 Single-context layout (`CONTEXT.md` + `docs/adr/` at repo root). See `docs/agents/domain.md`.
 
+### Testing
+
+Writing, changing or reviewing a test: read `docs/testing.md` first (which layer, behaviour over mocks, test budget, Playwright status).
+
 ### Commit messages
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/) (`type(scope): description`). See the "Commits" section in `README.md`.
