@@ -54,6 +54,10 @@ _Avoid_: Role, Permission, Admin — "Claim" is this model's term.
 What one User may do in one Group: whether they are a Member at all, and which capabilities they have there (manage members, rename or delete the Group, change a given Member, change the Group's content). Derived from membership, Creator status and Claims — never stored.
 _Avoid_: Permissions, Role, Rights.
 
+**Edit mode**:
+The state of a Group content page in which it offers controls that change content. Every content page opens read-only and is switched into Edit mode by its own toggle; the mode lasts until the page is left or reloaded, and is never shared between pages or remembered. It is a convenience, not a permission: only a Member allowed to change the Group's content (see ADR-0004) is offered the toggle at all. Swedish UI: _Redigera_ (the toggle), _Klar_ (to leave it).
+_Avoid_: Admin mode, Write access — those describe Group access, which Edit mode never grants.
+
 **Person**:
 A credited contributor (composer, arranger, lyricist, …) scoped to a Group — deliberately not a login account. A Person may be credited on Pieces without ever holding a Sjung account, and a User is not automatically a Person. Swedish UI: _Upphovsperson_ / _Upphovspersoner_ — chosen over _Person_ so it can't be mistaken for the Group's own members, and over _Medverkande_, which in a choir reads as the performers.
 _Avoid_: User, Contributor, Member.
