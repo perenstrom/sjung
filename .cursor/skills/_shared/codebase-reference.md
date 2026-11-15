@@ -21,7 +21,7 @@ When this file may be stale (new routes, actions, or conventions), run the **cod
 | User groups | `app/app/me/page.tsx`, `app/app/me/groups/page.tsx` | Manage memberships |
 | Group home (pieces) | `app/app/[groupSlug]/page.tsx` | Piece listing |
 | Piece detail | `app/app/[groupSlug]/pieces/[id]/page.tsx` | Metadata, files, links, notes |
-| People | `app/app/[groupSlug]/people/page.tsx` | Personer |
+| People | `app/app/[groupSlug]/people/page.tsx` | Upphovspersoner |
 | Members | `app/app/[groupSlug]/members/page.tsx` | Group members |
 | Set lists | `app/app/[groupSlug]/setlists/page.tsx` | Setlist listing |
 | Set list detail | `app/app/[groupSlug]/setlists/[id]/page.tsx` | Pieces in set list |

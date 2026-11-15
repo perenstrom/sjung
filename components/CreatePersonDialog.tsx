@@ -8,13 +8,13 @@ import { Label } from "@/components/ui/label";
 
 export function CreatePersonDialog({ groupSlug }: { groupSlug: string }) {
   return (
-    <EntityFormDialog.Root fallbackSv="Kunde inte lägga till person">
+    <EntityFormDialog.Root fallbackSv="Kunde inte lägga till upphovsperson">
       <EntityFormDialog.Trigger asChild>
         <Button>Lägg till</Button>
       </EntityFormDialog.Trigger>
       <EntityFormDialog.Content>
         <EntityFormDialog.Header>
-          <EntityFormDialog.Title>Lägg till person</EntityFormDialog.Title>
+          <EntityFormDialog.Title>Lägg till upphovsperson</EntityFormDialog.Title>
         </EntityFormDialog.Header>
         <EntityFormDialog.Form
           action={async (formData) => {

@@ -80,7 +80,7 @@ export function PieceCreditDraftRow({
   async function handleAdd() {
     const person = allPeople.find((candidate) => candidate.id === draft.personId);
     if (!person || !draft.role) {
-      setError("Välj person och roll.");
+      setError("Välj upphovsperson och roll.");
       return;
     }
 
@@ -102,7 +102,7 @@ export function PieceCreditDraftRow({
       <div className="flex flex-wrap items-center gap-2">
         <PersonCombobox
           ref={personPickerRef}
-          aria-label="Person"
+          aria-label="Upphovsperson"
           people={allPeople}
           value={draft.personId}
           onValueChange={selectPerson}

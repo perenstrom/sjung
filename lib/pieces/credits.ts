@@ -9,7 +9,7 @@ export function creditKey(credit: PieceCredit): string {
   return `${credit.personId}::${credit.role}`;
 }
 
-export const DUPLICATE_CREDITS_ERROR = "En person kan inte ha samma roll flera gånger";
+export const DUPLICATE_CREDITS_ERROR = "En upphovsperson kan inte ha samma roll flera gånger";
 
 export function assertNoDuplicateCredits(credits: PieceCredit[]) {
   const seen = new Set<string>();
@@ -52,7 +52,7 @@ export type CreditDraft = PieceCredit;
 export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", role: "" };
 
 export const MISSING_CREDIT_ROLE_ERROR = "Välj en roll eller rensa medverkande.";
-export const MISSING_CREDIT_PERSON_ERROR = "Välj en person eller rensa medverkande.";
+export const MISSING_CREDIT_PERSON_ERROR = "Välj en upphovsperson eller rensa medverkande.";
 
 /**
  * The Credits to save with a new Piece: the staged ones, plus the add row's

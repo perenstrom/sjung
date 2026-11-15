@@ -204,7 +204,7 @@ function PersonTrigger({
       {...props}
     >
       <span className={cn("truncate", !selected && "text-muted-foreground")}>
-        {selected ? selected.name : "Person"}
+        {selected ? selected.name : "Upphovsperson"}
       </span>
       <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden="true" />
     </Button>
@@ -241,7 +241,7 @@ function PersonSearch({
       await onCreate(query.trim());
       onDone();
     } catch (err) {
-      setCreateError(getThrownMessage(err, "Kunde inte skapa person"));
+      setCreateError(getThrownMessage(err, "Kunde inte skapa upphovsperson"));
     } finally {
       setCreating(false);
     }
@@ -250,7 +250,7 @@ function PersonSearch({
   return (
     <Command shouldFilter={false}>
       <CommandInput
-        placeholder="Sök eller skapa person…"
+        placeholder="Sök eller skapa upphovsperson…"
         autoFocus
         value={query}
         onValueChange={(nextQuery) => {
@@ -261,8 +261,8 @@ function PersonSearch({
       <CommandList>
         <CommandEmpty>
           {people.length === 0
-            ? "Skriv ett namn för att lägga till en person."
-            : "Ingen person hittades."}
+            ? "Skriv ett namn för att lägga till en upphovsperson."
+            : "Ingen upphovsperson hittades."}
         </CommandEmpty>
         {matches.length > 0 && (
           <CommandGroup>

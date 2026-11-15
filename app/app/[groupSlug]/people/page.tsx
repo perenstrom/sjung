@@ -36,17 +36,17 @@ export default async function TenantPeoplePage({ params }: PageProps) {
           trail={{
             visibility: "visible",
             ancestors: [createGroupAncestor(groupSlug, groupName)],
-            tail: { kind: "static", label: "Personer" },
+            tail: { kind: "static", label: "Upphovspersoner" },
           }}
         />
         <PageHeader
-          title="Personer"
+          title="Upphovspersoner"
           editActions={<CreatePersonDialog groupSlug={groupSlug} />}
         />
 
         <MobileList>
           {people.length === 0 ? (
-            <MobileListEmpty>Inga personer tillagda ännu.</MobileListEmpty>
+            <MobileListEmpty>Inga upphovspersoner tillagda ännu.</MobileListEmpty>
           ) : (
             people.map((person) => <MobileListRow key={person.id} primary={person.name} />)
           )}
@@ -63,7 +63,7 @@ export default async function TenantPeoplePage({ params }: PageProps) {
               {people.length === 0 ? (
                 <TableRow>
                   <TableCell className="text-muted-foreground">
-                    Inga personer tillagda ännu.
+                    Inga upphovspersoner tillagda ännu.
                   </TableCell>
                 </TableRow>
               ) : (

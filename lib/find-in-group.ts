@@ -43,7 +43,7 @@ const CONTENT = {
       prisma.pieceNote.findFirst({ where: { id, groupId, piece: { groupId } }, select }),
   },
   person: {
-    notFound: "Person hittades inte",
+    notFound: "Upphovsperson hittades inte",
     find: (groupId: string, id: string, select: Prisma.PersonSelect) =>
       prisma.person.findFirst({ where: { id, groupId }, select }),
   },
