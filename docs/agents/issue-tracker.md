@@ -5,7 +5,7 @@ Issues and specs (PRDs) for this repo are tracked in Linear, in the **Sjung** pr
 ## Conventions
 
 - **Create an issue**: use the connected Linear MCP tools (e.g. `mcp__linear__create_issue` or equivalent) to create the issue in the `Sjung` project. Include a clear title and a full description/body.
-- **Read an issue**: fetch it via the Linear MCP tools by issue ID or URL.
+- **Read an issue**: fetch it via the Linear MCP tools by issue ID or URL. Closed tickets get archived to stay under the free plan's issue cap, so pass `includeArchived: true` when listing; a `PER-` ID that Linear doesn't have is in `docs/ticket-ledger.md`, with pointers to any ADR or CONTEXT.md entry it produced.
 - **List issues**: query the Linear MCP tools, scoped to the `Sjung` project, filtering by label/state as needed.
 - **Comment on an issue**: use the Linear MCP tools' comment-creation call.
 - **Apply / remove labels**: use the Linear MCP tools' label-update call.
