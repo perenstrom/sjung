@@ -196,7 +196,7 @@ jobs:
   # Coolify's own auto-deploy is off; this is the only thing that deploys
   # staging. Docs-only pushes don't deploy.
   deploy-staging:
-    needs: [changes, build, integration-tests]
+    needs: [changes, build, integration-tests, e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     environment: staging
