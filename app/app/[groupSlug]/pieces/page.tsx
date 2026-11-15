@@ -30,11 +30,11 @@ export default async function TenantNoterPage({ params }: PageProps) {
           trail={{
             visibility: "visible",
             ancestors: [createGroupAncestor(groupSlug, groupName)],
-            tail: { kind: "static", label: "Noter" },
+            tail: { kind: "static", label: "Alla noter" },
           }}
         />
         <PageHeader
-          title="Noter"
+          title="Alla noter"
           editActions={<CreatePieceDialog people={people} groupSlug={groupSlug} />}
         />
 

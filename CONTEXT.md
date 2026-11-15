@@ -61,7 +61,7 @@ _Avoid_: User, Contributor, Member.
 ### Repertoire
 
 **Piece**:
-The catalog entry for a musical work: a name plus its Credits, Files, Links and Piece notes. Swedish UI: _Stycke_ (the entity), _Noter_ (the catalog/list page name).
+The catalog entry for a musical work: a name plus its Credits, Files, Links and Piece notes. Swedish UI: _Stycke_ (the entity), _Alla noter_ (the catalog/list page name).
 _Avoid_: Song, Sheet music, Score — those name the physical artifact (see File), not the work entry itself.
 
 **File**:

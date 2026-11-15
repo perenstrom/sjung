@@ -9,7 +9,7 @@ export function groupPath(groupSlug: string): string {
   return `/app/${groupSlug}`;
 }
 
-/** Noter: the Group's Piece catalog. */
+/** Alla noter: the Group's Piece catalog. */
 export function groupPiecesPath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/pieces`;
 }

@@ -29,7 +29,7 @@ export function groupNavItems({
   const href = (path: (slug: string) => string) => (groupSlug ? path(groupSlug) : null);
   const items: GroupNavItem[] = [
     { key: "setLists", label: "Repertoarer", href: href(groupSetListsPath) },
-    { key: "pieces", label: "Noter", href: href(groupPiecesPath) },
+    { key: "pieces", label: "Alla noter", href: href(groupPiecesPath) },
     { key: "people", label: "Personer", href: href(groupPeoplePath) },
   ];
   if (groupSlug && canManageMembers) {
