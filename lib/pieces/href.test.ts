@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fromSetListIdParam, pieceHref } from "@/lib/pieces/href";
+import { fileDownloadHref, fromSetListIdParam, pieceHref } from "@/lib/pieces/href";
 
 describe("pieceHref", () => {
   it("links to the piece", () => {
@@ -23,5 +23,11 @@ describe("fromSetListIdParam", () => {
     expect(fromSetListIdParam(undefined)).toBeUndefined();
     expect(fromSetListIdParam("")).toBeUndefined();
     expect(fromSetListIdParam(["sl-1", "sl-2"])).toBeUndefined();
+  });
+});
+
+describe("fileDownloadHref", () => {
+  it("links to the route that redirects to the File's download", () => {
+    expect(fileDownloadHref("kor", "f-1")).toBe("/app/kor/files/f-1");
   });
 });
