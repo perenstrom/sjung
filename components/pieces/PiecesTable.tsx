@@ -18,10 +18,12 @@ import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
+import { LetterDividerTableRow } from "@/components/pieces/LetterDivider";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
-import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
+import { caseInsensitiveSortingFn, compareCaseInsensitive } from "@/lib/data-table/sorting";
 import { pieceHref } from "@/lib/pieces/href";
+import { letterDividerBefore } from "@/lib/pieces/letterGroups";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
@@ -79,6 +81,18 @@ function StepActions(props: Omit<ComponentProps<typeof SetListStepActions>, "ord
   return <SetListStepActions orderedStepIds={orderedStepIds} {...props} />;
 }
 
+/** On Alla noter: the letter heading before the first Piece of each letter group, as currently sorted. */
+function renderLetterDivider(
+  row: PiecesTableRow,
+  previousRow: PiecesTableRow | undefined,
+  colSpan: number
+): ReactNode {
+  if (row.kind !== "piece") return null;
+  const previousName = previousRow?.kind === "piece" ? previousRow.piece.name : undefined;
+  const letter = letterDividerBefore(row.piece.name, previousName);
+  return letter ? <LetterDividerTableRow letter={letter} colSpan={colSpan} /> : null;
+}
+
 // Rows keep their cells' state (e.g. an open name editor) when a rename re-sorts them.
 function getRowId(row: PiecesTableRow): string {
   return row.id;
@@ -133,6 +147,8 @@ function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
  * `PiecesMobileList` below it. Pass `setList` instead of `pieces` to
  * show a set list's steps in position order: adds a `#` column and the step
  * reorder/remove actions, turns off sorting and drops the delete-piece action.
+ * Without `setList` (Alla noter) the pieces are shown in Swedish order, under
+ * a letter heading per first letter.
  */
 export function PiecesTable({
   people,
@@ -146,13 +162,19 @@ export function PiecesTable({
   | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
 )) {
   const { isEditing } = useEditMode();
-  const { pieces, setList } = props;
+  const { setList } = props;
   const setListId = setList?.id;
+  // The database's order may not be Swedish, so Alla noter sorts on the client:
+  // first load, the table and the mobile list then agree, and the letter groups hold.
+  const pieces = useMemo(
+    () => props.pieces && [...props.pieces].sort((a, b) => compareCaseInsensitive(a.name, b.name)),
+    [props.pieces]
+  );
   const rows = useMemo<PiecesTableRow[]>(
     () =>
       setList
         ? setList.steps
-        : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece })),
+        : (pieces ?? []).map((piece) => ({ kind: "piece", id: piece.id, piece })),
     [pieces, setList]
   );
   const cellContext = useMemo(
@@ -312,7 +334,7 @@ export function PiecesTable({
   return (
     <PiecesTableCellContext.Provider value={cellContext}>
       <PiecesMobileList
-        {...props}
+        {...(setList ? { setList } : { pieces: pieces ?? [] })}
         people={people}
         groupSlug={groupSlug}
         isEditing={isEditing}
@@ -324,6 +346,7 @@ export function PiecesTable({
         enableSorting={!setList}
         cellAlign="top"
         getRowId={getRowId}
+        renderRowDivider={setList ? undefined : renderLetterDivider}
         emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
       />
     </PiecesTableCellContext.Provider>
