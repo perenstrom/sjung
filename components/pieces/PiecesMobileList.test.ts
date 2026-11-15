@@ -70,6 +70,70 @@ describe("PiecesMobileList", () => {
   });
 });
 
+describe("PiecesMobileList letter dividers", () => {
+  function namedPiece(name: string): PieceWithRelations {
+    return { ...piece, id: name, name } as unknown as PieceWithRelations;
+  }
+
+  /** The letter dividers and piece names in `html`, in the order shown. */
+  function shownSequence(html: string): string[] {
+    return [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>|<span class="font-medium">([^<]*)<\/span>/g)].map(
+      (match) => match[1] ?? match[2],
+    );
+  }
+
+  describe.each([
+    ["read", false],
+    ["edit", true],
+  ])("in %s mode", (_, isEditing) => {
+    it("shows Alla noter as given, with a heading before the first piece of each letter group", () => {
+      const html = renderMarkup(
+        createElement(PiecesMobileList, {
+          people: [],
+          groupSlug: "koren",
+          isEditing,
+          pieces: ["1700-tal", "Abendlied", "Ave verum", "Bred dina vida vingar", "Änglamark", "Över berg och dal"].map(
+            namedPiece,
+          ),
+        }),
+      );
+
+      expect(shownSequence(html)).toEqual([
+        "#",
+        "1700-tal",
+        "A",
+        "Abendlied",
+        "Ave verum",
+        "B",
+        "Bred dina vida vingar",
+        "Ä",
+        "Änglamark",
+        "Ö",
+        "Över berg och dal",
+      ]);
+    });
+
+    it("shows no dividers in a set list's running order", () => {
+      const steps = ["Över berg och dal", "Abendlied"].map((name, position) => ({
+        kind: "piece",
+        id: `step-${position}`,
+        position,
+        piece: namedPiece(name),
+      })) as unknown as SetListStep[];
+      const html = renderMarkup(
+        createElement(PiecesMobileList, {
+          people: [],
+          groupSlug: "koren",
+          isEditing,
+          setList: { id: "setlist-1", steps },
+        }),
+      );
+
+      expect(shownSequence(html)).toEqual(["Över berg och dal", "Abendlied"]);
+    });
+  });
+});
+
 describe("PieceRowDetails, an open piece row", () => {
   function renderDetails(
     isEditing: boolean,

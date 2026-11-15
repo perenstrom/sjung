@@ -2,10 +2,11 @@
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
+import { LetterDividerListItem } from "@/components/pieces/LetterDivider";
 import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/mobile-list";
 import { formatCreditsLine } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
+import { letterDividerBefore } from "@/lib/pieces/letterGroups";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import type { Person } from "@/types/piece-credit-dialog";
@@ -37,6 +39,9 @@ const STEP_NUMBER_CLASS = "text-muted-foreground w-6 shrink-0 font-mono text-xs"
  * Pass `setList` instead of `pieces` for a set list's running order: rows get
  * their number, Running-order notes show inline, and in edit mode an open row
  * (or a note) gets the step reorder/remove actions instead of delete-piece.
+ *
+ * Without `setList` (Alla noter) a letter heading comes before the first piece
+ * of each letter group; pass `pieces` already in the order to show.
  */
 export function PiecesMobileList({
   people,
@@ -106,25 +111,31 @@ export function PiecesMobileList({
           }
 
           const { piece } = row;
+          const previous = rows[index - 1];
+          const letter = setList
+            ? null
+            : letterDividerBefore(piece.name, previous?.kind === "piece" ? previous.piece.name : undefined);
           return (
-            <MobileListExpandableRow
-              key={row.id}
-              open={openIds.has(row.id)}
-              onOpenChange={(open) => setOpen(row.id, open)}
-              leading={number}
-              primary={<span className="font-medium">{piece.name}</span>}
-              // Edit mode lists the credits in its Medverkande section instead.
-              secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
-            >
-              <PieceRowDetails
-                piece={piece}
-                people={people}
-                groupSlug={groupSlug}
-                isEditing={isEditing}
-                setListId={setList?.id}
-                stepActions={stepActions}
-              />
-            </MobileListExpandableRow>
+            <Fragment key={row.id}>
+              {letter ? <LetterDividerListItem letter={letter} /> : null}
+              <MobileListExpandableRow
+                open={openIds.has(row.id)}
+                onOpenChange={(open) => setOpen(row.id, open)}
+                leading={number}
+                primary={<span className="font-medium">{piece.name}</span>}
+                // Edit mode lists the credits in its Medverkande section instead.
+                secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
+              >
+                <PieceRowDetails
+                  piece={piece}
+                  people={people}
+                  groupSlug={groupSlug}
+                  isEditing={isEditing}
+                  setListId={setList?.id}
+                  stepActions={stepActions}
+                />
+              </MobileListExpandableRow>
+            </Fragment>
           );
         })
       )}

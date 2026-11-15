@@ -51,6 +51,120 @@ function renderSetList(): string {
   );
 }
 
+// The order the database may return: Ä among A, digits last.
+const unsortedNames = [
+  "Abendlied",
+  "Änglamark",
+  "Ave verum",
+  "Bred dina vida vingar",
+  "Över berg och dal",
+  "1700-tal",
+];
+
+function namedPiece(name: string): PieceWithRelations {
+  return { ...piece, id: name, name, credits: [] } as unknown as PieceWithRelations;
+}
+
+/** The letter dividers and the given piece names in `html`, in the order shown. */
+function shownSequence(html: string, names: string[]): string[] {
+  const dividers = [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>/g)].map((match) => ({
+    index: match.index,
+    text: match[1],
+  }));
+  const pieces = [...html.matchAll(/>([^<]+)</g)]
+    .filter((match) => names.includes(match[1]))
+    .map((match) => ({ index: match.index, text: match[1] }));
+  return [...dividers, ...pieces].sort((a, b) => a.index - b.index).map(({ text }) => text);
+}
+
+function desktopTable(html: string): string {
+  return html.slice(html.indexOf("<table"));
+}
+
+function mobileList(html: string): string {
+  return html.slice(0, html.indexOf("<table"));
+}
+
+describe("PiecesTable letter dividers", () => {
+  describe.each([
+    ["edit", true],
+    ["read", false],
+  ])("in %s mode", (_, isEditing) => {
+    beforeEach(() => {
+      editMode.isEditing = isEditing;
+    });
+
+    it.each([
+      ["desktop table", desktopTable],
+      ["mobile list", mobileList],
+    ])("sorts Alla noter in Swedish order with a divider before each letter group in the %s", (_, part) => {
+      const html = renderMarkup(
+        createElement(PiecesTable, {
+          people: [],
+          groupSlug: "koren",
+          pieces: unsortedNames.map(namedPiece),
+        }),
+      );
+
+      expect(shownSequence(part(html), unsortedNames)).toEqual([
+        "#",
+        "1700-tal",
+        "A",
+        "Abendlied",
+        "Ave verum",
+        "B",
+        "Bred dina vida vingar",
+        "Ä",
+        "Änglamark",
+        "Ö",
+        "Över berg och dal",
+      ]);
+    });
+
+    it("renders a divider as a full-width heading row", () => {
+      const html = desktopTable(
+        renderMarkup(
+          createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: [piece] }),
+        ),
+      );
+      const columnCount = html.match(/<th[\s>]/g)?.length;
+
+      expect(html).toMatch(new RegExp(`<td[^>]*colSpan="${columnCount}"[^>]*><h2[^>]*>V</h2>`));
+    });
+
+    it("shows no dividers in a set list and keeps its running order", () => {
+      const steps = ["Över berg och dal", "Abendlied"].map((name, position) => ({
+        kind: "piece",
+        id: `step-${position}`,
+        position,
+        piece: namedPiece(name),
+      })) as unknown as SetListStep[];
+      const html = renderMarkup(
+        createElement(PiecesTable, {
+          people: [],
+          groupSlug: "koren",
+          setList: { id: "setlist-1", steps },
+        }),
+      );
+
+      expect(html).not.toContain("<h2");
+      expect(shownSequence(desktopTable(html), unsortedNames)).toEqual([
+        "Över berg och dal",
+        "Abendlied",
+      ]);
+    });
+
+    it("shows no dividers when there are no pieces", () => {
+      const html = renderMarkup(
+        createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: [] }),
+      );
+
+      expect(html).not.toContain("<h2");
+      expect(textOf(html)).toContain("Inga noter tillagda ännu.");
+    });
+  });
+});
+
 describe.each([
   ["Noter", renderPieces],
   ["set list", renderSetList],

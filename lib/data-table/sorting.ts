@@ -9,8 +9,11 @@ declare module "@tanstack/react-table" {
   }
 }
 
+/** Swedish collation that ignores case and accents (but keeps Å, Ä and Ö apart from A and O). */
+export const swedishCollator = new Intl.Collator("sv", { sensitivity: "base" });
+
 export function compareCaseInsensitive(a: string, b: string): number {
-  return a.localeCompare(b, "sv", { sensitivity: "base" });
+  return swedishCollator.compare(a, b);
 }
 
 /** Case- and accent-insensitive string sort for Swedish UI text columns. */

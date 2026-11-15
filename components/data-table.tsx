@@ -29,6 +29,9 @@
  *
  * A column can make its cell span several columns per row with
  * `meta: { getColSpan: (row) => n }`; the covered cells are skipped.
+ *
+ * `renderRowDivider` can put a full-width row (e.g. a letter heading) before a
+ * body row, given the row shown above it in the current sorted order.
  */
 import {
   type Column,
@@ -41,7 +44,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +85,12 @@ export interface DataTableProps<TData, TValue> {
    * stays with that row when sorting or new data moves it. Default: the index.
    */
   getRowId?: (row: TData) => string;
+  /**
+   * A row to render before `row`, or null for none. `previousRow` is the row
+   * shown directly above it in the current sorted order (undefined for the
+   * first), and `colSpan` the number of visible columns, for a full-width row.
+   */
+  renderRowDivider?: (row: TData, previousRow: TData | undefined, colSpan: number) => ReactNode;
   className?: string;
 }
 
@@ -92,6 +101,7 @@ export function DataTable<TData, TValue>({
   emptyMessage = "Inga rader.",
   cellAlign = "middle",
   getRowId,
+  renderRowDivider,
   className,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -107,6 +117,8 @@ export function DataTable<TData, TValue>({
     sortingFns: caseInsensitiveSortingFns,
     getRowId,
   });
+  const rows = table.getRowModel().rows;
+  const visibleColumnCount = table.getVisibleLeafColumns().length;
 
   return (
     <div className={className}>
@@ -128,22 +140,25 @@ export function DataTable<TData, TValue>({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows.length > 0 ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {spanCells(
-                  row.getVisibleCells(),
-                  (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1
-                ).map(({ cell, colSpan }) => (
-                  <TableCell
-                    key={cell.id}
-                    colSpan={colSpan > 1 ? colSpan : undefined}
-                    className={cn(cellAlign === "top" && "align-top")}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
+          {rows.length > 0 ? (
+            rows.map((row, index) => (
+              <Fragment key={row.id}>
+                {renderRowDivider?.(row.original, rows[index - 1]?.original, visibleColumnCount)}
+                <TableRow>
+                  {spanCells(
+                    row.getVisibleCells(),
+                    (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1
+                  ).map(({ cell, colSpan }) => (
+                    <TableCell
+                      key={cell.id}
+                      colSpan={colSpan > 1 ? colSpan : undefined}
+                      className={cn(cellAlign === "top" && "align-top")}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </Fragment>
             ))
           ) : (
             <TableRow>
