@@ -1,15 +1,9 @@
 import "dotenv/config";
 import { PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { requireDisposableDatabaseUrl } from "@/lib/testing/disposable-database-url";
 
-const connectionString = process.env.TEST_DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error(
-    "TEST_DATABASE_URL is not set. Integration tests require a disposable " +
-      "Postgres database — see docs/testing-access-rights.md for setup.",
-  );
-}
+const connectionString = requireDisposableDatabaseUrl("TEST_DATABASE_URL");
 
 // App code (lib/prisma.ts) reads DATABASE_URL — point it at the test DB so
 // actions under test never touch the dev database.
