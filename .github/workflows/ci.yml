@@ -128,6 +128,71 @@ jobs:
         if: needs.changes.outputs.code == 'true'
         run: npm run test:integration
 
+  # Playwright against a production build. Auth is Auth.js on the same
+  # database, so a Postgres service container is enough. No real R2 or Resend
+  # credentials: specs that need them must use fakes, not repo secrets.
+  e2e:
+    needs: changes
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sjung_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # `prisma generate` (run via postinstall and `npm run build`) loads
+      # prisma.config.ts, which resolves DATABASE_URL. playwright.config.ts
+      # points the app server at E2E_DATABASE_URL either way.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_e2e?schema=public
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sjung_e2e?schema=public
+      # Throwaway, CI-only: signs session cookies for this run's server and
+      # nothing else.
+      AUTH_SECRET: ci-e2e-placeholder-auth-secret-not-used-anywhere-else
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        if: needs.changes.outputs.code == 'true'
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        if: needs.changes.outputs.code == 'true'
+        run: npx playwright install --with-deps chromium
+
+      # Migrates E2E_DATABASE_URL, builds and starts the app, then runs the
+      # specs. There is no seed: each spec creates the rows it needs.
+      - name: Run e2e tests
+        if: needs.changes.outputs.code == 'true'
+        run: npm run test:e2e
+
+      # The HTML report embeds the traces recorded on retry.
+      - name: Upload Playwright report
+        if: failure() && needs.changes.outputs.code == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   # Coolify's own auto-deploy is off; this is the only thing that deploys
   # staging. Docs-only pushes don't deploy.
   deploy-staging:
