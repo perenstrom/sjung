@@ -13,7 +13,7 @@ type PageProps = {
   params: Promise<{ groupSlug: string }>;
 };
 
-export default async function TenantNoterPage({ params }: PageProps) {
+export default async function GroupPiecesPage({ params }: PageProps) {
   const { groupSlug } = await params;
   const [pieces, people, groups, access] = await Promise.all([
     getPieces(groupSlug),

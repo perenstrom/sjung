@@ -78,7 +78,7 @@ describe("pieceDetailTrail", () => {
     });
   });
 
-  const noterTrail = {
+  const piecesTrail = {
     visibility: "visible",
     ancestors: [
       { label: "Kören", href: "/app/kor" },
@@ -96,7 +96,7 @@ describe("pieceDetailTrail", () => {
         setLists,
         fromSetListId: undefined,
       })
-    ).toEqual(noterTrail);
+    ).toEqual(piecesTrail);
   });
 
   it("leads back to Alla noter when the set list isn't one of this group's", () => {
@@ -108,7 +108,7 @@ describe("pieceDetailTrail", () => {
         setLists,
         fromSetListId: "sl-from-another-group",
       })
-    ).toEqual(noterTrail);
+    ).toEqual(piecesTrail);
   });
 
   it("labels an unnamed set list Repertoar", () => {
