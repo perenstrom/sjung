@@ -55,7 +55,7 @@ What one User may do in one Group: whether they are a Member at all, and which c
 _Avoid_: Permissions, Role, Rights.
 
 **Person**:
-A credited contributor (composer, arranger, lyricist, …) scoped to a Group — deliberately not a login account. A Person may be credited on Pieces without ever holding a Sjung account, and a User is not automatically a Person.
+A credited contributor (composer, arranger, lyricist, …) scoped to a Group — deliberately not a login account. A Person may be credited on Pieces without ever holding a Sjung account, and a User is not automatically a Person. Swedish UI: _Upphovsperson_ / _Upphovspersoner_ — chosen over _Person_ so it can't be mistaken for the Group's own members, and over _Medverkande_, which in a choir reads as the performers.
 _Avoid_: User, Contributor, Member.
 
 ### Repertoire
