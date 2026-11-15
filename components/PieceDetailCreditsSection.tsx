@@ -1,18 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-import { removeCredit } from "@/app/actions/pieces";
 import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceCreditRow } from "@/components/pieces/AddPieceCreditRow";
-import {
-  PieceCreditsList,
-  RemoveCreditRoleButton,
-} from "@/components/pieces/PieceCreditsList";
+import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
+import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { getThrownMessage } from "@/lib/getThrownMessage";
-import { creditKey, type CreditForDisplay } from "@/lib/pieces/credits";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 type PieceDetailCredit = PieceCredit & { person: { name: string } };
@@ -44,28 +36,6 @@ function PieceDetailCreditsCard({
   credits,
   people,
 }: PieceDetailCreditsSectionProps & { readOnly: boolean }) {
-  const router = useRouter();
-  const [removingKey, setRemovingKey] = useState<string | null>(null);
-  const [removeError, setRemoveError] = useState<string | null>(null);
-
-  async function handleRemove(credit: CreditForDisplay) {
-    setRemovingKey(creditKey(credit));
-    try {
-      const formData = new FormData();
-      formData.set("groupSlug", groupSlug);
-      formData.set("pieceId", pieceId);
-      formData.set("personId", credit.personId);
-      formData.set("role", credit.role);
-      await removeCredit(formData);
-      setRemoveError(null);
-      router.refresh();
-    } catch (err) {
-      setRemoveError(getThrownMessage(err, "Kunde inte ta bort medverkande"));
-    } finally {
-      setRemovingKey(null);
-    }
-  }
-
   return (
     <Card variant="section">
       <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
@@ -74,25 +44,16 @@ function PieceDetailCreditsCard({
       <CardContent className="space-y-3">
         {credits.length === 0 ? (
           <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+        ) : readOnly ? (
+          <PieceCreditsList credits={credits} className="space-y-2" />
         ) : (
-          <PieceCreditsList
+          <RemovableCreditsList
+            groupSlug={groupSlug}
+            pieceId={pieceId}
             credits={credits}
             className="space-y-2"
-            renderRoleAction={
-              readOnly
-                ? undefined
-                : (credit) => (
-                    <RemoveCreditRoleButton
-                      credit={credit}
-                      onRemove={handleRemove}
-                      disabled={removingKey === creditKey(credit)}
-                    />
-                  )
-            }
           />
         )}
-
-        {removeError ? <p className="text-sm text-destructive">{removeError}</p> : null}
 
         {readOnly ? null : (
           <div className="border-t pt-3">
