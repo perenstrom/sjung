@@ -170,6 +170,7 @@ export function PiecesTable({
     () => props.pieces && [...props.pieces].sort((a, b) => compareCaseInsensitive(a.name, b.name)),
     [props.pieces]
   );
+  const emptyMessage = setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu.";
   const rows = useMemo<PiecesTableRow[]>(
     () =>
       setList
@@ -338,6 +339,7 @@ export function PiecesTable({
         people={people}
         groupSlug={groupSlug}
         isEditing={isEditing}
+        emptyMessage={emptyMessage}
       />
       <DataTable
         className="max-md:hidden"
@@ -347,7 +349,7 @@ export function PiecesTable({
         cellAlign="top"
         getRowId={getRowId}
         renderRowDivider={setList ? undefined : renderLetterDivider}
-        emptyMessage={setList ? "Inga steg i repertoaren ännu." : "Inga noter tillagda ännu."}
+        emptyMessage={emptyMessage}
       />
     </PiecesTableCellContext.Provider>
   );
