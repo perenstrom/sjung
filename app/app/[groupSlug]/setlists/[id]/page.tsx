@@ -59,8 +59,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
           <p className="text-sm text-muted-foreground">Datum: {formatDate(setList.date) ?? "–"}</p>
         </div>
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-medium">Ordning</h2>
+        <section aria-label="Ordning">
           <PiecesTable
             setList={{ id: setList.id, steps: setList.steps }}
             people={people}
