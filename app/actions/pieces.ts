@@ -230,7 +230,8 @@ export async function listPieceNotes(
 // createPieceNote/updatePieceNote/deletePieceNote intentionally skip revalidatePieceRoutes:
 // revalidating the current route here resets client-side note state (the pieces table's
 // notes dialog) on every mutation. Callers refresh their own list via listPieceNotes
-// instead. The piece detail page does select notes server-side (pieceDetailSelect), but
+// instead, and the pieces list's notes dialog calls router.refresh() once it closes.
+// The piece detail page does select notes server-side (pieceDetailSelect), but
 // it's dynamically rendered, so navigating to it still fetches fresh notes.
 export async function createPieceNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);

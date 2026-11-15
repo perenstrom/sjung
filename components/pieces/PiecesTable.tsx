@@ -16,6 +16,7 @@ import {
 import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
+import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
@@ -31,9 +32,14 @@ import type { Person } from "@/types/piece-credit-dialog";
 const FIRST_LINE_CLASS = "flex min-h-8 items-center";
 const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 
-// A Running-order note row's text spans the Namn, Medverkande and Filer och
-// länkar columns.
-const NOTE_COL_SPAN = 3;
+// A Running-order note row's text spans the Namn, Medverkande, Anteckningar
+// and Filer och länkar columns.
+const RUNNING_ORDER_NOTE_COL_SPAN = 4;
+
+// Piece notes wrap at a readable width instead of stretching the column. A note's
+// first ~19px line is nudged down to sit centred in the 32px first line.
+const PIECE_NOTES_WIDTH_CLASS = "min-w-56 max-w-xs";
+const PIECE_NOTES_OFFSET_CLASS = "pt-1.5";
 
 // Files and links share one column, capped like Namn so a few of them, or
 // one long file name, can't push Åtgärder off-screen. Names and labels
@@ -136,7 +142,7 @@ export function PiecesTable({
         accessorFn: (row) => (row.kind === "piece" ? row.piece.name : ""),
         sortingFn: caseInsensitiveSortingFn,
         meta: {
-          getColSpan: (row) => (row.kind === "note" ? NOTE_COL_SPAN : 1),
+          getColSpan: (row) => (row.kind === "note" ? RUNNING_ORDER_NOTE_COL_SPAN : 1),
         },
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Namn" />
@@ -182,6 +188,27 @@ export function PiecesTable({
         }),
       },
       {
+        id: "notes",
+        enableSorting: false,
+        header: () => "Anteckningar",
+        cell: pieceCell((piece) => {
+          return (
+            <div
+              className={cn(PIECE_NOTES_WIDTH_CLASS, PIECE_NOTES_OFFSET_CLASS, "space-y-1 whitespace-normal")}
+            >
+              <PieceNotesList notes={piece.notes} />
+              {isEditing ? (
+                <PieceNotesDialog
+                  groupSlug={groupSlug}
+                  piece={{ id: piece.id, name: piece.name }}
+                  hasNotes={piece.notes.length > 0}
+                />
+              ) : null}
+            </div>
+          );
+        }),
+      },
+      {
         id: "filesAndLinks",
         enableSorting: false,
         header: () => "Filer och länkar",
@@ -200,54 +227,52 @@ export function PiecesTable({
           );
         }),
       },
-      {
-        id: "actions",
-        enableSorting: false,
-        header: () => (
-          <span className="w-[1%] whitespace-nowrap">Åtgärder</span>
-        ),
-        cell: ({ row }) => {
-          const step = row.original;
-          const piece = step.kind === "piece" ? step.piece : null;
-          return (
-            <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
-              {setListId && isEditing ? (
-                <div className="flex items-center">
-                  <StepActions
-                    step={step}
-                    stepIndex={row.index}
-                    groupSlug={groupSlug}
-                    setListId={setListId}
-                  />
-                </div>
-              ) : null}
-              {piece && isEditing ? (
-                <EditPieceAction
-                  groupSlug={groupSlug}
-                  piece={{
-                    id: piece.id,
-                    name: piece.name,
-                    credits: piece.credits,
-                  }}
-                />
-              ) : null}
-              {piece ? (
-                <PieceNotesDialog
-                  readOnly={!isEditing}
-                  groupSlug={groupSlug}
-                  piece={{ id: piece.id, name: piece.name }}
-                />
-              ) : null}
-              {piece && !setListId && isEditing ? (
-                <DeletePieceDialog
-                  groupSlug={groupSlug}
-                  piece={{ id: piece.id, name: piece.name }}
-                />
-              ) : null}
-            </div>
-          );
-        },
-      },
+      // Read mode has no actions, so it has no Åtgärder column either.
+      ...(isEditing
+        ? [
+            {
+              id: "actions",
+              enableSorting: false,
+              header: () => (
+                <span className="w-[1%] whitespace-nowrap">Åtgärder</span>
+              ),
+              cell: ({ row }) => {
+                const step = row.original;
+                const piece = step.kind === "piece" ? step.piece : null;
+                return (
+                  <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
+                    {setListId ? (
+                      <div className="flex items-center">
+                        <StepActions
+                          step={step}
+                          stepIndex={row.index}
+                          groupSlug={groupSlug}
+                          setListId={setListId}
+                        />
+                      </div>
+                    ) : null}
+                    {piece ? (
+                      <EditPieceAction
+                        groupSlug={groupSlug}
+                        piece={{
+                          id: piece.id,
+                          name: piece.name,
+                          credits: piece.credits,
+                        }}
+                      />
+                    ) : null}
+                    {piece && !setListId ? (
+                      <DeletePieceDialog
+                        groupSlug={groupSlug}
+                        piece={{ id: piece.id, name: piece.name }}
+                      />
+                    ) : null}
+                  </div>
+                );
+              },
+            } satisfies ColumnDef<PiecesTableRow>,
+          ]
+        : []),
     ],
     [groupSlug, isEditing, setListId]
   );
