@@ -18,6 +18,11 @@ function readEnv(name: EmailEnvVar): string | undefined {
   return value ? value : undefined;
 }
 
+/** For emails that don't really go out: a missing setting shows as a placeholder. */
+function readEnvOrPlaceholder(name: EmailEnvVar): string {
+  return readEnv(name) ?? `(${name} saknas)`;
+}
+
 function getRequiredEnv(name: EmailEnvVar): string {
   const value = readEnv(name);
   if (!value) {
@@ -80,7 +85,7 @@ function emailDelivery(): EmailDelivery {
  */
 export function emailRecipientFromEnv(name: RecipientEnvVar): string {
   if (emailDelivery().kind !== "resend") {
-    return readEnv(name) ?? `(${name} saknas)`;
+    return readEnvOrPlaceholder(name);
   }
   return getRequiredEnv(name);
 }
@@ -109,7 +114,7 @@ async function writeToOutbox(dir: string, { to, subject, react, replyTo }: SendE
 
 async function printToConsole({ to, subject, react, replyTo }: SendEmailInput): Promise<void> {
   const text = await render(react, { plainText: true });
-  const from = readEnv("EMAIL_FROM") ?? "(EMAIL_FROM saknas)";
+  const from = readEnvOrPlaceholder("EMAIL_FROM");
   const rule = "─".repeat(60);
 
   console.info(
