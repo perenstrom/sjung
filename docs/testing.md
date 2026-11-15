@@ -44,7 +44,7 @@ Server actions and route handlers called directly against a real, disposable Pos
 
 ### End-to-end (`npm run test:e2e`)
 
-Playwright in Chromium against a production build and its own database, under `e2e/` (setup in `docs/testing-access-rights.md`). The only test so far is the auth smoke, and CI runs it on every PR and push to `main` (the `e2e` job). The rest of the rollout is tracked under PER-429 in Linear: reading sent email (PER-424), and the journeys and interactions in PER-425, PER-426 and PER-428.
+Playwright in Chromium against a production build and its own database, under `e2e/` (setup in `docs/testing-access-rights.md`). The tests so far are the auth smoke and the first step of password reset, and CI runs them on every PR and push to `main` (the `e2e` job). Tests read the emails the app sends with `latestEmailTo(address)` from `e2e/support/outbox.ts`; the running server writes them to a local outbox folder instead of sending them. The rest of the rollout is tracked under PER-429 in Linear: the journeys and interactions in PER-425, PER-426 and PER-428.
 
 E2E covers only what the lower layers cannot see because it happens in the browser: sign-in cookies and redirects, multi-page journeys that click through an email link, drag-and-drop and other client interactions, and the phone-width layout. Each e2e test is one user **journey** that ends on something a user sees. The many cases of a rule (every role, every content kind) stay in the integration tables; e2e checks one case to prove the parts are connected.
 
