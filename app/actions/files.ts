@@ -13,7 +13,7 @@ import {
   parseUpdatePieceFileDisplayNameFromFormData,
 } from "@/lib/schemas/files";
 import { revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
-import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
+import { runContentMutation } from "@/lib/tenant-group";
 
 export async function createPieceFileUploadUrl(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
@@ -64,19 +64,6 @@ export async function finalizePieceFileReplace(formData: FormData) {
 
     await revalidatePieceRoutes(groupSlug, file.piece.id);
   });
-}
-
-/** A read: any Member may download, so this doesn't go through `runContentMutation`. */
-export async function createPieceFileDownloadUrl(formData: FormData) {
-  const groupSlug = parseWritableGroupSlugFromFormData(formData);
-  const fileId = parseFileIdFromFormData(formData);
-
-  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
-  const file = await findInGroup(groupId, "file", fileId, {
-    select: { storagePath: true, fileName: true, mimeType: true },
-  });
-
-  return { downloadUrl: await fileStore.signDownload(file) };
 }
 
 export async function updatePieceFileDisplayName(formData: FormData) {

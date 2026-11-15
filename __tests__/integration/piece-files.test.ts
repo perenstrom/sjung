@@ -8,7 +8,6 @@ vi.mock("next/cache", () => ({
 import type { File, Group, Piece } from "@/app/generated/prisma/client";
 import { GroupClaim } from "@/app/generated/prisma/enums";
 import {
-  createPieceFileDownloadUrl,
   createPieceFileReplaceUploadUrl,
   createPieceFileUploadUrl,
   deletePieceFile,
@@ -16,9 +15,10 @@ import {
   finalizePieceFileUpload,
 } from "@/app/actions/files";
 import { deletePiece } from "@/app/actions/pieces";
+import { GET as downloadFile } from "@/app/app/[groupSlug]/files/[fileId]/route";
 import { testPrisma } from "../support/db";
 import { failDeletesOf, putStoredObject, storedKeys } from "../support/fake-object-storage";
-import { createFile, createGroup, createMember, createPiece } from "../support/fixtures";
+import { createFile, createGroup, createMember, createPiece, createUser } from "../support/fixtures";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 
@@ -246,17 +246,62 @@ describe("deleting a Piece", () => {
 });
 
 describe("downloading a File", () => {
+  /** Follows the File's download link as the browser would. */
+  function followDownloadLink(groupSlug: string, fileId: string) {
+    return downloadFile(new Request(`http://localhost/app/${groupSlug}/files/${fileId}`), {
+      params: Promise.resolve({ groupSlug, fileId }),
+    });
+  }
+
+  it("redirects to a short-lived signed URL, so a plain link opens it", async () => {
+    const file = await storedFile();
+
+    const response = await followDownloadLink(group.slug, file.id);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(new URL(response.headers.get("location")!).pathname).toContain(file.storagePath);
+  });
+
   it("names the download with the File's name, encoded for any character", async () => {
     const file = await testPrisma.file.update({
       where: { id: (await storedFile()).id },
       data: { fileName: `Så "ända".pdf` },
     });
 
-    const { downloadUrl } = await createPieceFileDownloadUrl(
-      formData({ groupSlug: group.slug, fileId: file.id })
+    const response = await followDownloadLink(group.slug, file.id);
+
+    const disposition = new URL(response.headers.get("location")!).searchParams.get("disposition");
+    expect(disposition).toContain(`filename*=UTF-8''S%C3%A5%20%22%C3%A4nda%22.pdf`);
+  });
+
+  it("lets any Member download, without the right to manage content", async () => {
+    const file = await storedFile();
+    actAs((await createMember(group)).id);
+
+    const response = await followDownloadLink(group.slug, file.id);
+
+    expect(response.status).toBe(302);
+  });
+
+  it("finds nothing for someone outside the Group", async () => {
+    const file = await storedFile();
+    actAs((await createUser()).id);
+
+    const response = await followDownloadLink(group.slug, file.id);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("finds nothing for another Group's File", async () => {
+    const otherGroup = await createGroup();
+    const otherFile = await storedFile(
+      await createPiece({ groupId: otherGroup.id, createdById: otherGroup.createdById })
     );
 
-    const disposition = new URL(downloadUrl).searchParams.get("disposition");
-    expect(disposition).toContain(`filename*=UTF-8''S%C3%A5%20%22%C3%A4nda%22.pdf`);
+    const response = await followDownloadLink(group.slug, otherFile.id);
+
+    expect(response.status).toBe(404);
   });
 });

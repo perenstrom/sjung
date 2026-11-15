@@ -38,7 +38,6 @@ const READS = new Set([
   "getSetLists",
   "getSetListDetail",
   "getSetListPieceOptions",
-  "createPieceFileDownloadUrl",
 ]);
 
 const ACTION_MODULES = { ...fileActions, ...peopleActions, ...pieceActions, ...setListActions };

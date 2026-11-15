@@ -3,15 +3,13 @@
 import { FileText, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import {
-  createPieceFileDownloadUrl,
-  deletePieceFile,
-} from "@/app/actions/files";
+import { deletePieceFile } from "@/app/actions/files";
 import { metadataForFile } from "@/components/pieces/fileMetadata";
 import { splitForMiddleTruncation } from "@/components/pieces/middleTruncation";
 import { ReplacePieceFilePopover } from "@/components/pieces/ReplacePieceFilePopover";
 import type { PieceFileListItem } from "@/components/pieces/types";
 import { TruncatedTooltip } from "@/components/TruncatedTooltip";
+import { fileDownloadHref } from "@/lib/pieces/href";
 import { Button } from "@/components/ui/button";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { cn } from "@/lib/utils";
@@ -34,7 +32,7 @@ export function PieceFilesList({
   files: PieceFileListItem[];
   /** Keep only downloading; hide rename, replace and delete. */
   readOnly?: boolean;
-  /** Download errors, and remove errors in the non-compact list. */
+  /** Remove errors in the non-compact list. */
   onAggregateError: (message: string) => void;
   onClearAggregateError: () => void;
   onMutationSuccess?: () => void;
@@ -46,28 +44,8 @@ export function PieceFilesList({
   /** Compact only: 40px lines whose name fills the line, for touch lists. */
   touch?: boolean;
 }) {
-  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(
-    null,
-  );
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [deleteErrors, setDeleteErrors] = useState<Record<string, string>>({});
-
-  async function handleDownload(fileId: string) {
-    setDownloadingFileId(fileId);
-    onClearAggregateError();
-
-    try {
-      const formData = new FormData();
-      formData.set("groupSlug", groupSlug);
-      formData.set("fileId", fileId);
-      const { downloadUrl } = await createPieceFileDownloadUrl(formData);
-      window.open(downloadUrl, "_blank", "noopener,noreferrer");
-    } catch (err) {
-      onAggregateError(getThrownMessage(err, "Kunde inte ladda ner fil"));
-    } finally {
-      setDownloadingFileId(null);
-    }
-  }
 
   async function handleDeleteFile(fileId: string) {
     setDeletingFileId(fileId);
@@ -146,25 +124,17 @@ export function PieceFilesList({
                   aria-hidden
                 />
                 <TruncatedTooltip content={file.displayName}>
-                  <button
-                    type="button"
-                    onClick={() => handleDownload(file.id)}
-                    disabled={
-                      downloadingFileId === file.id ||
-                      deletingFileId === file.id ||
-                      disabled
-                    }
+                  <FileDownloadLink
+                    groupSlug={groupSlug}
+                    fileId={file.id}
+                    dimmed={deletingFileId === file.id || disabled}
                     className={cn(
-                      "flex min-w-0 flex-1 overflow-hidden text-left text-primary underline-offset-4 hover:underline disabled:opacity-50",
+                      "flex min-w-0 flex-1 overflow-hidden",
                       touch && "leading-10"
                     )}
                   >
-                    {downloadingFileId === file.id ? (
-                      "Hämtar..."
-                    ) : (
-                      <MiddleTruncatedText text={file.displayName} />
-                    )}
-                  </button>
+                    <MiddleTruncatedText text={file.displayName} />
+                  </FileDownloadLink>
                 </TruncatedTooltip>
                 {readOnly ? null : (
                   <>
@@ -211,16 +181,14 @@ export function PieceFilesList({
               aria-hidden
             />
             <TruncatedTooltip content={file.displayName}>
-              <button
-                type="button"
-                onClick={() => handleDownload(file.id)}
-                disabled={
-                  downloadingFileId === file.id || deletingFileId === file.id
-                }
-                className="min-w-0 truncate text-left font-medium text-primary underline-offset-4 hover:underline disabled:opacity-50"
+              <FileDownloadLink
+                groupSlug={groupSlug}
+                fileId={file.id}
+                dimmed={deletingFileId === file.id}
+                className="block min-w-0 truncate font-medium"
               >
-                {downloadingFileId === file.id ? "Hämtar..." : file.displayName}
-              </button>
+                {file.displayName}
+              </FileDownloadLink>
             </TruncatedTooltip>
           </span>
           {/* Metadata and actions wrap onto the next line together. */}
@@ -252,6 +220,41 @@ export function PieceFilesList({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Opens a File in a new tab through its download route. A plain link, so the
+ * tap itself opens the tab: iOS Safari blocks one opened by script after an
+ * await (PER-415). While the File is being removed it dims and stops opening.
+ */
+function FileDownloadLink({
+  groupSlug,
+  fileId,
+  dimmed,
+  className,
+  children,
+}: {
+  groupSlug: string;
+  fileId: string;
+  dimmed: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <a
+      href={fileDownloadHref(groupSlug, fileId)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-disabled={dimmed || undefined}
+      className={cn(
+        "text-left text-primary underline-offset-4 hover:underline",
+        dimmed && "pointer-events-none opacity-50",
+        className
+      )}
+    >
+      {children}
+    </a>
   );
 }
 
