@@ -37,15 +37,15 @@ const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 // and Filer och länkar columns.
 const RUNNING_ORDER_NOTE_COL_SPAN = 4;
 
-// Piece notes wrap at a readable width instead of stretching the column. A note's
-// first ~19px line is nudged down to sit centred in the 32px first line.
-const PIECE_NOTES_WIDTH_CLASS = "min-w-56 max-w-xs";
-const PIECE_NOTES_OFFSET_CLASS = "pt-1.5";
+// The list columns are capped at the same max width as Namn, so a long entry
+// wraps (or, for file names and link labels, truncates) instead of stretching
+// its column and pushing Åtgärder off-screen. They share one width so they
+// stay in step with each other.
+const LIST_COLUMN_WIDTH_CLASS = "min-w-56 max-w-xs";
 
-// Files and links share one column, capped like Namn so a few of them, or
-// one long file name, can't push Åtgärder off-screen. Names and labels
-// truncate inside it.
-const FILES_AND_LINKS_WIDTH_CLASS = "min-w-56 max-w-xs";
+// A piece note's first ~19px line is nudged down to sit centred in the 32px
+// first line.
+const PIECE_NOTES_OFFSET_CLASS = "pt-1.5";
 
 // A long piece name wraps instead of widening the Namn column: it turns the
 // table cell's nowrap back off and caps the width. The link also needs
@@ -236,7 +236,7 @@ export function PiecesTable({
         cell: pieceCell((piece) => {
           return (
             <div
-              className={cn(PIECE_NOTES_WIDTH_CLASS, PIECE_NOTES_OFFSET_CLASS, "space-y-1 whitespace-normal")}
+              className={cn(LIST_COLUMN_WIDTH_CLASS, PIECE_NOTES_OFFSET_CLASS, "space-y-1 whitespace-normal")}
             >
               <PieceNotesList notes={piece.notes} />
               {isEditing ? (
@@ -256,7 +256,7 @@ export function PiecesTable({
         header: () => "Filer och länkar",
         cell: pieceCell((piece) => {
           return (
-            <div className={cn(FILES_AND_LINKS_WIDTH_CLASS, LIST_CELL_OFFSET_CLASS)}>
+            <div className={cn(LIST_COLUMN_WIDTH_CLASS, LIST_CELL_OFFSET_CLASS)}>
               <PieceInlineFilesAndLinksCell
                 readOnly={!isEditing}
                 groupSlug={groupSlug}
