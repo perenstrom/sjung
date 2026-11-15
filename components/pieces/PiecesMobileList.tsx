@@ -5,9 +5,9 @@ import Link from "next/link";
 import { type ReactNode, useState } from "react";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
-import { EditPieceDialog } from "@/components/EditPieceDialog";
 import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover";
-import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
+import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
+import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
@@ -161,13 +161,6 @@ export function PieceRowDetails({
       )}
       <div className="flex flex-wrap items-center gap-2">
         {stepActions}
-        {isEditing ? (
-          <EditPieceDialog
-            people={people}
-            groupSlug={groupSlug}
-            piece={{ id: piece.id, name: piece.name, credits: piece.credits }}
-          />
-        ) : null}
         {isEditing && !setListId ? (
           <DeletePieceDialog groupSlug={groupSlug} piece={{ id: piece.id, name: piece.name }} />
         ) : null}
@@ -240,6 +233,15 @@ function PieceEditSections({
   return (
     <div className="space-y-3">
       <section className="space-y-1">
+        <SectionHeading>Namn</SectionHeading>
+        <PieceNameEditor
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          name={piece.name}
+          renderName={(name) => <span className="min-w-0 text-sm break-words">{name}</span>}
+        />
+      </section>
+      <section className="space-y-1">
         <div className="flex items-center justify-between gap-2">
           <SectionHeading>Medverkande</SectionHeading>
           <AddPieceCreditPopover
@@ -248,7 +250,9 @@ function PieceEditSections({
             piece={{ id: piece.id, name: piece.name }}
           />
         </div>
-        {piece.credits.length > 0 ? <PieceCreditsList credits={piece.credits} /> : null}
+        {piece.credits.length > 0 ? (
+          <RemovableCreditsList groupSlug={groupSlug} pieceId={piece.id} credits={piece.credits} />
+        ) : null}
       </section>
       <section className="space-y-1">
         <SectionHeading>Filer</SectionHeading>
