@@ -83,16 +83,24 @@ export async function findInGroup<
   K extends ContentKind,
   S extends ContentSelect<K> = typeof ID_ONLY,
 >(groupId: string, kind: K, id: string, options?: { select?: S }): Promise<ContentRow<K, S>> {
-  const { find, notFound } = CONTENT[kind];
+  const row = await findInGroupOrNull(groupId, kind, id, options);
+  if (!row) {
+    throw new Error(CONTENT[kind].notFound);
+  }
+  return row;
+}
+
+/** {@link findInGroup} for callers that answer a miss themselves, such as a route's 404. */
+export async function findInGroupOrNull<
+  K extends ContentKind,
+  S extends ContentSelect<K> = typeof ID_ONLY,
+>(groupId: string, kind: K, id: string, options?: { select?: S }): Promise<ContentRow<K, S> | null> {
   const select = options?.select ?? ID_ONLY;
   // Each entry's `find` takes its own model's select; the union can't be called directly.
-  const row = await (find as (groupId: string, id: string, select: object) => Promise<unknown>)(
+  const row = await (CONTENT[kind].find as (groupId: string, id: string, select: object) => Promise<unknown>)(
     groupId,
     id,
     select
   );
-  if (!row) {
-    throw new Error(notFound);
-  }
-  return row as ContentRow<K, S>;
+  return (row as ContentRow<K, S> | null) ?? null;
 }
