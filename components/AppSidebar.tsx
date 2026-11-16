@@ -17,7 +17,9 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Boxes, CircleUser, ListMusic, LogOut, Music, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Boxes, CircleUser, ListMusic, LogOut, Music, Newspaper, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
+// PROTOTYPE (PER-430), throwaway: in-memory read state for the Nyheter item.
+import { prototypeHref, useRememberedVariant, useUnreadCount } from "@/app/app/nyheter-prototype/_prototype/store";
 import {
   Select,
   SelectContent,
@@ -86,6 +88,33 @@ function NavItem({ href, label, icon, isActive }: NavItemProps) {
           <span>{label}</span>
         </SidebarMenuButton>
       )}
+    </SidebarMenuItem>
+  );
+}
+
+// PROTOTYPE (PER-430), throwaway: Nyheter with an unread dot, no count. The dot
+// sits after the label, and moves to the icon's corner when the sidebar is
+// collapsed to icons.
+function PrototypeAnnouncementsNavItem({ isActive }: { isActive: boolean }) {
+  const sidebar = useSidebar();
+  const unread = useUnreadCount();
+  const variant = useRememberedVariant();
+  const label = unread > 0 ? "Nyheter (olästa)" : "Nyheter";
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild tooltip={label} isActive={isActive}>
+        <Link href={prototypeHref(variant)} onClick={() => closeMobileSidebar(sidebar)}>
+          <Newspaper />
+          <span>Nyheter</span>
+          {unread > 0 ? (
+            <>
+              <span className="bg-primary ml-auto size-2 shrink-0 rounded-full group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1" />
+              <span className="sr-only">, olästa finns</span>
+            </>
+          ) : null}
+        </Link>
+      </SidebarMenuButton>
     </SidebarMenuItem>
   );
 }
@@ -249,6 +278,7 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
           </div>
         ) : null}
         <SidebarMenu>
+          <PrototypeAnnouncementsNavItem isActive={pathname.startsWith("/app/nyheter-prototype")} />
           <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} />
           <NavItem
             href={PRIVACY_POLICY_PATH}
