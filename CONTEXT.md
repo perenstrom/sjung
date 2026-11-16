@@ -106,6 +106,14 @@ A freestanding entry in a Set list's ordered sequence that isn't tied to any Pie
 A free-text message a Verified user sends to the people running Sjung, about the app itself (bugs, ideas, confusion) — never addressed to a Group or its Members. Sending it promises no reply. Swedish UI: _Feedback_ (_Skicka feedback_ on the button).
 _Avoid_: Support, Ticket, Bug report — nothing tracks or guarantees an answer.
 
+**Operator**:
+One of the people running Sjung. A site-wide standing, unrelated to any Group: it is not a Claim, grants no Group access, and today only lets them publish, edit and delete Announcements. Granted outside the app, never by another User. See ADR-0008.
+_Avoid_: Admin, Site admin (the Creator is _Administratör_ in the UI), Staff, Superuser.
+
+**Announcement**:
+News about Sjung itself (new features, changes, planned downtime), published by an Operator to every Verified user, whichever Groups they are in. It is never addressed to a single Group, and Groups cannot publish them. Each User has read or not read each Announcement on its own: it becomes read when they open it, or when they mark all of them as read at once. Announcements published before a User's account was created count as already read. Swedish UI: _Nyheter_.
+_Avoid_: News item, Message, Notification. _Meddelande_ suggests messages between people.
+
 **Privacy policy**:
 The public statement of what personal data Sjung keeps, why, who it is shared with, and how a User gets it erased. Users are informed of it, never asked to accept it. Swedish UI: _Integritetspolicy_.
 _Avoid_: Privacy notice, GDPR page.
