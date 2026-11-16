@@ -109,7 +109,7 @@ function PrototypeAnnouncementsNavItem({ isActive }: { isActive: boolean }) {
           <span>Nyheter</span>
           {unread > 0 ? (
             <>
-              <span className="bg-primary ml-auto size-2 shrink-0 rounded-full group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1" />
+              <span className="ml-auto size-2 bg-blue-500 shrink-0 rounded-full group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1" />
               <span className="sr-only">, olästa finns</span>
             </>
           ) : null}

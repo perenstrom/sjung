@@ -57,7 +57,7 @@ function UnreadDot({ className }: { className?: string }) {
   return (
     <span
       aria-label="Oläst"
-      className={cn("inline-block size-2 shrink-0 rounded-full bg-primary", className)}
+      className={cn("inline-block size-2 shrink-0 rounded-full bg-blue-500", className)}
     />
   );
 }
@@ -165,8 +165,12 @@ function VariantB({ selected }: { selected: PrototypeAnnouncement | null }) {
   const unreadCount = useUnreadCount();
 
   return (
-    <div className="-mx-4 -my-4 md:-my-8 md:-mr-8 md:-ml-12 grid min-h-[calc(100svh-4rem)] md:grid-cols-[20rem_1fr]">
-      <aside className={cn("border-r md:block", selected ? "hidden" : "block")}>
+    // From md up the split fills the space under the header exactly (100svh minus
+    // the inset's 0.5rem margins and the 4rem header), and the list and the
+    // reading pane each scroll on their own. On phones only one pane shows, so
+    // the page scrolls as usual.
+    <div className="-mx-4 -my-4 grid md:-my-8 md:-mr-8 md:-ml-12 md:h-[calc(100svh-5rem)] md:grid-cols-[20rem_1fr] md:overflow-hidden">
+      <aside className={cn("min-h-0 flex-col border-r md:flex", selected ? "hidden" : "flex")}>
         <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
           <div>
             <h1 className="text-lg font-semibold">Nyheter</h1>
@@ -185,7 +189,7 @@ function VariantB({ selected }: { selected: PrototypeAnnouncement | null }) {
             <CheckCheck />
           </Button>
         </div>
-        <ul>
+        <ul className="min-h-0 flex-1 md:overflow-y-auto">
           {ANNOUNCEMENTS.map((a) => {
             const unread = !readIds.has(a.id);
             const active = selected?.id === a.id;
@@ -211,7 +215,7 @@ function VariantB({ selected }: { selected: PrototypeAnnouncement | null }) {
           })}
         </ul>
       </aside>
-      <section className={cn("min-w-0 px-4 py-6 md:px-10 md:py-8", selected ? "block" : "hidden md:block")}>
+      <section className={cn("min-h-0 min-w-0 px-4 py-6 md:overflow-y-auto md:px-10 md:py-8 md:pb-24", selected ? "block" : "hidden md:block")}>
         {selected ? (
           <article className="max-w-2xl space-y-6">
             <Link
