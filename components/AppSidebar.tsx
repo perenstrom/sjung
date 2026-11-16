@@ -39,6 +39,7 @@ import { UnreadDot } from "@/components/announcements/UnreadDot";
 import { brandMarkSrc } from "@/lib/app-environment";
 import { ACCOUNT_PATH } from "@/lib/account/routes";
 import { ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
+import { isReservedGroupSlug } from "@/lib/group-slug";
 import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 import { PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from "@/lib/legal/routes";
 
@@ -59,7 +60,7 @@ type GroupOption = {
 function tenantSlugFromPathname(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
   if (parts[0] !== "app" || parts.length < 2) return null;
-  if (parts[1] === "me") return null;
+  if (isReservedGroupSlug(parts[1])) return null;
   return parts[1];
 }
 

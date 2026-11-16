@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  isReservedGroupSlug,
-  RESERVED_GROUP_SLUG,
-  slugifyGroupName,
-} from "@/lib/group-slug";
+import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 
 describe("slugifyGroupName", () => {
   it("normalizes Swedish characters and punctuation", () => {
@@ -22,8 +18,15 @@ describe("slugifyGroupName", () => {
 });
 
 describe("isReservedGroupSlug", () => {
-  it("identifies reserved slugs", () => {
-    expect(isReservedGroupSlug(RESERVED_GROUP_SLUG)).toBe(true);
-    expect(isReservedGroupSlug("annan-grupp")).toBe(false);
+  it.each(["me", "news", "admin", "settings"])("reserves %s for the app", (slug) => {
+    expect(isReservedGroupSlug(slug)).toBe(true);
+  });
+
+  it("reserves the slug a Group name turns into", () => {
+    expect(isReservedGroupSlug(slugifyGroupName("  News! "))).toBe(true);
+  });
+
+  it.each(["annan-grupp", "news-2", "nyheter"])("leaves %s free for Groups", (slug) => {
+    expect(isReservedGroupSlug(slug)).toBe(false);
   });
 });
