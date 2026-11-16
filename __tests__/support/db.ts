@@ -36,6 +36,8 @@ const TABLES = [
   "user_tokens",
   "invitations",
   "invitation_tokens",
+  "announcements",
+  "announcement_reads",
 ];
 
 export async function resetDatabase() {

@@ -9,6 +9,7 @@ import { testPrisma } from "../support/db";
 import { failEmailsTo, sentEmails } from "../support/fake-email";
 import { failDeletesOf, putStoredObject, storedKeys } from "../support/fake-object-storage";
 import {
+  createAnnouncement,
   createFile,
   createGroup,
   createLink,
@@ -212,6 +213,23 @@ describe("deleteOwnAccount", () => {
         select: { invitedById: true },
       })
     ).toEqual({ invitedById: null });
+  });
+
+  it("takes the User's Announcement read state with them, and keeps Announcements they wrote without an author", async () => {
+    const user = await signedInUser();
+    const written = await createAnnouncement({ createdById: user.id });
+    const read = await createAnnouncement();
+    await testPrisma.announcementRead.create({ data: { userId: user.id, announcementId: read.id } });
+
+    await deleteWith(PASSWORD);
+
+    expect(await testPrisma.announcementRead.count()).toBe(0);
+    expect(
+      await testPrisma.announcement.findUnique({
+        where: { id: written.id },
+        select: { createdById: true, updatedById: true },
+      })
+    ).toEqual({ createdById: null, updatedById: null });
   });
 
   it("emails a receipt to the former address", async () => {

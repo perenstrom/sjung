@@ -5,6 +5,7 @@ const SESSION_USER_SELECT = {
   id: true,
   name: true,
   email: true,
+  createdAt: true,
   emailVerifiedAt: true,
   sessionVersion: true,
 } as const;

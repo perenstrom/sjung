@@ -17,7 +17,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Boxes, CircleUser, ListMusic, LogOut, Music, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Boxes, CircleUser, ListMusic, LogOut, Music, Newspaper, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -34,8 +34,10 @@ import {
   type GroupNavItem,
 } from "@/lib/sidebar-navigation";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { UnreadDot } from "@/components/announcements/UnreadDot";
 import { brandMarkSrc } from "@/lib/app-environment";
 import { ACCOUNT_PATH } from "@/lib/account/routes";
+import { ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
 import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 import { PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from "@/lib/legal/routes";
 
@@ -66,18 +68,23 @@ type NavItemProps = {
   label: string;
   icon: ReactNode;
   isActive: boolean;
+  /** Shown when the sidebar is collapsed to icons; defaults to `label`. */
+  tooltip?: string;
+  /** Shown after the label, e.g. an unread dot. */
+  children?: ReactNode;
 };
 
-function NavItem({ href, label, icon, isActive }: NavItemProps) {
+function NavItem({ href, label, icon, isActive, tooltip = label, children }: NavItemProps) {
   const sidebar = useSidebar();
 
   return (
     <SidebarMenuItem>
       {href ? (
-        <SidebarMenuButton asChild tooltip={label} isActive={isActive}>
+        <SidebarMenuButton asChild tooltip={tooltip} isActive={isActive}>
           <Link href={href} onClick={() => closeMobileSidebar(sidebar)}>
             {icon}
             <span>{label}</span>
+            {children}
           </Link>
         </SidebarMenuButton>
       ) : (
@@ -90,12 +97,37 @@ function NavItem({ href, label, icon, isActive }: NavItemProps) {
   );
 }
 
+/**
+ * Nyheter, with a blue dot while any Announcement is unread: after the label,
+ * or in the icon's corner when the sidebar is collapsed to icons. No count.
+ */
+function AnnouncementsNavItem({ hasUnread, isActive }: { hasUnread: boolean; isActive: boolean }) {
+  return (
+    <NavItem
+      href={ANNOUNCEMENTS_PATH}
+      label="Nyheter"
+      icon={<Newspaper />}
+      isActive={isActive}
+      tooltip={hasUnread ? "Nyheter (olästa finns)" : "Nyheter"}
+    >
+      {hasUnread ? (
+        <>
+          <UnreadDot className="ml-auto group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1" />
+          <span className="sr-only">, olästa finns</span>
+        </>
+      ) : null}
+    </NavItem>
+  );
+}
+
 type AppSidebarProps = {
   groups: GroupOption[];
   activeGroupSlug: string | null;
+  /** Whether the User has any unread Announcement. */
+  hasUnreadAnnouncements: boolean;
 };
 
-export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
+export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const sidebar = useSidebar();
@@ -249,6 +281,10 @@ export function AppSidebar({ groups, activeGroupSlug }: AppSidebarProps) {
           </div>
         ) : null}
         <SidebarMenu>
+          <AnnouncementsNavItem
+            hasUnread={hasUnreadAnnouncements}
+            isActive={pathname === ANNOUNCEMENTS_PATH || pathname.startsWith(`${ANNOUNCEMENTS_PATH}/`)}
+          />
           <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} />
           <NavItem
             href={PRIVACY_POLICY_PATH}

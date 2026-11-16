@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Separator } from "@/components/ui/separator";
 import { getGroups } from "@/app/actions/groups";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
+import { hasUnreadAnnouncements } from "@/lib/announcements/announcements";
 import { getSessionUser } from "@/lib/auth/require-user";
 import { SESSION_ENDED_PATH, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 import { redirect } from "next/navigation";
@@ -29,7 +30,7 @@ export default async function ProtectedLayout({
     redirect(VERIFY_EMAIL_PATH);
   }
 
-  const groups = await getGroups();
+  const [groups, unreadAnnouncements] = await Promise.all([getGroups(), hasUnreadAnnouncements(user)]);
   const activeGroupSlugFromCookie = await getActiveGroupSlugCookie();
   const activeGroupSlug = groups.some(
     (group) => group.slug === activeGroupSlugFromCookie
@@ -40,7 +41,11 @@ export default async function ProtectedLayout({
   return (
     <SidebarProvider>
       <AppBreadcrumbProvider>
-        <AppSidebar groups={groups} activeGroupSlug={activeGroupSlug} />
+        <AppSidebar
+          groups={groups}
+          activeGroupSlug={activeGroupSlug}
+          hasUnreadAnnouncements={unreadAnnouncements}
+        />
         <SidebarInset className="min-w-0">
           {/* Below md: a 56px bar (plus hairline) that scrolls away, with a flush,
               square, full-height trigger. */}
