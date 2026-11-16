@@ -30,6 +30,7 @@ import { logOut } from "@/app/actions/auth";
 import {
   closeMobileSidebar,
   groupNavItems,
+  isAtOrUnder,
   switchGroup,
   type GroupNavItem,
 } from "@/lib/sidebar-navigation";
@@ -225,10 +226,7 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: 
                 href={groupsHref}
                 label="Mina grupper"
                 icon={<Boxes />}
-                isActive={
-                  pathname === groupsHref ||
-                  pathname.startsWith(`${groupsHref}/`)
-                }
+                isActive={isAtOrUnder(pathname, groupsHref)}
               />
               <NavItem
                 href={ACCOUNT_PATH}
@@ -283,7 +281,7 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: 
         <SidebarMenu>
           <AnnouncementsNavItem
             hasUnread={hasUnreadAnnouncements}
-            isActive={pathname === ANNOUNCEMENTS_PATH || pathname.startsWith(`${ANNOUNCEMENTS_PATH}/`)}
+            isActive={isAtOrUnder(pathname, ANNOUNCEMENTS_PATH)}
           />
           <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} />
           <NavItem

@@ -38,6 +38,11 @@ export function groupNavItems({
   return items;
 }
 
+/** Whether `pathname` is the page at `path` or a page below it, so its sidebar item shows active. */
+export function isAtOrUnder(pathname: string, path: string): boolean {
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
 type MobileSidebar = {
   isMobile: boolean;
   setOpenMobile: (open: boolean) => void;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { closeMobileSidebar, groupNavItems, switchGroup } from "./sidebar-navigation";
+import { closeMobileSidebar, groupNavItems, isAtOrUnder, switchGroup } from "./sidebar-navigation";
 
 describe("closeMobileSidebar", () => {
   it("closes the sheet on mobile", () => {
@@ -87,5 +87,16 @@ describe("groupNavItems", () => {
       { key: "pieces", label: "Alla noter", href: null },
       { key: "people", label: "Upphovspersoner", href: null },
     ]);
+  });
+});
+
+describe("isAtOrUnder", () => {
+  it.each([
+    ["/app/news", true],
+    ["/app/news/abc", true],
+    ["/app/newsletter", false],
+    ["/app", false],
+  ])("%s is %s for /app/news", (pathname, expected) => {
+    expect(isAtOrUnder(pathname, "/app/news")).toBe(expected);
   });
 });
