@@ -147,7 +147,7 @@ export function PieceFilesList({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-7 shrink-0"
+                      className="size-7 shrink-0 text-destructive hover:text-destructive"
                       onClick={() => handleDeleteFile(file.id)}
                       disabled={deletingFileId === file.id || disabled}
                       aria-label={`Ta bort fil ${file.displayName}`}
@@ -207,7 +207,7 @@ export function PieceFilesList({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-7 shrink-0"
+                  className="size-7 shrink-0 text-destructive hover:text-destructive"
                   onClick={() => handleDeleteFile(file.id)}
                   disabled={deletingFileId === file.id}
                   aria-label={`Ta bort fil ${file.displayName}`}
