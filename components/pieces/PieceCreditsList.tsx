@@ -55,10 +55,10 @@ export function RemoveCreditedPersonButton({
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="ghost-destructive"
       size="icon"
       // The touch-sized target overhangs the name's line instead of pushing it down.
-      className="size-7 shrink-0 text-destructive hover:text-destructive pointer-coarse:-my-2"
+      className="size-7 shrink-0 pointer-coarse:-my-2"
       onClick={() => onRemove(person)}
       disabled={disabled}
       aria-label={`Ta bort ${person.name}`}

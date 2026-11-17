@@ -130,9 +130,9 @@ export function PieceLinksList({
                     />
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="ghost-destructive"
                       size="icon"
-                      className="size-7 shrink-0 text-destructive hover:text-destructive"
+                      className="size-7 shrink-0"
                       onClick={() => handleRemove(link.id)}
                       disabled={isRemoveDisabled(link)}
                       aria-label={`Ta bort länk ${label}`}
@@ -189,9 +189,9 @@ export function PieceLinksList({
                         />
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="ghost-destructive"
                           size="icon"
-                          className="size-7 shrink-0 text-destructive hover:text-destructive"
+                          className="size-7 shrink-0"
                           onClick={() => handleRemove(link.id)}
                           disabled={removingLinkId === link.id}
                           aria-label={`Ta bort länk ${label}`}
