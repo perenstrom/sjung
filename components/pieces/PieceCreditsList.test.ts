@@ -19,7 +19,7 @@ describe("PieceCreditsList", () => {
   it("lets a Person's Credit role badges wrap under the name at every width", () => {
     const html = renderCredits();
 
-    expect(html).toMatch(/<li class="[^"]*\bflex-wrap\b/);
+    expect(html).toMatch(/<li[^>]*><div class="[^"]*\bflex-wrap\b/);
     expect(html).not.toContain("flex-nowrap");
   });
 

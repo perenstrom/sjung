@@ -75,10 +75,15 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
   addLink: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, url: "https://example.org" }),
   updateLink: (g, c) => formData({ groupSlug: g.slug, linkId: c.link.id, url: "https://example.org" }),
   removeLink: (g, c) => formData({ groupSlug: g.slug, linkId: c.link.id }),
-  addCredit: (g, c) =>
-    formData({ groupSlug: g.slug, pieceId: c.piece.id, personId: c.person.id, role: "Arrangör" }),
-  removeCredit: (g, c) =>
-    formData({ groupSlug: g.slug, pieceId: c.piece.id, personId: c.person.id, role: "Kompositör" }),
+  addCredits: (g, c) =>
+    formData({
+      groupSlug: g.slug,
+      pieceId: c.piece.id,
+      personId: c.person.id,
+      roles: JSON.stringify(["Arrangör", "Dirigent"]),
+    }),
+  removePersonCredits: (g, c) =>
+    formData({ groupSlug: g.slug, pieceId: c.piece.id, personId: c.person.id }),
   createPieceNote: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, content: "Andas" }),
   updatePieceNote: (g, c) =>
     formData({ groupSlug: g.slug, pieceNoteId: c.pieceNote.id, content: "Andas" }),
@@ -195,9 +200,9 @@ describe("content actions require manageContent", () => {
       expect(await testPrisma.link.count({ where: { pieceId: content.piece.id } })).toBe(2);
     });
 
-    it("adds a Credit", async () => {
-      await pieceActions.addCredit(CONTENT_ACTIONS.addCredit(group, content));
-      expect(await testPrisma.personToPiece.count({ where: { pieceId: content.piece.id } })).toBe(2);
+    it("adds Credits", async () => {
+      await pieceActions.addCredits(CONTENT_ACTIONS.addCredits(group, content));
+      expect(await testPrisma.personToPiece.count({ where: { pieceId: content.piece.id } })).toBe(3);
     });
 
     it("adds a Piece note", async () => {

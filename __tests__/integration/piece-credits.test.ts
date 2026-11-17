@@ -8,10 +8,10 @@ vi.mock("next/cache", () => ({
 import { auth } from "@/auth";
 import type { Group, Person } from "@/app/generated/prisma/client";
 import {
-  addCredit,
+  addCredits,
   createPiece as createPieceAction,
   getCreditRoles,
-  removeCredit,
+  removePersonCredits,
 } from "@/app/actions/pieces";
 import { DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
 import { testPrisma } from "../support/db";
@@ -19,6 +19,9 @@ import { createCredit, createGroup, createPerson, createPiece } from "../support
 import { formData } from "../support/form-data";
 
 const mockAuth = vi.mocked(auth);
+
+const addCreditsInput = (group: Group, pieceId: string, personId: string, roles: string[]) =>
+  formData({ groupSlug: group.slug, pieceId, personId, roles: JSON.stringify(roles) });
 
 describe("Credits only name People in the Piece's Group", () => {
   let group: Group;
@@ -32,28 +35,19 @@ describe("Credits only name People in the Piece's Group", () => {
     otherGroupsPerson = await createPerson(await createGroup(), "Wilhelm Stenhammar");
   });
 
-  it("addCredit credits a Person in the Group", async () => {
+  it("addCredits credits a Person in the Group", async () => {
     const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
 
-    await addCredit(
-      formData({ groupSlug: group.slug, pieceId: piece.id, personId: ownPerson.id, role: "Kompositör" })
-    );
+    await addCredits(addCreditsInput(group, piece.id, ownPerson.id, ["Kompositör"]));
 
     expect(await testPrisma.personToPiece.count({ where: { pieceId: piece.id } })).toBe(1);
   });
 
-  it("addCredit refuses a Person from another Group and writes nothing", async () => {
+  it("addCredits refuses a Person from another Group and writes nothing", async () => {
     const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
 
     await expect(
-      addCredit(
-        formData({
-          groupSlug: group.slug,
-          pieceId: piece.id,
-          personId: otherGroupsPerson.id,
-          role: "Kompositör",
-        })
-      )
+      addCredits(addCreditsInput(group, piece.id, otherGroupsPerson.id, ["Kompositör"]))
     ).rejects.toThrow("Upphovsperson hittades inte");
 
     expect(await testPrisma.personToPiece.count({ where: { pieceId: piece.id } })).toBe(0);
@@ -107,10 +101,10 @@ describe("Credit roles are free text, stored in the spelling the Group already u
     ["a built-in role in another case and spacing", "  kompositör ", "Kompositör"],
     ["a role the Group uses, in another case", "dirigent", "Dirigent"],
     ["a role only another Group uses", "ljudtekniker", "ljudtekniker"],
-  ])("addCredit stores %s as %j", async (_case, typed, stored) => {
+  ])("addCredits stores %s as %j", async (_case, typed, stored) => {
     const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
 
-    await addCredit(formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id, role: typed }));
+    await addCredits(addCreditsInput(group, piece.id, person.id, [typed]));
 
     expect(await storedRoles(piece.id)).toEqual([stored]);
   });
@@ -148,17 +142,6 @@ describe("Credit roles are free text, stored in the spelling the Group already u
     expect(await testPrisma.piece.count({ where: { name: "Midsommarvaka" } })).toBe(0);
   });
 
-  it("removeCredit removes a Credit with a custom role", async () => {
-    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
-    await createCredit(piece, person, "Körledare");
-
-    await removeCredit(
-      formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id, role: "Körledare" })
-    );
-
-    expect(await storedRoles(piece.id)).toEqual([]);
-  });
-
   it("getCreditRoles suggests the built-in roles, then the Group's own, never another Group's", async () => {
     expect(await getCreditRoles(group.slug)).toEqual([
       "Arrangör",
@@ -166,5 +149,71 @@ describe("Credit roles are free text, stored in the spelling the Group already u
       "Textförfattare",
       "Dirigent",
     ]);
+  });
+});
+
+describe("A Person gets several Credit roles on a Piece at once, and loses them together", () => {
+  let group: Group;
+  let person: Person;
+
+  beforeEach(async () => {
+    group = await createGroup();
+    mockAuth.mockResolvedValue({ user: { id: group.createdById } } as never);
+    person = await createPerson(group, "Hugo Alfvén");
+  });
+
+  const rolesOf = async (pieceId: string, personId: string) =>
+    (
+      await testPrisma.personToPiece.findMany({ where: { pieceId, personId }, select: { role: true } })
+    )
+      .map((credit) => credit.role)
+      .sort();
+
+  it("addCredits saves one Credit per role", async () => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+
+    await addCredits(addCreditsInput(group, piece.id, person.id, ["Kompositör", "Arrangör", "Körledare"]));
+
+    expect(await rolesOf(piece.id, person.id)).toEqual(["Arrangör", "Kompositör", "Körledare"]);
+  });
+
+  it.each([
+    ["one of the roles is already held", ["Arrangör", "Kompositör"]],
+    ["two roles are the same once matched", ["Arrangör", " arrangör"]],
+  ])("addCredits saves none of the roles when %s", async (_case, roles) => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    await createCredit(piece, person, "Kompositör");
+
+    await expect(addCredits(addCreditsInput(group, piece.id, person.id, roles))).rejects.toThrow(
+      DUPLICATE_CREDITS_ERROR
+    );
+
+    expect(await rolesOf(piece.id, person.id)).toEqual(["Kompositör"]);
+  });
+
+  it("removePersonCredits removes every Credit the Person has on the Piece, and no one else's", async () => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    const otherPiece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    const otherPerson = await createPerson(group, "Wilhelm Stenhammar");
+    await createCredit(piece, person, "Kompositör");
+    await createCredit(piece, person, "Körledare");
+    await createCredit(piece, otherPerson, "Arrangör");
+    await createCredit(otherPiece, person, "Kompositör");
+
+    await removePersonCredits(
+      formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id })
+    );
+
+    expect(await rolesOf(piece.id, person.id)).toEqual([]);
+    expect(await rolesOf(piece.id, otherPerson.id)).toEqual(["Arrangör"]);
+    expect(await rolesOf(otherPiece.id, person.id)).toEqual(["Kompositör"]);
+  });
+
+  it("removePersonCredits refuses a Person without Credits on the Piece", async () => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+
+    await expect(
+      removePersonCredits(formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id }))
+    ).rejects.toThrow("Medverkande hittades inte");
   });
 });

@@ -47,28 +47,60 @@ export function creditRolesHeldBy(credits: PieceCredit[], personId: string): Set
   );
 }
 
-/** The Person and Credit role picked in an add-credit row; either may still be empty. */
-export type CreditDraft = PieceCredit;
+/** The Person and Credit roles picked in an add-credit row; either may still be empty. */
+export type CreditDraft = {
+  personId: string;
+  roles: string[];
+};
 
-export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", role: "" };
+export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", roles: [] };
 
-export const MISSING_CREDIT_ROLE_ERROR = "Välj en roll eller rensa medverkande.";
+export const MISSING_CREDIT_ROLE_ERROR = "Välj minst en roll eller rensa medverkande.";
 export const MISSING_CREDIT_PERSON_ERROR = "Välj en upphovsperson eller rensa medverkande.";
-export const MISSING_CREDIT_FIELDS_ERROR = "Välj upphovsperson och roll.";
+export const MISSING_CREDIT_FIELDS_ERROR = "Välj upphovsperson och minst en roll.";
+
+/** What is missing before a draft can be added, or null when it is complete. */
+export function creditDraftError(draft: CreditDraft): string | null {
+  const hasRoles = draft.roles.length > 0;
+  if (draft.personId && hasRoles) return null;
+  if (draft.personId) return MISSING_CREDIT_ROLE_ERROR;
+  if (hasRoles) return MISSING_CREDIT_PERSON_ERROR;
+  return MISSING_CREDIT_FIELDS_ERROR;
+}
+
+/** One Credit per picked role. */
+export function creditsFromDraft(draft: CreditDraft): PieceCredit[] {
+  return draft.roles.map((role) => ({ personId: draft.personId, role }));
+}
+
+/** The draft with another Person picked, dropping picked roles that Person already holds. */
+export function withCreditDraftPerson(
+  draft: CreditDraft,
+  credits: PieceCredit[],
+  personId: string
+): CreditDraft {
+  const held = creditRolesHeldBy(credits, personId);
+  return { personId, roles: draft.roles.filter((role) => !held.has(role)) };
+}
+
+/** Picks a role that isn't picked, and unpicks one that is. */
+export function toggleCreditRole(roles: string[], role: string): string[] {
+  return roles.includes(role) ? roles.filter((picked) => picked !== role) : [...roles, role];
+}
 
 /**
- * The Credits to save with a new Piece: the staged ones, plus the add row's
- * draft when both a Person and a Credit role are picked. A half-picked draft
- * is an error rather than being silently dropped.
+ * The Credits to save with a new Piece: the staged ones, plus one per role
+ * of the add row's draft when both a Person and roles are picked. A
+ * half-picked draft is an error rather than being silently dropped.
  */
 export function resolveCreditsToSubmit(
   staged: PieceCredit[],
   draft: CreditDraft
 ): { credits: PieceCredit[] } | { error: string } {
-  if (draft.personId && draft.role) return { credits: [...staged, draft] };
-  if (draft.personId) return { error: MISSING_CREDIT_ROLE_ERROR };
-  if (draft.role) return { error: MISSING_CREDIT_PERSON_ERROR };
-  return { credits: staged };
+  if (!draft.personId && draft.roles.length === 0) return { credits: staged };
+  const error = creditDraftError(draft);
+  if (error) return { error };
+  return { credits: [...staged, ...creditsFromDraft(draft)] };
 }
 
 export type CreditForDisplay = {

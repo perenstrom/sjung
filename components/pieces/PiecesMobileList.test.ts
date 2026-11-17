@@ -207,14 +207,16 @@ describe("PieceRowDetails, an open piece row", () => {
       expect(html).toContain('aria-label="Byt namn på Vem kan segla"');
     });
 
-    it("lets each Credit role be removed on its own", () => {
+    it("removes a Person's Credits with one button per Person, not per role", () => {
       const html = renderDetails(true, {
         credits: [
           { personId: "person-1", role: "Kompositör", person: { name: "Anna Andersson" } },
+          { personId: "person-1", role: "Arrangör", person: { name: "Anna Andersson" } },
         ],
       } as unknown as Partial<PieceWithRelations>);
 
-      expect(html).toContain('aria-label="Ta bort Anna Andersson som Kompositör"');
+      expect(html.match(/aria-label="Ta bort Anna Andersson"/g)).toHaveLength(1);
+      expect(html).not.toContain("Ta bort Anna Andersson som");
     });
   });
 

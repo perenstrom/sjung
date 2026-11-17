@@ -5,12 +5,12 @@ import { createPiece } from "@/app/actions/pieces";
 import { PieceCreditDraftRow } from "@/components/pieces/PieceCreditDraftRow";
 import {
   PieceCreditsList,
-  RemoveCreditRoleButton,
+  RemoveCreditedPersonButton,
 } from "@/components/pieces/PieceCreditsList";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import {
+  type CreditedPerson,
   type CreditForDisplay,
-  creditKey,
   EMPTY_CREDIT_DRAFT,
   resolveCreditsToSubmit,
 } from "@/lib/pieces/credits";
@@ -43,8 +43,8 @@ export function CreatePieceDialog({
   const [draft, setDraft] = useState(EMPTY_CREDIT_DRAFT);
   const formRef = useRef<HTMLFormElement>(null);
 
-  function removeCredit(credit: CreditForDisplay) {
-    setCredits((prev) => prev.filter((c) => creditKey(c) !== creditKey(credit)));
+  function removePerson(person: CreditedPerson) {
+    setCredits((prev) => prev.filter((credit) => credit.personId !== person.personId));
   }
 
   // Checked before the form action runs, so a half-picked credit doesn't
@@ -119,8 +119,8 @@ export function CreatePieceDialog({
               <PieceCreditsList
                 credits={credits}
                 className="space-y-2"
-                renderRoleAction={(credit) => (
-                  <RemoveCreditRoleButton credit={credit} onRemove={removeCredit} />
+                renderPersonAction={(person) => (
+                  <RemoveCreditedPersonButton person={person} onRemove={removePerson} />
                 )}
               />
             )}
@@ -136,7 +136,7 @@ export function CreatePieceDialog({
                   setDraft(nextDraft);
                   setDraftError(null);
                 }}
-                onAdd={(credit) => setCredits((prev) => [...prev, credit])}
+                onAdd={(added) => setCredits((prev) => [...prev, ...added])}
               />
             </div>
           </div>

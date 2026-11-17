@@ -21,6 +21,8 @@ export type SearchComboboxProps = {
   /** The picked value's text on the trigger; `placeholder` shows when empty. */
   selectedLabel: string | undefined;
   placeholder: string;
+  /** Shown before the text on the trigger, in place of the trailing chevron. */
+  icon?: ReactNode;
   /** The search, mounted when the picker opens; it closes the picker with `useCloseSearchCombobox`. */
   children: ReactNode;
   className?: string;
@@ -50,6 +52,7 @@ export function SearchCombobox(props: SearchComboboxProps) {
 function PopoverSearchCombobox({
   selectedLabel,
   placeholder,
+  icon,
   children,
   className,
   ref,
@@ -68,6 +71,7 @@ function PopoverSearchCombobox({
           className={className}
           selectedLabel={selectedLabel}
           placeholder={placeholder}
+          icon={icon}
         />
       </PopoverTrigger>
       <PopoverContent
@@ -88,6 +92,7 @@ function PopoverSearchCombobox({
 function InlineSearchCombobox({
   selectedLabel,
   placeholder,
+  icon,
   children,
   className,
   ref,
@@ -139,6 +144,7 @@ function InlineSearchCombobox({
         className={className}
         selectedLabel={selectedLabel}
         placeholder={placeholder}
+        icon={icon}
         onClick={() => setOpen(!open)}
       />
       {open ? (
@@ -166,24 +172,27 @@ function InlineSearchCombobox({
 function SearchComboboxTrigger({
   selectedLabel,
   placeholder,
+  icon,
   className,
   ...props
 }: React.ComponentProps<typeof Button> & {
   selectedLabel: string | undefined;
   placeholder: string;
+  icon?: ReactNode;
 }) {
   return (
     <Button
       type="button"
       variant="outline"
       role="combobox"
-      className={cn("justify-between font-normal", className)}
+      className={cn(icon ? "justify-start" : "justify-between", "font-normal", className)}
       {...props}
     >
+      {icon}
       <span className={cn("truncate", !selectedLabel && "text-muted-foreground")}>
         {selectedLabel || placeholder}
       </span>
-      <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden="true" />
+      {icon ? null : <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden="true" />}
     </Button>
   );
 }

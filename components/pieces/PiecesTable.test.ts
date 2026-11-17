@@ -276,11 +276,11 @@ describe.each([
       expect(render()).toMatch(/>Vem kan segla<\/a>.*?aria-label="Byt namn på Vem kan segla"/);
     });
 
-    it("lets each Credit role be removed on its own", () => {
+    it("removes a Person's Credits with one button per Person, not per role", () => {
       const html = render();
 
-      expect(html).toContain('aria-label="Ta bort Anna Andersson som Kompositör"');
-      expect(html).toContain('aria-label="Ta bort Anna Andersson som Textförfattare"');
+      expect(html.match(/aria-label="Ta bort Anna Andersson"/g)).toHaveLength(1);
+      expect(html).not.toContain("Ta bort Anna Andersson som");
     });
   });
 

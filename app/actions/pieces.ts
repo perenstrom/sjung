@@ -7,7 +7,7 @@ import { rankCreditRoles, resolveCreditRole } from "@/lib/pieces/credit-roles";
 import { assertNoDuplicateCredits, DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
 import {
   parseCreditPersonIdFromFormData,
-  parseCreditRoleFromFormData,
+  parseCreditRolesFromFormData,
   parseLinkIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
@@ -171,23 +171,26 @@ export async function updateLink(formData: FormData) {
   });
 }
 
-export async function addCredit(formData: FormData) {
+/** Credits one Person on a saved Piece with every given role, all or none. */
+export async function addCredits(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const personId = parseCreditPersonIdFromFormData(formData);
-  const typedRole = parseCreditRoleFromFormData(formData);
+  const typedRoles = parseCreditRolesFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
     const person = await findInGroup(groupId, "person", personId);
-    const role = resolveCreditRole(typedRole, await getCreditRolesUsedInGroup(groupId));
+    const groupRoles = await getCreditRolesUsedInGroup(groupId);
+    const credits = typedRoles.map((typed) => ({
+      personId: person.id,
+      role: resolveCreditRole(typed, groupRoles),
+    }));
+    assertNoDuplicateCredits(credits);
     try {
-      await prisma.personToPiece.create({
-        data: {
-          pieceId: piece.id,
-          personId: person.id,
-          role,
-        },
+      // One INSERT, so a role the Person already holds saves none of them.
+      await prisma.personToPiece.createMany({
+        data: credits.map((credit) => ({ pieceId: piece.id, ...credit })),
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
@@ -200,20 +203,16 @@ export async function addCredit(formData: FormData) {
   });
 }
 
-export async function removeCredit(formData: FormData) {
+/** Removes every Credit a Person has on a saved Piece. */
+export async function removePersonCredits(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const personId = parseCreditPersonIdFromFormData(formData);
-  const role = parseCreditRoleFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
     const { count } = await prisma.personToPiece.deleteMany({
-      where: {
-        pieceId: piece.id,
-        personId,
-        role,
-      },
+      where: { pieceId: piece.id, personId },
     });
 
     if (count === 0) {
