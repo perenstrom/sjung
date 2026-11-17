@@ -46,14 +46,15 @@ export function creditRolesHeldBy(credits: PieceCredit[], personId: string): Set
   );
 }
 
-/** The Person and Credit role picked in an add-credit row; either may still be empty. */
-export type CreditDraft = PieceCredit;
+/** The Person and Credit roles picked in an add-credit row; either may still be empty. */
+// PROTOTYPE (PER-431): roles is a list so one Person can get several at once.
+export type CreditDraft = { personId: string; roles: string[] };
 
-export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", role: "" };
+export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", roles: [] };
 
-export const MISSING_CREDIT_ROLE_ERROR = "Välj en roll eller rensa medverkande.";
+export const MISSING_CREDIT_ROLE_ERROR = "Välj minst en roll eller rensa medverkande.";
 export const MISSING_CREDIT_PERSON_ERROR = "Välj en upphovsperson eller rensa medverkande.";
-export const MISSING_CREDIT_FIELDS_ERROR = "Välj upphovsperson och roll.";
+export const MISSING_CREDIT_FIELDS_ERROR = "Välj upphovsperson och minst en roll.";
 
 /**
  * The Credits to save with a new Piece: the staged ones, plus the add row's
@@ -64,9 +65,12 @@ export function resolveCreditsToSubmit(
   staged: PieceCredit[],
   draft: CreditDraft
 ): { credits: PieceCredit[] } | { error: string } {
-  if (draft.personId && draft.role) return { credits: [...staged, draft] };
+  if (draft.personId && draft.roles.length > 0)
+    return {
+      credits: [...staged, ...draft.roles.map((role) => ({ personId: draft.personId, role }))],
+    };
   if (draft.personId) return { error: MISSING_CREDIT_ROLE_ERROR };
-  if (draft.role) return { error: MISSING_CREDIT_PERSON_ERROR };
+  if (draft.roles.length > 0) return { error: MISSING_CREDIT_PERSON_ERROR };
   return { credits: staged };
 }
 

@@ -14,11 +14,14 @@ export function PieceCreditsList({
   credits,
   className,
   renderRoleAction,
+  renderPersonAction,
 }: {
   credits: CreditForDisplay[];
   className?: string;
   /** Trailing control inside a role badge, e.g. a remove button. */
   renderRoleAction?: (credit: CreditForDisplay) => ReactNode;
+  /** PROTOTYPE (PER-431): trailing control for the whole Person row. */
+  renderPersonAction?: (personId: string, name: string) => ReactNode;
 }) {
   return (
     <ul className={cn("text-sm", className)}>
@@ -41,6 +44,11 @@ export function PieceCreditsList({
               })}
             </span>
           ))}
+          {renderPersonAction ? (
+            <span className="ml-auto">
+              {renderPersonAction(person.personId, person.name)}
+            </span>
+          ) : null}
         </li>
       ))}
     </ul>

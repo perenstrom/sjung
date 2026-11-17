@@ -1,3 +1,4 @@
+import { CREDIT_ROLE_VARIANTS, PrototypeSwitcher } from "@/components/prototype/PrototypeSwitcher";
 import { getPeople } from "@/app/actions/people";
 import { getPieceDetail } from "@/app/actions/pieces";
 import { getSetLists } from "@/app/actions/setlists";
@@ -102,6 +103,8 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
           entries={piece.setListEntries}
           allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
         />
+        {/* PROTOTYPE (PER-431) */}
+        <PrototypeSwitcher variants={CREDIT_ROLE_VARIANTS} />
       </div>
     </EditModeProvider>
   );

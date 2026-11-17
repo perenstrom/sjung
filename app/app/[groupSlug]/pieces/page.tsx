@@ -1,3 +1,4 @@
+import { CREDIT_ROLE_VARIANTS, PrototypeSwitcher } from "@/components/prototype/PrototypeSwitcher";
 import { getPieces } from "@/app/actions/pieces";
 import { getPeople } from "@/app/actions/people";
 import { CreatePieceDialog } from "@/components/CreatePieceDialog";
@@ -39,6 +40,8 @@ export default async function GroupPiecesPage({ params }: PageProps) {
         />
 
         <SearchablePiecesTable pieces={pieces} people={people} groupSlug={groupSlug} />
+        {/* PROTOTYPE (PER-431) */}
+        <PrototypeSwitcher variants={CREDIT_ROLE_VARIANTS} />
       </div>
     </EditModeProvider>
   );

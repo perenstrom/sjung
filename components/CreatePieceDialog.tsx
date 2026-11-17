@@ -1,5 +1,7 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 import { createPiece } from "@/app/actions/pieces";
 import { PieceCreditDraftRow } from "@/components/pieces/PieceCreditDraftRow";
@@ -40,6 +42,7 @@ export function CreatePieceDialog({
   const [credits, setCredits] = useState<CreditForDisplay[]>([]);
   const [draft, setDraft] = useState(EMPTY_CREDIT_DRAFT);
   const formRef = useRef<HTMLFormElement>(null);
+  const variant = useSearchParams().get("variant") ?? "A";
 
   function removeCredit(credit: CreditForDisplay) {
     setCredits((prev) => prev.filter((c) => creditKey(c) !== creditKey(credit)));
@@ -117,9 +120,32 @@ export function CreatePieceDialog({
               <PieceCreditsList
                 credits={credits}
                 className="space-y-2"
-                renderRoleAction={(credit) => (
-                  <RemoveCreditRoleButton credit={credit} onRemove={removeCredit} />
-                )}
+                // PROTOTYPE (PER-431): in C, one remove per Person row.
+                renderRoleAction={
+                  variant === "C"
+                    ? undefined
+                    : (credit) => (
+                        <RemoveCreditRoleButton credit={credit} onRemove={removeCredit} />
+                      )
+                }
+                renderPersonAction={
+                  variant === "C"
+                    ? (personId, name) => (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 text-destructive hover:text-destructive"
+                          onClick={() =>
+                            setCredits((prev) => prev.filter((c) => c.personId !== personId))
+                          }
+                          aria-label={`Ta bort ${name}`}
+                        >
+                          <Trash2 className="size-3.5" aria-hidden="true" />
+                        </Button>
+                      )
+                    : undefined
+                }
               />
             )}
 
@@ -133,7 +159,7 @@ export function CreatePieceDialog({
                   setDraft(nextDraft);
                   setDraftError(null);
                 }}
-                onAdd={(credit) => setCredits((prev) => [...prev, credit])}
+                onAdd={(added) => setCredits((prev) => [...prev, ...added])}
               />
             </div>
           </div>

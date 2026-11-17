@@ -1,7 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
 
 import { removeCredit } from "@/app/actions/pieces";
 import {
@@ -28,6 +31,7 @@ export function RemovableCreditsList({
   className?: string;
 }) {
   const router = useRouter();
+  const variant = useSearchParams().get("variant") ?? "A";
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,18 +53,61 @@ export function RemovableCreditsList({
     }
   }
 
+  // PROTOTYPE: one call per role, not one transaction.
+  async function handleRemovePerson(personId: string) {
+    setRemovingKey(personId);
+    try {
+      for (const credit of credits.filter((c) => c.personId === personId)) {
+        const formData = new FormData();
+        formData.set("groupSlug", groupSlug);
+        formData.set("pieceId", pieceId);
+        formData.set("personId", credit.personId);
+        formData.set("role", credit.role);
+        await removeCredit(formData);
+      }
+      setError(null);
+      router.refresh();
+    } catch (err) {
+      setError(getThrownMessage(err, "Kunde inte ta bort medverkande"));
+    } finally {
+      setRemovingKey(null);
+    }
+  }
+
   return (
     <>
       <PieceCreditsList
         credits={credits}
         className={className}
-        renderRoleAction={(credit) => (
-          <RemoveCreditRoleButton
-            credit={credit}
-            onRemove={handleRemove}
-            disabled={removingKey === creditKey(credit)}
-          />
-        )}
+        renderRoleAction={
+          variant === "C"
+            ? undefined
+            : (credit) => (
+                <RemoveCreditRoleButton
+                  credit={credit}
+                  onRemove={handleRemove}
+                  disabled={removingKey === creditKey(credit)}
+                />
+              )
+        }
+        // PROTOTYPE (PER-431): in C, one remove per Person row.
+        renderPersonAction={
+          variant === "C"
+            ? (personId, name) => (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-destructive hover:text-destructive"
+                  onClick={() => handleRemovePerson(personId)}
+                  disabled={removingKey === personId}
+                  aria-label={`Ta bort ${name}`}
+                >
+                  <Trash2 className="size-3.5" aria-hidden="true" />
+                </Button>
+              )
+            : undefined
+        }
       />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </>

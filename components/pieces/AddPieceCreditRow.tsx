@@ -24,13 +24,16 @@ export function AddPieceCreditRow({
   const router = useRouter();
   const [draft, setDraft] = useState(EMPTY_CREDIT_DRAFT);
 
-  async function handleAdd(credit: CreditForDisplay) {
-    const formData = new FormData();
-    formData.set("groupSlug", groupSlug);
-    formData.set("pieceId", pieceId);
-    formData.set("personId", credit.personId);
-    formData.set("role", credit.role);
-    await addCredit(formData);
+  // PROTOTYPE (PER-431): one call per role, not one transaction.
+  async function handleAdd(added: CreditForDisplay[]) {
+    for (const credit of added) {
+      const formData = new FormData();
+      formData.set("groupSlug", groupSlug);
+      formData.set("pieceId", pieceId);
+      formData.set("personId", credit.personId);
+      formData.set("role", credit.role);
+      await addCredit(formData);
+    }
     router.refresh();
   }
 
