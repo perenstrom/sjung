@@ -4,7 +4,8 @@ import { CreatePieceDialog } from "@/components/CreatePieceDialog";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
-import { PageHeader } from "@/components/PageHeader";
+import { Suspense } from "react";
+import { PieceImportPrototype } from "@/components/pieces/import-prototype/PieceImportPrototype";
 import { SearchablePiecesTable } from "@/components/pieces/SearchablePiecesTable";
 import { getGroups } from "@/app/actions/groups";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
@@ -34,19 +35,24 @@ export default async function GroupPiecesPage({ params }: PageProps) {
             tail: { kind: "static", label: "Alla noter" },
           }}
         />
-        <PageHeader
-          title="Alla noter"
-          editActions={
-            <CreatePieceDialog people={people} creditRoles={creditRoles} groupSlug={groupSlug} />
-          }
-        />
-
-        <SearchablePiecesTable
-          pieces={pieces}
-          people={people}
-          creditRoles={creditRoles}
-          groupSlug={groupSlug}
-        />
+        {/* PROTOTYPE (PER-434): header + table wrapped so import variants can mount. */}
+        <Suspense>
+          <PieceImportPrototype
+            people={people.map((person) => person.name)}
+            roles={creditRoles}
+            titles={pieces.map((piece) => piece.name)}
+            createAction={
+              <CreatePieceDialog people={people} creditRoles={creditRoles} groupSlug={groupSlug} />
+            }
+          >
+            <SearchablePiecesTable
+              pieces={pieces}
+              people={people}
+              creditRoles={creditRoles}
+              groupSlug={groupSlug}
+            />
+          </PieceImportPrototype>
+        </Suspense>
       </div>
     </EditModeProvider>
   );
