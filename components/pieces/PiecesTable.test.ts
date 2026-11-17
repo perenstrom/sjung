@@ -36,7 +36,7 @@ const piece = {
 
 function renderPieces(): string {
   return renderMarkup(
-    createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: [piece] }),
+    createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] }),
   );
 }
 
@@ -44,7 +44,7 @@ function renderSetList(): string {
   const steps = [{ kind: "piece", id: "step-1", position: 0, piece }] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesTable, {
-      people: [],
+      people: [], creditRoles: [],
       groupSlug: "koren",
       setList: { id: "setlist-1", steps },
     }),
@@ -100,7 +100,7 @@ describe("PiecesTable letter dividers", () => {
     ])("sorts Alla noter in Swedish order with a divider before each letter group in the %s", (_, part) => {
       const html = renderMarkup(
         createElement(PiecesTable, {
-          people: [],
+          people: [], creditRoles: [],
           groupSlug: "koren",
           pieces: unsortedNames.map(namedPiece),
         }),
@@ -124,7 +124,7 @@ describe("PiecesTable letter dividers", () => {
     it("renders a divider as a full-width heading row", () => {
       const html = desktopTable(
         renderMarkup(
-          createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: [piece] }),
+          createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] }),
         ),
       );
       const columnCount = html.match(/<th[\s>]/g)?.length;
@@ -141,7 +141,7 @@ describe("PiecesTable letter dividers", () => {
       })) as unknown as SetListStep[];
       const html = renderMarkup(
         createElement(PiecesTable, {
-          people: [],
+          people: [], creditRoles: [],
           groupSlug: "koren",
           setList: { id: "setlist-1", steps },
         }),
@@ -156,7 +156,7 @@ describe("PiecesTable letter dividers", () => {
 
     it("shows no dividers when there are no pieces", () => {
       const html = renderMarkup(
-        createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: [] }),
+        createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [] }),
       );
 
       expect(html).not.toContain("<h2");
@@ -179,7 +179,7 @@ describe("PiecesTable search on Alla noter", () => {
 
   function renderSearch(search: string): string {
     return renderMarkup(
-      createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: allPieces, search }),
+      createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: allPieces, search }),
     );
   }
 
@@ -231,7 +231,7 @@ describe("PiecesTable search on Alla noter", () => {
 
   it("keeps the empty-Group message when there are no pieces at all", () => {
     const html = renderMarkup(
-      createElement(PiecesTable, { people: [], groupSlug: "koren", pieces: [], search: "" }),
+      createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [], search: "" }),
     );
 
     expect(textOf(html)).toContain("Inga noter tillagda ännu.");

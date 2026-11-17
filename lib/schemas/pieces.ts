@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ROLES } from "@/lib/roles";
+import { MAX_CREDIT_ROLE_LENGTH } from "@/lib/pieces/credit-roles";
 import type { PieceCredit } from "@/lib/pieces/credits";
 import { personNameSchema } from "@/lib/schemas/people";
 import { formDataString } from "@/lib/schemas/form-data";
@@ -127,8 +127,14 @@ export function parseRequiredHttpUrlFromFormData(formData: FormData): URL {
 }
 
 const pieceCreditItemSchema = z.object({
-  personId: z.uuid(),
-  role: z.enum(ROLES),
+  personId: z.uuid({ error: INVALID_CREDITS_ERROR }),
+  role: z
+    .string({ error: INVALID_CREDITS_ERROR })
+    .trim()
+    .min(1, { error: "Roll krävs" })
+    .max(MAX_CREDIT_ROLE_LENGTH, {
+      error: `Rollen får vara högst ${MAX_CREDIT_ROLE_LENGTH} tecken`,
+    }),
 });
 
 export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[] {
@@ -150,9 +156,11 @@ export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[]
     throw new Error(INVALID_CREDITS_ERROR);
   }
 
-  const arrayResult = z.array(pieceCreditItemSchema).safeParse(parsed);
+  const arrayResult = z
+    .array(pieceCreditItemSchema, { error: INVALID_CREDITS_ERROR })
+    .safeParse(parsed);
   if (!arrayResult.success) {
-    throw new Error(INVALID_CREDITS_ERROR);
+    throw new Error(arrayResult.error.issues[0]?.message ?? INVALID_CREDITS_ERROR);
   }
 
   return arrayResult.data;
@@ -173,7 +181,7 @@ export function parseCreditRoleFromFormData(formData: FormData): string {
     formDataString(formData, "role")
   );
   if (!result.success) {
-    throw new Error(INVALID_CREDITS_ERROR);
+    throw new Error(result.error.issues[0]?.message ?? INVALID_CREDITS_ERROR);
   }
   return result.data;
 }

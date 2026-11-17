@@ -13,11 +13,13 @@ export function AddPieceCreditRow({
   groupSlug,
   pieceId,
   people,
+  creditRoles,
   credits,
 }: {
   groupSlug: string;
   pieceId: string;
   people: Person[];
+  creditRoles: string[];
   /** The Piece's current Credits, used to disable roles the Person already holds. */
   credits: PieceCredit[];
 }) {
@@ -38,6 +40,7 @@ export function AddPieceCreditRow({
     <PieceCreditDraftRow
       groupSlug={groupSlug}
       people={people}
+      creditRoles={creditRoles}
       credits={credits}
       draft={draft}
       onDraftChange={setDraft}

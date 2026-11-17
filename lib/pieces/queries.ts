@@ -62,3 +62,13 @@ export async function getSetListIdsContainingPiece(pieceId: string): Promise<str
   });
   return entries.map((entry) => entry.setListId);
 }
+
+/** The distinct Credit roles on the Group's credits, as stored. */
+export async function getCreditRolesUsedInGroup(groupId: string): Promise<string[]> {
+  const credits = await prisma.personToPiece.findMany({
+    where: { piece: { groupId } },
+    distinct: ["role"],
+    select: { role: true },
+  });
+  return credits.map((credit) => credit.role);
+}

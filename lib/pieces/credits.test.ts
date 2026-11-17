@@ -107,7 +107,7 @@ describe("groupCreditsByPerson", () => {
     ]);
   });
 
-  it("shows each Person once, with their roles in ROLES order", () => {
+  it("shows each Person once, with their roles in Credit role order", () => {
     const credits = [
       credit("p1", "Anna", "Textförfattare"),
       credit("p1", "Anna", "Kompositör"),
@@ -115,7 +115,7 @@ describe("groupCreditsByPerson", () => {
     ];
 
     expect(groupCreditsByPerson(credits)).toEqual([
-      { personId: "p1", name: "Anna", roles: ["Kompositör", "Arrangör", "Textförfattare"] },
+      { personId: "p1", name: "Anna", roles: ["Arrangör", "Kompositör", "Textförfattare"] },
     ]);
   });
 
@@ -143,8 +143,8 @@ describe("groupCreditsByPerson", () => {
     ];
 
     expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual([
-      "David",
       "Cecilia",
+      "David",
       "Anna",
       "Bertil",
     ]);
@@ -155,7 +155,7 @@ describe("groupCreditsByPerson", () => {
       credit("p1", "Östen", "Kompositör"),
       credit("p2", "anna", "Kompositör"),
       credit("p3", "Bertil", "Kompositör"),
-      credit("p3", "Bertil", "Arrangör"),
+      credit("p3", "Bertil", "Textförfattare"),
     ];
 
     expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual([
@@ -262,6 +262,6 @@ describe("formatCreditsLine", () => {
         credit("p1", "Ann", "Textförfattare"),
         credit("p1", "Ann", "Kompositör"),
       ])
-    ).toBe("Ann (Kompositör, Textförfattare) · Bo (Arrangör)");
+    ).toBe("Bo (Arrangör) · Ann (Kompositör, Textförfattare)");
   });
 });

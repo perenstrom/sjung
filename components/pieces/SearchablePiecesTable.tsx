@@ -19,6 +19,7 @@ const SEARCH_LABEL = "Sök stycke eller upphovsperson";
 export function SearchablePiecesTable(props: {
   pieces: PieceWithRelations[];
   people: Person[];
+  creditRoles: string[];
   groupSlug: string;
 }) {
   const [search, setSearch] = useState("");

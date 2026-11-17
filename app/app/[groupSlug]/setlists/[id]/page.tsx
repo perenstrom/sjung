@@ -1,3 +1,4 @@
+import { getCreditRoles } from "@/app/actions/pieces";
 import {
   addPieceToSetList,
   appendSetListNote,
@@ -28,10 +29,11 @@ type PageProps = {
 
 export default async function TenantSetListDetailPage({ params }: PageProps) {
   const { groupSlug, id } = await params;
-  const [setList, pieces, people, groups, access] = await Promise.all([
+  const [setList, pieces, people, creditRoles, groups, access] = await Promise.all([
     getSetListDetail(groupSlug, id),
     getSetListPieceOptions(groupSlug),
     getPeople(groupSlug),
+    getCreditRoles(groupSlug),
     getGroups(),
     findGroupAccess(groupSlug),
   ]);
@@ -63,6 +65,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
           <PiecesTable
             setList={{ id: setList.id, steps: setList.steps }}
             people={people}
+            creditRoles={creditRoles}
             groupSlug={groupSlug}
           />
         </section>

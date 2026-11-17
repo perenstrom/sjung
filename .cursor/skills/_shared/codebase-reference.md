@@ -68,7 +68,7 @@ Schema changes: edit `schema.prisma`, run `npx prisma migrate dev --name <descri
 - **Primitives:** `components/ui/` — shadcn/Radix (Button, Dialog, Table, Sidebar, etc.).
 - **Dialogs:** Feature dialogs (`CreatePieceDialog`, `CreatePersonDialog`, `CreateSetListDialog`, …) often use `EntityFormDialog` (`components/EntityFormDialog.tsx`) for consistent submit/error/close behavior.
 - **Breadcrumbs:** `components/AppBreadcrumb.tsx`, `BreadcrumbRegistrar.tsx`, `lib/breadcrumbs.ts`.
-- **Credits:** `lib/roles.ts` — `ROLES`, `Role` (Kompositör, Arrangör, Textförfattare).
+- **Credits:** `lib/pieces/credit-roles.ts` — free-text Credit roles: `BUILT_IN_CREDIT_ROLES` (Arrangör, Kompositör, Textförfattare), matching, ranking and suggestions; `lib/pieces/credits.ts` for grouping and diffing.
 
 When adding interactive UI:
 

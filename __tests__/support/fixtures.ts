@@ -173,6 +173,13 @@ export async function createPerson(group: Group, name = "Test Person"): Promise<
   });
 }
 
+/** A Credit naming the Person on the Piece with the role, stored as given. */
+export async function createCredit(piece: Piece, person: Person, role: string): Promise<void> {
+  await testPrisma.personToPiece.create({
+    data: { pieceId: piece.id, personId: person.id, role },
+  });
+}
+
 /** A Set list in the Group, created by the Group's Creator. */
 export async function createSetList(group: Group, name = "Test Set List"): Promise<SetList> {
   return testPrisma.setList.create({

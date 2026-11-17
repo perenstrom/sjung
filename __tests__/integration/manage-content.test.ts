@@ -33,6 +33,7 @@ const REFUSED = "Du har inte behörighet att ändra innehåll i gruppen";
 const READS = new Set([
   "getPieces",
   "getPieceDetail",
+  "getCreditRoles",
   "listPieceNotes",
   "getPeople",
   "getSetLists",

@@ -3,6 +3,7 @@
 import { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { findInGroup } from "@/lib/find-in-group";
+import { rankCreditRoles, resolveCreditRole } from "@/lib/pieces/credit-roles";
 import { assertNoDuplicateCredits, DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
 import {
   parseCreditPersonIdFromFormData,
@@ -22,6 +23,7 @@ import {
   parseWritableGroupSlugParam,
 } from "@/lib/schemas/people";
 import {
+  getCreditRolesUsedInGroup,
   getPieceDetailForGroup,
   getPiecesForGroup,
   getSetListIdsContainingPiece,
@@ -49,13 +51,24 @@ export async function getPieceDetail(
   return getPieceDetailForGroup(groupId, pieceId);
 }
 
+/** The Credit roles to suggest in the Group: the built-in ones, then the Group's own. */
+export async function getCreditRoles(groupSlug: string): Promise<string[]> {
+  const { groupId } = await getWritableGroupIdForSlug(parseWritableGroupSlugParam(groupSlug));
+  return rankCreditRoles(await getCreditRolesUsedInGroup(groupId));
+}
+
 export async function createPiece(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const name = parsePieceNameFromFormData(formData);
-  const credits = parsePieceCreditsFromFormData(formData);
-  assertNoDuplicateCredits(credits);
+  const typedCredits = parsePieceCreditsFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const groupRoles = await getCreditRolesUsedInGroup(groupId);
+    const credits = typedCredits.map((c) => ({
+      personId: c.personId,
+      role: resolveCreditRole(c.role, groupRoles),
+    }));
+    assertNoDuplicateCredits(credits);
     await Promise.all(credits.map((c) => findInGroup(groupId, "person", c.personId)));
     const created = await prisma.piece.create({
       data: {
@@ -162,11 +175,12 @@ export async function addCredit(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const personId = parseCreditPersonIdFromFormData(formData);
-  const role = parseCreditRoleFromFormData(formData);
+  const typedRole = parseCreditRoleFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
     const person = await findInGroup(groupId, "person", personId);
+    const role = resolveCreditRole(typedRole, await getCreditRolesUsedInGroup(groupId));
     try {
       await prisma.personToPiece.create({
         data: {

@@ -33,7 +33,7 @@ const notes = [
 
 function renderPieces(isEditing: boolean): string {
   return renderMarkup(
-    createElement(PiecesMobileList, { people: [], groupSlug: "koren", isEditing, emptyMessage: "", pieces: [piece] }),
+    createElement(PiecesMobileList, { people: [], creditRoles: [], groupSlug: "koren", isEditing, emptyMessage: "", pieces: [piece] }),
   );
 }
 
@@ -41,7 +41,7 @@ function renderSetList(isEditing: boolean): string {
   const steps = [{ kind: "piece", id: "step-1", position: 0, piece }] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesMobileList, {
-      people: [],
+      people: [], creditRoles: [],
       groupSlug: "koren",
       isEditing,
       emptyMessage: "",
@@ -90,7 +90,7 @@ describe("PiecesMobileList letter dividers", () => {
     it("shows Alla noter as given, with a heading before the first piece of each letter group", () => {
       const html = renderMarkup(
         createElement(PiecesMobileList, {
-          people: [],
+          people: [], creditRoles: [],
           groupSlug: "koren",
           isEditing,
           emptyMessage: "",
@@ -124,7 +124,7 @@ describe("PiecesMobileList letter dividers", () => {
       })) as unknown as SetListStep[];
       const html = renderMarkup(
         createElement(PiecesMobileList, {
-          people: [],
+          people: [], creditRoles: [],
           groupSlug: "koren",
           isEditing,
           emptyMessage: "",
@@ -146,7 +146,7 @@ describe("PieceRowDetails, an open piece row", () => {
     return renderMarkup(
       createElement(PieceRowDetails, {
         piece: { ...piece, ...overrides } as PieceWithRelations,
-        people: [],
+        people: [], creditRoles: [],
         groupSlug: "koren",
         isEditing,
         setListId,

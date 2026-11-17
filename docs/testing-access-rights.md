@@ -15,7 +15,7 @@ Sjung has no static seam catalog — per the `tdd` skill, seams are agreed live 
   - The in-Group content lookup `findInGroup` in `lib/find-in-group.ts`
   - Server actions in `app/actions/*`
   - Tenant layout gating in `app/app/[groupSlug]/layout.tsx`
-- `lib/roles.ts` is for music credit roles (for example `Kompositor` and `Arrangor`) and is not RBAC for app authorization.
+- `lib/pieces/credit-roles.ts` is for music Credit roles (for example `Kompositör` and `Arrangör`) and is not RBAC for app authorization.
 
 ## Access-right scope and allow/deny intent
 
