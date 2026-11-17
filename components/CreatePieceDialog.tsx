@@ -29,9 +29,11 @@ import { Label } from "@/components/ui/label";
 
 export function CreatePieceDialog({
   people,
+  creditRoles,
   groupSlug,
 }: {
   people: Person[];
+  creditRoles: string[];
   groupSlug: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -127,6 +129,7 @@ export function CreatePieceDialog({
               <PieceCreditDraftRow
                 groupSlug={groupSlug}
                 people={people}
+                creditRoles={creditRoles}
                 credits={credits}
                 draft={draft}
                 onDraftChange={(nextDraft) => {

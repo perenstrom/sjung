@@ -26,7 +26,7 @@ const piece = {
 
 describe("SearchablePiecesTable", () => {
   const html = renderMarkup(
-    createElement(SearchablePiecesTable, { people: [], groupSlug: "koren", pieces: [piece] }),
+    createElement(SearchablePiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] }),
   );
 
   it("shows a labelled search box above the list, with Swedish placeholder text", () => {

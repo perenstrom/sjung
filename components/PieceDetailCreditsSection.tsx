@@ -15,6 +15,7 @@ type PieceDetailCreditsSectionProps = {
   pieceName: string;
   credits: PieceDetailCredit[];
   people: Person[];
+  creditRoles: string[];
 };
 
 export function PieceDetailCreditsSection(props: PieceDetailCreditsSectionProps) {
@@ -35,6 +36,7 @@ function PieceDetailCreditsCard({
   pieceId,
   credits,
   people,
+  creditRoles,
 }: PieceDetailCreditsSectionProps & { readOnly: boolean }) {
   return (
     <Card variant="section">
@@ -61,6 +63,7 @@ function PieceDetailCreditsCard({
               groupSlug={groupSlug}
               pieceId={pieceId}
               people={people}
+              creditRoles={creditRoles}
               credits={credits}
             />
           </div>

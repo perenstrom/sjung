@@ -69,12 +69,15 @@ type PiecesTableRow = PieceRow | NoteRow;
 // remounts every cell and closes any dialog open inside one.
 const PiecesTableCellContext = createContext<{
   people: Person[];
+  creditRoles: string[];
   orderedStepIds: string[];
-}>({ people: [], orderedStepIds: [] });
+}>({ people: [], creditRoles: [], orderedStepIds: [] });
 
-function AddCreditAction(props: Omit<ComponentProps<typeof AddPieceCreditPopover>, "people">) {
-  const { people } = useContext(PiecesTableCellContext);
-  return <AddPieceCreditPopover people={people} {...props} />;
+function AddCreditAction(
+  props: Omit<ComponentProps<typeof AddPieceCreditPopover>, "people" | "creditRoles">
+) {
+  const { people, creditRoles } = useContext(PiecesTableCellContext);
+  return <AddPieceCreditPopover people={people} creditRoles={creditRoles} {...props} />;
 }
 
 function StepActions(props: Omit<ComponentProps<typeof SetListStepActions>, "orderedStepIds">) {
@@ -153,10 +156,12 @@ function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
  */
 export function PiecesTable({
   people,
+  creditRoles,
   groupSlug,
   ...props
 }: {
   people: Person[];
+  creditRoles: string[];
   groupSlug: string;
 } & (
   | { pieces: PieceWithRelations[]; search?: string; setList?: undefined }
@@ -189,8 +194,8 @@ export function PiecesTable({
     [pieces, setList]
   );
   const cellContext = useMemo(
-    () => ({ people, orderedStepIds: setList?.steps.map((step) => step.id) ?? [] }),
-    [people, setList]
+    () => ({ people, creditRoles, orderedStepIds: setList?.steps.map((step) => step.id) ?? [] }),
+    [people, creditRoles, setList]
   );
 
   const columns = useMemo<ColumnDef<PiecesTableRow>[]>(
@@ -254,7 +259,7 @@ export function PiecesTable({
                 <div className={FIRST_LINE_CLASS}>
                   <AddCreditAction
                     groupSlug={groupSlug}
-                    piece={{ id: piece.id, name: piece.name }}
+                    piece={{ id: piece.id, name: piece.name, credits: piece.credits }}
                   />
                 </div>
               ) : null}
@@ -347,6 +352,7 @@ export function PiecesTable({
       <PiecesMobileList
         {...(setList ? { setList } : { pieces: pieces ?? [] })}
         people={people}
+        creditRoles={creditRoles}
         groupSlug={groupSlug}
         isEditing={isEditing}
         emptyMessage={emptyMessage}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { addCredit } from "@/app/actions/pieces";
+import { CreditRoleCombobox } from "@/components/pieces/CreditRoleCombobox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,9 +27,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import { MISSING_CREDIT_FIELDS_ERROR } from "@/lib/pieces/credits";
-import { ROLES } from "@/lib/roles";
-import type { Person } from "@/types/piece-credit-dialog";
+import { creditRolesHeldBy, MISSING_CREDIT_FIELDS_ERROR } from "@/lib/pieces/credits";
+import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 const NO_PEOPLE_TOOLTIP =
   "Inga upphovspersoner tillagda ännu. Lägg till upphovspersoner under Upphovspersoner först.";
@@ -36,13 +36,18 @@ const NO_PEOPLE_TOOLTIP =
 export function AddPieceCreditPopover({
   groupSlug,
   people,
+  creditRoles,
   piece,
 }: {
   groupSlug: string;
   people: Person[];
+  /** The Group's Credit roles to suggest (see `getCreditRoles`). */
+  creditRoles: string[];
   piece: {
     id: string;
     name: string;
+    /** Used to leave out roles the chosen Person already holds. */
+    credits: PieceCredit[];
   };
 }) {
   const router = useRouter();
@@ -52,6 +57,13 @@ export function AddPieceCreditPopover({
   const [error, setError] = useState<string | null>(null);
 
   const hasPeople = people.length > 0;
+  const heldRoles = creditRolesHeldBy(piece.credits, personId);
+
+  function selectPerson(nextPersonId: string) {
+    setPersonId(nextPersonId);
+    // Don't leave a Credit role picked that the new Person already holds.
+    if (creditRolesHeldBy(piece.credits, nextPersonId).has(role)) setRole("");
+  }
 
   function resetForm() {
     setPersonId("");
@@ -120,7 +132,7 @@ export function AddPieceCreditPopover({
           <div className="space-y-3">
             <div className="space-y-2">
               <Label>Upphovsperson</Label>
-              <Select value={personId} onValueChange={setPersonId}>
+              <Select value={personId} onValueChange={selectPerson}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Upphovsperson" />
                 </SelectTrigger>
@@ -134,20 +146,16 @@ export function AddPieceCreditPopover({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Roll</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Roll" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((creditRole) => (
-                    <SelectItem key={creditRole} value={creditRole}>
-                      {creditRole}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-wrap gap-2">
+              <Label className="basis-full">Roll</Label>
+              <CreditRoleCombobox
+                aria-label="Roll"
+                roles={creditRoles}
+                heldRoles={heldRoles}
+                value={role}
+                onValueChange={setRole}
+                className="w-full"
+              />
             </div>
           </div>
 

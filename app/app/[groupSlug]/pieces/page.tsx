@@ -1,4 +1,4 @@
-import { getPieces } from "@/app/actions/pieces";
+import { getCreditRoles, getPieces } from "@/app/actions/pieces";
 import { getPeople } from "@/app/actions/people";
 import { CreatePieceDialog } from "@/components/CreatePieceDialog";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
@@ -15,9 +15,10 @@ type PageProps = {
 
 export default async function GroupPiecesPage({ params }: PageProps) {
   const { groupSlug } = await params;
-  const [pieces, people, groups, access] = await Promise.all([
+  const [pieces, people, creditRoles, groups, access] = await Promise.all([
     getPieces(groupSlug),
     getPeople(groupSlug),
+    getCreditRoles(groupSlug),
     getGroups(),
     findGroupAccess(groupSlug),
   ]);
@@ -35,10 +36,17 @@ export default async function GroupPiecesPage({ params }: PageProps) {
         />
         <PageHeader
           title="Alla noter"
-          editActions={<CreatePieceDialog people={people} groupSlug={groupSlug} />}
+          editActions={
+            <CreatePieceDialog people={people} creditRoles={creditRoles} groupSlug={groupSlug} />
+          }
         />
 
-        <SearchablePiecesTable pieces={pieces} people={people} groupSlug={groupSlug} />
+        <SearchablePiecesTable
+          pieces={pieces}
+          people={people}
+          creditRoles={creditRoles}
+          groupSlug={groupSlug}
+        />
       </div>
     </EditModeProvider>
   );

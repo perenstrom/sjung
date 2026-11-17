@@ -5,16 +5,11 @@ import { useRef, useState } from "react";
 
 import { createPerson } from "@/app/actions/people";
 import { PersonCombobox } from "@/components/PersonCombobox";
+import { CreditRoleCombobox } from "@/components/pieces/CreditRoleCombobox";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { mergePeople } from "@/lib/people/person-options";
+import { rankCreditRoles } from "@/lib/pieces/credit-roles";
 import {
   type CreditDraft,
   type CreditForDisplay,
@@ -22,11 +17,10 @@ import {
   EMPTY_CREDIT_DRAFT,
   MISSING_CREDIT_FIELDS_ERROR,
 } from "@/lib/pieces/credits";
-import { ROLES } from "@/lib/roles";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 /**
- * Person picker + Credit role select + "Lägg till" for one Credit. The picked
+ * Person picker + Credit role picker + "Lägg till" for one Credit. The picked
  * Person and Credit role (the draft) are owned by the caller, and so is
  * saving: `onAdd` gets the Credit, and if it throws, its message is shown in
  * the row. A Person created from the picker is saved right away, even if the
@@ -35,6 +29,7 @@ import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 export function PieceCreditDraftRow({
   groupSlug,
   people,
+  creditRoles,
   credits,
   draft,
   onDraftChange,
@@ -42,7 +37,9 @@ export function PieceCreditDraftRow({
 }: {
   groupSlug: string;
   people: Person[];
-  /** The Credits so far, used to disable Credit roles the Person already holds. */
+  /** The Group's Credit roles to suggest (see `getCreditRoles`). */
+  creditRoles: string[];
+  /** The Credits so far: their roles are suggested too, minus those the Person already holds. */
   credits: PieceCredit[];
   draft: CreditDraft;
   onDraftChange: (draft: CreditDraft) => void;
@@ -55,6 +52,8 @@ export function PieceCreditDraftRow({
 
   const allPeople = mergePeople(people, createdPeople);
   const heldRoles = creditRolesHeldBy(credits, draft.personId);
+  // Roles staged in an unsaved Piece aren't in the Group's roles yet.
+  const suggestedRoles = rankCreditRoles([...creditRoles, ...credits.map((credit) => credit.role)]);
   const hasDraft = draft.personId !== "" || draft.role !== "";
 
   function selectPerson(personId: string) {
@@ -110,22 +109,14 @@ export function PieceCreditDraftRow({
           onCreate={handleCreatePerson}
           className="min-w-32 flex-1"
         />
-        <Select value={draft.role} onValueChange={(role) => onDraftChange({ ...draft, role })}>
-          <SelectTrigger className="min-w-36" aria-label="Roll">
-            <SelectValue placeholder="Roll" />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLES.map((creditRole) => (
-              <SelectItem
-                key={creditRole}
-                value={creditRole}
-                disabled={heldRoles.has(creditRole)}
-              >
-                {creditRole}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CreditRoleCombobox
+          aria-label="Roll"
+          roles={suggestedRoles}
+          heldRoles={heldRoles}
+          value={draft.role}
+          onValueChange={(role) => onDraftChange({ ...draft, role })}
+          className="min-w-36"
+        />
         {hasDraft ? (
           <Button
             type="button"

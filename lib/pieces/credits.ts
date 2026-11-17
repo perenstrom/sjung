@@ -1,4 +1,5 @@
-import { ROLES } from "@/lib/roles";
+import { compareCaseInsensitive } from "@/lib/data-table/sorting";
+import { compareCreditRoles } from "@/lib/pieces/credit-roles";
 
 export type PieceCredit = {
   personId: string;
@@ -82,20 +83,6 @@ export type CreditedPerson = {
   roles: string[];
 };
 
-const compareSv = (a: string, b: string) => a.localeCompare(b, "sv-SE", { sensitivity: "base" });
-
-const KNOWN_ROLES: readonly string[] = ROLES;
-
-/** Known roles in ROLES order first, then any other roles alphabetically. */
-function compareRoles(a: string, b: string): number {
-  const rankA = KNOWN_ROLES.indexOf(a);
-  const rankB = KNOWN_ROLES.indexOf(b);
-  if (rankA !== -1 && rankB !== -1) return rankA - rankB;
-  if (rankA !== -1) return -1;
-  if (rankB !== -1) return 1;
-  return compareSv(a, b);
-}
-
 /**
  * A piece's credits for display: each Person once, with their Credit roles.
  * People are ordered by their highest-ranked role, then by name.
@@ -110,10 +97,10 @@ export function groupCreditsByPerson(credits: CreditForDisplay[]): CreditedPerso
   }
 
   const grouped = [...people.values()];
-  for (const person of grouped) person.roles.sort(compareRoles);
+  for (const person of grouped) person.roles.sort(compareCreditRoles);
 
   return grouped.sort(
-    (a, b) => compareRoles(a.roles[0], b.roles[0]) || compareSv(a.name, b.name)
+    (a, b) => compareCreditRoles(a.roles[0], b.roles[0]) || compareCaseInsensitive(a.name, b.name)
   );
 }
 

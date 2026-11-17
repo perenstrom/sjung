@@ -185,15 +185,13 @@ describe("parsePieceCreditsFromFormData", () => {
     );
   });
 
-  it("throws Ogiltigt format för medverkande when role is invalid", () => {
+  it("throws Roll krävs when a role is empty once trimmed", () => {
     const fd = createFormData({
       credits: JSON.stringify([
-        { personId: validPersonIdA, role: "Producent" },
+        { personId: validPersonIdA, role: "  " },
       ]),
     });
-    expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
-      "Ogiltigt format för medverkande"
-    );
+    expect(() => parsePieceCreditsFromFormData(fd)).toThrow("Roll krävs");
   });
 });
 
@@ -219,20 +217,18 @@ describe("parseCreditPersonIdFromFormData", () => {
 });
 
 describe("parseCreditRoleFromFormData", () => {
-  it("returns the role when it is a known role", () => {
-    const fd = createFormData({ role: "Kompositör" });
-    expect(parseCreditRoleFromFormData(fd)).toBe("Kompositör");
+  it("returns any role, trimmed", () => {
+    const fd = createFormData({ role: " Producent " });
+    expect(parseCreditRoleFromFormData(fd)).toBe("Producent");
   });
 
-  it("throws Ogiltigt format för medverkande when missing", () => {
-    expect(() => parseCreditRoleFromFormData(createFormData({}))).toThrow(
-      "Ogiltigt format för medverkande"
-    );
+  it("throws Roll krävs when missing", () => {
+    expect(() => parseCreditRoleFromFormData(createFormData({}))).toThrow("Roll krävs");
   });
 
-  it("throws Ogiltigt format för medverkande when role is not a known role", () => {
+  it("throws when the role is longer than 50 characters once trimmed", () => {
     expect(() =>
-      parseCreditRoleFromFormData(createFormData({ role: "Producent" }))
-    ).toThrow("Ogiltigt format för medverkande");
+      parseCreditRoleFromFormData(createFormData({ role: ` ${"x".repeat(51)} ` }))
+    ).toThrow("Rollen får vara högst 50 tecken");
   });
 });

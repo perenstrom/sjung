@@ -1,5 +1,5 @@
 import { getPeople } from "@/app/actions/people";
-import { getPieceDetail } from "@/app/actions/pieces";
+import { getCreditRoles, getPieceDetail } from "@/app/actions/pieces";
 import { getSetLists } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
@@ -22,9 +22,10 @@ type PageProps = {
 
 export default async function TenantPieceDetailPage({ params, searchParams }: PageProps) {
   const [{ groupSlug, id }, { setlist }] = await Promise.all([params, searchParams]);
-  const [piece, people, setLists, groups, access] = await Promise.all([
+  const [piece, people, creditRoles, setLists, groups, access] = await Promise.all([
     getPieceDetail(groupSlug, id),
     getPeople(groupSlug),
+    getCreditRoles(groupSlug),
     getSetLists(groupSlug),
     getGroups(),
     findGroupAccess(groupSlug),
@@ -64,6 +65,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
             person: { name: credit.person.name },
           }))}
           people={people}
+          creditRoles={creditRoles}
         />
 
         <PieceDetailFilesSection

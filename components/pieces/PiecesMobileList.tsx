@@ -47,12 +47,14 @@ const STEP_NUMBER_CLASS = "text-muted-foreground w-6 shrink-0 font-mono text-xs"
  */
 export function PiecesMobileList({
   people,
+  creditRoles,
   groupSlug,
   isEditing,
   emptyMessage,
   ...props
 }: {
   people: Person[];
+  creditRoles: string[];
   groupSlug: string;
   isEditing: boolean;
   emptyMessage: string;
@@ -131,6 +133,7 @@ export function PiecesMobileList({
                 <PieceRowDetails
                   piece={piece}
                   people={people}
+                  creditRoles={creditRoles}
                   groupSlug={groupSlug}
                   isEditing={isEditing}
                   setListId={setList?.id}
@@ -153,6 +156,7 @@ export function PiecesMobileList({
 export function PieceRowDetails({
   piece,
   people,
+  creditRoles,
   groupSlug,
   isEditing,
   setListId,
@@ -160,6 +164,7 @@ export function PieceRowDetails({
 }: {
   piece: PieceWithRelations;
   people: Person[];
+  creditRoles: string[];
   groupSlug: string;
   isEditing: boolean;
   setListId?: string;
@@ -168,7 +173,12 @@ export function PieceRowDetails({
   return (
     <>
       {isEditing ? (
-        <PieceEditSections piece={piece} people={people} groupSlug={groupSlug} />
+        <PieceEditSections
+          piece={piece}
+          people={people}
+          creditRoles={creditRoles}
+          groupSlug={groupSlug}
+        />
       ) : (
         <PieceMaterial piece={piece} groupSlug={groupSlug} />
       )}
@@ -237,10 +247,12 @@ function PieceMaterial({
 function PieceEditSections({
   piece,
   people,
+  creditRoles,
   groupSlug,
 }: {
   piece: PieceWithRelations;
   people: Person[];
+  creditRoles: string[];
   groupSlug: string;
 }) {
   return (
@@ -259,8 +271,9 @@ function PieceEditSections({
           <SectionHeading>Medverkande</SectionHeading>
           <AddPieceCreditPopover
             people={people}
+            creditRoles={creditRoles}
             groupSlug={groupSlug}
-            piece={{ id: piece.id, name: piece.name }}
+            piece={{ id: piece.id, name: piece.name, credits: piece.credits }}
           />
         </div>
         {piece.credits.length > 0 ? (
