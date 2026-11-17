@@ -53,6 +53,16 @@ describe("Credits only name People in the Piece's Group", () => {
     expect(await testPrisma.personToPiece.count({ where: { pieceId: piece.id } })).toBe(0);
   });
 
+  it("removePersonCredits refuses a Person from another Group", async () => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+
+    await expect(
+      removePersonCredits(
+        formData({ groupSlug: group.slug, pieceId: piece.id, personId: otherGroupsPerson.id })
+      )
+    ).rejects.toThrow("Upphovsperson hittades inte");
+  });
+
   it("createPiece refuses a Person from another Group and writes nothing", async () => {
     await expect(
       createPieceAction(

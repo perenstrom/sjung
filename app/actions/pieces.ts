@@ -211,8 +211,9 @@ export async function removePersonCredits(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
+    const person = await findInGroup(groupId, "person", personId);
     const { count } = await prisma.personToPiece.deleteMany({
-      where: { pieceId: piece.id, personId },
+      where: { pieceId: piece.id, personId: person.id },
     });
 
     if (count === 0) {
