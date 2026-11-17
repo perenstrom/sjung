@@ -76,8 +76,12 @@ _Avoid_: Score, Sheet music, Attachment — reserve those for casual conversatio
 An external URL reference attached to a Piece (e.g. a recording or streaming link).
 
 **Credit**:
-A role-tagged link between a Person and a Piece. Roles are a closed set today — Kompositör (composer), Arrangör (arranger), Textförfattare (lyricist) — defined in `lib/roles.ts`; expect this set to grow. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Medverkande_.
+A role-tagged link between a Person and a Piece. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Medverkande_.
 _Avoid_: Role on its own — always say "Credit role" to avoid confusion with anything membership-related.
+
+**Credit role**:
+The free-text label on a Credit saying what the Person did for the Piece. Each Group uses its own vocabulary: a Group's Credit roles are simply those on its Credits — there is no separate list of them, so a Credit role nobody holds any more is gone. Two Credit roles are the same if they differ only in letter case or spacing; the spelling already in use wins. Three are built in and always offered, even to a Group that has never used them — Arrangör (arranger), Kompositör (composer), Textförfattare (lyricist) — and they rank first, in that order, ahead of every other Credit role in alphabetical order. That ranking also orders the People on a Piece, by their highest-ranked Credit role. Swedish UI: _Roll_.
+_Avoid_: Role on its own, Credit type.
 
 **Set list**:
 An ordered rehearsal/performance program for a Group: an interleaved sequence of Set list pieces and Running-order notes. Swedish UI: _Repertoar_ / _Repertoarer_.
