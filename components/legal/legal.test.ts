@@ -10,8 +10,8 @@ describe("PublicFooter", () => {
   const html = renderMarkup(createElement(PublicFooter));
 
   it("links the Privacy policy and the Terms of use", () => {
-    expect(hasLink(html, "/integritet", "Integritetspolicy")).toBe(true);
-    expect(hasLink(html, "/anvandarvillkor", "Användarvillkor")).toBe(true);
+    expect(hasLink(html, "/privacy", "Integritetspolicy")).toBe(true);
+    expect(hasLink(html, "/terms", "Användarvillkor")).toBe(true);
   });
 });
 
@@ -22,8 +22,8 @@ describe("SignupTermsNotice", () => {
     expect(textOf(html)).toBe(
       "Genom att skapa ett konto godkänner du användarvillkoren. Läs om hur vi hanterar personuppgifter i vår integritetspolicy."
     );
-    expect(hasLink(html, "/anvandarvillkor", "användarvillkoren")).toBe(true);
-    expect(hasLink(html, "/integritet", "integritetspolicy")).toBe(true);
+    expect(hasLink(html, "/terms", "användarvillkoren")).toBe(true);
+    expect(hasLink(html, "/privacy", "integritetspolicy")).toBe(true);
   });
 });
 
@@ -32,6 +32,6 @@ describe("FileRightsReminder", () => {
 
   it("reminds the User to upload only Files they may store, linking the Terms of use", () => {
     expect(textOf(html)).toBe("Ladda bara upp filer du har rätt att lagra digitalt. Läs användarvillkoren.");
-    expect(hasLink(html, "/anvandarvillkor", "användarvillkoren")).toBe(true);
+    expect(hasLink(html, "/terms", "användarvillkoren")).toBe(true);
   });
 });

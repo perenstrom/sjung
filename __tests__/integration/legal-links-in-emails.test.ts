@@ -9,8 +9,8 @@ import { sendVerificationEmail } from "@/lib/auth/email-verification";
 import { requestPasswordReset } from "@/lib/auth/password-reset";
 import { sendFeedbackEmail } from "@/lib/feedback/feedback";
 
-const PRIVACY_POLICY_URL = "http://sjung.test/integritet";
-const TERMS_OF_USE_URL = "http://sjung.test/anvandarvillkor";
+const PRIVACY_POLICY_URL = "http://sjung.test/privacy";
+const TERMS_OF_USE_URL = "http://sjung.test/terms";
 
 describe("emails sent to Users and invited addresses", () => {
   it.each([

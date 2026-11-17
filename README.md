@@ -32,6 +32,7 @@ Required variables (from `.env.example`):
 - `RESEND_API_KEY` (optional locally — see "Emails in local development" below)
 - `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`; optional locally)
 - `FEEDBACK_EMAIL_TO` (inbox that Feedback sent from the app goes to; optional locally)
+- `OPERATORS_EMAIL` (comma-separated addresses of the Operators, who publish Announcements under *Nyheter*; empty means nobody, see ADR-0008)
 - `APP_BASE_URL` (origin for links in emails, e.g. `https://www.sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 
@@ -95,7 +96,7 @@ Config lives in the `staging` and `production` GitHub environments: variables `C
 
 Each Coolify app sets the runtime variable `APP_ENV`: `staging` on `sjung-staging` and `production` on `sjung-production`. It decides the environment label in the browser tab title (`[staging] Sjung` on staging, plain `Sjung` in production; `npm run dev` always shows `[local] Sjung`). An unset or unknown value counts as production.
 
-Both apps also set four runtime variables for email. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
+Both apps also set four runtime variables for email, and `OPERATORS_EMAIL` for who may publish Announcements. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
 
 | Variable | `sjung-staging` | `sjung-production` |
 | --- | --- | --- |
@@ -103,6 +104,7 @@ Both apps also set four runtime variables for email. Without them signup still w
 | `EMAIL_FROM` | `Sjung <noreply@per.fyi>` | `Sjung <noreply@per.fyi>` |
 | `APP_BASE_URL` | `https://staging.sjung.app` | `https://www.sjung.app` |
 | `FEEDBACK_EMAIL_TO` | Inbox for Feedback | Inbox for Feedback |
+| `OPERATORS_EMAIL` | Operators' addresses, comma-separated | Operators' addresses, comma-separated |
 
 Each app has its own sending-only Resend key, so either can be revoked alone. The sender must be on a domain verified in Resend. Production uses `www` because `sjung.app` redirects there, and links in emails shouldn't go through a redirect. Set them as runtime variables, not build variables; a restart picks up a change.
 

@@ -53,6 +53,9 @@ model User {
   groups               UsersToGroups[]
   tokens               UserToken[]
   sentInvitations      Invitation[]
+  createdAnnouncements Announcement[]  @relation("AnnouncementCreatedBy")
+  updatedAnnouncements Announcement[]  @relation("AnnouncementUpdatedBy")
+  announcementReads    AnnouncementRead[]
 
   @@map("users")
 }
@@ -373,4 +376,42 @@ model SetListNote {
   setList   SetList @relation(fields: [setListId], references: [id], onDelete: Cascade)
 
   @@map("set_list_notes")
+}
+
+// News about Sjung itself, published by an Operator to every Verified user
+// (CONTEXT.md, "Announcement"; ADR-0008). The creator is the author: stored,
+// never shown to readers, and cleared when they are deleted (ADR-0006).
+model Announcement {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
+
+  title       String
+  body        String   @db.Text
+  // Saving a new Announcement publishes it at once; there are no drafts.
+  publishedAt DateTime @default(now()) @map("published_at")
+
+  createdBy User?              @relation("AnnouncementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?              @relation("AnnouncementUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  reads     AnnouncementRead[]
+
+  @@index([publishedAt])
+  @@map("announcements")
+}
+
+// That a User has read an Announcement. Announcements published before the
+// User's account was created count as read without a row here.
+model AnnouncementRead {
+  userId         String   @map("user_id")
+  announcementId String   @map("announcement_id")
+  readAt         DateTime @default(now()) @map("read_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, announcementId])
+  @@index([announcementId])
+  @@map("announcement_reads")
 }

@@ -12,6 +12,7 @@ import type {
   SetListNote,
   File,
   Link,
+  Announcement,
 } from "@/app/generated/prisma/client";
 
 let userCounter = 0;
@@ -257,4 +258,27 @@ export async function createAccessScenario(): Promise<AccessScenario> {
   const nonMember = await createUser();
 
   return { group, creator, member, nonMember };
+}
+
+type CreateAnnouncementOptions = Partial<{
+  title: string;
+  body: string;
+  publishedAt: Date;
+  createdById: string | null;
+}>;
+
+/** A published Announcement; without an author unless `createdById` is given. */
+export async function createAnnouncement(
+  overrides: CreateAnnouncementOptions = {},
+): Promise<Announcement> {
+  const createdById = overrides.createdById ?? null;
+  return testPrisma.announcement.create({
+    data: {
+      title: overrides.title ?? "Test Announcement",
+      body: overrides.body ?? "Något nytt i Sjung.",
+      ...(overrides.publishedAt !== undefined ? { publishedAt: overrides.publishedAt } : {}),
+      createdById,
+      updatedById: createdById,
+    },
+  });
 }
