@@ -3,18 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { removeCredit } from "@/app/actions/pieces";
+import { removePersonCredits } from "@/app/actions/pieces";
 import {
   PieceCreditsList,
-  RemoveCreditRoleButton,
+  RemoveCreditedPersonButton,
 } from "@/components/pieces/PieceCreditsList";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import { creditKey, type CreditForDisplay } from "@/lib/pieces/credits";
+import type { CreditedPerson, CreditForDisplay } from "@/lib/pieces/credits";
 
 /**
- * A piece's credits for edit mode: `PieceCreditsList` with an X on each Credit
- * role badge that removes just that credit, then refreshes. Callers render
- * their own empty state.
+ * A saved piece's credits for edit mode: `PieceCreditsList` with a bin on
+ * each Person's row that removes all their Credits, then refreshes. Callers
+ * render their own empty state.
  */
 export function RemovableCreditsList({
   groupSlug,
@@ -28,24 +28,23 @@ export function RemovableCreditsList({
   className?: string;
 }) {
   const router = useRouter();
-  const [removingKey, setRemovingKey] = useState<string | null>(null);
+  const [removingPersonId, setRemovingPersonId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleRemove(credit: CreditForDisplay) {
-    setRemovingKey(creditKey(credit));
+  async function handleRemove(person: CreditedPerson) {
+    setRemovingPersonId(person.personId);
     try {
       const formData = new FormData();
       formData.set("groupSlug", groupSlug);
       formData.set("pieceId", pieceId);
-      formData.set("personId", credit.personId);
-      formData.set("role", credit.role);
-      await removeCredit(formData);
+      formData.set("personId", person.personId);
+      await removePersonCredits(formData);
       setError(null);
       router.refresh();
     } catch (err) {
       setError(getThrownMessage(err, "Kunde inte ta bort medverkande"));
     } finally {
-      setRemovingKey(null);
+      setRemovingPersonId(null);
     }
   }
 
@@ -54,11 +53,11 @@ export function RemovableCreditsList({
       <PieceCreditsList
         credits={credits}
         className={className}
-        renderRoleAction={(credit) => (
-          <RemoveCreditRoleButton
-            credit={credit}
+        renderPersonAction={(person) => (
+          <RemoveCreditedPersonButton
+            person={person}
             onRemove={handleRemove}
-            disabled={removingKey === creditKey(credit)}
+            disabled={removingPersonId === person.personId}
           />
         )}
       />

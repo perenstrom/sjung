@@ -1,8 +1,8 @@
-import { X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { type CreditForDisplay, groupCreditsByPerson } from "@/lib/pieces/credits";
+import { type CreditedPerson, type CreditForDisplay, groupCreditsByPerson } from "@/lib/pieces/credits";
 import { cn } from "@/lib/utils";
 
 /**
@@ -13,61 +13,57 @@ import { cn } from "@/lib/utils";
 export function PieceCreditsList({
   credits,
   className,
-  renderRoleAction,
+  renderPersonAction,
 }: {
   credits: CreditForDisplay[];
   className?: string;
-  /** Trailing control inside a role badge, e.g. a remove button. */
-  renderRoleAction?: (credit: CreditForDisplay) => ReactNode;
+  /** Trailing control at the end of a Person's row, e.g. a remove button. */
+  renderPersonAction?: (person: CreditedPerson) => ReactNode;
 }) {
   return (
     <ul className={cn("text-sm", className)}>
       {groupCreditsByPerson(credits).map((person) => (
-        <li
-          key={person.personId}
-          className="flex min-h-7 flex-wrap items-center gap-x-2 gap-y-1"
-        >
-          <span className="min-w-0 font-medium break-words">{person.name}</span>
-          {person.roles.map((role) => (
-            <span
-              key={role}
-              className="inline-flex items-center gap-1 rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
-            >
-              {role}
-              {renderRoleAction?.({
-                personId: person.personId,
-                role,
-                person: { name: person.name },
-              })}
-            </span>
-          ))}
+        <li key={person.personId} className="flex min-h-7 items-start gap-2">
+          <div className="flex min-h-7 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="min-w-0 font-medium break-words">{person.name}</span>
+            {person.roles.map((role) => (
+              <span
+                key={role}
+                className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
+              >
+                {role}
+              </span>
+            ))}
+          </div>
+          {renderPersonAction?.(person)}
         </li>
       ))}
     </ul>
   );
 }
 
-/** The remove control for a role badge in `PieceCreditsList`. */
-export function RemoveCreditRoleButton({
-  credit,
+/** Removes all of a Person's Credits, at the end of their row in `PieceCreditsList`. */
+export function RemoveCreditedPersonButton({
+  person,
   onRemove,
   disabled,
 }: {
-  credit: CreditForDisplay;
-  onRemove: (credit: CreditForDisplay) => void;
+  person: CreditedPerson;
+  onRemove: (person: CreditedPerson) => void;
   disabled?: boolean;
 }) {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="ghost-destructive"
       size="icon"
-      className="-mr-1 size-4 rounded-sm"
-      onClick={() => onRemove(credit)}
+      // The touch-sized target overhangs the name's line instead of pushing it down.
+      className="size-7 shrink-0 pointer-coarse:-my-2"
+      onClick={() => onRemove(person)}
       disabled={disabled}
-      aria-label={`Ta bort ${credit.person.name} som ${credit.role}`}
+      aria-label={`Ta bort ${person.name}`}
     >
-      <X className="size-3" aria-hidden="true" />
+      <Trash2 className="size-4" aria-hidden="true" />
     </Button>
   );
 }

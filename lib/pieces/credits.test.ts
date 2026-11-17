@@ -2,15 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import {
   assertNoDuplicateCredits,
+  creditDraftError,
   creditRolesHeldBy,
+  creditsFromDraft,
   diffCredits,
   DUPLICATE_CREDITS_ERROR,
   EMPTY_CREDIT_DRAFT,
   formatCreditsLine,
   groupCreditsByPerson,
+  MISSING_CREDIT_FIELDS_ERROR,
   MISSING_CREDIT_PERSON_ERROR,
   MISSING_CREDIT_ROLE_ERROR,
   resolveCreditsToSubmit,
+  toggleCreditRole,
+  withCreditDraftPerson,
 } from "@/lib/pieces/credits";
 
 describe("assertNoDuplicateCredits", () => {
@@ -223,24 +228,60 @@ describe("resolveCreditsToSubmit", () => {
     expect(resolveCreditsToSubmit(staged, EMPTY_CREDIT_DRAFT)).toEqual({ credits: staged });
   });
 
-  it("includes a picked Person and role that were not added yet", () => {
+  it("includes one Credit per role for a picked Person and roles not added yet", () => {
     expect(
-      resolveCreditsToSubmit(staged, { personId: "person-3", role: "Textförfattare" })
+      resolveCreditsToSubmit(staged, { personId: "person-3", roles: ["Textförfattare", "Arrangör"] })
     ).toEqual({
-      credits: [...staged, { personId: "person-3", role: "Textförfattare" }],
+      credits: [
+        ...staged,
+        { personId: "person-3", role: "Textförfattare" },
+        { personId: "person-3", role: "Arrangör" },
+      ],
     });
   });
 
-  it("asks for a role when only a Person is picked", () => {
-    expect(resolveCreditsToSubmit(staged, { personId: "person-3", role: "" })).toEqual({
-      error: MISSING_CREDIT_ROLE_ERROR,
-    });
+  it.each([
+    ["only a Person", { personId: "person-3", roles: [] }, MISSING_CREDIT_ROLE_ERROR],
+    ["only roles", { personId: "", roles: ["Kompositör"] }, MISSING_CREDIT_PERSON_ERROR],
+  ])("asks for what is missing when %s is picked", (_case, draft, error) => {
+    expect(resolveCreditsToSubmit(staged, draft)).toEqual({ error });
   });
+});
 
-  it("asks for a Person when only a role is picked", () => {
-    expect(resolveCreditsToSubmit(staged, { personId: "", role: "Kompositör" })).toEqual({
-      error: MISSING_CREDIT_PERSON_ERROR,
-    });
+describe("creditDraftError", () => {
+  it.each([
+    ["nothing", EMPTY_CREDIT_DRAFT, MISSING_CREDIT_FIELDS_ERROR],
+    ["only a Person", { personId: "person-1", roles: [] }, MISSING_CREDIT_ROLE_ERROR],
+    ["only roles", { personId: "", roles: ["Kompositör"] }, MISSING_CREDIT_PERSON_ERROR],
+    ["a Person and roles", { personId: "person-1", roles: ["Kompositör"] }, null],
+  ])("for %s picked is %j", (_case, draft, error) => {
+    expect(creditDraftError(draft)).toBe(error);
+  });
+});
+
+describe("creditsFromDraft", () => {
+  it("makes one Credit per picked role", () => {
+    expect(creditsFromDraft({ personId: "person-1", roles: ["Kompositör", "Dirigent"] })).toEqual([
+      { personId: "person-1", role: "Kompositör" },
+      { personId: "person-1", role: "Dirigent" },
+    ]);
+  });
+});
+
+describe("withCreditDraftPerson", () => {
+  const credits = [{ personId: "person-2", role: "Kompositör" }];
+
+  it("drops picked roles the newly picked Person already holds, keeping the rest", () => {
+    expect(
+      withCreditDraftPerson({ personId: "person-1", roles: ["Kompositör", "Dirigent"] }, credits, "person-2")
+    ).toEqual({ personId: "person-2", roles: ["Dirigent"] });
+  });
+});
+
+describe("toggleCreditRole", () => {
+  it("adds a role that isn't picked and removes one that is", () => {
+    expect(toggleCreditRole(["Kompositör"], "Dirigent")).toEqual(["Kompositör", "Dirigent"]);
+    expect(toggleCreditRole(["Kompositör", "Dirigent"], "Kompositör")).toEqual(["Dirigent"]);
   });
 });
 

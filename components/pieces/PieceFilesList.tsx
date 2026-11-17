@@ -145,7 +145,7 @@ export function PieceFilesList({
                     />
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="ghost-destructive"
                       size="icon"
                       className="size-7 shrink-0"
                       onClick={() => handleDeleteFile(file.id)}
@@ -205,7 +205,7 @@ export function PieceFilesList({
                 />
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="ghost-destructive"
                   size="icon"
                   className="size-7 shrink-0"
                   onClick={() => handleDeleteFile(file.id)}

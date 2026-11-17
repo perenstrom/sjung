@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseCreditPersonIdFromFormData,
-  parseCreditRoleFromFormData,
+  parseCreditRolesFromFormData,
   parseLinkIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
@@ -216,19 +216,26 @@ describe("parseCreditPersonIdFromFormData", () => {
   });
 });
 
-describe("parseCreditRoleFromFormData", () => {
-  it("returns any role, trimmed", () => {
-    const fd = createFormData({ role: " Producent " });
-    expect(parseCreditRoleFromFormData(fd)).toBe("Producent");
+describe("parseCreditRolesFromFormData", () => {
+  const parse = (roles: unknown) =>
+    parseCreditRolesFromFormData(createFormData({ roles: JSON.stringify(roles) }));
+
+  it("returns every role, trimmed", () => {
+    expect(parse([" Producent ", "Kompositör"])).toEqual(["Producent", "Kompositör"]);
   });
 
-  it("throws Roll krävs when missing", () => {
-    expect(() => parseCreditRoleFromFormData(createFormData({}))).toThrow("Roll krävs");
+  it.each([
+    ["no roles", [], "Välj minst en roll"],
+    ["an empty role", ["Kompositör", "  "], "Roll krävs"],
+    ["a role longer than 50 characters once trimmed", [` ${"x".repeat(51)} `], "Rollen får vara högst 50 tecken"],
+  ])("throws for %s", (_case, roles, message) => {
+    expect(() => parse(roles)).toThrow(message);
   });
 
-  it("throws when the role is longer than 50 characters once trimmed", () => {
-    expect(() =>
-      parseCreditRoleFromFormData(createFormData({ role: ` ${"x".repeat(51)} ` }))
-    ).toThrow("Rollen får vara högst 50 tecken");
+  it("throws when the field is missing or not a list", () => {
+    expect(() => parseCreditRolesFromFormData(createFormData({}))).toThrow(
+      "Ogiltigt format för medverkande"
+    );
+    expect(() => parse("Kompositör")).toThrow("Ogiltigt format för medverkande");
   });
 });

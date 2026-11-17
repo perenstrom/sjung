@@ -176,10 +176,18 @@ export function parseCreditPersonIdFromFormData(formData: FormData): string {
   return result.data;
 }
 
-export function parseCreditRoleFromFormData(formData: FormData): string {
-  const result = pieceCreditItemSchema.shape.role.safeParse(
-    formDataString(formData, "role")
-  );
+/** The `roles` field: a JSON list of at least one Credit role. */
+export function parseCreditRolesFromFormData(formData: FormData): string[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(formDataString(formData, "roles"));
+  } catch {
+    throw new Error(INVALID_CREDITS_ERROR);
+  }
+  const result = z
+    .array(pieceCreditItemSchema.shape.role, { error: INVALID_CREDITS_ERROR })
+    .min(1, { error: "Välj minst en roll" })
+    .safeParse(parsed);
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? INVALID_CREDITS_ERROR);
   }
