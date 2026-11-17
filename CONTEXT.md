@@ -83,6 +83,10 @@ _Avoid_: Role on its own — always say "Credit role" to avoid confusion with an
 The free-text label on a Credit saying what the Person did for the Piece. Each Group uses its own vocabulary: a Group's Credit roles are simply those on its Credits — there is no separate list of them, so a Credit role nobody holds any more is gone. Two Credit roles are the same if they differ only in letter case or spacing; the spelling already in use wins. Three are built in and always offered, even to a Group that has never used them — Arrangör (arranger), Kompositör (composer), Textförfattare (lyricist) — and they rank first, in that order, ahead of every other Credit role in alphabetical order. That ranking also orders the People on a Piece, by their highest-ranked Credit role. Swedish UI: _Roll_.
 _Avoid_: Role on its own, Credit type.
 
+**Piece import**:
+Adding many Pieces with their Credits at once from rows pasted from a spreadsheet: one row per Piece, the title first, then one column per Credit role naming the People who hold it. Nothing is saved until the user has seen what will be added and confirmed it, and then everything is saved together or nothing is. People and Credit roles the Group already has are reused, never duplicated. Swedish UI: _Importera_.
+_Avoid_: Bulk add, Upload — no file is uploaded; the rows are pasted.
+
 **Set list**:
 An ordered rehearsal/performance program for a Group: an interleaved sequence of Set list pieces and Running-order notes. Swedish UI: _Repertoar_ / _Repertoarer_.
 _Avoid_: Repertoire (English) — keep "Set list" as the English name even though the Swedish UI says _Repertoar_; Program.
