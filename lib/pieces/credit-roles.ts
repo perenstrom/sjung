@@ -55,17 +55,10 @@ export function resolveCreditRole(typed: string, groupRoles: readonly string[]):
   );
 }
 
-/**
- * The roles to suggest for the typed text: those containing it anywhere
- * (ignoring case and spacing), minus the ones the chosen Person already holds.
- */
-export function creditRoleSuggestions(
-  roles: readonly string[],
-  heldRoles: ReadonlySet<string>,
-  query: string
-): string[] {
+/** The roles to list for the typed text: those containing it anywhere, ignoring case and spacing. */
+export function creditRoleSuggestions(roles: readonly string[], query: string): string[] {
   const needle = creditRoleKey(query);
-  return roles.filter((role) => !heldRoles.has(role) && creditRoleKey(role).includes(needle));
+  return roles.filter((role) => creditRoleKey(role).includes(needle));
 }
 
 /** Whether to offer the typed text as a new role: it's not empty and is no known role. */

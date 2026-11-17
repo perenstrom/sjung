@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 
 import { createPerson } from "@/app/actions/people";
 import { PersonCombobox } from "@/components/PersonCombobox";
-import { CreditRoleCombobox } from "@/components/pieces/CreditRoleCombobox";
+import { CreditRolesPicker } from "@/components/pieces/CreditRolesPicker";
 import { Button } from "@/components/ui/button";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { mergePeople } from "@/lib/people/person-options";
@@ -13,18 +13,24 @@ import { rankCreditRoles } from "@/lib/pieces/credit-roles";
 import {
   type CreditDraft,
   type CreditForDisplay,
+  creditDraftError,
   creditRolesHeldBy,
+  creditsFromDraft,
   EMPTY_CREDIT_DRAFT,
-  MISSING_CREDIT_FIELDS_ERROR,
+  MISSING_CREDIT_PERSON_ERROR,
+  withCreditDraftPerson,
 } from "@/lib/pieces/credits";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 /**
- * Person picker + Credit role picker + "Lägg till" for one Credit. The picked
- * Person and Credit role (the draft) are owned by the caller, and so is
- * saving: `onAdd` gets the Credit, and if it throws, its message is shown in
- * the row. A Person created from the picker is saved right away, even if the
- * Credit is never added.
+ * Person picker + Credit roles picker + "Lägg till", for one Credit per
+ * picked role. The picked Person and roles (the draft) are owned by the
+ * caller, and so is saving: `onAdd` gets the Credits, and if it throws, its
+ * message is shown in the row and the draft is kept. A Person created from
+ * the picker is saved right away, even if the Credits are never added.
+ *
+ * Where the row is narrower than `@md`, it stacks: Person, roles, then
+ * Rensa and Lägg till side by side.
  */
 export function PieceCreditDraftRow({
   groupSlug,
@@ -39,11 +45,11 @@ export function PieceCreditDraftRow({
   people: Person[];
   /** The Group's Credit roles to suggest (see `getCreditRoles`). */
   creditRoles: string[];
-  /** The Credits so far: their roles are suggested too, minus those the Person already holds. */
+  /** The Credits so far: their roles are listed too, and those the Person holds are locked. */
   credits: PieceCredit[];
   draft: CreditDraft;
   onDraftChange: (draft: CreditDraft) => void;
-  onAdd: (credit: CreditForDisplay) => Promise<void> | void;
+  onAdd: (credits: CreditForDisplay[]) => Promise<void> | void;
 }) {
   const personPickerRef = useRef<HTMLButtonElement>(null);
   const [createdPeople, setCreatedPeople] = useState<Person[]>([]);
@@ -54,12 +60,10 @@ export function PieceCreditDraftRow({
   const heldRoles = creditRolesHeldBy(credits, draft.personId);
   // Roles staged in an unsaved Piece aren't in the Group's roles yet.
   const suggestedRoles = rankCreditRoles([...creditRoles, ...credits.map((credit) => credit.role)]);
-  const hasDraft = draft.personId !== "" || draft.role !== "";
+  const hasDraft = draft.personId !== "" || draft.roles.length > 0;
 
   function selectPerson(personId: string) {
-    // Don't leave a Credit role selected that the new Person already holds.
-    const role = creditRolesHeldBy(credits, personId).has(draft.role) ? "" : draft.role;
-    onDraftChange({ personId, role });
+    onDraftChange(withCreditDraftPerson(draft, credits, personId));
   }
 
   async function handleCreatePerson(name: string) {
@@ -79,14 +83,17 @@ export function PieceCreditDraftRow({
 
   async function handleAdd() {
     const person = allPeople.find((candidate) => candidate.id === draft.personId);
-    if (!person || !draft.role) {
-      setError(MISSING_CREDIT_FIELDS_ERROR);
+    const draftError = creditDraftError(draft) ?? (person ? null : MISSING_CREDIT_PERSON_ERROR);
+    if (draftError || !person) {
+      setError(draftError);
       return;
     }
 
     setPending(true);
     try {
-      await onAdd({ personId: person.id, role: draft.role, person: { name: person.name } });
+      await onAdd(
+        creditsFromDraft(draft).map((credit) => ({ ...credit, person: { name: person.name } }))
+      );
       setError(null);
       onDraftChange(EMPTY_CREDIT_DRAFT);
       personPickerRef.current?.focus();
@@ -98,8 +105,8 @@ export function PieceCreditDraftRow({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="@container space-y-2">
+      <div className="flex flex-wrap items-center gap-2 @md:flex-nowrap">
         <PersonCombobox
           ref={personPickerRef}
           aria-label="Upphovsperson"
@@ -107,16 +114,26 @@ export function PieceCreditDraftRow({
           value={draft.personId}
           onValueChange={selectPerson}
           onCreate={handleCreatePerson}
-          className="min-w-32 flex-1"
+          className="basis-full @md:min-w-0 @md:flex-1 @md:basis-auto"
         />
-        <CreditRoleCombobox
-          aria-label="Roll"
+        <CreditRolesPicker
+          aria-label="Roller"
           roles={suggestedRoles}
           heldRoles={heldRoles}
-          value={draft.role}
-          onValueChange={(role) => onDraftChange({ ...draft, role })}
-          className="min-w-36"
+          value={draft.roles}
+          onValueChange={(roles) => onDraftChange({ ...draft, roles })}
+          className="basis-full @md:w-40 @md:flex-none @md:basis-auto"
         />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleClear}
+          disabled={!hasDraft}
+          className="flex-1 @md:hidden"
+        >
+          <X className="size-4" aria-hidden="true" />
+          Rensa
+        </Button>
         {hasDraft ? (
           <Button
             type="button"
@@ -124,11 +141,18 @@ export function PieceCreditDraftRow({
             size="icon"
             onClick={handleClear}
             aria-label="Rensa medverkande"
+            className="hidden @md:inline-flex"
           >
             <X className="size-4" aria-hidden="true" />
           </Button>
         ) : null}
-        <Button type="button" variant="outline" onClick={handleAdd} disabled={pending}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleAdd}
+          disabled={pending}
+          className="flex-1 @md:flex-none"
+        >
           <Plus className="size-4" aria-hidden="true" />
           {pending ? "Lägger till…" : "Lägg till"}
         </Button>

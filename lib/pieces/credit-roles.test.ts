@@ -57,19 +57,12 @@ describe("creditRoleSuggestions", () => {
   const roles = ["Arrangör", "Kompositör", "Textförfattare", "Dirigent"];
 
   it("suggests every role for an empty query", () => {
-    expect(creditRoleSuggestions(roles, new Set(), "  ")).toEqual(roles);
+    expect(creditRoleSuggestions(roles, "  ")).toEqual(roles);
   });
 
   it("keeps roles containing the query anywhere, ignoring case", () => {
-    expect(creditRoleSuggestions(roles, new Set(), "RIG")).toEqual(["Dirigent"]);
-    expect(creditRoleSuggestions(roles, new Set(), "för")).toEqual(["Textförfattare"]);
-  });
-
-  it("leaves out roles the chosen Person already holds", () => {
-    expect(creditRoleSuggestions(roles, new Set(["Kompositör", "Dirigent"]), "")).toEqual([
-      "Arrangör",
-      "Textförfattare",
-    ]);
+    expect(creditRoleSuggestions(roles, "RIG")).toEqual(["Dirigent"]);
+    expect(creditRoleSuggestions(roles, "för")).toEqual(["Textförfattare"]);
   });
 });
 

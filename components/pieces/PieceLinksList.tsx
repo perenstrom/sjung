@@ -130,7 +130,7 @@ export function PieceLinksList({
                     />
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="ghost-destructive"
                       size="icon"
                       className="size-7 shrink-0"
                       onClick={() => handleRemove(link.id)}
@@ -189,7 +189,7 @@ export function PieceLinksList({
                         />
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="ghost-destructive"
                           size="icon"
                           className="size-7 shrink-0"
                           onClick={() => handleRemove(link.id)}
