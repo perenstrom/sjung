@@ -132,7 +132,7 @@ export function PieceImportPanel({
           <p>Första raden är rubriker. Första kolumnen är titeln.</p>
           <p>Varje annan kolumn är en roll, med personerna i varje cell skilda av semikolon (;).</p>
           <p>Högst {MAX_IMPORT_ROWS} rader.</p>
-          {preview ? <p>Avgränsat med {DELIMITER_LABELS[preview.delimiter]}.</p> : null}
+          {preview && preview.columns.length > 0 ? <p>Avgränsat med {DELIMITER_LABELS[preview.delimiter]}.</p> : null}
         </aside>
       </div>
 

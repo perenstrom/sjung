@@ -6,13 +6,11 @@ import { findGroupAccess } from "@/lib/group-access";
 import { PiecesPageContent } from "@/components/pieces/PiecesPageContent";
 import { getGroups } from "@/app/actions/groups";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
-import type { ImportGroup } from "@/lib/pieces/import";
+import { EMPTY_IMPORT_GROUP } from "@/lib/pieces/import";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;
 };
-
-const NO_IMPORT_GROUP: ImportGroup = { people: [], creditRoles: [], pieceTitles: [] };
 
 export default async function GroupPiecesPage({ params }: PageProps) {
   const { groupSlug } = await params;
@@ -24,7 +22,7 @@ export default async function GroupPiecesPage({ params }: PageProps) {
     getCreditRoles(groupSlug),
     getGroups(),
     // Only Members who can change content can import.
-    canEdit ? getPieceImportGroup(groupSlug) : NO_IMPORT_GROUP,
+    canEdit ? getPieceImportGroup(groupSlug) : EMPTY_IMPORT_GROUP,
   ]);
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 

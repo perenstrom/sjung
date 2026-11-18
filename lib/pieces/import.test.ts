@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildImportPlan,
+  EMPTY_IMPORT_GROUP as EMPTY_GROUP,
   importOutcome,
   MAX_IMPORT_ROWS,
   NO_IMPORT_CHOICES,
@@ -9,8 +10,6 @@ import {
   type ImportGroup,
   type ImportPreview,
 } from "@/lib/pieces/import";
-
-const EMPTY_GROUP: ImportGroup = { people: [], creditRoles: [], pieceTitles: [] };
 
 function preview(text: string, group: ImportGroup = EMPTY_GROUP, choices: ImportChoices = NO_IMPORT_CHOICES) {
   const plan = buildImportPlan(text, group, choices);
@@ -96,6 +95,17 @@ describe("reading the pasted rows", () => {
     ]);
     expect(plan.skipped[0].raw).toBe("\tOkänd");
     expect(plan.rows.map((row) => row.title)).toEqual(["Agnus Dei"]);
+  });
+
+  it("reads a paste with only a title column whole, commas and all", () => {
+    expect(added(preview("Titel\nHey, Jude\nKyrie; Gloria"))).toEqual(["Hey, Jude", "Kyrie; Gloria"]);
+  });
+
+  it("skips a row whose stray quote would otherwise swallow the rows up to the next quote", () => {
+    const plan = preview(['Titel\tKompositör', '"Sanctus\tOkänd', "Benedictus\tOkänd", '"Agnus Dei"\tOkänd'].join("\n"));
+
+    expect(plan.skipped.map(({ line, reason }) => [line, reason])).toEqual([[2, "Ett citattecken stängs aldrig"]]);
+    expect(plan.rows.map((row) => row.title)).toEqual(["Benedictus", "Agnus Dei"]);
   });
 
   it("allows empty cells past the last header, as spreadsheets paste them", () => {

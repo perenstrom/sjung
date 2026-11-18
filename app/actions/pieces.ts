@@ -43,6 +43,7 @@ import {
   importOutcome,
   MAX_IMPORT_ROWS,
   type ImportGroup,
+  type ImportPerson,
   type ImportPreview,
 } from "@/lib/pieces/import";
 import { revalidateGroupPeopleRoutes, revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
@@ -87,48 +88,65 @@ export async function importPieces(formData: FormData): Promise<PieceImportResul
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const { text, choices, outcome } = parsePieceImportFromFormData(formData);
 
-  const result = await runContentMutation(groupSlug, ({ userId, groupId }) =>
-    prisma.$transaction(
-      async (tx): Promise<PieceImportResult> => {
-        const group = await getPieceImportGroupFor(groupId, tx);
-        const plan = buildImportPlan(text, group, choices);
-        if (plan.kind === "tooMany") {
-          throw new Error(`Högst ${MAX_IMPORT_ROWS} rader kan importeras åt gången`);
-        }
-        if (plan.kind === "empty") throw new Error("Det finns inga noter att importera");
-        if (importOutcome(plan) !== outcome) return { kind: "changed", group };
-        if (plan.counts.pieces === 0) throw new Error("Det finns inga noter att importera");
+  const result = await runContentMutation(groupSlug, async ({ userId, groupId }): Promise<PieceImportResult> => {
+    try {
+      return await prisma.$transaction(
+        async (tx): Promise<PieceImportResult> => {
+          const group = await getPieceImportGroupFor(groupId, tx);
+          const plan = buildImportPlan(text, group, choices);
+          if (plan.kind === "tooMany") {
+            throw new Error(`Högst ${MAX_IMPORT_ROWS} rader kan importeras åt gången`);
+          }
+          if (plan.kind === "empty") throw new Error(NOTHING_TO_IMPORT);
+          if (importOutcome(plan) !== outcome) return { kind: "changed", group };
+          if (plan.counts.pieces === 0) throw new Error(NOTHING_TO_IMPORT);
 
-        const rows = plan.rows.filter((row) => row.add).map((row) => ({ row, id: randomUUID() }));
-        const newPersonIds = new Map(plan.newPeople.map((name) => [name, randomUUID()]));
-        const personId = (person: ImportPreview["rows"][number]["credits"][number]["person"]) =>
-          person.kind === "existing" ? person.id : newPersonIds.get(person.name)!;
-        const audit = { createdById: userId, updatedById: userId };
-
-        await tx.person.createMany({
-          data: [...newPersonIds].map(([name, id]) => ({ id, name, groupId, ...audit })),
-        });
-        await tx.piece.createMany({
-          data: rows.map(({ row, id }) => ({ id, name: row.title, groupId, ...audit })),
-        });
-        await tx.personToPiece.createMany({
-          data: rows.flatMap(({ row, id }) =>
-            row.credits.flatMap((credit) =>
-              credit.roles.map((role) => ({ pieceId: id, personId: personId(credit.person), role }))
-            )
-          ),
-        });
-
-        return { kind: "imported", summary: plan.counts };
-      },
-      // Serializable, so a Person or Piece added meanwhile fails the save rather than being duplicated.
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30_000 }
-    )
-  );
+          await saveImport(tx, plan, { groupId, userId });
+          return { kind: "imported", summary: plan.counts };
+        },
+        // Serializable, so a Person or Piece someone adds meanwhile fails the save rather than being duplicated.
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30_000 }
+      );
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
+        return { kind: "changed", group: await getPieceImportGroupFor(groupId) };
+      }
+      throw err;
+    }
+  });
 
   // New Pieces are in no Set list and new People only show on these pages.
   if (result.kind === "imported") revalidateGroupPeopleRoutes(groupSlug);
   return result;
+}
+
+const NOTHING_TO_IMPORT = "Det finns inga noter att importera";
+
+/** Writes the preview's added Pieces, its new People and their Credits. */
+async function saveImport(
+  tx: Prisma.TransactionClient,
+  plan: ImportPreview,
+  { groupId, userId }: { groupId: string; userId: string }
+) {
+  const pieces = plan.rows.filter((row) => row.add).map((row) => ({ row, id: randomUUID() }));
+  const newPersonIds = new Map(plan.newPeople.map((name) => [name, randomUUID()]));
+  const personId = (person: ImportPerson) =>
+    person.kind === "existing" ? person.id : newPersonIds.get(person.name)!;
+  const audit = { createdById: userId, updatedById: userId };
+
+  await tx.person.createMany({
+    data: [...newPersonIds].map(([name, id]) => ({ id, name, groupId, ...audit })),
+  });
+  await tx.piece.createMany({
+    data: pieces.map(({ row, id }) => ({ id, name: row.title, groupId, ...audit })),
+  });
+  await tx.personToPiece.createMany({
+    data: pieces.flatMap(({ row, id }) =>
+      row.credits.flatMap((credit) =>
+        credit.roles.map((role) => ({ pieceId: id, personId: personId(credit.person), role }))
+      )
+    ),
+  });
 }
 
 export async function createPiece(formData: FormData) {

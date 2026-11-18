@@ -24,6 +24,8 @@ export type ImportGroup = {
   pieceTitles: string[];
 };
 
+export const EMPTY_IMPORT_GROUP: ImportGroup = { people: [], creditRoles: [], pieceTitles: [] };
+
 /** The user's choices in the preview. */
 export type ImportChoices = {
   /** Use a column (by its index in the paste) as a Credit role or not, where it differs from the default. */
@@ -89,12 +91,13 @@ type RawRecord = { line: number; raw: string; cells: string[]; error: string | n
 
 const UNCLOSED_QUOTE = "Ett citattecken stängs aldrig";
 
-/** Tab first, then `;`, then `,`, by which the header row contains. */
+/**
+ * Tab first, then `;`, then `,`, by which the header row contains. A header
+ * with none of them is a paste of titles only, so its rows aren't split.
+ */
 function detectDelimiter(text: string): ImportDelimiter {
   const header = text.split(/\r?\n/).find((line) => line.trim() !== "") ?? "";
-  if (header.includes("\t")) return "\t";
-  if (header.includes(";")) return ";";
-  return ",";
+  return (["\t", ";", ","] as const).find((delimiter) => header.includes(delimiter)) ?? "\t";
 }
 
 function lineStarts(text: string): number[] {
@@ -107,7 +110,9 @@ function lineStarts(text: string): number[] {
  * Splits the text into records by RFC 4180: a cell starting with `"` runs to
  * the closing `"`, may hold delimiters and line breaks, and `""` is a `"`. A
  * quote that is never closed makes its record unreadable, and reading goes on
- * from the line after the one it started on.
+ * from the line after the one it started on. A closing `"` must end the cell,
+ * so a stray quote can't pair with a later row's opening one and swallow the
+ * rows between.
  */
 function readRecords(text: string, delimiter: ImportDelimiter): RawRecord[] {
   const starts = lineStarts(text);
@@ -129,7 +134,7 @@ function readRecords(text: string, delimiter: ImportDelimiter): RawRecord[] {
     while (i < text.length) {
       const ch = text[i];
       if (atCellStart && ch === '"') {
-        const close = readQuoted(text, i + 1);
+        const close = readQuoted(text, i + 1, delimiter);
         if (close === null) {
           error = UNCLOSED_QUOTE;
           break;
@@ -169,7 +174,11 @@ function readRecords(text: string, delimiter: ImportDelimiter): RawRecord[] {
 }
 
 /** The quoted cell's text from just after its opening `"`, or null when it never closes. */
-function readQuoted(text: string, from: number): { value: string; end: number } | null {
+function readQuoted(
+  text: string,
+  from: number,
+  delimiter: ImportDelimiter
+): { value: string; end: number } | null {
   let value = "";
   for (let i = from; i < text.length; i++) {
     if (text[i] !== '"') {
@@ -178,7 +187,9 @@ function readQuoted(text: string, from: number): { value: string; end: number } 
       value += '"';
       i++;
     } else {
-      return { value, end: i + 1 };
+      const next = text[i + 1];
+      const endsCell = next === undefined || next === delimiter || next === "\n" || next === "\r";
+      return endsCell ? { value, end: i + 1 } : null;
     }
   }
   return null;
