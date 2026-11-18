@@ -1,4 +1,5 @@
 import { compareCaseInsensitive } from "@/lib/data-table/sorting";
+import { matchKey, normalizeSpacing } from "@/lib/text/match-key";
 
 /**
  * Credit roles are free text. These three are always offered and rank first,
@@ -9,14 +10,10 @@ export const BUILT_IN_CREDIT_ROLES: readonly string[] = ["Arrang√∂r", "Komposit√
 export const MAX_CREDIT_ROLE_LENGTH = 50;
 
 /** Trimmed, with each run of whitespace collapsed to one space. */
-export function normalizeCreditRole(role: string): string {
-  return role.trim().replace(/\s+/g, " ");
-}
+export const normalizeCreditRole = normalizeSpacing;
 
 /** Two roles are the same if they differ only in letter case or spacing. */
-function creditRoleKey(role: string): string {
-  return normalizeCreditRole(role).toLocaleLowerCase("sv");
-}
+const creditRoleKey = matchKey;
 
 /** Built-in roles in their order first, then every other role alphabetically. */
 export function compareCreditRoles(a: string, b: string): number {
