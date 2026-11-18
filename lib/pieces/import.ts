@@ -11,6 +11,10 @@ import { matchKey, normalizeSpacing } from "@/lib/text/match-key";
  * Group. The client shows its preview, and the confirming server action runs
  * it again against the Group as it is then, so it can tell whether the
  * preview went stale (`importOutcome`) before saving.
+ *
+ * Walked through in docs/walkthroughs/piece-import.md (excerpts quoted by line
+ * number) and animated in docs/walkthroughs/piece-import.html. Update both
+ * when this file's behaviour changes.
  */
 
 export const MAX_IMPORT_ROWS = 500;
