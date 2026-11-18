@@ -1,14 +1,9 @@
-import { randomUUID } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
-vi.mock("node:crypto", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:crypto")>();
-  return { ...actual, randomUUID: vi.fn(actual.randomUUID) };
-});
 
 import type { Group } from "@/app/generated/prisma/client";
 import { getPieceImportGroup, importPieces } from "@/app/actions/pieces";
@@ -118,14 +113,11 @@ describe("importPieces", () => {
   });
 
   it("leaves no Piece, Person or Credit behind when saving fails part-way", async () => {
-    const taken = await createPiece({ groupId: group.id, createdById: group.createdById, name: "Befintlig" });
-    const text = "Titel\tKompositör\nKyrie\tMozart\nGloria\tVivaldi";
-    const outcome = await previewedOutcome(group, text, NO_IMPORT_CHOICES);
-    // Gloria, the second new Piece, gets a stored Piece's id, so saving fails after the new People are written.
-    const takenId = taken.id as ReturnType<typeof randomUUID>;
-    vi.mocked(randomUUID).mockReturnValueOnce(randomUUID()).mockReturnValueOnce(takenId);
+    await createPiece({ groupId: group.id, createdById: group.createdById, name: "Befintlig" });
+    // Postgres refuses text holding a NUL character, so this title fails the save after its People are new.
+    const text = "Titel\tKompositör\nKyrie\tMozart\nGlo\u0000ria\tVivaldi";
 
-    await expect(confirm(group, text, NO_IMPORT_CHOICES, outcome)).rejects.toThrow();
+    await expect(confirm(group, text)).rejects.toThrow();
 
     expect(await piecesInGroup(group)).toEqual(["Befintlig"]);
     expect(await peopleInGroup(group)).toEqual([]);
