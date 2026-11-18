@@ -34,6 +34,7 @@ const READS = new Set([
   "getPieces",
   "getPieceDetail",
   "getCreditRoles",
+  "getPieceImportGroup",
   "listPieceNotes",
   "getPeople",
   "getSetLists",
@@ -141,6 +142,13 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
   appendSetListNote: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, content: "Paus" }),
   deleteSetListNote: (g, c) => formData({ groupSlug: g.slug, setListNoteId: c.setListNote.id }),
   createPerson: (g) => formData({ groupSlug: g.slug, name: "Hugo Alfvén" }),
+  importPieces: (g) =>
+    formData({
+      groupSlug: g.slug,
+      text: "Titel\nKyrie",
+      choices: JSON.stringify({ columns: {}, addDuplicateLines: [] }),
+      outcome: "",
+    }),
 };
 
 function action(name: string): (fd: FormData) => Promise<unknown> {
