@@ -11,6 +11,7 @@ import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
 import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
+import { PieceDetailSectionStack } from "@/components/pieces/PieceDetailSectionLayout";
 import { pieceDetailTrail } from "@/lib/breadcrumbs";
 import { fromSetListIdParam } from "@/lib/pieces/href";
 import { notFound } from "next/navigation";
@@ -55,55 +56,57 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
           initialName={piece.name}
         />
 
-        <PieceDetailCreditsSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          credits={piece.credits.map((credit) => ({
-            personId: credit.personId,
-            role: credit.role,
-            person: { name: credit.person.name },
-          }))}
-          people={people}
-          creditRoles={creditRoles}
-        />
+        <PieceDetailSectionStack>
+          <PieceDetailCreditsSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            pieceName={piece.name}
+            credits={piece.credits.map((credit) => ({
+              personId: credit.personId,
+              role: credit.role,
+              person: { name: credit.person.name },
+            }))}
+            people={people}
+            creditRoles={creditRoles}
+          />
 
-        <PieceDetailFilesSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          files={piece.files.map((file) => ({
-            id: file.id,
-            displayName: file.displayName,
-            size: file.size,
-            createdAt: file.createdAt,
-          }))}
-        />
+          <PieceDetailFilesSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            pieceName={piece.name}
+            files={piece.files.map((file) => ({
+              id: file.id,
+              displayName: file.displayName,
+              size: file.size,
+              createdAt: file.createdAt,
+            }))}
+          />
 
-        <PieceDetailLinksSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          links={piece.links.map((link) => ({
-            id: link.id,
-            url: link.url,
-            label: link.label,
-          }))}
-        />
+          <PieceDetailLinksSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            pieceName={piece.name}
+            links={piece.links.map((link) => ({
+              id: link.id,
+              url: link.url,
+              label: link.label,
+            }))}
+          />
 
-        <PieceDetailNotesSection
-          key={`notes-${piece.id}`}
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          notes={piece.notes}
-        />
+          <PieceDetailNotesSection
+            key={`notes-${piece.id}`}
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            notes={piece.notes}
+          />
 
-        <PieceSetListsSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          entries={piece.setListEntries}
-          allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
-        />
+          <PieceSetListsSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            entries={piece.setListEntries}
+            allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
+          />
+        </PieceDetailSectionStack>
       </div>
     </EditModeProvider>
   );
