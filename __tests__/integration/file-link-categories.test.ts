@@ -47,9 +47,7 @@ async function uploadFile(category?: string) {
 
 async function categoryInUse(category: string) {
   const other = await createPiece({ groupId: group.id, createdById: group.createdById });
-  const link = await createLink(other);
-  await testPrisma.link.update({ where: { id: link.id }, data: { category } });
-  return link;
+  return createLink(other, undefined, category);
 }
 
 describe("a File's Category", () => {
@@ -68,8 +66,7 @@ describe("a File's Category", () => {
     ["cleared", "", null],
     ["cleared by Övrigt", " övrigt ", null],
   ])("can be %s when renaming", async (_case, category, expected) => {
-    const file = await createFile(piece);
-    await testPrisma.file.update({ where: { id: file.id }, data: { category: "Texter" } });
+    const file = await createFile(piece, "Texter");
 
     await updatePieceFileDisplayName(
       formData({ groupSlug: group.slug, fileId: file.id, displayName: "Ny", category })
@@ -110,8 +107,7 @@ describe("a Link's Category", () => {
 describe("the Group's Categories", () => {
   it("are the built-ins, then the Categories its Files and Links use, alphabetically", async () => {
     await categoryInUse("Texter");
-    const file = await createFile(piece);
-    await testPrisma.file.update({ where: { id: file.id }, data: { category: "Ackord" } });
+    await createFile(piece, "Ackord");
 
     expect(await getCategories(group.slug)).toEqual(["Noter", "Övningsfiler", "Inspelningar", "Ackord", "Texter"]);
   });
@@ -126,7 +122,7 @@ describe("the Group's Categories", () => {
   it("leave out other Groups' Categories", async () => {
     const otherGroup = await createGroup();
     const otherPiece = await createPiece({ groupId: otherGroup.id, createdById: otherGroup.createdById });
-    await testPrisma.link.update({ where: { id: (await createLink(otherPiece)).id }, data: { category: "Hemligt" } });
+    await createLink(otherPiece, undefined, "Hemligt");
 
     expect(await getCategories(group.slug)).toEqual(["Noter", "Övningsfiler", "Inspelningar"]);
   });

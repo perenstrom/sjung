@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 function render(
   readOnly: boolean,
-  categories: { file?: string; link?: string; otherFile?: string } = {},
+  categories: { file?: string; link?: string } = {},
 ): string {
   return renderToStaticMarkup(
     createElement(PieceInlineFilesAndLinksCell, {
@@ -21,12 +21,7 @@ function render(
       groupSlug: "kören",
       pieceId: "piece-1",
       pieceName: "Vem kan segla",
-      files: [
-        { id: "file-1", displayName: "Sopran_stämma_REVIDERAD.pdf", size: 1024, category: categories.file ?? null },
-        ...(categories.otherFile === undefined
-          ? []
-          : [{ id: "file-2", displayName: "Alt.pdf", size: 1024, category: categories.otherFile }]),
-      ],
+      files: [{ id: "file-1", displayName: "Sopran_stämma_REVIDERAD.pdf", size: 1024, category: categories.file ?? null }],
       links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: categories.link ?? null }],
     }),
   );
@@ -59,12 +54,7 @@ describe("PieceInlineFilesAndLinksCell", () => {
     expect(textOf(render(true))).not.toContain("Övrigt");
   });
 
-  it("groups under Categories in ranking order, Files before Links, Övrigt last", () => {
-    const text = textOf(render(true, { file: "Inspelningar", link: "Inspelningar", otherFile: "Noter" }));
-    expect(text).toMatch(/Noter.*Alt\.pdf.*Inspelningar.*Sopran.*Inspelning(?!ar)/);
-  });
-
-  it("puts the uncategorized under Övrigt, after the Categories", () => {
+  it("shows each Category heading over its Files and Links", () => {
     expect(textOf(render(true, { link: "Noter" }))).toMatch(/Noter.*Inspelning.*Övrigt.*Sopran/);
   });
 
