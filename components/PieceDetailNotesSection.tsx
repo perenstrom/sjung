@@ -1,12 +1,12 @@
 "use client";
 
 import { useEditMode } from "@/components/EditModeContext";
+import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
 import {
   PieceNotesPanel,
   usePieceNotes,
   type PieceNotesState,
 } from "@/components/pieces/PieceNotesPanel";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { PieceNoteListItem } from "@/lib/pieces/types";
 
 type PieceDetailNotesSectionProps = {
@@ -27,7 +27,7 @@ export function PieceDetailNotesSection({
   // Remount on every toggle so leaving edit mode discards a half-written note
   // and closes any open inline edit.
   return (
-    <PieceDetailNotesCard
+    <PieceDetailNotesBody
       key={isEditing ? "edit" : "read"}
       readOnly={!isEditing}
       groupSlug={groupSlug}
@@ -37,7 +37,7 @@ export function PieceDetailNotesSection({
   );
 }
 
-function PieceDetailNotesCard({
+function PieceDetailNotesBody({
   readOnly,
   groupSlug,
   pieceId,
@@ -49,18 +49,13 @@ function PieceDetailNotesCard({
   list: PieceNotesState;
 }) {
   return (
-    <Card variant="section">
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-        <h2 className="text-lg leading-8 font-medium">Anteckningar</h2>
-      </CardHeader>
-      <CardContent>
-        <PieceNotesPanel
-          readOnly={readOnly}
-          groupSlug={groupSlug}
-          pieceId={pieceId}
-          list={list}
-        />
-      </CardContent>
-    </Card>
+    <PieceDetailSectionLayout title="Anteckningar">
+      <PieceNotesPanel
+        readOnly={readOnly}
+        groupSlug={groupSlug}
+        pieceId={pieceId}
+        list={list}
+      />
+    </PieceDetailSectionLayout>
   );
 }

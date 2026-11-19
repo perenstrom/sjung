@@ -4,9 +4,9 @@ import { useState } from "react";
 
 import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceLinkRow } from "@/components/pieces/AddPieceLinkRow";
+import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
 import { PieceLinksList } from "@/components/pieces/PieceLinksList";
 import type { PieceLink } from "@/components/pieces/types";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 type PieceDetailLinksSectionProps = {
   groupSlug: string;
@@ -20,7 +20,7 @@ export function PieceDetailLinksSection(props: PieceDetailLinksSectionProps) {
   // Remount on every toggle so leaving edit mode discards a half-filled add row
   // and closes any open popover.
   return (
-    <PieceDetailLinksCard
+    <PieceDetailLinksBody
       key={isEditing ? "edit" : "read"}
       readOnly={!isEditing}
       {...props}
@@ -28,7 +28,7 @@ export function PieceDetailLinksSection(props: PieceDetailLinksSectionProps) {
   );
 }
 
-function PieceDetailLinksCard({
+function PieceDetailLinksBody({
   readOnly,
   groupSlug,
   pieceId,
@@ -37,25 +37,20 @@ function PieceDetailLinksCard({
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
 
   return (
-    <Card variant="section">
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-        <h2 className="text-lg leading-8 font-medium">Länkar</h2>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <PieceLinksList
-          groupSlug={groupSlug}
-          links={links}
-          readOnly={readOnly}
-          editingLinkId={editingLinkId}
-          onEditingLinkIdChange={setEditingLinkId}
-        />
+    <PieceDetailSectionLayout title="Länkar">
+      <PieceLinksList
+        groupSlug={groupSlug}
+        links={links}
+        readOnly={readOnly}
+        editingLinkId={editingLinkId}
+        onEditingLinkIdChange={setEditingLinkId}
+      />
 
-        {readOnly ? null : (
-          <div className="border-t pt-3">
-            <AddPieceLinkRow groupSlug={groupSlug} pieceId={pieceId} />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {readOnly ? null : (
+        <div className="border-t pt-3">
+          <AddPieceLinkRow groupSlug={groupSlug} pieceId={pieceId} />
+        </div>
+      )}
+    </PieceDetailSectionLayout>
   );
 }
