@@ -1,41 +1,22 @@
-import {
-  createColumnHelper,
-  createTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  type SortingState,
-} from "@tanstack/react-table";
+import { createElement } from "react";
+import type { SortingState } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
 
-import { caseInsensitiveSortingFns } from "./sorting";
+import { type ColumnDef, DataTable } from "@/components/data-table";
+import { renderMarkup } from "@/lib/testing/markup";
 
 type Row = { name: string };
 
-const columnHelper = createColumnHelper<Row>();
-const columns = [
-  columnHelper.accessor("name", {
-    header: "Namn",
-    enableSorting: true,
-    sortingFn: "caseInsensitive",
-  }),
+const columns: ColumnDef<Row>[] = [
+  { accessorKey: "name", header: "Namn", sortFn: "caseInsensitive" },
 ];
 
 function sortedNames(data: Row[], sorting: SortingState): string[] {
-  const table = createTable({
-    data,
-    columns,
-    state: { sorting },
-    onStateChange: () => {},
-    onSortingChange: () => {},
-    renderFallbackValue: null,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    sortingFns: caseInsensitiveSortingFns,
-  });
-  return table.getRowModel().rows.map((row) => row.original.name);
+  const html = renderMarkup(createElement(DataTable<Row>, { columns, data, initialSorting: sorting }));
+  return [...html.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((match) => match[1]);
 }
 
-describe("DataTable sorting (TanStack row model)", () => {
+describe("DataTable sorting", () => {
   const data: Row[] = [
     { name: "Charlie" },
     { name: "Alice" },

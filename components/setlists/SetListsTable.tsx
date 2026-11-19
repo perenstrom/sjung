@@ -10,7 +10,6 @@ import { DeleteSetListDialog } from "@/components/DeleteSetListDialog";
 import { EditSetListDialog } from "@/components/EditSetListDialog";
 import { useEditMode } from "@/components/EditModeContext";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
-import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
 import { compareSetListsByDefault } from "@/lib/setlists/sorting";
 
 export type SetListsTableRow = {
@@ -28,11 +27,11 @@ export type SetListsTableRow = {
 export function setListsColumns(
   groupSlug: string,
   isEditing: boolean
-): ColumnDef<SetListsTableRow, unknown>[] {
+): ColumnDef<SetListsTableRow>[] {
   return [
     {
       accessorKey: "name",
-      sortingFn: caseInsensitiveSortingFn,
+      sortFn: "caseInsensitive",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namn" />,
       cell: ({ row }) => (
         <Link
@@ -48,7 +47,7 @@ export function setListsColumns(
       // Sort on the real date, not the formatted label. Undefined, unlike
       // null, lets `sortUndefined` keep undated Set lists last both ways.
       accessorFn: (row) => row.date ?? undefined,
-      sortingFn: "datetime",
+      sortFn: "datetime",
       sortUndefined: "last",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Datum" />,
       cell: ({ row }) => row.original.dateLabel ?? "–",
@@ -66,7 +65,7 @@ export function setListsColumns(
                 <SetListRowActions groupSlug={groupSlug} setList={row.original} />
               </div>
             ),
-          } satisfies ColumnDef<SetListsTableRow, unknown>,
+          } satisfies ColumnDef<SetListsTableRow>,
         ]
       : []),
   ];

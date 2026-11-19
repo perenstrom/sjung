@@ -9,7 +9,7 @@
  * const columns: ColumnDef<MyRow>[] = [
  *   {
  *     accessorKey: "name",
- *     sortingFn: caseInsensitiveSortingFn,
+ *     sortFn: "caseInsensitive",
  *     header: ({ column }) => (
  *       <DataTableColumnHeader column={column} title="Namn" />
  *     ),
@@ -25,6 +25,9 @@
  * <DataTable columns={columns} data={rows} enableSorting={false} />
  * ```
  *
+ * A column's `sortFn` can name any sort function registered in
+ * `dataTableFeatures` (`lib/data-table/features.ts`).
+ *
  * Use `enableSorting={false}` when the view uses manual reorder (e.g. setlist steps).
  * Pass `initialSorting` (e.g. `[{ id: "date", desc: true }]`) to start sorted.
  *
@@ -36,14 +39,14 @@
  * body row, given the row shown above it in the current sorted order.
  */
 import {
+  type CellData,
   type Column,
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
+  type ColumnDef as TanStackColumnDef,
+  FlexRender,
   type RowData,
   type SortingState,
-  useReactTable,
+  type TableFeatures,
+  useTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";
@@ -58,12 +61,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { spanCells } from "@/lib/data-table/cellSpans";
-import { caseInsensitiveSortingFns } from "@/lib/data-table/sorting";
+import { type DataTableFeatures, dataTableFeatures } from "@/lib/data-table/features";
 import { cn } from "@/lib/utils";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  interface ColumnMeta<TData extends RowData, TValue> {
+  interface ColumnMeta<TFeatures extends TableFeatures, TData extends RowData, TValue extends CellData> {
     /**
      * How many columns this column's cell covers in the given row (default 1).
      * The covered cells to its right are not rendered.
@@ -74,10 +77,15 @@ declare module "@tanstack/react-table" {
   }
 }
 
-export type { ColumnDef };
+/** A column of a `DataTable`. */
+export type ColumnDef<TData extends RowData, TValue extends CellData = CellData> = TanStackColumnDef<
+  DataTableFeatures,
+  TData,
+  TValue
+>;
 
-export interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+export interface DataTableProps<TData extends RowData> {
+  columns: ColumnDef<TData>[];
   data: TData[];
   /** When false, rows keep server/data order (e.g. manual reorder tables). Default true. */
   enableSorting?: boolean;
@@ -100,7 +108,7 @@ export interface DataTableProps<TData, TValue> {
   className?: string;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   enableSorting = true,
@@ -110,22 +118,20 @@ export function DataTable<TData, TValue>({
   getRowId,
   renderRowDivider,
   className,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
     enableSorting,
-    sortingFns: caseInsensitiveSortingFns,
     getRowId,
   });
   const rows = table.getRowModel().rows;
-  const visibleColumnCount = table.getVisibleLeafColumns().length;
+  const columnCount = table.getAllLeafColumns().length;
 
   return (
     <div className={className}>
@@ -138,12 +144,7 @@ export function DataTable<TData, TValue>({
                   key={header.id}
                   className={header.column.columnDef.meta?.headerClassName}
                 >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                  {header.isPlaceholder ? null : <FlexRender header={header} />}
                 </TableHead>
               ))}
             </TableRow>
@@ -153,10 +154,10 @@ export function DataTable<TData, TValue>({
           {rows.length > 0 ? (
             rows.map((row, index) => (
               <Fragment key={row.id}>
-                {renderRowDivider?.(row.original, rows[index - 1]?.original, visibleColumnCount)}
+                {renderRowDivider?.(row.original, rows[index - 1]?.original, columnCount)}
                 <TableRow>
                   {spanCells(
-                    row.getVisibleCells(),
+                    row.getAllCells(),
                     (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1
                   ).map(({ cell, colSpan }) => (
                     <TableCell
@@ -164,7 +165,7 @@ export function DataTable<TData, TValue>({
                       colSpan={colSpan > 1 ? colSpan : undefined}
                       className={cn(cellAlign === "top" && "align-top")}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      <FlexRender cell={cell} />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -186,14 +187,14 @@ export function DataTable<TData, TValue>({
   );
 }
 
-interface DataTableColumnHeaderProps<TData, TValue> {
-  column: Column<TData, TValue>;
+interface DataTableColumnHeaderProps<TData extends RowData, TValue extends CellData> {
+  column: Column<DataTableFeatures, TData, TValue>;
   title: string;
   className?: string;
 }
 
 /** Sortable header control for use inside column `header` renderers. */
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<TData extends RowData, TValue extends CellData>({
   column,
   title,
   className,
