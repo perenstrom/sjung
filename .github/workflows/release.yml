@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # Keeps one release PR open with the next version and its CHANGELOG.md
+  # entries. When that PR is merged, the same job tags the merge commit and
+  # creates the GitHub Release instead.
+  release-please:
+    runs-on: ubuntu-latest
+    # Holds the release app's key. Like production, the environment only
+    # admits main, so no other branch's workflow can mint the token that may
+    # push to the production branch.
+    environment: release
+    # Two runs editing the release PR or tagging at once would race. A queued
+    # run that gets replaced loses nothing: the next run still finds a merged
+    # release PR that hasn't been released and releases it.
+    concurrency:
+      group: release-please
+      cancel-in-progress: false
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      sha: ${{ steps.release.outputs.sha }}
+
+    steps:
+      # A PR opened with the default GITHUB_TOKEN doesn't trigger CI, so the
+      # release PR's required checks would never report.
+      - name: Create release app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  deploy-production:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+      checks: read
+    uses: ./.github/workflows/deploy-production.yml
+    with:
+      sha: ${{ needs.release-please.outputs.sha }}
+    # No secrets passed: the deploy job reads its own from the production
+    # environment.
