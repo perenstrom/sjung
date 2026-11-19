@@ -8,6 +8,7 @@ import {
   type PieceWithRelations,
 } from "@/lib/pieces/types";
 import type { ImportGroup } from "@/lib/pieces/import";
+import { resolveCategory } from "@/lib/pieces/categories";
 
 export async function getPiecesForGroup(groupId: string): Promise<PieceWithRelations[]> {
   return prisma.piece.findMany({
@@ -76,6 +77,21 @@ export async function getCreditRolesUsedInGroup(
     select: { role: true },
   });
   return credits.map((credit) => credit.role);
+}
+
+/** The distinct Categories on the Group's Files and Links, as stored. */
+export async function getCategoriesUsedInGroup(groupId: string): Promise<string[]> {
+  const where = { piece: { groupId }, category: { not: null } };
+  const [files, links] = await Promise.all([
+    prisma.file.findMany({ where, distinct: ["category"], select: { category: true } }),
+    prisma.link.findMany({ where, distinct: ["category"], select: { category: true } }),
+  ]);
+  return [...files, ...links].flatMap(({ category }) => (category === null ? [] : [category]));
+}
+
+/** The Category to store in the Group for a typed one (see `resolveCategory`). */
+export async function resolveCategoryInGroup(groupId: string, typed: string): Promise<string | null> {
+  return typed.trim() === "" ? null : resolveCategory(typed, await getCategoriesUsedInGroup(groupId));
 }
 
 /** What a Piece import matches against: the Group's People, Credit roles in use and Piece titles. */

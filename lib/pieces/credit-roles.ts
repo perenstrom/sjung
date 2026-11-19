@@ -1,60 +1,17 @@
-import { compareCaseInsensitive } from "@/lib/data-table/sorting";
-import { matchKey, normalizeSpacing } from "@/lib/text/match-key";
+import { createVocabulary } from "@/lib/text/vocabulary";
 
 /**
- * Credit roles are free text. These three are always offered and rank first,
- * in this order; any other role a Group has used follows alphabetically. Two
- * roles are the same if they differ only in letter case or spacing (`matchKey`).
+ * Credit roles are a free-text vocabulary (see `createVocabulary`). These
+ * three are always offered and rank first, in this order.
  */
-export const BUILT_IN_CREDIT_ROLES: readonly string[] = ["Arrangör", "Kompositör", "Textförfattare"];
+const creditRoles = createVocabulary(["Arrangör", "Kompositör", "Textförfattare"]);
+
+export const BUILT_IN_CREDIT_ROLES = creditRoles.builtIns;
 
 export const MAX_CREDIT_ROLE_LENGTH = 50;
 
-/** Built-in roles in their order first, then every other role alphabetically. */
-export function compareCreditRoles(a: string, b: string): number {
-  const rankA = BUILT_IN_CREDIT_ROLES.indexOf(a);
-  const rankB = BUILT_IN_CREDIT_ROLES.indexOf(b);
-  if (rankA !== -1 && rankB !== -1) return rankA - rankB;
-  if (rankA !== -1) return -1;
-  if (rankB !== -1) return 1;
-  return compareCaseInsensitive(a, b);
-}
-
-/**
- * The built-in roles merged with the roles used on a Group's credits, each
- * once (the built-in or first-seen spelling wins), in ranked order.
- */
-export function rankCreditRoles(groupRoles: readonly string[]): string[] {
-  const byKey = new Map<string, string>();
-  for (const role of [...BUILT_IN_CREDIT_ROLES, ...groupRoles]) {
-    const normalized = normalizeSpacing(role);
-    const key = matchKey(normalized);
-    if (normalized !== "" && !byKey.has(key)) byKey.set(key, normalized);
-  }
-  return [...byKey.values()].sort(compareCreditRoles);
-}
-
-/**
- * The role to store for a typed one: the existing spelling when it matches a
- * built-in role or one already on the Group's credits, else the typed text
- * normalized.
- */
-export function resolveCreditRole(typed: string, groupRoles: readonly string[]): string {
-  const key = matchKey(typed);
-  return (
-    rankCreditRoles(groupRoles).find((role) => matchKey(role) === key) ??
-    normalizeSpacing(typed)
-  );
-}
-
-/** The roles to list for the typed text: those containing it anywhere, ignoring case and spacing. */
-export function creditRoleSuggestions(roles: readonly string[], query: string): string[] {
-  const needle = matchKey(query);
-  return roles.filter((role) => matchKey(role).includes(needle));
-}
-
-/** Whether to offer the typed text as a new role: it's not empty and is no known role. */
-export function shouldOfferNewCreditRole(roles: readonly string[], query: string): boolean {
-  const key = matchKey(query);
-  return key !== "" && !roles.some((role) => matchKey(role) === key);
-}
+export const compareCreditRoles = creditRoles.compare;
+export const rankCreditRoles = creditRoles.rank;
+export const resolveCreditRole = creditRoles.resolve;
+export const creditRoleSuggestions = creditRoles.suggestions;
+export const shouldOfferNewCreditRole = creditRoles.shouldOfferNew;

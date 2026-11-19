@@ -4,6 +4,7 @@ import { Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type DragEvent } from "react";
 
+import { CategoryPicker } from "@/components/pieces/CategoryPicker";
 import { pickDroppedFile } from "@/components/pieces/droppedFile";
 import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * Always-visible drop zone for uploading one File to a Piece. The upload
- * starts as soon as a File is dropped or picked.
+ * starts as soon as a File is dropped or picked, with the Category picked
+ * above it, which stays picked for the next upload.
  */
 export function AddPieceFileRow({
   groupSlug,
@@ -27,6 +29,7 @@ export function AddPieceFileRow({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
 
   const { handleTransfer, isTransferring } = usePieceFileTransfer({
     target: { kind: "upload", groupSlug, pieceId },
@@ -38,6 +41,7 @@ export function AddPieceFileRow({
   async function upload(file: File) {
     const formData = new FormData();
     formData.set("file", file);
+    formData.set("category", category ?? "");
     await handleTransfer(formData);
     // Reset so picking the same File again still fires a change.
     if (inputRef.current) {
@@ -85,6 +89,7 @@ export function AddPieceFileRow({
 
   return (
     <div className="space-y-2">
+      <CategoryPicker value={category} onValueChange={setCategory} className="max-w-64" />
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}

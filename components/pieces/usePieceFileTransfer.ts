@@ -85,7 +85,7 @@ export function usePieceFileTransfer({
     notifyTransferringChange(isTransferring);
   }, [isTransferring]);
 
-  async function transfer(adapter: PieceFileTransferAdapter, selectedFile: File) {
+  async function transfer(adapter: PieceFileTransferAdapter, selectedFile: File, category: string) {
     try {
       const uploadMeta = new FormData();
       uploadMeta.set("groupSlug", target.groupSlug);
@@ -111,6 +111,9 @@ export function usePieceFileTransfer({
       finalizeData.set("fileName", selectedFile.name);
       finalizeData.set("storagePath", uploadData.storagePath);
       finalizeData.set("displayName", selectedFile.name);
+      if (target.kind === "upload") {
+        finalizeData.set("category", category);
+      }
       await adapter.finalize(finalizeData);
 
       onTransferSuccess?.();
@@ -123,6 +126,7 @@ export function usePieceFileTransfer({
     const adapter = resolveAdapter(target);
 
     const selectedFile = formData.get("file");
+    const category = formData.get("category");
     if (!(selectedFile instanceof File)) {
       onError(adapter.missingFileMessage);
       return;
@@ -145,7 +149,7 @@ export function usePieceFileTransfer({
     await new Promise<void>((resolve) => {
       startTransition(async () => {
         try {
-          await transfer(adapter, selectedFile);
+          await transfer(adapter, selectedFile, typeof category === "string" ? category : "");
         } finally {
           resolve();
         }

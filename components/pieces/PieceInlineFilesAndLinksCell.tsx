@@ -6,14 +6,16 @@ import {
 } from "@/components/pieces/PieceInlineFilesCell";
 import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import type { PieceLink } from "@/components/pieces/types";
+import { groupByCategory } from "@/lib/pieces/categories";
 
 /**
- * A piece's files and then its links as one stacked list, for the pieces
- * table's "Filer och länkar" column. Each list keeps its own add button and
- * row actions in edit mode; their icons tell files and links apart.
+ * A piece's Files and Links as one list under their Category headings (see
+ * `groupByCategory`), Files before Links in each; their icons tell them
+ * apart. In edit mode, the add buttons for both come last.
  */
 export function PieceInlineFilesAndLinksCell({
   readOnly = false,
+  touch,
   groupSlug,
   pieceId,
   pieceName,
@@ -21,37 +23,38 @@ export function PieceInlineFilesAndLinksCell({
   links,
 }: {
   readOnly?: boolean;
+  /** 40px lines for touch lists; see the lists' `touch`. */
+  touch?: boolean;
   groupSlug: string;
   pieceId: string;
   pieceName: string;
   files: PieceInlineFile[];
   links: PieceLink[];
 }) {
-  // Read-only, an empty list renders nothing, so it is left out instead of
-  // leaving the gap behind.
-  const showFiles = !readOnly || files.length > 0;
-  const showLinks = !readOnly || links.length > 0;
+  const shared = { touch, groupSlug, pieceId, pieceName };
 
   return (
-    <div className="flex flex-col gap-1">
-      {showFiles ? (
-        <PieceInlineFilesCell
-          readOnly={readOnly}
-          groupSlug={groupSlug}
-          pieceId={pieceId}
-          pieceName={pieceName}
-          files={files}
-        />
-      ) : null}
-      {showLinks ? (
-        <PieceInlineLinksCell
-          readOnly={readOnly}
-          groupSlug={groupSlug}
-          pieceId={pieceId}
-          pieceName={pieceName}
-          links={links}
-        />
-      ) : null}
+    <div className="flex flex-col gap-2">
+      {groupByCategory(files, links).map((group) => (
+        <div key={group.heading ?? ""} className="flex flex-col gap-1">
+          {group.heading === null ? null : (
+            <p className="text-xs font-medium text-muted-foreground">{group.heading}</p>
+          )}
+          {group.files.length > 0 ? (
+            <PieceInlineFilesCell readOnly={readOnly} withoutAdd {...shared} files={group.files} />
+          ) : null}
+          {group.links.length > 0 ? (
+            <PieceInlineLinksCell readOnly={readOnly} withoutAdd {...shared} links={group.links} />
+          ) : null}
+        </div>
+      ))}
+      {readOnly ? null : (
+        // Empty lists render only their add buttons.
+        <div className="flex flex-col gap-1">
+          <PieceInlineFilesCell {...shared} files={[]} />
+          <PieceInlineLinksCell {...shared} links={[]} />
+        </div>
+      )}
     </div>
   );
 }

@@ -19,10 +19,10 @@ const piece = {
   name: "Vem kan segla",
   credits: [],
   files: [
-    { id: "file-1", displayName: "Sopran.pdf", size: 1024 },
-    { id: "file-2", displayName: "Alt.pdf", size: 1024 },
+    { id: "file-1", displayName: "Sopran.pdf", size: 1024, category: null },
+    { id: "file-2", displayName: "Alt.pdf", size: 1024, category: null },
   ],
-  links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning" }],
+  links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: null }],
   aliases: [],
   notes: [],
 } as unknown as PieceWithRelations;
@@ -155,6 +155,25 @@ describe("PieceRowDetails, an open piece row", () => {
     );
   }
 
+  describe.each([
+    ["read", false],
+    ["edit", true],
+  ])("with a Category in %s mode", (_, isEditing) => {
+    it("groups the Files and Links under their Category headings, Övrigt last", () => {
+      const text = textOf(
+        renderDetails(isEditing, {
+          files: [
+            { id: "file-1", displayName: "Sopran.pdf", size: 1024, category: null },
+            { id: "file-2", displayName: "Alt.pdf", size: 1024, category: "Noter" },
+          ],
+          links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: "Noter" }],
+        } as unknown as Partial<PieceWithRelations>),
+      );
+
+      expect(text).toMatch(/Noter.*Alt\.pdf.*Inspelning.*Övrigt.*Sopran\.pdf/);
+    });
+  });
+
   describe("in read mode", () => {
     it("lists the piece's notes under an Anteckningar heading, after Files and Links", () => {
       const html = renderDetails(false, { notes });
@@ -185,10 +204,10 @@ describe("PieceRowDetails, an open piece row", () => {
   });
 
   describe("in edit mode", () => {
-    it("lists the notes after Länkar with a trigger to edit them", () => {
+    it("lists the notes after the Files and Links with a trigger to edit them", () => {
       const text = textOf(renderDetails(true, { notes }));
 
-      expect(text).toMatch(/Länkar.*Anteckningar.*Nyast med radbrytning.*Äldst.*Redigera anteckningar/);
+      expect(text).toMatch(/Filer och länkar.*Inspelning.*Anteckningar.*Nyast med radbrytning.*Äldst.*Redigera anteckningar/);
     });
 
     it("shows the Anteckningar section with an add trigger for a piece without notes", () => {

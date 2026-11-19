@@ -10,8 +10,7 @@ import { LetterDividerListItem } from "@/components/pieces/LetterDivider";
 import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
-import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
-import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
+import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
@@ -211,7 +210,7 @@ export function PieceRowDetails({
   );
 }
 
-/** Read mode: Files, then Links, as 40px full-width lines, then the Piece notes. */
+/** Read mode: the Files and Links as 40px full-width lines, then the Piece notes. */
 function PieceMaterial({
   piece,
   groupSlug,
@@ -232,24 +231,15 @@ function PieceMaterial({
 
   return (
     <>
-      <div>
-        <PieceInlineFilesCell
-          readOnly
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          files={toInlineFiles(piece)}
-        />
-        <PieceInlineLinksCell
-          readOnly
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          links={toInlineLinks(piece)}
-        />
-      </div>
+      <PieceInlineFilesAndLinksCell
+        readOnly
+        touch
+        groupSlug={groupSlug}
+        pieceId={piece.id}
+        pieceName={piece.name}
+        files={toInlineFiles(piece)}
+        links={toInlineLinks(piece)}
+      />
       {notes}
     </>
   );
@@ -293,22 +283,13 @@ function PieceEditSections({
         ) : null}
       </section>
       <section className="space-y-1">
-        <SectionHeading>Filer</SectionHeading>
-        <PieceInlineFilesCell
+        <SectionHeading>Filer och länkar</SectionHeading>
+        <PieceInlineFilesAndLinksCell
           touch
           groupSlug={groupSlug}
           pieceId={piece.id}
           pieceName={piece.name}
           files={toInlineFiles(piece)}
-        />
-      </section>
-      <section className="space-y-1">
-        <SectionHeading>Länkar</SectionHeading>
-        <PieceInlineLinksCell
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
           links={toInlineLinks(piece)}
         />
       </section>
