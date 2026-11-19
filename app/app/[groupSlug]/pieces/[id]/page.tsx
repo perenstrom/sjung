@@ -11,17 +11,23 @@ import { PieceDetailLinksSection } from "@/components/PieceDetailLinksSection";
 import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
+import {
+  PIECE_DETAIL_VARIANTS,
+  PieceDetailSectionsLayout,
+  parsePieceDetailVariant,
+} from "@/components/pieces/prototype/PieceDetailLayoutPrototype";
+import { PrototypeSwitcher } from "@/components/PrototypeSwitcher";
 import { pieceDetailTrail } from "@/lib/breadcrumbs";
 import { fromSetListIdParam } from "@/lib/pieces/href";
 import { notFound } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ groupSlug: string; id: string }>;
-  searchParams: Promise<{ setlist?: string | string[] }>;
+  searchParams: Promise<{ setlist?: string | string[]; variant?: string | string[] }>;
 };
 
 export default async function TenantPieceDetailPage({ params, searchParams }: PageProps) {
-  const [{ groupSlug, id }, { setlist }] = await Promise.all([params, searchParams]);
+  const [{ groupSlug, id }, { setlist, variant: variantParam }] = await Promise.all([params, searchParams]);
   const [piece, people, creditRoles, setLists, groups, access] = await Promise.all([
     getPieceDetail(groupSlug, id),
     getPeople(groupSlug),
@@ -34,6 +40,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
   if (!piece) {
     notFound();
   }
+  const variant = parsePieceDetailVariant(variantParam);
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
@@ -55,55 +62,58 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
           initialName={piece.name}
         />
 
-        <PieceDetailCreditsSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          credits={piece.credits.map((credit) => ({
-            personId: credit.personId,
-            role: credit.role,
-            person: { name: credit.person.name },
-          }))}
-          people={people}
-          creditRoles={creditRoles}
-        />
+        <PieceDetailSectionsLayout variant={variant}>
+          <PieceDetailCreditsSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            pieceName={piece.name}
+            credits={piece.credits.map((credit) => ({
+              personId: credit.personId,
+              role: credit.role,
+              person: { name: credit.person.name },
+            }))}
+            people={people}
+            creditRoles={creditRoles}
+          />
 
-        <PieceDetailFilesSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          files={piece.files.map((file) => ({
-            id: file.id,
-            displayName: file.displayName,
-            size: file.size,
-            createdAt: file.createdAt,
-          }))}
-        />
+          <PieceDetailFilesSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            pieceName={piece.name}
+            files={piece.files.map((file) => ({
+              id: file.id,
+              displayName: file.displayName,
+              size: file.size,
+              createdAt: file.createdAt,
+            }))}
+          />
 
-        <PieceDetailLinksSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          links={piece.links.map((link) => ({
-            id: link.id,
-            url: link.url,
-            label: link.label,
-          }))}
-        />
+          <PieceDetailLinksSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            pieceName={piece.name}
+            links={piece.links.map((link) => ({
+              id: link.id,
+              url: link.url,
+              label: link.label,
+            }))}
+          />
 
-        <PieceDetailNotesSection
-          key={`notes-${piece.id}`}
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          notes={piece.notes}
-        />
+          <PieceDetailNotesSection
+            key={`notes-${piece.id}`}
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            notes={piece.notes}
+          />
 
-        <PieceSetListsSection
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          entries={piece.setListEntries}
-          allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
-        />
+          <PieceSetListsSection
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            entries={piece.setListEntries}
+            allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
+          />
+        </PieceDetailSectionsLayout>
+        <PrototypeSwitcher variants={PIECE_DETAIL_VARIANTS} current={variant} />
       </div>
     </EditModeProvider>
   );

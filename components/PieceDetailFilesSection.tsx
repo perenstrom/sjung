@@ -8,7 +8,7 @@ import { AddPieceFileRow } from "@/components/pieces/AddPieceFileRow";
 import { PieceFilesList } from "@/components/pieces/PieceFilesList";
 import { RenamePieceFilePopover } from "@/components/pieces/RenamePieceFilePopover";
 import type { PieceFileListItem } from "@/components/pieces/types";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { PieceDetailSection } from "@/components/pieces/prototype/PieceDetailLayoutPrototype";
 
 type PieceDetailFilesSectionProps = {
   groupSlug: string;
@@ -40,45 +40,40 @@ function PieceDetailFilesCard({
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
 
   return (
-    <Card variant="section">
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-        <h2 className="text-lg leading-8 font-medium">Filer</h2>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <PieceFilesList
-          groupSlug={groupSlug}
-          files={files}
-          readOnly={readOnly}
-          onAggregateError={setError}
-          onClearAggregateError={() => setError(null)}
-          onMutationSuccess={() => router.refresh()}
-          renderFileActions={(file) => (
-            <RenamePieceFilePopover
-              key={file.id}
-              groupSlug={groupSlug}
-              fileId={file.id}
-              displayName={file.displayName}
-              open={editingFileId === file.id}
-              triggerClassName="size-7 shrink-0"
-              onOpenChange={(nextOpen) => {
-                if (nextOpen) {
-                  setEditingFileId(file.id);
-                } else if (editingFileId === file.id) {
-                  setEditingFileId(null);
-                }
-              }}
-            />
-          )}
-        />
-
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-        {readOnly ? null : (
-          <div className="border-t pt-3">
-            <AddPieceFileRow groupSlug={groupSlug} pieceId={pieceId} />
-          </div>
+    <PieceDetailSection title="Filer">
+      <PieceFilesList
+        groupSlug={groupSlug}
+        files={files}
+        readOnly={readOnly}
+        onAggregateError={setError}
+        onClearAggregateError={() => setError(null)}
+        onMutationSuccess={() => router.refresh()}
+        renderFileActions={(file) => (
+          <RenamePieceFilePopover
+            key={file.id}
+            groupSlug={groupSlug}
+            fileId={file.id}
+            displayName={file.displayName}
+            open={editingFileId === file.id}
+            triggerClassName="size-7 shrink-0"
+            onOpenChange={(nextOpen) => {
+              if (nextOpen) {
+                setEditingFileId(file.id);
+              } else if (editingFileId === file.id) {
+                setEditingFileId(null);
+              }
+            }}
+          />
         )}
-      </CardContent>
-    </Card>
+      />
+
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+      {readOnly ? null : (
+        <div className="border-t pt-3">
+          <AddPieceFileRow groupSlug={groupSlug} pieceId={pieceId} />
+        </div>
+      )}
+    </PieceDetailSection>
   );
 }

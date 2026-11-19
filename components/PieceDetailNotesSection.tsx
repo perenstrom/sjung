@@ -6,7 +6,7 @@ import {
   usePieceNotes,
   type PieceNotesState,
 } from "@/components/pieces/PieceNotesPanel";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { PieceDetailSection } from "@/components/pieces/prototype/PieceDetailLayoutPrototype";
 import type { PieceNoteListItem } from "@/lib/pieces/types";
 
 type PieceDetailNotesSectionProps = {
@@ -49,18 +49,13 @@ function PieceDetailNotesCard({
   list: PieceNotesState;
 }) {
   return (
-    <Card variant="section">
-      <CardHeader className="flex flex-wrap items-center justify-between gap-2 space-y-0">
-        <h2 className="text-lg leading-8 font-medium">Anteckningar</h2>
-      </CardHeader>
-      <CardContent>
-        <PieceNotesPanel
-          readOnly={readOnly}
-          groupSlug={groupSlug}
-          pieceId={pieceId}
-          list={list}
-        />
-      </CardContent>
-    </Card>
+    <PieceDetailSection title="Anteckningar" wide>
+      <PieceNotesPanel
+        readOnly={readOnly}
+        groupSlug={groupSlug}
+        pieceId={pieceId}
+        list={list}
+      />
+    </PieceDetailSection>
   );
 }
