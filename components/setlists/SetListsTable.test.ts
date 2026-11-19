@@ -115,7 +115,7 @@ describe("SetListsTable", () => {
     ],
   ])("sorts by %s when its heading is chosen", (_, sorting, expected) => {
     const html = renderMarkup(
-      createElement(DataTable<SetListsTableRow, unknown>, {
+      createElement(DataTable<SetListsTableRow>, {
         columns: setListsColumns("koren", false),
         // SetListsTable hands the table its rows in the default order, which settles ties.
         data: [...setLists].sort(compareSetListsByDefault),

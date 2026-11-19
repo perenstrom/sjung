@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { type ComponentProps, createContext, type ReactNode, useContext, useMemo } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
 
 import { DeletePieceDialog } from "@/components/DeletePieceDialog";
 import { useEditMode } from "@/components/EditModeContext";
@@ -10,10 +9,7 @@ import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover
 import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
-import {
-  DataTable,
-  DataTableColumnHeader,
-} from "@/components/data-table";
+import { type ColumnDef, DataTable, DataTableColumnHeader } from "@/components/data-table";
 import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
@@ -21,7 +17,7 @@ import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { LetterDividerTableRow } from "@/components/pieces/LetterDivider";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
-import { caseInsensitiveSortingFn, compareCaseInsensitive } from "@/lib/data-table/sorting";
+import { compareCaseInsensitive } from "@/lib/data-table/sorting";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
 import { pieceMatchesSearch } from "@/lib/pieces/search";
@@ -216,7 +212,7 @@ export function PiecesTable({
       {
         id: "name",
         accessorFn: (row) => (row.kind === "piece" ? row.piece.name : ""),
-        sortingFn: caseInsensitiveSortingFn,
+        sortFn: "caseInsensitive",
         meta: {
           getColSpan: (row) => (row.kind === "note" ? RUNNING_ORDER_NOTE_COL_SPAN : 1),
         },
