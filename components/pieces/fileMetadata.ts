@@ -8,7 +8,7 @@ function formatUploadedDate(value: Date | string): string {
 }
 
 /** Size · upload date, shown next to a File's name. */
-export function metadataForFile(file: PieceFileListItem): string {
+export function metadataForFile(file: Pick<PieceFileListItem, "size" | "createdAt">): string {
   const size = formatFileSize(file.size);
   return file.createdAt == null
     ? size
