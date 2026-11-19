@@ -5,11 +5,13 @@ import { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { findInGroup } from "@/lib/find-in-group";
 import { rankCreditRoles, resolveCreditRole } from "@/lib/pieces/credit-roles";
+import { isNewAlias } from "@/lib/pieces/aliases";
 import { assertNoDuplicateCredits, DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
 import {
   parseCreditPersonIdFromFormData,
   parseCreditRolesFromFormData,
   parseLinkIdFromFormData,
+  parsePieceAliasIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
   parsePieceIdFromFormData,
@@ -199,6 +201,41 @@ export async function updatePiece(formData: FormData) {
     });
 
     await revalidatePieceRoutes(groupSlug, piece.id);
+  });
+}
+
+/**
+ * Gives a Piece another Alias, after its others. An Alias that repeats the
+ * Piece's name or one of its Aliases (ignoring case and spacing) is quietly
+ * left out.
+ */
+export async function addPieceAlias(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
+  const name = parsePieceNameFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const piece = await findInGroup(groupId, "piece", pieceId, {
+      select: { id: true, name: true, aliases: { select: { name: true } } },
+    });
+    if (!isNewAlias(name, piece)) return;
+
+    await prisma.pieceAlias.create({ data: { pieceId: piece.id, name } });
+    await revalidatePieceRoutes(groupSlug, piece.id);
+  });
+}
+
+export async function removePieceAlias(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceAliasId = parsePieceAliasIdFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const alias = await findInGroup(groupId, "pieceAlias", pieceAliasId, {
+      select: { id: true, pieceId: true },
+    });
+    await prisma.pieceAlias.delete({ where: { id: alias.id } });
+
+    await revalidatePieceRoutes(groupSlug, alias.pieceId);
   });
 }
 

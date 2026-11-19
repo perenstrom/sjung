@@ -8,6 +8,7 @@ import {
   createLink,
   createPerson,
   createPiece,
+  createPieceAlias,
   createPieceNote,
   createSetList,
   createSetListNote,
@@ -34,6 +35,10 @@ const KINDS: Record<ContentKind, { create: (group: Group) => Promise<{ id: strin
   },
   file: { create: async (group) => createFile(await pieceIn(group)), notFound: "Fil hittades inte" },
   link: { create: async (group) => createLink(await pieceIn(group)), notFound: "Länk hittades inte" },
+  pieceAlias: {
+    create: async (group) => createPieceAlias(await pieceIn(group)),
+    notFound: "Alternativt namn hittades inte",
+  },
   pieceNote: {
     create: async (group) =>
       createPieceNote({ piece: await pieceIn(group), createdById: group.createdById }),

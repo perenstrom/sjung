@@ -1,6 +1,22 @@
 import { Prisma } from "@/app/generated/prisma/client";
 
+/** Aliases in the order they were added; the id breaks a tie between two added in the same millisecond. */
+export const PIECE_ALIAS_ORDER = [
+  { createdAt: "asc" },
+  { id: "asc" },
+] as const satisfies Prisma.PieceAliasOrderByWithRelationInput[];
+
+/** A Piece's Aliases as lists and pages show them, in the order they were added (CONTEXT.md: Alias). */
+const pieceAliasesQuery = {
+  orderBy: PIECE_ALIAS_ORDER,
+  select: { id: true, name: true },
+} as const satisfies Prisma.Piece$aliasesArgs;
+
+/** One of a Piece's Aliases. */
+export type PieceAliasItem = Prisma.PieceAliasGetPayload<{ select: typeof pieceAliasesQuery.select }>;
+
 export const pieceWithRelationsInclude = {
+  aliases: pieceAliasesQuery,
   credits: {
     include: {
       person: { select: { name: true } },
@@ -45,6 +61,7 @@ export type PieceNoteListItem = Omit<PieceNoteListItemQueryResult, "createdBy"> 
 export const pieceDetailSelect = {
   id: true,
   name: true,
+  aliases: pieceAliasesQuery,
   credits: {
     select: {
       personId: true,

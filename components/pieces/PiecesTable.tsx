@@ -15,12 +15,13 @@ import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFil
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { LetterDividerTableRow } from "@/components/pieces/LetterDivider";
+import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { compareCaseInsensitive } from "@/lib/data-table/sorting";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
-import { pieceMatchesSearch } from "@/lib/pieces/search";
+import { searchPieces } from "@/lib/pieces/search";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
@@ -56,7 +57,13 @@ const PIECE_NAME_WRAP_CLASS = "max-w-xs py-1.5 whitespace-normal break-words";
 
 // A row is a piece or, in set list mode, a Running-order note. Set list rows
 // carry the step id, so the same piece can appear in several rows.
-type PieceRow = { kind: "piece"; id: string; piece: PieceWithRelations };
+// A search result's row carries the Aliases that explain why it matched.
+type PieceRow = {
+  kind: "piece";
+  id: string;
+  piece: PieceWithRelations;
+  matchingAliases?: readonly string[];
+};
 type NoteRow = { kind: "note"; id: string; content: string };
 type PiecesTableRow = PieceRow | NoteRow;
 
@@ -101,11 +108,14 @@ function getRowId(row: PiecesTableRow): string {
 /** The piece's name as a link to piece detail; in edit mode with a pencil to rename it. */
 function PieceNameCell({
   piece,
+  matchingAliases = [],
   groupSlug,
   setListId,
   isEditing,
 }: {
   piece: PieceWithRelations;
+  /** The Aliases that explain a search match the name doesn't, shown under it. */
+  matchingAliases?: readonly string[];
   groupSlug: string;
   setListId: string | undefined;
   isEditing: boolean;
@@ -118,19 +128,22 @@ function PieceNameCell({
   );
 
   return (
-    <div className={cn(FIRST_LINE_CLASS, PIECE_NAME_WRAP_CLASS)}>
-      {isEditing ? (
-        <PieceNameEditor
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          name={piece.name}
-          renderName={renderName}
-          // The Namn column is narrow; keep the input wide enough to type in.
-          inputClassName="min-w-40"
-        />
-      ) : (
-        renderName(piece.name)
-      )}
+    <div className={PIECE_NAME_WRAP_CLASS}>
+      <div className={FIRST_LINE_CLASS}>
+        {isEditing ? (
+          <PieceNameEditor
+            groupSlug={groupSlug}
+            pieceId={piece.id}
+            name={piece.name}
+            renderName={renderName}
+            // The Namn column is narrow; keep the input wide enough to type in.
+            inputClassName="min-w-40"
+          />
+        ) : (
+          renderName(piece.name)
+        )}
+      </div>
+      <PieceAliasesLine aliases={matchingAliases} />
     </div>
   );
 }
@@ -173,9 +186,14 @@ export function PiecesTable({
     [props.pieces]
   );
   // Filtered before rows are made, so the letter dividers follow the matches.
-  const pieces = useMemo(
-    () => sortedPieces?.filter((piece) => pieceMatchesSearch(piece, search)),
+  const searchResults = useMemo(
+    () => sortedPieces && searchPieces(sortedPieces, search),
     [sortedPieces, search]
+  );
+  const pieces = useMemo(() => searchResults?.map(({ piece }) => piece), [searchResults]);
+  const matchingAliases = useMemo(
+    () => new Map(searchResults?.map((result) => [result.piece.id, result.matchingAliases])),
+    [searchResults]
   );
   const emptyMessage = setList
     ? "Inga steg i repertoaren ännu."
@@ -186,8 +204,8 @@ export function PiecesTable({
     () =>
       setList
         ? setList.steps
-        : (pieces ?? []).map((piece) => ({ kind: "piece", id: piece.id, piece })),
-    [pieces, setList]
+        : (searchResults ?? []).map((result) => ({ kind: "piece", id: result.piece.id, ...result })),
+    [searchResults, setList]
   );
   const cellContext = useMemo(
     () => ({ people, creditRoles, orderedStepIds: setList?.steps.map((step) => step.id) ?? [] }),
@@ -227,6 +245,7 @@ export function PiecesTable({
           ) : (
             <PieceNameCell
               piece={row.original.piece}
+              matchingAliases={row.original.matchingAliases}
               groupSlug={groupSlug}
               setListId={setListId}
               isEditing={isEditing}
@@ -346,7 +365,7 @@ export function PiecesTable({
   return (
     <PiecesTableCellContext.Provider value={cellContext}>
       <PiecesMobileList
-        {...(setList ? { setList } : { pieces: pieces ?? [] })}
+        {...(setList ? { setList } : { pieces: pieces ?? [], matchingAliases })}
         people={people}
         creditRoles={creditRoles}
         groupSlug={groupSlug}

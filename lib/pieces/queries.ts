@@ -33,6 +33,7 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
   return {
     id: piece.id,
     name: piece.name,
+    aliases: piece.aliases,
     credits: piece.credits,
     files: piece.files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     links: piece.links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),

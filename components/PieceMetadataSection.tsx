@@ -2,19 +2,24 @@
 
 import { useEditMode } from "@/components/EditModeContext";
 import { EditModeToggle } from "@/components/EditModeToggle";
+import { PieceAliasesEditor } from "@/components/pieces/PieceAliasesEditor";
+import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
+import type { PieceAliasItem } from "@/lib/pieces/types";
 
 type PieceMetadataSectionProps = {
   groupSlug: string;
   pieceId: string;
   initialName: string;
+  /** The Piece's Aliases, in the order they were added. */
+  aliases: readonly PieceAliasItem[];
 };
 
 const renderHeading = (name: string) => (
   <h1 className="min-w-0 text-2xl font-semibold break-words">{name}</h1>
 );
 
-export function PieceMetadataSection({ groupSlug, pieceId, initialName }: PieceMetadataSectionProps) {
+export function PieceMetadataSection({ groupSlug, pieceId, initialName, aliases }: PieceMetadataSectionProps) {
   const { isEditing } = useEditMode();
 
   return (
@@ -35,6 +40,11 @@ export function PieceMetadataSection({ groupSlug, pieceId, initialName }: PieceM
         )}
         <EditModeToggle />
       </div>
+      {isEditing ? (
+        <PieceAliasesEditor groupSlug={groupSlug} pieceId={pieceId} aliases={aliases} />
+      ) : (
+        <PieceAliasesLine aliases={aliases.map((alias) => alias.name)} className="break-words" />
+      )}
     </section>
   );
 }

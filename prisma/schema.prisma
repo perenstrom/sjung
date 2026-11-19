@@ -206,8 +206,23 @@ model Piece {
   links          Link[]
   setListEntries SetListPiece[]
   notes          PieceNote[]
+  aliases        PieceAlias[]
 
   @@map("pieces")
+}
+
+/// Another name a Piece goes by (CONTEXT.md: Alias), listed in the order added.
+model PieceAlias {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  name    String
+  pieceId String @map("piece_id")
+
+  piece Piece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  @@index([pieceId, createdAt])
+  @@map("piece_aliases")
 }
 
 model Link {

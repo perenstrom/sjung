@@ -2,7 +2,10 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { addPieceToSetList } from "@/app/actions/setlists";
+import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import { searchPieces } from "@/lib/pieces/search";
+import type { SetListPieceOption } from "@/lib/setlists/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,21 +17,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type PieceOption = {
-  id: string;
-  name: string;
-};
-
 type AddPieceToSetListFormProps = {
   groupSlug: string;
   setListId: string;
-  pieces: PieceOption[];
+  // No credits, so the search doesn't look at credited People.
+  pieces: SetListPieceOption[];
 };
 
 /**
- * Search for a Piece and add it to the end of a Set list. After a successful
- * add the search and selection start over, ready for the next Piece; after a
- * failed add they are kept so the user can retry.
+ * Search for a Piece and add it to the end of a Set list. The search finds a
+ * Piece by its name or an Alias, like Alla noter but not by credited People,
+ * and an option found only by its Aliases shows the matching ones under its
+ * name. After a successful add the search and selection start over, ready for
+ * the next Piece; after a failed add they are kept so the user can retry.
  */
 export function AddPieceToSetListForm({
   groupSlug,
@@ -52,16 +53,8 @@ export function AddPieceToSetListForm({
     null
   );
 
-  const filteredPieces = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("sv-SE");
-    if (!normalized) {
-      return pieces;
-    }
-
-    return pieces.filter((piece) =>
-      piece.name.toLocaleLowerCase("sv-SE").includes(normalized)
-    );
-  }, [pieces, query]);
+  const searchResults = useMemo(() => searchPieces(pieces, query), [pieces, query]);
+  const filteredPieces = useMemo(() => searchResults.map(({ piece }) => piece), [searchResults]);
 
   const resolvedPieceId = useMemo(() => {
     if (filteredPieces.length === 0) {
@@ -104,9 +97,16 @@ export function AddPieceToSetListForm({
               <SelectValue placeholder="Inga stycken matchar" />
             </SelectTrigger>
             <SelectContent>
-              {filteredPieces.map((piece) => (
+              {searchResults.map(({ piece, matchingAliases }) => (
                 <SelectItem key={piece.id} value={piece.id}>
-                  {piece.name}
+                  <span className="flex flex-col items-start">
+                    {piece.name}
+                    {/* Explains the match in the list, not in the chosen value. */}
+                    <PieceAliasesLine
+                      aliases={matchingAliases}
+                      className="text-xs in-data-[slot=select-value]:hidden"
+                    />
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>

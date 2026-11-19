@@ -54,6 +54,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
           groupSlug={groupSlug}
           pieceId={piece.id}
           initialName={piece.name}
+          aliases={piece.aliases}
         />
 
         <PieceDetailSectionStack>
