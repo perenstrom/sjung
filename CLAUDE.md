@@ -18,7 +18,7 @@ Writing, changing or reviewing a test: read `docs/testing.md` first (which layer
 
 ### Commit messages
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/) (`type(scope): description`). See the "Commits" section in `README.md`.
+Follow [Conventional Commits](https://www.conventionalcommits.org/) (`type(scope): description`) in commit messages and PR titles. See the "Commits" section in `README.md`.
 
 ### No Claude attribution
 
@@ -26,7 +26,7 @@ Commits and PRs carry no Claude attribution: no `Co-Authored-By: Claude` trailer
 
 ### Boy scout rule
 
-Leave the code you touch cleaner than you found it. When a change or its review turns up small tidying in or next to that code (duplicated logic, unclear names, a helper in the wrong folder, scattered conditionals), do it as part of the same work rather than leaving it as a suggestion. Commit it separately as a `refactor` so the behaviour change and the cleanup can be reviewed apart. Keep it to code the change touches; a larger cleanup gets its own issue instead.
+Leave the code you touch cleaner than you found it. When a change or its review turns up small tidying in or next to that code (duplicated logic, unclear names, a helper in the wrong folder, scattered conditionals), do it as part of the same work rather than leaving it as a suggestion. Commit it separately as a `refactor` commit on the branch so the behaviour change and the cleanup can be reviewed apart; PRs are squash-merged, so both land on `main` as one commit titled after the behaviour change. Keep it to code the change touches; a larger cleanup gets its own issue instead.
 
 ### PR descriptions
 

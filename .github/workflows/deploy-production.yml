@@ -1,17 +1,29 @@
 name: Deploy to production
 
 on:
+  # Manual deploys and rollbacks.
   workflow_dispatch:
     inputs:
+      sha:
+        description: "Commit on main to deploy, e.g. to roll back. Empty deploys main's current HEAD."
+        type: string
+        required: false
+        default: ""
       force:
         description: "Force a clean --no-cache rebuild instead of reusing an existing image for this commit"
         type: boolean
         default: false
-
-# Never run two production deploys at once, and never cancel one mid-flight.
-concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  # The release workflow, after merging a release PR.
+  workflow_call:
+    inputs:
+      sha:
+        description: "Release commit to deploy"
+        type: string
+        required: true
+      force:
+        description: "Force a clean --no-cache rebuild"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,6 +33,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 90
+    # Never run two production deploys at once, and never cancel one
+    # mid-flight. Set on the job so it also holds when the release workflow
+    # calls this one.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
 
     steps:
       - name: Require main
@@ -32,27 +51,97 @@ jobs:
             exit 1
           fi
 
-      # Must match the job names CI reports, which are also the required
-      # status checks on main.
-      - name: Confirm CI is green on main's current HEAD
+      # A rollback names an older commit, which must already be on main.
+      - name: Resolve the commit to deploy
+        id: target
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          REQUESTED_SHA: ${{ inputs.sha }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
-          for job in "build" "Integration Tests" "e2e"; do
-            conclusion=$(gh api --method GET "repos/$REPO/commits/$SHA/check-runs" -f check_name="$job" \
-              --jq ".check_runs | sort_by(.started_at) | last | .conclusion")
-            if [ "$conclusion" != "success" ]; then
-              echo "::error::CI job '$job' is not green on $SHA (conclusion: ${conclusion:-not found})."
-              exit 1
-            fi
-            echo "CI job '$job' is green on $SHA."
-          done
+          requested="${REQUESTED_SHA:-$HEAD_SHA}"
+          if ! sha=$(gh api "repos/$REPO/commits/$requested" --jq .sha); then
+            echo "::error::Commit '$requested' doesn't exist in $REPO."
+            exit 1
+          fi
+          # "identical" or "ahead" means main contains the commit.
+          status=$(gh api "repos/$REPO/compare/$sha...refs/heads/main" --jq .status)
+          if [ "$status" != "identical" ] && [ "$status" != "ahead" ]; then
+            echo "::error::Commit $sha isn't on main (compare status: $status)."
+            exit 1
+          fi
+          echo "Deploying $sha."
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
-      # Coolify builds main's HEAD at trigger time, not github.sha, so a push
-      # landing between dispatch and here would ship an unchecked commit.
-      # Avoid merging to main while a production deploy is starting.
+      # Must match the job names CI reports, which are also the required
+      # status checks on main. After a release PR merges, CI on the release
+      # commit is still running, so a release deploy waits for it to finish.
+      # A manual deploy or rollback doesn't wait: an old commit with no check
+      # runs would otherwise spin until the timeout.
+      - name: Require CI to pass on the commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ steps.target.outputs.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            max_polls=1
+          else
+            # 45 minutes: CI starts on the same push and runs e2e last.
+            max_polls=90
+          fi
+          poll_interval=30
+          for i in $(seq 1 "$max_polls"); do
+            pending=""
+            for job in "build" "Integration Tests" "e2e"; do
+              result=$(gh api --method GET "repos/$REPO/commits/$SHA/check-runs" -f check_name="$job" \
+                --jq '.check_runs | sort_by(.started_at) | last | "\(.status) \(.conclusion)"') || result="unreachable"
+              case "$result" in
+                "completed success")
+                  ;;
+                completed\ *)
+                  echo "::error::CI job '$job' failed on $SHA (${result#completed })."
+                  exit 1
+                  ;;
+                *)
+                  pending="$pending '$job' ($result)"
+                  ;;
+              esac
+            done
+            if [ -z "$pending" ]; then
+              echo "CI jobs build, Integration Tests and e2e are green on $SHA."
+              exit 0
+            fi
+            echo "[$i/$max_polls] not green yet:$pending"
+            if [ "$i" -lt "$max_polls" ]; then
+              sleep "$poll_interval"
+            fi
+          done
+          echo "::error::CI isn't green on $SHA:$pending"
+          exit 1
+
+      # Coolify's production app tracks the production branch and builds
+      # whatever it points to when Coolify fetches. Pointing it at the checked
+      # commit first means a merge to main during this run can't reach
+      # production. Only the release app may push to production, and the ref
+      # update is forced so a rollback can move the branch backwards.
+      - name: Create release app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Move the production branch to the commit
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          gh api --method PATCH "repos/$REPO/git/refs/heads/production" -f sha="$SHA" -F force=true --jq .object.sha
+
       - name: Trigger Coolify production deploy
         id: trigger
         env:
@@ -104,3 +193,21 @@ jobs:
           done
           echo "::error::Timed out waiting for the deployment to finish."
           exit 1
+
+      # Coolify resolves the production branch to a commit when it fetches
+      # and records it on the deployment.
+      - name: Confirm Coolify deployed the commit
+        env:
+          COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+          COOLIFY_PROD_TOKEN: ${{ secrets.COOLIFY_PROD_TOKEN }}
+          DEPLOYMENT_UUID: ${{ steps.trigger.outputs.deployment_uuid }}
+          SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          deployed=$(curl --fail --silent --show-error --request GET \
+            "${COOLIFY_URL}/api/v1/deployments/${DEPLOYMENT_UUID}" \
+            --header "Authorization: Bearer ${COOLIFY_PROD_TOKEN}" | jq -r '.commit')
+          if [ "$deployed" != "$SHA" ]; then
+            echo "::error::Coolify deployed ${deployed:-an unknown commit}, not $SHA."
+            exit 1
+          fi
+          echo "Coolify deployed $SHA."
