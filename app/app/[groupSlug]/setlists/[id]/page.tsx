@@ -1,6 +1,5 @@
 import { getCreditRoles } from "@/app/actions/pieces";
 import {
-  addPieceToSetList,
   appendSetListNote,
   getSetListDetail,
   getSetListPieceOptions,
@@ -12,7 +11,7 @@ import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
 import { PageHeader } from "@/components/PageHeader";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
-import { SetListPiecePicker } from "@/components/SetListPiecePicker";
+import { AddPieceToSetListForm } from "@/components/AddPieceToSetListForm";
 import {
   createGroupAncestor,
   createSetListsAncestor,
@@ -73,16 +72,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
         <EditOnly>
           <section className="space-y-3">
             <h2 className="text-lg font-medium">Lägg till stycke</h2>
-            <form action={addPieceToSetList} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <input type="hidden" name="groupSlug" value={groupSlug} />
-              <input type="hidden" name="setListId" value={setList.id} />
-              <div className="sm:w-80">
-                <SetListPiecePicker pieces={pieces} />
-              </div>
-              <Button type="submit" disabled={pieces.length === 0}>
-                Lägg till
-              </Button>
-            </form>
+            <AddPieceToSetListForm groupSlug={groupSlug} setListId={setList.id} pieces={pieces} />
           </section>
 
           <section className="space-y-3">
