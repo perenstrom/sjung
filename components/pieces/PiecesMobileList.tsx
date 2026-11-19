@@ -23,6 +23,7 @@ import {
 import { formatCreditsLine } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
+import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import type { Person } from "@/types/piece-credit-dialog";
@@ -59,10 +60,16 @@ export function PiecesMobileList({
   isEditing: boolean;
   emptyMessage: string;
 } & (
-  | { pieces: PieceWithRelations[]; setList?: undefined }
+  | {
+      pieces: PieceWithRelations[];
+      /** Per piece id, the Aliases that explain a search match its name doesn't. */
+      matchingAliases?: ReadonlyMap<string, readonly string[]>;
+      setList?: undefined;
+    }
   | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
 )) {
   const { pieces, setList } = props;
+  const matchingAliases = setList ? undefined : props.matchingAliases;
   // Kept by row id (the step id in a set list, where a piece can appear
   // twice), so rows stay open across router.refresh().
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set());
@@ -126,7 +133,12 @@ export function PiecesMobileList({
                 open={openIds.has(row.id)}
                 onOpenChange={(open) => setOpen(row.id, open)}
                 leading={number}
-                primary={<span className="font-medium">{piece.name}</span>}
+                primary={
+                  <>
+                    <span className="font-medium">{piece.name}</span>
+                    <PieceAliasesLine aliases={matchingAliases?.get(piece.id) ?? []} className="truncate" />
+                  </>
+                }
                 // Edit mode lists the credits in its Medverkande section instead.
                 secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
               >

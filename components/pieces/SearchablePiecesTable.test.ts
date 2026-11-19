@@ -21,6 +21,7 @@ const piece = {
   credits: [],
   files: [],
   links: [],
+  aliases: [],
   notes: [],
 } as unknown as PieceWithRelations;
 

@@ -37,6 +37,12 @@ const CONTENT = {
     find: (groupId: string, id: string, select: Prisma.LinkSelect) =>
       prisma.link.findFirst({ where: { id, piece: { groupId } }, select }),
   },
+  /** An Alias of a Piece (CONTEXT.md). */
+  pieceAlias: {
+    notFound: "Alternativt namn hittades inte",
+    find: (groupId: string, id: string, select: Prisma.PieceAliasSelect) =>
+      prisma.pieceAlias.findFirst({ where: { id, piece: { groupId } }, select }),
+  },
   pieceNote: {
     notFound: "Anteckning hittades inte",
     find: (groupId: string, id: string, select: Prisma.PieceNoteSelect) =>
@@ -67,9 +73,11 @@ type ContentRow<K extends ContentKind, S> = K extends "piece"
           ? S extends Prisma.FileSelect ? Prisma.FileGetPayload<{ select: S }> : never
           : K extends "link"
             ? S extends Prisma.LinkSelect ? Prisma.LinkGetPayload<{ select: S }> : never
-            : K extends "pieceNote"
-              ? S extends Prisma.PieceNoteSelect ? Prisma.PieceNoteGetPayload<{ select: S }> : never
-              : S extends Prisma.PersonSelect ? Prisma.PersonGetPayload<{ select: S }> : never;
+            : K extends "pieceAlias"
+              ? S extends Prisma.PieceAliasSelect ? Prisma.PieceAliasGetPayload<{ select: S }> : never
+              : K extends "pieceNote"
+                ? S extends Prisma.PieceNoteSelect ? Prisma.PieceNoteGetPayload<{ select: S }> : never
+                : S extends Prisma.PersonSelect ? Prisma.PersonGetPayload<{ select: S }> : never;
 
 const ID_ONLY = { id: true } as const;
 

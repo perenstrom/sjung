@@ -5,6 +5,7 @@ import type {
   GroupClaim,
   GroupMemberClaim,
   Piece,
+  PieceAlias,
   PieceNote,
   Person,
   SetList,
@@ -236,6 +237,11 @@ export async function createFile(piece: Piece): Promise<File> {
       updatedById: piece.createdById,
     },
   });
+}
+
+/** An Alias of the Piece, added after any it already has. */
+export async function createPieceAlias(piece: Piece, name = "Test Alias"): Promise<PieceAlias> {
+  return testPrisma.pieceAlias.create({ data: { pieceId: piece.id, name } });
 }
 
 /** A Link on the Piece, by the Piece's creator. */

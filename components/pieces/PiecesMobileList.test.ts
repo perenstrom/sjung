@@ -23,6 +23,7 @@ const piece = {
     { id: "file-2", displayName: "Alt.pdf", size: 1024 },
   ],
   links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning" }],
+  aliases: [],
   notes: [],
 } as unknown as PieceWithRelations;
 

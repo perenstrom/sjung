@@ -19,6 +19,7 @@ import {
   createMember,
   createPerson,
   createPiece,
+  createPieceAlias,
   createPieceNote,
   createSetList,
   createSetListNote,
@@ -62,6 +63,7 @@ async function seedContent(group: Group) {
     setListNote,
     file: await createFile(piece),
     link: await createLink(piece),
+    pieceAlias: await createPieceAlias(piece, "Julsången"),
     pieceNote: await createPieceNote({ piece, createdById: group.createdById }),
   };
 }
@@ -73,6 +75,8 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
   createPiece: (g) => formData({ groupSlug: g.slug, name: "Kyrie" }),
   updatePiece: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, name: "Gloria" }),
   deletePiece: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id }),
+  addPieceAlias: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, name: "Den långa" }),
+  removePieceAlias: (g, c) => formData({ groupSlug: g.slug, pieceAliasId: c.pieceAlias.id }),
   addLink: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, url: "https://example.org" }),
   updateLink: (g, c) => formData({ groupSlug: g.slug, linkId: c.link.id, url: "https://example.org" }),
   removeLink: (g, c) => formData({ groupSlug: g.slug, linkId: c.link.id }),
