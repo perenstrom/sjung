@@ -79,6 +79,7 @@ export const pieceDetailSelect = {
       createdAt: true,
       displayName: true,
       size: true,
+      category: true,
     },
   },
   links: {
@@ -87,6 +88,7 @@ export const pieceDetailSelect = {
       createdAt: true,
       url: true,
       label: true,
+      category: true,
     },
   },
   notes: {

@@ -54,6 +54,7 @@ function PieceDetailFilesBody({
             groupSlug={groupSlug}
             fileId={file.id}
             displayName={file.displayName}
+            category={file.category}
             open={editingFileId === file.id}
             triggerClassName="size-7 shrink-0"
             onOpenChange={(nextOpen) => {

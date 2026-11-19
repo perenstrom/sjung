@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { updatePieceFileDisplayName } from "@/app/actions/files";
+import { CategoryField } from "@/components/pieces/CategoryPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ export function RenamePieceFilePopover({
   groupSlug,
   fileId,
   displayName,
+  category,
   pieceName,
   open,
   disabled = false,
@@ -29,6 +31,7 @@ export function RenamePieceFilePopover({
   groupSlug: string;
   fileId: string;
   displayName: string;
+  category: string | null;
   pieceName?: string;
   open: boolean;
   disabled?: boolean;
@@ -51,7 +54,7 @@ export function RenamePieceFilePopover({
       handleOpenChange(false);
       router.refresh();
     } catch (err) {
-      setError(getThrownMessage(err, "Kunde inte spara filnamn"));
+      setError(getThrownMessage(err, "Kunde inte spara fil"));
     }
   }
 
@@ -70,7 +73,7 @@ export function RenamePieceFilePopover({
         </Button>
       </FormPopoverTrigger>
       <FormPopoverContent
-        title="Redigera filnamn"
+        title="Redigera fil"
         description={pieceName ?? displayName}
       >
         <form action={handleUpdate} className="space-y-4">
@@ -86,6 +89,8 @@ export function RenamePieceFilePopover({
               required
             />
           </div>
+
+          <CategoryField defaultValue={category} />
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

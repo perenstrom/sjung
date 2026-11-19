@@ -232,8 +232,10 @@ model Link {
   createdById String?  @map("created_by_id")
   updatedById String?  @map("updated_by_id")
 
-  url   String
-  label String?
+  url      String
+  label    String?
+  /// See Category in CONTEXT.md; `null` is uncategorized.
+  category String?
 
   pieceId String @map("piece_id")
 
@@ -256,6 +258,8 @@ model File {
   storagePath String @unique @map("storage_path")
   mimeType    String @map("mime_type")
   size        Int
+  /// See Category in CONTEXT.md; `null` is uncategorized.
+  category    String?
 
   pieceId   String @map("piece_id")
   createdBy User?  @relation("FileCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)

@@ -9,7 +9,7 @@ import { PieceFilesList } from "./PieceFilesList";
 vi.mock("@/app/actions/files", () => ({}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
-const files = [{ id: "file-1", displayName: "Sopran.pdf", size: 1024 }];
+const files = [{ id: "file-1", displayName: "Sopran.pdf", size: 1024, category: null }];
 
 function render(props: { compact?: boolean; readOnly?: boolean }): string {
   return renderMarkup(

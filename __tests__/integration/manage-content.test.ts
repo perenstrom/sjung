@@ -35,6 +35,7 @@ const READS = new Set([
   "getPieces",
   "getPieceDetail",
   "getCreditRoles",
+  "getCategories",
   "getPieceImportGroup",
   "listPieceNotes",
   "getPeople",

@@ -7,10 +7,16 @@ export function toInlineFiles(piece: PieceWithRelations): PieceFileListItem[] {
     id: file.id,
     displayName: file.displayName,
     size: file.size,
+    category: file.category,
   }));
 }
 
 /** A piece's links, as the inline link lists take them. */
 export function toInlineLinks(piece: PieceWithRelations): PieceLink[] {
-  return piece.links.map((link) => ({ id: link.id, url: link.url, label: link.label }));
+  return piece.links.map((link) => ({
+    id: link.id,
+    url: link.url,
+    label: link.label,
+    category: link.category,
+  }));
 }
