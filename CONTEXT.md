@@ -75,6 +75,10 @@ _Avoid_: Score, Sheet music, Attachment — reserve those for casual conversatio
 **Link**:
 An external URL reference attached to a Piece (e.g. a recording or streaming link).
 
+**Category**:
+The free-text label on a File or Link saying what kind of resource it is. A File or Link has at most one Category. Files and Links share one vocabulary per Group: a Group's Categories are simply those on its Files and Links, so a Category nothing uses any more is gone. Two Categories are the same if they differ only in letter case or spacing; the spelling already in use wins. Three are built in and always offered, even to a Group that has never used them — Noter (scores), Övningsfiler (rehearsal files), Inspelningar (recordings) — and they rank first, in that order, ahead of every other Category in alphabetical order. Wherever a Piece's Files and Links are shown, they are grouped under their Categories in that ranking, Files before Links within each, with the uncategorized last under _Övrigt_ (giving something the Category "Övrigt" leaves it uncategorized); a Piece where nothing has a Category shows no groups at all. Swedish UI: _Kategori_.
+_Avoid_: Tag (a File or Link has only one), Type (clashes with the file's format).
+
 **Credit**:
 A role-tagged link between a Person and a Piece. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Medverkande_.
 _Avoid_: Role on its own — always say "Credit role" to avoid confusion with anything membership-related.
