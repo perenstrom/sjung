@@ -15,9 +15,9 @@ import {
 import {
   creditRoleSuggestions,
   MAX_CREDIT_ROLE_LENGTH,
-  normalizeCreditRole,
   shouldOfferNewCreditRole,
 } from "@/lib/pieces/credit-roles";
+import { normalizeSpacing } from "@/lib/text/match-key";
 import { toggleCreditRole } from "@/lib/pieces/credits";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +75,7 @@ function CreditRolesSearch({
   const listed = [...roles, ...value.filter((role) => !roles.includes(role))];
   const matches = creditRoleSuggestions(listed, query);
   const offerNew = shouldOfferNewCreditRole(listed, query);
-  const newRole = normalizeCreditRole(query);
+  const newRole = normalizeSpacing(query);
 
   function create() {
     onChange([...value, newRole]);

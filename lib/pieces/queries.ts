@@ -7,6 +7,7 @@ import {
   type PieceNoteListItemQueryResult,
   type PieceWithRelations,
 } from "@/lib/pieces/types";
+import type { ImportGroup } from "@/lib/pieces/import";
 
 export async function getPiecesForGroup(groupId: string): Promise<PieceWithRelations[]> {
   return prisma.piece.findMany({
@@ -64,11 +65,31 @@ export async function getSetListIdsContainingPiece(pieceId: string): Promise<str
 }
 
 /** The distinct Credit roles on the Group's credits, as stored. */
-export async function getCreditRolesUsedInGroup(groupId: string): Promise<string[]> {
-  const credits = await prisma.personToPiece.findMany({
+export async function getCreditRolesUsedInGroup(
+  groupId: string,
+  db: Pick<typeof prisma, "personToPiece"> = prisma
+): Promise<string[]> {
+  const credits = await db.personToPiece.findMany({
     where: { piece: { groupId } },
     distinct: ["role"],
     select: { role: true },
   });
   return credits.map((credit) => credit.role);
+}
+
+/** What a Piece import matches against: the Group's People, Credit roles in use and Piece titles. */
+export async function getPieceImportGroupFor(
+  groupId: string,
+  db: Pick<typeof prisma, "person" | "personToPiece" | "piece"> = prisma
+): Promise<ImportGroup> {
+  const [people, creditRoles, pieces] = await Promise.all([
+    db.person.findMany({
+      where: { groupId },
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+      select: { id: true, name: true },
+    }),
+    getCreditRolesUsedInGroup(groupId, db),
+    db.piece.findMany({ where: { groupId }, select: { name: true } }),
+  ]);
+  return { people, creditRoles, pieceTitles: pieces.map((piece) => piece.name) };
 }

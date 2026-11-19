@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { MAX_CREDIT_ROLE_LENGTH } from "@/lib/pieces/credit-roles";
 import type { PieceCredit } from "@/lib/pieces/credits";
+import type { ImportChoices } from "@/lib/pieces/import";
 import { personNameSchema } from "@/lib/schemas/people";
 import { formDataString } from "@/lib/schemas/form-data";
 
@@ -192,4 +193,35 @@ export function parseCreditRolesFromFormData(formData: FormData): string[] {
     throw new Error(result.error.issues[0]?.message ?? INVALID_CREDITS_ERROR);
   }
   return result.data;
+}
+
+const INVALID_IMPORT_ERROR = "Ogiltig import";
+
+/** Generous for 500 rows; the server action body limit is lower still. */
+const MAX_IMPORT_TEXT_LENGTH = 1_000_000;
+
+const importChoicesSchema = z.object({
+  columns: z.record(z.string().regex(/^\d+$/), z.boolean()),
+  addDuplicateLines: z.array(z.number().int().positive()),
+});
+
+/** The pasted text, the user's choices and the outcome they previewed, posted to confirm a Piece import. */
+export function parsePieceImportFromFormData(formData: FormData): {
+  text: string;
+  choices: ImportChoices;
+  outcome: string;
+} {
+  const text = formDataString(formData, "text");
+  if (text.length > MAX_IMPORT_TEXT_LENGTH) throw new Error("Texten är för lång");
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(formDataString(formData, "choices"));
+  } catch {
+    throw new Error(INVALID_IMPORT_ERROR);
+  }
+  const choices = importChoicesSchema.safeParse(parsed);
+  if (!choices.success) throw new Error(INVALID_IMPORT_ERROR);
+
+  return { text, choices: choices.data, outcome: formDataString(formData, "outcome") };
 }

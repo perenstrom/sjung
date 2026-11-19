@@ -1,20 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
+import type { SortingState } from "@tanstack/react-table";
 import { ChevronRight } from "lucide-react";
 
+import { type ColumnDef, DataTable, DataTableColumnHeader } from "@/components/data-table";
 import { DeleteSetListDialog } from "@/components/DeleteSetListDialog";
 import { EditSetListDialog } from "@/components/EditSetListDialog";
 import { useEditMode } from "@/components/EditModeContext";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
+import { caseInsensitiveSortingFn } from "@/lib/data-table/sorting";
+import { compareSetListsByDefault } from "@/lib/setlists/sorting";
 
 export type SetListsTableRow = {
   id: string;
@@ -27,7 +24,68 @@ export type SetListsTableRow = {
   dateLabel: string | null;
 };
 
-/** Set lists as a table from `md` up and as the shared mobile list below it. */
+/** Desktop columns: Namn and Datum sort on click; Åtgärder only in edit mode. */
+export function setListsColumns(
+  groupSlug: string,
+  isEditing: boolean
+): ColumnDef<SetListsTableRow, unknown>[] {
+  return [
+    {
+      accessorKey: "name",
+      sortingFn: caseInsensitiveSortingFn,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Namn" />,
+      cell: ({ row }) => (
+        <Link
+          href={`/app/${groupSlug}/setlists/${row.original.id}`}
+          className="underline-offset-4 hover:underline"
+        >
+          {row.original.name}
+        </Link>
+      ),
+    },
+    {
+      id: "date",
+      // Sort on the real date, not the formatted label. Undefined, unlike
+      // null, lets `sortUndefined` keep undated Set lists last both ways.
+      accessorFn: (row) => row.date ?? undefined,
+      sortingFn: "datetime",
+      sortUndefined: "last",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Datum" />,
+      cell: ({ row }) => row.original.dateLabel ?? "–",
+    },
+    ...(isEditing
+      ? [
+          {
+            id: "actions",
+            enableSorting: false,
+            // Shrinks the column to fit its buttons.
+            meta: { headerClassName: "w-[1%]" },
+            header: "Åtgärder",
+            cell: ({ row }) => (
+              <div className="flex items-center gap-2">
+                <SetListRowActions groupSlug={groupSlug} setList={row.original} />
+              </div>
+            ),
+          } satisfies ColumnDef<SetListsTableRow, unknown>,
+        ]
+      : []),
+  ];
+}
+
+// The table's starting sort. With rows handed over already in
+// compareSetListsByDefault order (which settles ties), it reproduces that
+// order, so keep the two in step.
+const DEFAULT_SORTING: SortingState = [{ id: "date", desc: true }];
+
+function getRowId(row: SetListsTableRow): string {
+  return row.id;
+}
+
+/**
+ * Set lists as a table from `md` up and as the shared mobile list below it,
+ * both newest date first, undated last and same-date ones by name. The table's
+ * Namn and Datum headings re-sort it; the mobile list keeps that order.
+ */
 export function SetListsTable({
   setLists,
   groupSlug,
@@ -36,53 +94,25 @@ export function SetListsTable({
   groupSlug: string;
 }) {
   const { isEditing } = useEditMode();
+  // In the default order, so the mobile list matches the table and, once a
+  // heading is clicked, Set lists that tie keep it.
+  const sortedSetLists = useMemo(
+    () => [...setLists].sort(compareSetListsByDefault),
+    [setLists]
+  );
+  const columns = useMemo(() => setListsColumns(groupSlug, isEditing), [groupSlug, isEditing]);
 
   return (
     <>
-      <SetListsMobileList setLists={setLists} groupSlug={groupSlug} isEditing={isEditing} />
-      <div className="max-md:hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Namn</TableHead>
-              <TableHead>Datum</TableHead>
-              {isEditing ? (
-                <TableHead className="w-[1%] whitespace-nowrap">Åtgärder</TableHead>
-              ) : null}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {setLists.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={isEditing ? 3 : 2} className="text-muted-foreground">
-                  Inga repertoarer tillagda ännu.
-                </TableCell>
-              </TableRow>
-            ) : (
-              setLists.map((setList) => (
-                <TableRow key={setList.id}>
-                  <TableCell>
-                    <Link
-                      href={`/app/${groupSlug}/setlists/${setList.id}`}
-                      className="underline-offset-4 hover:underline"
-                    >
-                      {setList.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{setList.dateLabel ?? "–"}</TableCell>
-                  {isEditing ? (
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <SetListRowActions groupSlug={groupSlug} setList={setList} />
-                      </div>
-                    </TableCell>
-                  ) : null}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <SetListsMobileList setLists={sortedSetLists} groupSlug={groupSlug} isEditing={isEditing} />
+      <DataTable
+        className="max-md:hidden"
+        columns={columns}
+        data={sortedSetLists}
+        initialSorting={DEFAULT_SORTING}
+        getRowId={getRowId}
+        emptyMessage="Inga repertoarer tillagda ännu."
+      />
     </>
   );
 }

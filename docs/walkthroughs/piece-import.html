@@ -1,0 +1,806 @@
+<title>Piece Import Parser</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky narration rail (step list, caption, trace, code, controls) beside a two-column board of the parser's state. */
+:root {
+  --bg: #EDF0F4; --panel: #FFFFFF; --ink: #17202B; --muted: #5C6777; --line: #D3DAE3;
+  --accent: #3A4CD6; --accent-soft: #E4E8FF;
+  --exist: #1F5FC2; --exist-soft: #DCE8FA;
+  --new: #11815A; --new-soft: #D9F1E6;
+  --warn: #9A5C00; --warn-soft: #FBEACB;
+  --bad: #B83535; --bad-soft: #F8DFDF;
+  --hl: #FFF0A0; --code-bg: #F5F7FA;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1218; --panel: #161B23; --ink: #E5E9EF; --muted: #95A0AF; --line: #29313C;
+  --accent: #8D9CFF; --accent-soft: #232A52;
+  --exist: #82B2FF; --exist-soft: #19283F;
+  --new: #5DD39E; --new-soft: #12301F;
+  --warn: #F0B456; --warn-soft: #362710;
+  --bad: #FF8C8C; --bad-soft: #3B191B;
+  --hl: #4A431C; --code-bg: #11151C; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0E1218; --panel: #161B23; --ink: #E5E9EF; --muted: #95A0AF; --line: #29313C;
+  --accent: #8D9CFF; --accent-soft: #232A52;
+  --exist: #82B2FF; --exist-soft: #19283F;
+  --new: #5DD39E; --new-soft: #12301F;
+  --warn: #F0B456; --warn-soft: #362710;
+  --bad: #FF8C8C; --bad-soft: #3B191B;
+  --hl: #4A431C; --code-bg: #11151C; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--body); }
+.page {
+  display: grid; grid-template-columns: minmax(330px, 410px) minmax(0, 1fr); gap: 24px;
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-width: 1500px; margin: 0 auto;
+}
+.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); align-self: start;
+  max-height: calc(100vh - 32px); overflow: auto; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+h1 { font: 700 26px/1.1 var(--display); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 4px 0 0; font-size: 13px; }
+.sub code { font-family: var(--mono); font-size: 12px; }
+
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; counter-reset: s; }
+.steps button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: baseline;
+  padding: 4px 8px; border-radius: 6px; color: var(--muted); font-size: 13px; }
+.steps button:hover { background: var(--panel); color: var(--ink); }
+.steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.steps .n { font: 500 11px var(--mono); font-variant-numeric: tabular-nums; }
+.steps .fn { font: 400 11px var(--mono); opacity: .8; }
+.steps li.on button { background: var(--accent-soft); color: var(--ink); }
+.steps li.on .n { color: var(--accent); }
+.steps li.past button { color: var(--ink); }
+
+.narr { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; }
+.narr-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.narr-head .count { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.narr h2 { font: 600 19px/1.2 var(--display); margin: 0; flex-basis: 100%; text-wrap: balance; }
+.narr .fnname { font: 500 12px var(--mono); color: var(--accent); }
+.caption { font-size: 14.5px; line-height: 1.55; min-height: 4.6em; margin: 0; }
+.caption q { quotes: "“" "”"; }
+.caption code, .cl, .mono { font-family: var(--mono); }
+.caption code { font-size: 12.5px; background: var(--code-bg); padding: 0 4px; border-radius: 4px; }
+.beats { display: flex; gap: 4px; }
+.beats i { height: 3px; flex: 1; border-radius: 2px; background: var(--line); transition: background .3s; }
+.beats i.on { background: var(--accent); }
+
+.trace { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 28px; font: 12px var(--mono); }
+.trace .tk { padding: 2px 7px; border-radius: 5px; background: var(--code-bg); border: 1px solid var(--line); white-space: pre; }
+.trace .tk.fn { background: transparent; border-color: transparent; color: var(--accent); padding-inline: 0; }
+.trace .tk.hit { background: var(--exist-soft); border-color: transparent; color: var(--exist); }
+.trace .tk.new { background: var(--new-soft); border-color: transparent; color: var(--new); }
+.trace .tk.miss { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.trace .tk.bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+.trace .ar { color: var(--muted); }
+
+.code { max-height: 260px; overflow-y: auto; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 0; overflow-x: auto; font-size: 11.5px; line-height: 1.6; }
+.cl { white-space: pre; padding: 0 12px; color: var(--muted); transition: background .3s, color .3s; }
+.cl.on { background: var(--accent-soft); color: var(--ink); box-shadow: inset 3px 0 0 var(--accent); }
+
+.controls { display: flex; gap: 8px; align-items: center; }
+.controls button { font: 500 13px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+.controls button:hover { border-color: var(--accent); }
+.controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.controls button:disabled { opacity: .4; cursor: default; border-color: var(--line); }
+.controls #play { background: var(--accent); border-color: var(--accent); color: var(--panel); min-width: 84px; }
+.controls .keys { margin-left: auto; color: var(--muted); font-size: 11.5px; }
+.controls kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+
+/* Board */
+.board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; min-width: 0; }
+.col { display: grid; gap: 16px; min-width: 0; }
+.sec { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 14px; min-width: 0; transition: border-color .35s, box-shadow .35s, opacity .35s; }
+.sec.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.sec-h h3 { margin: 0; font: 600 11px var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sec.active .sec-h h3 { color: var(--accent); }
+.sec-h .src { font: 11px var(--mono); color: var(--muted); }
+.empty-note { color: var(--muted); font-size: 12.5px; font-style: italic; }
+
+/* Paste */
+.paste { font: 12.5px/1.75 var(--mono); overflow-x: auto; }
+.ln { display: grid; grid-template-columns: 26px 1fr; border-radius: 4px; transition: background .3s, opacity .3s; }
+.ln .g { color: var(--muted); text-align: right; padding-right: 10px; font-variant-numeric: tabular-nums; user-select: none; }
+.ln .tx { white-space: pre; }
+.ln.cur { background: var(--hl); }
+.ln.done { opacity: .45; }
+.ln.err .tx { text-decoration: line-through wavy var(--bad); text-decoration-thickness: 1px; }
+.ln.err { background: var(--bad-soft); }
+.tab { color: var(--muted); opacity: .55; padding: 0 3px; }
+.tab.flash { color: var(--accent); opacity: 1; }
+.cell { transition: box-shadow .3s, background .3s; border-radius: 3px; }
+.split .cell { box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); padding: 1px 3px; }
+.split .cell.e { display: inline-block; min-width: 14px; height: 1.2em; vertical-align: -3px; }
+.q { color: var(--accent); font-weight: 500; }
+.d { color: var(--warn); font-weight: 500; }
+.blank-mark { color: var(--muted); font-style: italic; font-family: var(--body); font-size: 11.5px; }
+
+/* Group & choices */
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; align-items: baseline; font-size: 13px; }
+.kv dt { color: var(--muted); font-size: 12px; }
+.kv dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { display: inline-flex; align-items: baseline; gap: 5px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); font-size: 12.5px; white-space: nowrap; }
+.chip .id { font: 10.5px var(--mono); color: var(--muted); }
+.chip.muted { color: var(--muted); border-style: dashed; }
+.json { font: 12px/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; }
+
+/* Delimiter */
+.probes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.probe { font: 12px var(--mono); padding: 3px 10px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); }
+.probe.hit { border-color: var(--new); color: var(--new); background: var(--new-soft); }
+.probe.skip { text-decoration: line-through; opacity: .6; }
+.probe.try { border-color: var(--accent); color: var(--accent); }
+
+/* Records */
+.recs { display: grid; gap: 4px; }
+.rec { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 3px 6px; border-radius: 6px; font-size: 12px; transition: background .3s, opacity .3s; }
+.rec .l { font: 500 11px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.rec .cs { display: flex; flex-wrap: wrap; gap: 3px; min-width: 0; }
+.rec .c { font: 11.5px var(--mono); background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; white-space: pre; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.rec .c.e { color: var(--muted); }
+.rec .note { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.rec.cur { background: var(--hl); }
+.rec.done { opacity: .4; }
+.rec.err { background: var(--bad-soft); }
+.rec.err .note { color: var(--bad); }
+
+/* Columns */
+.cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.colc { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 4px; font-size: 12.5px; }
+.colc .ix { font: 11px var(--mono); color: var(--muted); }
+.colc .hd { font-weight: 600; }
+.colc .rl { font-size: 12px; color: var(--muted); }
+.colc .rl b { color: var(--ink); font-weight: 500; }
+.tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.tag { font: 500 10.5px var(--body); padding: 0 6px; border-radius: 4px; letter-spacing: .02em; background: var(--code-bg); color: var(--muted); }
+.tag.use { background: var(--new-soft); color: var(--new); }
+.tag.newg { background: var(--warn-soft); color: var(--warn); }
+.tag.known { background: var(--exist-soft); color: var(--exist); }
+
+/* Lookups */
+.looks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.look { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 64px; min-width: 0; }
+.look h4 { margin: 0 0 6px; font: 500 11.5px var(--mono); color: var(--muted); }
+.look h4 small { font-family: var(--body); }
+.look .items { display: flex; flex-direction: column; gap: 3px; }
+.entry { font-size: 12px; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; border-radius: 4px; padding: 0 4px; margin: 0 -4px; }
+.entry .k { font: 11.5px var(--mono); color: var(--muted); }
+.entry.e-ex { color: var(--exist); }
+.entry.e-new { color: var(--new); }
+.none { color: var(--muted); font: 11.5px var(--mono); }
+
+/* Rows */
+.rows { display: grid; gap: 8px; }
+.rowc { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; transition: opacity .3s, border-color .3s; }
+.rowc.add { border-left: 3px solid var(--new); }
+.rowc.no { border-left: 3px solid var(--warn); }
+.rowc.no .ttl { color: var(--muted); }
+.rc-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rc-h .l { font: 500 11px var(--mono); color: var(--muted); }
+.rc-h .ttl { font-weight: 600; }
+.badge { font: 600 10.5px var(--body); letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; }
+.badge.add { background: var(--new-soft); color: var(--new); }
+.badge.no { background: var(--code-bg); color: var(--muted); }
+.badge.dup { background: var(--warn-soft); color: var(--warn); }
+.credits { display: flex; flex-wrap: wrap; gap: 6px; }
+.person { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border-radius: 6px; font-size: 12.5px; }
+.person.existing { background: var(--exist-soft); color: var(--exist); }
+.person.new { background: var(--new-soft); color: var(--new); }
+.person.ghost { background: transparent; outline: 1px dashed var(--new); outline-offset: -1px; opacity: .8; }
+.person .mk { font: 600 12px var(--mono); }
+.person .role { font-size: 11px; color: var(--ink); background: var(--panel); border-radius: 4px; padding: 0 5px; }
+.ghostnote { font-size: 11px; color: var(--muted); font-style: italic; }
+.skipped { display: grid; gap: 4px; margin-top: 8px; }
+.skp { display: grid; grid-template-columns: 30px 1fr; gap: 8px; font-size: 12px; padding: 4px 6px; border-radius: 6px; background: var(--bad-soft); }
+.skp .l { font: 500 11px var(--mono); color: var(--bad); }
+.skp .r { color: var(--bad); font-weight: 500; }
+.skp .raw { font: 11px var(--mono); color: var(--muted); white-space: pre; }
+
+/* Counts */
+.counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.cnt { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-width: 0; }
+.cnt .v { font: 700 24px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.cnt .v.small { font: 500 12px/1.5 var(--body); }
+.cnt .k { font: 11px var(--mono); color: var(--muted); }
+
+/* Server */
+.fp { font: 11px/1.6 var(--mono); background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; white-space: pre-wrap; word-break: break-word; }
+.fp mark { background: var(--hl); color: inherit; border-radius: 3px; padding: 0 2px; }
+.fp mark.bad { background: var(--bad-soft); color: var(--bad); }
+.verdict { margin-top: 8px; display: grid; gap: 6px; font-size: 13px; }
+.verdict .v { padding: 6px 10px; border-radius: 6px; }
+.verdict .ok { background: var(--new-soft); color: var(--new); }
+.verdict .ch { background: var(--bad-soft); color: var(--bad); }
+.verdict .run { background: var(--accent-soft); color: var(--accent); }
+
+/* Motion */
+.enter { animation: pop .5s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.flash { animation: flash 1.3s var(--ease) both; animation-delay: calc(var(--fi, 0) * 60ms); }
+.enter.flash { animation: pop .5s var(--ease) both, flash 1.3s var(--ease) .2s both; }
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes flash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 25% { box-shadow: 0 0 0 3px var(--accent); } }
+.ln.flash, .rec.flash, .entry.flash { animation-name: flashbg; }
+@keyframes flashbg { 0%, 100% { background-color: transparent; } 25% { background-color: var(--hl); } }
+.rebuild .rowc { animation: rebuild .7s var(--ease) both; }
+@keyframes rebuild { 0% { opacity: 1; } 35% { opacity: .25; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .enter, .flash, .rebuild .rowc { animation: none !important; } .flash { outline: 2px solid var(--accent); } }
+
+@media (max-width: 1180px) { .page { grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); } .board { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 780px) {
+  .page { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: sticky; top: env(safe-area-inset-top, 0px); max-height: none; overflow: visible; z-index: 5; background: var(--bg); padding-block: 8px; gap: 8px; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+  .rail-intro, .steps, .code, .keys { display: none !important; }
+  .caption { min-height: 0; font-size: 13.5px; }
+  .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .looks { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<div class="page">
+  <aside class="rail">
+    <div class="rail-intro">
+      <h1>Piece import, step by step</h1>
+      <p class="sub">How <code>buildImportPlan</code> in <code>lib/pieces/import.ts</code> turns a pasted spreadsheet into Pieces, People and Credits. The data is the example from <code>docs/walkthroughs/piece-import.md</code>.</p>
+    </div>
+    <div class="narr">
+      <div class="narr-head"><span class="count" id="count"></span><span class="fnname" id="fn"></span><h2 id="stitle"></h2></div>
+      <div class="beats" id="beats"></div>
+      <p class="caption" id="cap" aria-live="polite"></p>
+      <div class="trace" id="trace"></div>
+      <div class="controls">
+        <button id="prev" type="button" aria-label="Previous beat">◀ Back</button>
+        <button id="play" type="button">Play</button>
+        <button id="next" type="button" aria-label="Next beat">Next ▶</button>
+        <span class="keys"><kbd>←</kbd> <kbd>→</kbd> <kbd>space</kbd></span>
+      </div>
+      <div class="code" id="code"></div>
+    </div>
+    <ol class="steps" id="steps"></ol>
+  </aside>
+
+  <main class="board">
+    <div class="col">
+      <section class="sec" data-stage="input"><div class="sec-h"><h3>Pasted text</h3><span class="src" id="paste-src">text</span></div><div class="paste" id="paste"></div></section>
+      <section class="sec" data-stage="input"><div class="sec-h"><h3>The Group</h3><span class="src">getPieceImportGroupFor</span></div><div id="group"></div></section>
+      <section class="sec" data-stage="choices"><div class="sec-h"><h3>Choices</h3><span class="src">ImportChoices</span></div><div id="choices"></div></section>
+      <section class="sec" data-stage="delim"><div class="sec-h"><h3>Delimiter</h3><span class="src">detectDelimiter</span></div><div id="delim"></div></section>
+      <section class="sec" data-stage="records"><div class="sec-h"><h3>Records</h3><span class="src">readRecords</span></div><div id="records"></div></section>
+    </div>
+    <div class="col">
+      <section class="sec" data-stage="columns"><div class="sec-h"><h3>Columns</h3><span class="src">readColumns</span></div><div id="columns"></div></section>
+      <section class="sec" data-stage="lookups"><div class="sec-h"><h3>Lookups</h3><span class="src">by matchKey</span></div><div id="lookups"></div></section>
+      <section class="sec" data-stage="rows"><div class="sec-h"><h3>Rows</h3><span class="src">ImportRow[] · skipped</span></div><div id="rows"></div></section>
+      <section class="sec" data-stage="counts"><div class="sec-h"><h3>Counts</h3><span class="src">ImportPreview.counts</span></div><div id="counts"></div></section>
+      <section class="sec" data-stage="server"><div class="sec-h"><h3>Confirming on the server</h3><span class="src">importPieces</span></div><div id="server"></div></section>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const mk = (t) => t.trim().replace(/\s+/g, " ").toLocaleLowerCase("sv");
+const norm = (t) => t.trim().replace(/\s+/g, " ");
+
+const MAIN = [
+  ["Titel", "Kompositör", "Textförfattare", "Arrangör"],
+  ["Gläns över sjö och strand", "Alice Tegnér", "Viktor Rydberg", ""],
+  ["Uti vår hage", "anna  berg; Hugo Alfvén", "ANNA BERG", "Hugo Alfvén"],
+  ["Ave maria", "Schubert"],
+  ["uti vår hage"],
+  ["", "Bach"],
+];
+const QUOTE = ['Titel,Kompositör', '"Uti vår hage, folkvisa",Bach', '"Säg ""hej""",Bach', '"Rad', 'brytning",Bach', '', '"Trasig" rad,Bach', 'Sista,Bach'];
+
+/* ---------- state ---------- */
+const init = () => ({
+  stage: "input", flash: [], trace: null,
+  paste: { show: false, mode: "main", cur: [], split: [], done: [], err: [], tabFlash: false },
+  group: false, choices: null, delim: null,
+  records: [], qrecs: null, columns: [], lookups: null,
+  rows: [], skipped: [], counts: null, server: null, rebuild: false,
+});
+const F = (s, ...k) => s.flash.push(...k);
+const T = (...parts) => parts.map((p) => { const i = p.indexOf(":"); return { k: p.slice(0, i), t: p.slice(i + 1) }; });
+const rec = (s, line) => s.records.find((r) => r.line === line);
+const row = (s, line) => s.rows.find((r) => r.line === line);
+const cur = (s, line) => {
+  s.paste.cur = [line];
+  s.records.forEach((r) => { if (r.state === "cur") r.state = "done"; });
+  const r = rec(s, line); if (r) r.state = "cur";
+  F(s, "pl-" + line);
+};
+const finish = (s, line) => { s.paste.done.push(line); const r = rec(s, line); if (r) r.state = "done"; s.paste.cur = []; };
+const credit = (s, line, name, kind, role, extra = {}) => {
+  const r = row(s, line), key = mk(name);
+  let c = r.credits.find((c) => mk(c.name) === key);
+  if (!c) { c = { name, kind, roles: [], ...extra }; r.credits.push(c); }
+  if (!c.roles.includes(role)) c.roles.push(role);
+  F(s, `cr-${line}-${key}`, `role-${line}-${key}-${role}`);
+};
+const addNew = (s, name) => { s.lookups.np.push({ key: mk(name), name }); F(s, "np-" + mk(name)); };
+const addSeen = (s, title) => { s.lookups.st.push(mk(title)); F(s, "st-" + mk(title)); };
+const newRow = (s, line, title) => { s.rows.push({ line, title, dup: undefined, add: undefined, credits: [] }); };
+
+/* ---------- the script ---------- */
+const ROW_CODE = [
+  "const problem = rowProblem(record, header.cells.length, columns);",
+  "if (problem) { skipped.push({ line, raw, reason: problem }); continue; }",
+  "const duplicate = existingTitles.has(titleKey) ? \"existing\" : seenTitles.has(titleKey) ? \"earlier\" : null;",
+  "seenTitles.add(titleKey);",
+  "const add = duplicate === null || addDuplicateLines.has(record.line);",
+  "const known = existingPeople.get(key) ?? newPeople.get(key);",
+  "if (add) newPeople.set(key, person); // only an added Piece creates its People",
+  "for (const name of splitNames(raw)) {",
+  "  const credit = credits.get(key) ?? { person, roles: [] };",
+  "  if (!credit.roles.includes(column.role)) credit.roles.push(column.role);",
+];
+
+const STEPS = [
+{ title: "The paste and the Group", fn: "buildImportPlan", stage: "input",
+  code: ["/** Reads the paste and matches it against the Group. Writes nothing. */",
+    "export function buildImportPlan(text: string, group: ImportGroup, choices: ImportChoices): ImportPlan {",
+    "  if (text.trim() === \"\") return { kind: \"empty\" };"],
+  beats: [
+    { cap: "A choir leader pastes six lines from a spreadsheet into the import panel on <q>Alla noter</q>. Tabs are shown as ⇥.", hl: [], run: (s) => { s.paste.show = true; } },
+    { cap: "The page already loaded what the import matches against: the Group's People, the Credit roles its Credits use, and its Piece titles.", hl: [1], run: (s) => { s.group = true; } },
+    { cap: "No choices yet. <code>buildImportPlan</code> is pure: the browser runs it on every change for the preview, and the server runs it again before saving.", hl: [1, 2], run: (s) => { s.stage = "choices"; s.choices = { columns: {}, add: [] }; F(s, "choices");
+      s.trace = T("val:text", "val:group", "val:choices", "fn:buildImportPlan", "hit:ImportPlan"); } },
+  ] },
+{ title: "Pick the delimiter", fn: "detectDelimiter", stage: "delim",
+  code: ["function detectDelimiter(text: string): ImportDelimiter {",
+    "  const header = text.split(/\\r?\\n/).find((line) => line.trim() !== \"\") ?? \"\";",
+    "  return ([\"\\t\", \";\", \",\"] as const).find((d) => header.includes(d)) ?? \"\\t\";",
+    "}"],
+  beats: [
+    { cap: "Only the first non-blank line decides the delimiter. That is the header row.", hl: [1], run: (s) => { s.paste.cur = [1]; s.delim = { probes: { tab: "", semi: "", comma: "" }, result: null }; F(s, "pl-1"); } },
+    { cap: "Tab is tried first. The header holds three tabs, so the delimiter is tab.", hl: [2], run: (s) => { s.delim.probes.tab = "hit"; s.delim.result = "\"\\t\""; s.paste.tabFlash = true; F(s, "probe-tab", "delim-res");
+      s.trace = T("val:Titel⇥Kompositör⇥…", "fn:includes(\"\\t\")", "hit:true"); } },
+    { cap: "<code>;</code> and <code>,</code> are never tried. A header with no delimiter at all falls back to tab, so a later title like <q>Ave, verum corpus</q> is not split on its comma.", hl: [2], run: (s) => { s.delim.probes.semi = "skip"; s.delim.probes.comma = "skip"; s.paste.tabFlash = false; s.paste.cur = []; } },
+  ] },
+{ title: "Split the text into records", fn: "readRecords", stage: "records",
+  code: ["while (i < text.length) {",
+    "  const ch = text[i];",
+    "  if (atCellStart && ch === '\"') { /* hand off to readQuoted */ }",
+    "  else if (ch === delimiter) { cells.push(cell); cell = \"\"; atCellStart = true; }",
+    "  else if (ch === \"\\n\" || ch === \"\\r\") break;   // end of record",
+    "  else cell += ch;",
+    "}",
+    "const isBlank = (r) => r.error === null && r.cells.every((c) => c.trim() === \"\");"],
+  beats: [1, 2, 3, 4, 6].map((line) => ({
+    cap: {
+      1: "<code>readRecords</code> walks the text one character at a time. Each tab closes a cell and each line break ends a record.",
+      2: "Line 2 ends with a tab, so its last cell is empty. Empty trailing cells are normal in a spreadsheet paste.",
+      3: "Semicolons are not the delimiter, so <q>anna&nbsp;&nbsp;berg; Hugo Alfvén</q> stays one cell. Names are split later.",
+      4: "Lines 4 and 5 are short. A record can have fewer cells than the header.",
+      6: "Line 6 starts with a tab, so its title cell is empty. Reading doesn't judge; that check comes later.",
+    }[line], hl: line === 1 ? [3, 4] : line === 3 ? [5] : [3],
+    run: (s) => {
+      const lines = line === 4 ? [4, 5] : [line];
+      lines.forEach((l) => { s.paste.split.push(l); s.records.push({ line: l, cells: MAIN[l - 1].slice(), state: "" }); });
+      s.paste.cur = lines; s.trace = null;
+    } })).concat([
+    { cap: "<code>isBlank</code> drops records whose cells are all whitespace. There are none here, so six records go on.", hl: [7], run: (s) => { s.paste.cur = []; s.records.forEach((r) => F(s, "rec-" + r.line)); } },
+  ]) },
+{ title: "Quoted cells", fn: "readQuoted", stage: "records",
+  code: ["for (let i = from; i < text.length; i++) {",
+    "  if (text[i] !== '\"') value += text[i];",
+    "  else if (text[i + 1] === '\"') { value += '\"'; i++; }   // \"\" is a quote",
+    "  else {",
+    "    const next = text[i + 1];",
+    "    const endsCell = next === undefined || next === delimiter || next === \"\\n\" || next === \"\\r\";",
+    "    return endsCell ? { value, end: i + 1 } : null;   // null: unreadable",
+    "  }",
+    "}"],
+  beats: [
+    { cap: "A detour with a different paste: comma-separated, with quoted cells. A cell that starts with <code>\"</code> runs to its closing quote.", hl: [0, 1], run: (s) => { s.paste.mode = "quote"; s.paste.cur = [1]; s.qrecs = [{ line: 1, cells: ["Titel", "Kompositör"], state: "" }]; s.trace = T("val:\"Titel,Kompositör\"", "fn:detectDelimiter", "hit:\",\""); } },
+    { cap: "Line 2: the comma inside the quotes belongs to the title.", hl: [5, 6], run: (s) => { s.paste.cur = [2]; s.qrecs.push({ line: 2, cells: ["Uti vår hage, folkvisa", "Bach"], state: "" }); s.trace = null; } },
+    { cap: "Line 3: <code>\"\"</code> inside a quoted cell is one literal quote.", hl: [2], run: (s) => { s.paste.cur = [3]; s.qrecs.push({ line: 3, cells: ['Säg "hej"', "Bach"], state: "" }); } },
+    { cap: "Lines 4–5: a quoted cell may hold a line break. The record still counts as line 4, because <code>lineAt</code> maps its start offset back to a line.", hl: [1], run: (s) => { s.paste.cur = [4, 5]; s.qrecs.push({ line: 4, cells: ["Rad↵brytning", "Bach"], state: "" }); } },
+    { cap: "Line 6 is blank. <code>isBlank</code> drops it, so it becomes neither a row nor a skipped row.", hl: [], run: (s) => { s.paste.cur = [6]; } },
+    { cap: "Line 7: the quote after <q>Trasig</q> is followed by a space, so it doesn't end the cell. <code>readQuoted</code> returns null and the record is unreadable: <q>Ett citattecken stängs aldrig</q>.", hl: [4, 5, 6], run: (s) => { s.paste.cur = []; s.paste.err = [7]; s.qrecs.push({ line: 7, cells: [], state: "err", note: "Ett citattecken stängs aldrig" });
+      s.trace = T("val:\"Trasig\" rad", "fn:readQuoted", "miss:next is \" \"", "bad:null"); } },
+    { cap: "Reading resumes on the line after the bad one. One bad row costs one row; a stray quote can't swallow the rows after it.", hl: [], run: (s) => { s.paste.cur = [8]; s.qrecs.push({ line: 8, cells: ["Sista", "Bach"], state: "" }); s.trace = null; } },
+  ] },
+{ title: "Which headers become Credit roles", fn: "readColumns", stage: "columns",
+  code: ["const headerText = normalizeSpacing(rawHeader);",
+    "const role = resolveCreditRole(headerText, group.creditRoles);",
+    "const isKnown = knownRoleKeys.has(matchKey(headerText));   // built-in or used in the Group",
+    "return { index, header: headerText, role, unusableReason,",
+    "  isNewToGroup: !groupRoleKeys.has(matchKey(headerText)),",
+    "  use: unusableReason === null && (choices.columns[index] ?? isKnown) };"],
+  beats: [
+    { cap: "Back to the main paste. The first record is the header and the other five are data. Five rows is within the 500-row limit, so the plan is a preview, not <code>tooMany</code>.", hl: [], run: (s) => {
+      s.paste = { ...s.paste, mode: "main", cur: [1], err: [] }; s.qrecs = null; rec(s, 1).state = "header"; F(s, "rec-1"); } },
+    { cap: "Column 0 is always the title, whatever its header says. Every other header names a candidate Credit role.", hl: [], run: (s) => { s.columns.push({ index: 0, header: "Titel", role: "title", tags: [["", "always the title"]] }); } },
+    { cap: "<q>Kompositör</q> is already used by the Group's Credits. It is a known role, used by default, and not new to the Group.", hl: [1, 2, 4, 5], run: (s) => {
+      s.columns.push({ index: 1, header: "Kompositör", role: "Kompositör", tags: [["known", "used in Group"], ["use", "used"]] });
+      s.trace = T("val:\"Kompositör\"", "fn:resolveCreditRole", "hit:Kompositör"); } },
+    { cap: "<q>Textförfattare</q> is a built-in role, so it is used by default. No Credit in this Group has it yet, so it is new to the Group.", hl: [2, 4], run: (s) => {
+      s.columns.push({ index: 2, header: "Textförfattare", role: "Textförfattare", tags: [["known", "built-in"], ["newg", "new to Group"], ["use", "used"]] });
+      s.trace = T("val:\"Textförfattare\"", "fn:resolveCreditRole", "hit:Textförfattare"); } },
+    { cap: "<q>Arrangör</q> is the same: built-in, used, new to the Group. A header like <q>KOMPOSITÖR</q> would store as <q>Kompositör</q>, the existing spelling.", hl: [1, 4], run: (s) => {
+      s.columns.push({ index: 3, header: "Arrangör", role: "Arrangör", tags: [["known", "built-in"], ["newg", "new to Group"], ["use", "used"]] });
+      s.trace = T("val:\"KOMPOSITÖR\"", "fn:resolveCreditRole", "hit:Kompositör"); } },
+    { cap: "A header that isn't a known role, such as <q>Anteckning</q>, would be ignored by default. The user can switch it to a role, and that override goes in <code>choices.columns</code>.", hl: [5], run: (s) => { s.paste.cur = []; s.trace = T("val:Anteckning", "miss:not known", "fn:choices.columns[3] ??", "val:false"); } },
+  ] },
+{ title: "Build the lookups", fn: "buildImportPlan", stage: "lookups",
+  code: ["const existingPeople = new Map<string, ImportPerson>();",
+    "for (const person of group.people) existingPeople.set(matchKey(person.name), …);",
+    "const newPeople = new Map<string, ImportPerson>();",
+    "const existingTitles = new Set(group.pieceTitles.map(matchKey));",
+    "const seenTitles = new Set<string>();",
+    "",
+    "// matchKey: trimmed, spaces collapsed, lower-cased (sv). Accents count.",
+    "export function matchKey(text: string): string {",
+    "  return normalizeSpacing(text).toLocaleLowerCase(\"sv\");",
+    "}"],
+  beats: [
+    { cap: "Names are never compared with <code>===</code>. Each lookup is keyed by <code>matchKey</code>, so names that differ only in case or spacing are the same. <q>Åström</q> and <q>Aström</q> still differ.", hl: [0, 1, 7, 8], run: (s) => {
+      s.lookups = { ep: [{ key: "anna berg", name: "Anna Berg", id: "p1" }], et: [], st: [], np: [] };
+      s.trace = T("val:\"Anna Berg\"", "fn:matchKey", "hit:anna berg"); } },
+    { cap: "<code>existingTitles</code> holds the Group's Piece titles by match key.", hl: [3], run: (s) => { s.lookups.et.push("ave maria"); s.trace = T("val:\"Ave Maria\"", "fn:matchKey", "hit:ave maria"); } },
+    { cap: "<code>newPeople</code> and <code>seenTitles</code> start empty. They fill in as the loop meets rows.", hl: [2, 4], run: (s) => { s.trace = null; F(s, "look-np", "look-st"); } },
+  ] },
+{ title: "Line 2: two new People", fn: "row loop", stage: "rows", code: ROW_CODE,
+  beats: [
+    { cap: "<code>rowProblem</code> checks the record first. It has a title, no cells past the last header, and nothing over 200 characters, so it can be read.", hl: [0], run: (s) => { cur(s, 2); newRow(s, 2, "Gläns över sjö och strand");
+      s.trace = T("fn:rowProblem", "val:title ✓", "val:cells ≤ 4 ✓", "val:lengths ✓", "hit:null"); } },
+    { cap: "<q>gläns över sjö och strand</q> is in neither <code>existingTitles</code> nor <code>seenTitles</code>. Not a duplicate, so the row is added. Its key goes into <code>seenTitles</code>.", hl: [2, 3, 4], run: (s) => {
+      const r = row(s, 2); r.dup = null; r.add = true; addSeen(s, r.title); F(s, "row-2");
+      s.trace = T("val:\"Gläns över sjö och strand\"", "fn:matchKey", "val:gläns över sjö och strand", "miss:no duplicate", "new:add"); } },
+    { cap: "Kompositör: <q>Alice Tegnér</q> is not an existing Person and not a planned new one, so she is new. The row is added, so she goes into <code>newPeople</code>.", hl: [5, 6, 8, 9], run: (s) => {
+      credit(s, 2, "Alice Tegnér", "new", "Kompositör"); addNew(s, "Alice Tegnér");
+      s.trace = T("val:\"Alice Tegnér\"", "fn:matchKey", "val:alice tegnér", "miss:not existing", "new:+ new Person"); } },
+    { cap: "Textförfattare: <q>Viktor Rydberg</q> is new too. The Arrangör cell is empty, so it adds no one.", hl: [7, 8, 9], run: (s) => {
+      credit(s, 2, "Viktor Rydberg", "new", "Textförfattare"); addNew(s, "Viktor Rydberg"); finish(s, 2);
+      s.trace = T("val:\"Viktor Rydberg\"", "miss:not existing", "new:+ new Person"); } },
+  ] },
+{ title: "Line 3: one Person, two roles", fn: "row loop", stage: "rows", code: ROW_CODE,
+  beats: [
+    { cap: "<q>Uti vår hage</q> can be read and is not a duplicate yet. It is added, and its key goes into <code>seenTitles</code>.", hl: [0, 2, 3, 4], run: (s) => {
+      cur(s, 3); newRow(s, 3, "Uti vår hage"); const r = row(s, 3); r.dup = null; r.add = true; addSeen(s, r.title);
+      s.trace = T("val:\"Uti vår hage\"", "fn:matchKey", "val:uti vår hage", "miss:no duplicate", "new:add"); } },
+    { cap: "The Kompositör cell holds two names. <code>splitNames</code> splits on <code>;</code> and normalizes the spacing, so <q>anna&nbsp;&nbsp;berg</q> becomes <q>anna berg</q>.", hl: [7], run: (s) => {
+      s.trace = T("val:\"anna  berg; Hugo Alfvén\"", "fn:splitNames", "val:\"anna berg\"", "val:\"Hugo Alfvén\""); } },
+    { cap: "<q>anna berg</q> has the same match key as the existing Anna Berg. No new Person: this Credit points at <code>p1</code>.", hl: [5, 8, 9], run: (s) => {
+      credit(s, 3, "Anna Berg", "existing", "Kompositör", { id: "p1" }); F(s, "ep-anna berg");
+      s.trace = T("val:\"anna berg\"", "fn:matchKey", "val:anna berg", "hit:= Anna Berg (p1)"); } },
+    { cap: "<q>Hugo Alfvén</q> is new, and the row is added, so he goes into <code>newPeople</code>.", hl: [5, 6], run: (s) => {
+      credit(s, 3, "Hugo Alfvén", "new", "Kompositör"); addNew(s, "Hugo Alfvén");
+      s.trace = T("val:\"Hugo Alfvén\"", "fn:matchKey", "val:hugo alfvén", "miss:not existing", "new:+ new Person"); } },
+    { cap: "Textförfattare: <q>ANNA BERG</q> is Anna Berg again. Credits are grouped per Person, so she gets one Credit with a second role.", hl: [8, 9], run: (s) => {
+      credit(s, 3, "Anna Berg", "existing", "Textförfattare"); F(s, "ep-anna berg");
+      s.trace = T("val:\"ANNA BERG\"", "fn:matchKey", "val:anna berg", "hit:= Anna Berg (p1)"); } },
+    { cap: "Arrangör: <q>Hugo Alfvén</q> is found in <code>newPeople</code> this time. Same Person, one Credit with two roles, and still one new Person.", hl: [5, 8, 9], run: (s) => {
+      credit(s, 3, "Hugo Alfvén", "new", "Arrangör"); F(s, "np-hugo alfvén"); finish(s, 3);
+      s.trace = T("val:\"Hugo Alfvén\"", "fn:newPeople.get", "new:+ Hugo Alfvén (planned)"); } },
+  ] },
+{ title: "Line 4: a duplicate of the Group's Piece", fn: "row loop", stage: "rows", code: ROW_CODE,
+  beats: [
+    { cap: "<q>Ave maria</q> has the match key <q>ave maria</q>, which is in <code>existingTitles</code>. It duplicates the Group's <q>Ave Maria</q>.", hl: [2], run: (s) => {
+      cur(s, 4); newRow(s, 4, "Ave maria"); row(s, 4).dup = "existing"; F(s, "et-ave maria");
+      s.trace = T("val:\"Ave maria\"", "fn:matchKey", "val:ave maria", "miss:in existingTitles"); } },
+    { cap: "A duplicate is added only if the user ticks <q>Lägg till ändå</q>. <code>addDuplicateLines</code> is empty, so <code>add</code> is false.", hl: [3, 4], run: (s) => {
+      row(s, 4).add = false; s.lookups.st.push("ave maria"); F(s, "st-ave maria", "row-4");
+      s.trace = T("val:duplicate = \"existing\"", "fn:addDuplicateLines.has(4)", "bad:false"); } },
+    { cap: "<q>Schubert</q> is new and the row still shows him. But only an added row registers its People, so he stays out of <code>newPeople</code>.", hl: [5, 6], run: (s) => {
+      credit(s, 4, "Schubert", "new", "Kompositör", { ghost: true }); finish(s, 4);
+      s.trace = T("val:\"Schubert\"", "miss:not existing", "new:+ Schubert", "bad:not registered"); } },
+  ] },
+{ title: "Line 5: a duplicate within the paste", fn: "row loop", stage: "rows", code: ROW_CODE,
+  beats: [
+    { cap: "<q>uti vår hage</q> is not in the Group, but its key is in <code>seenTitles</code> from line 3. An earlier duplicate, not added. Every title goes into <code>seenTitles</code>, so a third copy would be one too.", hl: [2, 3, 4], run: (s) => {
+      cur(s, 5); newRow(s, 5, "uti vår hage"); const r = row(s, 5); r.dup = "earlier"; r.add = false; F(s, "st-uti vår hage", "row-5"); finish(s, 5);
+      s.trace = T("val:\"uti vår hage\"", "fn:matchKey", "val:uti vår hage", "miss:in seenTitles", "bad:not added"); } },
+  ] },
+{ title: "Line 6: no title", fn: "rowProblem", stage: "rows",
+  code: ["function rowProblem(record, headerCount, columns): string | null {",
+    "  if (record.error) return record.error;",
+    "  const title = normalizeSpacing(record.cells[0] ?? \"\");",
+    "  if (title === \"\") return \"Titel saknas\";",
+    "  if (record.cells.slice(headerCount).some((c) => c.trim() !== \"\")) return \"Fler celler än rubriker\";",
+    "  if (title.length > MAX_IMPORT_NAME_LENGTH) return `Titeln är längre än 200 tecken`;",
+    "  // …and no name in a used column over 200 characters",
+    "  return null;",
+    "}"],
+  beats: [
+    { cap: "The title cell is empty. <code>rowProblem</code> returns <q>Titel saknas</q>, the row goes to <code>skipped</code>, and <q>Bach</q> is never looked up.", hl: [2, 3], run: (s) => {
+      cur(s, 6); s.skipped.push({ line: 6, raw: "⇥Bach", reason: "Titel saknas" }); F(s, "sk-6"); finish(s, 6); s.paste.err = [6]; rec(s, 6).state = "err"; rec(s, 6).note = "Titel saknas";
+      s.trace = T("val:\"\"", "fn:rowProblem", "bad:\"Titel saknas\""); } },
+  ] },
+{ title: "Count what the import will do", fn: "buildImportPlan", stage: "counts",
+  code: ["const addedRows = rows.filter((row) => row.add);",
+    "const newCreditRoles = usedColumns",
+    "  .filter((c) => c.isNewToGroup && addedRows.some((row) => row.credits.some((cr) => cr.roles.includes(c.role))))",
+    "  .map((c) => c.role);",
+    "counts: { pieces: addedRows.length,",
+    "  skipped: skipped.length + rows.length - addedRows.length,",
+    "  newPeople: newPeople.size, newCreditRoles }"],
+  beats: [
+    { cap: "Two rows are added: lines 2 and 3.", hl: [0, 4], run: (s) => { s.counts = { pieces: 2, skipped: null, newPeople: null, roles: null }; F(s, "cnt-pieces", "row-2", "row-3"); s.trace = null; } },
+    { cap: "Skipped counts the unreadable row and the duplicates left out: 1 + 4 − 2 = 3.", hl: [5], run: (s) => { s.counts.skipped = 3; F(s, "cnt-skipped", "row-4", "row-5", "sk-6"); } },
+    { cap: "Three new People: Alice Tegnér, Viktor Rydberg and Hugo Alfvén. Not Schubert.", hl: [6], run: (s) => { s.counts.newPeople = 3; F(s, "cnt-newPeople", "look-np"); } },
+    { cap: "New Credit roles are the new-to-Group columns that an added row uses: Textförfattare and Arrangör. Kompositör is already in the Group.", hl: [1, 2, 3], run: (s) => { s.counts.roles = ["Textförfattare", "Arrangör"]; F(s, "cnt-roles", "col-2", "col-3"); } },
+  ] },
+{ title: "The user adds the duplicate anyway", fn: "ImportChoices", stage: "choices",
+  code: ["export type ImportChoices = {",
+    "  columns: Record<number, boolean>;   // only overrides of the default",
+    "  addDuplicateLines: number[];        // duplicates to add anyway",
+    "};",
+    "",
+    "const add = duplicate === null || addDuplicateLines.has(record.line);",
+    "if (add) newPeople.set(key, person);"],
+  beats: [
+    { cap: "In the preview the user ticks <q>Lägg till ändå</q> on line 4. Choices hold only overrides, so <code>addDuplicateLines</code> becomes <code>[4]</code>.", hl: [2], run: (s) => { s.choices.add = [4]; F(s, "choices"); s.trace = null; } },
+    { cap: "Nothing is patched in place. The client runs <code>buildImportPlan</code> again with the same paste and Group and the new choices.", hl: [], run: (s) => { s.stage = "rows"; s.rebuild = true; s.trace = T("val:text", "val:group", "val:{ addDuplicateLines: [4] }", "fn:buildImportPlan", "hit:ImportPlan"); } },
+    { cap: "Line 4 is added now, so <q>Schubert</q> is registered as a new Person.", hl: [5, 6], run: (s) => { s.stage = "rows"; s.rebuild = false; const r = row(s, 4); r.add = true; r.credits[0].ghost = false; F(s, "row-4", "cr-4-schubert"); addNew(s, "Schubert"); } },
+    { cap: "The counts follow: 3 Pieces, 2 skipped, 4 new People.", hl: [], run: (s) => { s.stage = "counts"; s.counts = { ...s.counts, pieces: 3, skipped: 2, newPeople: 4 }; F(s, "cnt-pieces", "cnt-skipped", "cnt-newPeople"); } },
+  ] },
+{ title: "Confirm on the server", fn: "importPieces", stage: "server",
+  code: ["return await prisma.$transaction(async (tx) => {",
+    "  const group = await getPieceImportGroupFor(groupId, tx);",
+    "  const plan = buildImportPlan(text, group, choices);",
+    "  if (importOutcome(plan) !== outcome) return { kind: \"changed\", group };",
+    "  await saveImport(tx, plan, { groupId, userId });",
+    "}, { isolationLevel: Serializable });"],
+  beats: [
+    { cap: "Importera posts the paste, the choices and <code>importOutcome(preview)</code>: a fingerprint of each row's duplicate status and Credits. An existing Person appears as an id, a new one as <code>+name</code>.", hl: [], run: (s) => { s.server = { state: "sent" }; s.trace = T("val:text", "val:choices", "val:outcome", "fn:importPieces"); } },
+    { cap: "In a serializable transaction, the server reads the Group again and rebuilds the plan with the same pure function.", hl: [1, 2], run: (s) => { s.server.state = "rebuild"; F(s, "srv-run"); s.trace = T("fn:getPieceImportGroupFor(tx)", "fn:buildImportPlan", "fn:importOutcome"); } },
+    { cap: "The fingerprints match, so <code>saveImport</code> writes 4 People, then 3 Pieces, then 7 Credits (one per Person and role), all in the same transaction.", hl: [3, 4], run: (s) => { s.server.state = "ok"; F(s, "srv-ok"); s.trace = T("hit:outcome ===", "fn:saveImport", "new:4 People · 3 Pieces · 7 Credits"); } },
+    { cap: "If someone had added Hugo Alfvén to the Group in the meantime, his Credit would read <code>\"p2\"</code> instead of <code>\"+Hugo Alfvén\"</code>. The fingerprints differ, nothing is saved, and the client gets the fresh Group to redraw the preview.", hl: [3], run: (s) => { s.server.state = "changed"; F(s, "srv-ch"); s.trace = T("val:\"+Hugo Alfvén\"", "fn:≠", "val:\"p2\"", "bad:{ kind: \"changed\" }"); } },
+  ] },
+];
+
+/* flatten */
+const BEATS = [];
+STEPS.forEach((st, si) => st.beats.forEach((b, bi) => BEATS.push({ ...b, si, bi })));
+const stepStart = (si) => BEATS.findIndex((b) => b.si === si);
+
+const stateAt = (n) => {
+  const s = init();
+  for (let i = 0; i <= n; i++) {
+    s.flash = []; s.stage = STEPS[BEATS[i].si].stage;
+    if (i > 0 && BEATS[i].si !== BEATS[i - 1].si) s.trace = null;
+    BEATS[i].run(s);
+  }
+  return s;
+};
+
+/* ---------- render ---------- */
+const $ = (id) => document.getElementById(id);
+const tabHtml = (fl, line, j) => `<span class="tab${fl ? " flash" : ""}" data-k="tab-${line}-${j}">⇥</span>`;
+
+function renderPaste(s) {
+  const p = s.paste;
+  $("paste-src").textContent = p.mode === "quote" ? "another paste, comma-separated" : "text";
+  if (!p.show) return `<p class="empty-note">Nothing pasted yet.</p>`;
+  const cls = (n) => ["ln", p.cur.includes(n) && "cur", p.done.includes(n) && !p.cur.includes(n) && "done", p.err.includes(n) && "err", p.split.includes(n) && p.mode === "main" && "split"].filter(Boolean).join(" ");
+  if (p.mode === "main") {
+    return MAIN.map((cells, i) => {
+      const n = i + 1;
+      const withTabs = cells.map((c, j) => (j ? tabHtml(p.tabFlash && n === 1, n, j) : "") + `<span class="cell${c === "" ? " e" : ""}">${esc(c)}</span>`).join("");
+      return `<div class="${cls(n)}" data-k="pl-${n}"><span class="g">${n}</span><span class="tx">${withTabs}</span></div>`;
+    }).join("");
+  }
+  let inQ = false;
+  return QUOTE.map((raw, i) => {
+    const n = i + 1;
+    let h = "";
+    for (const ch of raw) {
+      if (ch === '"') { inQ = !inQ; h += `<span class="q">"</span>`; }
+      else if (ch === "," && !inQ) h += `<span class="d">,</span>`;
+      else h += esc(ch);
+    }
+    if (raw === "") h = `<span class="blank-mark">(blank line)</span>`;
+    return `<div class="${cls(n)}" data-k="ql-${n}"><span class="g">${n}</span><span class="tx">${h}</span></div>`;
+  }).join("");
+}
+
+function renderGroup(s) {
+  if (!s.group) return `<p class="empty-note">Loaded with the page.</p>`;
+  return `<dl class="kv">
+    <dt>People</dt><dd><span class="chip" data-k="g-anna">Anna Berg <span class="id">p1</span></span></dd>
+    <dt>Credit roles</dt><dd><span class="chip" data-k="g-komp">Kompositör</span></dd>
+    <dt>Piece titles</dt><dd><span class="chip" data-k="g-ave">Ave Maria</span></dd>
+    <dt>Built-in roles</dt><dd><span class="chip muted">Arrangör</span><span class="chip muted">Kompositör</span><span class="chip muted">Textförfattare</span></dd>
+  </dl>`;
+}
+
+function renderChoices(s) {
+  if (!s.choices) return `<p class="empty-note">The user's overrides from the preview.</p>`;
+  return `<div class="json" data-k="choices">{ columns: {}, addDuplicateLines: [${s.choices.add.join(", ")}] }</div>`;
+}
+
+function renderDelim(s) {
+  if (!s.delim) return `<p class="empty-note">Not detected yet.</p>`;
+  const pr = s.paste.mode === "quote" ? { tab: "skip", semi: "skip", comma: "hit" } : s.delim.probes;
+  return `<div class="probes">
+    <span class="probe ${pr.tab || "try"}" data-k="probe-tab">⇥ tab</span>
+    <span class="probe ${pr.semi}" data-k="probe-semi">;</span>
+    <span class="probe ${pr.comma}" data-k="probe-comma">,</span>
+    ${s.delim.result ? `<span class="mono" data-k="delim-res">→ <b>${s.paste.mode === "quote" ? "\",\"" : esc(s.delim.result)}</b></span>` : ""}
+  </div>`;
+}
+
+function renderRecords(s) {
+  const list = s.qrecs || s.records;
+  if (!list.length) return `<p class="empty-note">No records read yet.</p>`;
+  const pre = s.qrecs ? "q" : "";
+  return `<div class="recs">${list.map((r) => {
+    const st = r.state === "header" ? "done" : r.state;
+    const note = r.state === "header" ? "header → columns" : r.note || (r.state === "cur" ? "reading" : "");
+    const cells = r.cells.map((c) => `<span class="c${c === "" ? " e" : ""}">${c === "" ? "∅" : esc(c)}</span>`).join("");
+    return `<div class="rec ${st}" data-k="rec-${pre}${r.line}"><span class="l">L${r.line}</span><span class="cs">${cells}</span><span class="note">${esc(note)}</span></div>`;
+  }).join("")}</div>`;
+}
+
+function renderColumns(s) {
+  if (!s.columns.length) return `<p class="empty-note">Read from the header row.</p>`;
+  return `<div class="cols">${s.columns.map((c) => `<div class="colc" data-k="col-${c.index}">
+    <span class="ix">column ${c.index}</span><span class="hd">${esc(c.header)}</span>
+    <span class="rl">${c.index === 0 ? "the Piece's title" : `role <b>${esc(c.role)}</b>`}</span>
+    <span class="tags">${c.tags.map(([k, t]) => `<span class="tag ${k}">${esc(t)}</span>`).join("")}</span></div>`).join("")}</div>`;
+}
+
+function renderLookups(s) {
+  const L = s.lookups;
+  if (!L) return `<p class="empty-note">Built once, before the row loop.</p>`;
+  const none = `<span class="none">empty</span>`;
+  const box = (k, title, note, items) => `<div class="look" data-k="look-${k}"><h4>${title} <small>${note}</small></h4><div class="items">${items.length ? items.join("") : none}</div></div>`;
+  return `<div class="looks">
+    ${box("ep", "existingPeople", "", L.ep.map((p) => `<span class="entry e-ex" data-k="ep-${p.key}"><span class="k">${esc(p.key)}</span>→ ${esc(p.name)} <span class="k">${p.id}</span></span>`))}
+    ${box("np", "newPeople", "", L.np.map((p) => `<span class="entry e-new" data-k="np-${p.key}"><span class="k">${esc(p.key)}</span>→ ${esc(p.name)}</span>`))}
+    ${box("et", "existingTitles", "", L.et.map((t) => `<span class="entry" data-k="et-${t}"><span class="k">${esc(t)}</span></span>`))}
+    ${box("st", "seenTitles", "", L.st.filter((t, i, a) => a.indexOf(t) === i).map((t) => `<span class="entry" data-k="st-${t}"><span class="k">${esc(t)}</span></span>`))}
+  </div>`;
+}
+
+function renderRows(s) {
+  if (!s.rows.length && !s.skipped.length) return `<p class="empty-note">Filled by the row loop.</p>`;
+  const rows = s.rows.map((r) => {
+    const badges = [
+      r.dup ? `<span class="badge dup">duplicate · ${r.dup}</span>` : "",
+      r.add === true ? `<span class="badge add">add</span>` : r.add === false ? `<span class="badge no">not added</span>` : "",
+    ].join("");
+    const cr = r.credits.map((c) => {
+      const key = mk(c.name);
+      return `<span class="person ${c.kind}${c.ghost ? " ghost" : ""}" data-k="cr-${r.line}-${key}"><span class="mk">${c.kind === "existing" ? "=" : "+"}</span>${esc(c.name)}${c.roles.map((ro) => `<span class="role" data-k="role-${r.line}-${key}-${ro}">${esc(ro)}</span>`).join("")}</span>`;
+    }).join("");
+    const ghost = r.credits.some((c) => c.ghost) ? `<span class="ghostnote">shown, but not created</span>` : "";
+    return `<div class="rowc ${r.add === true ? "add" : r.add === false ? "no" : ""}" data-k="row-${r.line}">
+      <div class="rc-h"><span class="l">L${r.line}</span><span class="ttl">${esc(r.title)}</span>${badges}</div>
+      ${cr || ghost ? `<div class="credits">${cr}${ghost}</div>` : ""}</div>`;
+  }).join("");
+  const sk = s.skipped.length ? `<div class="skipped">${s.skipped.map((k) => `<div class="skp" data-k="sk-${k.line}"><span class="l">L${k.line}</span><span><span class="r">${esc(k.reason)}</span> <span class="raw">${esc(k.raw)}</span></span></div>`).join("")}</div>` : "";
+  return `<div class="rows${s.rebuild ? " rebuild" : ""}">${rows}</div>${sk}`;
+}
+
+function renderCounts(s) {
+  const c = s.counts;
+  if (!c) return `<p class="empty-note">Worked out after the loop.</p>`;
+  const v = (x) => (x === null ? "–" : x);
+  return `<div class="counts">
+    <div class="cnt" data-k="cnt-pieces"><div class="v">${v(c.pieces)}</div><div class="k">pieces</div></div>
+    <div class="cnt" data-k="cnt-skipped"><div class="v">${v(c.skipped)}</div><div class="k">skipped</div></div>
+    <div class="cnt" data-k="cnt-newPeople"><div class="v">${v(c.newPeople)}</div><div class="k">newPeople</div></div>
+    <div class="cnt" data-k="cnt-roles"><div class="v small">${c.roles ? c.roles.map(esc).join(", ") : "–"}</div><div class="k">newCreditRoles</div></div>
+  </div>`;
+}
+
+function fingerprint(s, hugoId) {
+  const json = JSON.stringify({
+    rows: s.rows.map((r) => [r.line, r.title, r.dup, r.add, r.credits.map((c) => [c.kind === "existing" ? c.id : hugoId && c.name === "Hugo Alfvén" ? hugoId : "+" + c.name, c.roles])]),
+    skipped: s.skipped.map((k) => [k.line, k.reason]),
+  });
+  return esc(json).replace(/&quot;(\+Hugo Alfvén|p2)&quot;/g, (m, v) => `<mark class="${v === "p2" ? "bad" : ""}">&quot;${v}&quot;</mark>`);
+}
+
+function renderServer(s) {
+  if (!s.server) return `<p class="empty-note">Runs when the user clicks Importera.</p>`;
+  const st = s.server.state;
+  let out = `<div class="mono" style="font-size:11px;color:var(--muted);margin-bottom:4px">outcome, as previewed</div><div class="fp" data-k="fp-1">${fingerprint(s)}</div>`;
+  const v = [];
+  if (st !== "sent") v.push(`<div class="v run" data-k="srv-run">Read the Group in the transaction, rebuild the plan, compare.</div>`);
+  if (st === "ok") v.push(`<div class="v ok" data-k="srv-ok">Same outcome → saveImport: 4 People, 3 Pieces, 7 Credits. Returns { kind: "imported" }.</div>`);
+  if (st === "changed") {
+    out += `<div class="mono" style="font-size:11px;color:var(--muted);margin:8px 0 4px">outcome now, if Hugo Alfvén was added since</div><div class="fp" data-k="fp-2">${fingerprint(s, "p2")}</div>`;
+    v.push(`<div class="v ch" data-k="srv-ch">Different outcome → nothing saved. Returns { kind: "changed", group }.</div>`);
+  }
+  return out + `<div class="verdict">${v.join("")}</div>`;
+}
+
+function renderTrace(s) {
+  if (!s.trace) return "";
+  return s.trace.map((t, i) => (i ? `<span class="ar" data-k="ar-${tick}-${i}">→</span>` : "") + `<span class="tk ${t.k}" data-k="tk-${tick}-${i}">${esc(t.t)}</span>`).join("");
+}
+
+/* ---------- player ---------- */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let idx = -1, playing = false, timer = null, prevKeys = null, tick = 0, lastStage = null;
+
+$("steps").innerHTML = STEPS.map((st, i) => `<li data-i="${i}"><button type="button"><span class="n">${String(i + 1).padStart(2, "0")}</span><span>${st.title}</span><span class="fn">${st.fn}</span></button></li>`).join("");
+$("steps").addEventListener("click", (e) => { const li = e.target.closest("li"); if (li) jumpStep(+li.dataset.i); });
+
+function show(n, animate = true) {
+  idx = n; tick++;
+  const s = stateAt(n), b = BEATS[n], st = STEPS[b.si];
+  $("paste").innerHTML = renderPaste(s);
+  $("group").innerHTML = renderGroup(s);
+  $("choices").innerHTML = renderChoices(s);
+  $("delim").innerHTML = renderDelim(s);
+  $("records").innerHTML = renderRecords(s);
+  $("columns").innerHTML = renderColumns(s);
+  $("lookups").innerHTML = renderLookups(s);
+  $("rows").innerHTML = renderRows(s);
+  $("counts").innerHTML = renderCounts(s);
+  $("server").innerHTML = renderServer(s);
+  $("trace").innerHTML = renderTrace(s);
+
+  $("count").textContent = `Step ${b.si + 1} of ${STEPS.length}`;
+  $("fn").textContent = st.fn;
+  $("stitle").textContent = st.title;
+  $("cap").innerHTML = b.cap;
+  $("beats").innerHTML = st.beats.map((_, i) => `<i class="${i <= b.bi ? "on" : ""}"></i>`).join("");
+  $("code").innerHTML = st.code.map((l, i) => `<div class="cl${b.hl.includes(i) ? " on" : ""}">${esc(l) || " "}</div>`).join("");
+  document.querySelectorAll("#steps li").forEach((li, i) => { li.classList.toggle("on", i === b.si); li.classList.toggle("past", i < b.si); });
+  document.querySelectorAll(".sec").forEach((sec) => sec.classList.toggle("active", sec.dataset.stage === s.stage));
+
+  const keys = new Set(); let ei = 0, fi = 0;
+  document.querySelectorAll("[data-k]").forEach((el) => {
+    const k = el.dataset.k; keys.add(k);
+    if (animate && prevKeys && !prevKeys.has(k)) { el.classList.add("enter"); el.style.setProperty("--i", Math.min(ei++, 12)); }
+    if (s.flash.includes(k)) { el.classList.add("flash"); el.style.setProperty("--fi", Math.min(fi++, 8)); }
+  });
+  prevKeys = keys;
+
+  if (s.stage !== lastStage) {
+    lastStage = s.stage;
+    const sec = document.querySelector(`.sec[data-stage="${s.stage}"]`);
+    if (sec) {
+      const r = sec.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > innerHeight) sec.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    }
+  }
+  $("prev").disabled = n === 0;
+  $("next").disabled = n === BEATS.length - 1;
+  schedule();
+}
+
+const dur = (b) => 1500 + b.cap.replace(/<[^>]+>/g, "").length * 32;
+function schedule() {
+  clearTimeout(timer);
+  if (!playing) return;
+  if (idx >= BEATS.length - 1) { setPlaying(false); return; }
+  timer = setTimeout(() => show(idx + 1), dur(BEATS[idx]));
+}
+function setPlaying(p) { playing = p; $("play").textContent = p ? "Pause" : idx >= BEATS.length - 1 ? "Replay" : "Play"; schedule(); }
+function silentTo(n) { if (n < 0) { prevKeys = new Set(); return; } show(n, false); }
+function jumpStep(si) { clearTimeout(timer); silentTo(stepStart(si) - 1); show(stepStart(si)); }
+function go(n) { if (n < 0 || n >= BEATS.length) return; clearTimeout(timer); if (n < idx) silentTo(n - 1); show(n); }
+
+$("play").addEventListener("click", () => { if (!playing && idx >= BEATS.length - 1) { silentTo(-1); show(0); setPlaying(true); return; } setPlaying(!playing); });
+$("next").addEventListener("click", () => { setPlaying(false); go(idx + 1); });
+$("prev").addEventListener("click", () => { setPlaying(false); go(idx - 1); });
+addEventListener("keydown", (e) => {
+  if (e.target.closest("button") && (e.key === " " || e.key === "Enter")) return;
+  if (e.key === "ArrowRight") { setPlaying(false); go(idx + 1); }
+  else if (e.key === "ArrowLeft") { setPlaying(false); go(idx - 1); }
+  else if (e.key === " ") { e.preventDefault(); $("play").click(); }
+});
+
+prevKeys = new Set();
+show(0);
+setPlaying(!reduce);
+})();
+</script>
