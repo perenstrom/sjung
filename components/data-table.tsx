@@ -29,7 +29,8 @@
  * Pass `initialSorting` (e.g. `[{ id: "date", desc: true }]`) to start sorted.
  *
  * A column can make its cell span several columns per row with
- * `meta: { getColSpan: (row) => n }`; the covered cells are skipped.
+ * `meta: { getColSpan: (row) => n }`; the covered cells are skipped. It can
+ * style its header cell with `meta: { headerClassName }`.
  *
  * `renderRowDivider` can put a full-width row (e.g. a letter heading) before a
  * body row, given the row shown above it in the current sorted order.
@@ -68,6 +69,8 @@ declare module "@tanstack/react-table" {
      * The covered cells to its right are not rendered.
      */
     getColSpan?: (row: TData) => number;
+    /** Classes for this column's header cell, e.g. `w-[1%]` to shrink it to fit. */
+    headerClassName?: string;
   }
 }
 
@@ -131,7 +134,10 @@ export function DataTable<TData, TValue>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
+                <TableHead
+                  key={header.id}
+                  className={header.column.columnDef.meta?.headerClassName}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(

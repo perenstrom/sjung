@@ -58,7 +58,9 @@ export function setListsColumns(
           {
             id: "actions",
             enableSorting: false,
-            header: () => <span className="w-[1%] whitespace-nowrap">Åtgärder</span>,
+            // Shrinks the column to fit its buttons.
+            meta: { headerClassName: "w-[1%]" },
+            header: "Åtgärder",
             cell: ({ row }) => (
               <div className="flex items-center gap-2">
                 <SetListRowActions groupSlug={groupSlug} setList={row.original} />
