@@ -26,6 +26,7 @@
  * ```
  *
  * Use `enableSorting={false}` when the view uses manual reorder (e.g. setlist steps).
+ * Pass `initialSorting` (e.g. `[{ id: "date", desc: true }]`) to start sorted.
  *
  * A column can make its cell span several columns per row with
  * `meta: { getColSpan: (row) => n }`; the covered cells are skipped.
@@ -77,6 +78,8 @@ export interface DataTableProps<TData, TValue> {
   data: TData[];
   /** When false, rows keep server/data order (e.g. manual reorder tables). Default true. */
   enableSorting?: boolean;
+  /** The sort the table starts with, before any heading is clicked. Default unsorted. */
+  initialSorting?: SortingState;
   emptyMessage?: string;
   /** Vertical alignment of body cells. Default "middle". */
   cellAlign?: "middle" | "top";
@@ -98,13 +101,14 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   enableSorting = true,
+  initialSorting = [],
   emptyMessage = "Inga rader.",
   cellAlign = "middle",
   getRowId,
   renderRowDivider,
   className,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
 
   const table = useReactTable({
     data,
