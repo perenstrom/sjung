@@ -138,7 +138,7 @@ These live outside the repo and need admin access:
 - **Release GitHub App** — a GitHub App installed on this repository only, with repository permissions Contents and Pull requests set to read and write. Store its client ID as the variable `RELEASE_APP_CLIENT_ID` and a private key as the secret `RELEASE_APP_PRIVATE_KEY` in both the `release` and `production` environments. Limit both environments' deployment branches to `main`, so only workflows on `main` can mint the app's token.
 - **`production` branch** — create it at the commit production runs today, before the first deploy (the workflow updates the branch and fails if it's missing). Protect it so only the release app can push, force pushes included (rollbacks move it backwards), and nobody can delete it.
 - **Coolify** — set `sjung-production`'s branch to `production` and leave its commit at `HEAD`.
-- **Merge settings** — allow squash merging only, with the PR title as the commit message. Once the `PR title` check has run on a PR, add it to `main`'s required status checks alongside `build`, `Integration Tests` and `e2e`.
+- **Merge settings** — allow squash merging only, with the PR title as the commit message and a blank body. Once the `PR title` check has run on a PR, add it to `main`'s required status checks alongside `build`, `Integration Tests` and `e2e`.
 
 ## Commits
 
@@ -159,7 +159,7 @@ PRs are squash-merged, so each PR lands on `main` as one commit whose message is
 - **Linear ticket** — Linear's GitHub integration auto-completes an issue whenever a PR whose branch name, title or commit references that issue's ID gets merged, regardless of whether that PR actually implements the fix. So the bare `(PER-XXX)` suffix, and that ticket's Linear-suggested branch name, are reserved for the PR that actually finishes the work. Put the suffix in the PR title, since that becomes the commit on `main`:
   - **Closing PR** (implements/finishes the ticket) — use the ticket's Linear-suggested branch name and append its ID in parentheses to the PR title, e.g. `fix(auth): correct token refresh (PER-42)`.
   - **Non-closing PR** (docs, ADRs, research, triage notes that relate to a ticket without finishing it) — do not use that ticket's Linear-suggested branch name or put its ID in the title. Reference the ticket in the PR body as `Refs PER-XXX` instead, so merging it doesn't auto-complete the issue.
-- **Breaking changes** — mark with `!` after the type/scope in the PR title (`feat(api)!: ...`) and explain in a `BREAKING CHANGE:` footer in the PR body.
+- **Breaking changes** — mark with `!` after the type/scope in the PR title (`feat(api)!: ...`). Squash commits on `main` have no body, so the `!` is what release-please sees; a `BREAKING CHANGE:` footer in the PR description doesn't reach `main`, so explain the break in the description for reviewers only.
 
 ## Pull requests
 
