@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { addPieceToSetList } from "@/app/actions/setlists";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +25,11 @@ type AddPieceToSetListFormProps = {
   pieces: PieceOption[];
 };
 
-/** Search for a Piece and add it to the end of a Set list. */
+/**
+ * Search for a Piece and add it to the end of a Set list. After a successful
+ * add the search and selection start over, ready for the next Piece; after a
+ * failed add they are kept so the user can retry.
+ */
 export function AddPieceToSetListForm({
   groupSlug,
   setListId,
@@ -32,6 +37,20 @@ export function AddPieceToSetListForm({
 }: AddPieceToSetListFormProps) {
   const [query, setQuery] = useState("");
   const [selectedPieceId, setSelectedPieceId] = useState<string>(pieces[0]?.id ?? "");
+
+  const [error, formAction, isPending] = useActionState(
+    async (_previousError: string | null, formData: FormData) => {
+      try {
+        await addPieceToSetList(formData);
+      } catch (err) {
+        return getThrownMessage(err, "Kunde inte lägga till stycke");
+      }
+      setQuery("");
+      setSelectedPieceId(pieces[0]?.id ?? "");
+      return null;
+    },
+    null
+  );
 
   const filteredPieces = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("sv-SE");
@@ -59,7 +78,7 @@ export function AddPieceToSetListForm({
     noFilteredMatches || !resolvedPieceId ? undefined : resolvedPieceId;
 
   return (
-    <form action={addPieceToSetList} className="space-y-2">
+    <form action={formAction} className="space-y-2">
       <input type="hidden" name="groupSlug" value={groupSlug} />
       <input type="hidden" name="setListId" value={setListId} />
       <input type="hidden" name="pieceId" value={resolvedPieceId} />
@@ -99,10 +118,15 @@ export function AddPieceToSetListForm({
             Filtrera och välj sedan stycke i listan.
           </p>
         </div>
-        <Button type="submit" disabled={pieces.length === 0}>
+        <Button type="submit" disabled={pieces.length === 0 || isPending}>
           Lägg till
         </Button>
       </div>
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }
