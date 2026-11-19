@@ -26,9 +26,11 @@
  * ```
  *
  * Use `enableSorting={false}` when the view uses manual reorder (e.g. setlist steps).
+ * Pass `initialSorting` (e.g. `[{ id: "date", desc: true }]`) to start sorted.
  *
  * A column can make its cell span several columns per row with
- * `meta: { getColSpan: (row) => n }`; the covered cells are skipped.
+ * `meta: { getColSpan: (row) => n }`; the covered cells are skipped. It can
+ * style its header cell with `meta: { headerClassName }`.
  *
  * `renderRowDivider` can put a full-width row (e.g. a letter heading) before a
  * body row, given the row shown above it in the current sorted order.
@@ -67,6 +69,8 @@ declare module "@tanstack/react-table" {
      * The covered cells to its right are not rendered.
      */
     getColSpan?: (row: TData) => number;
+    /** Classes for this column's header cell, e.g. `w-[1%]` to shrink it to fit. */
+    headerClassName?: string;
   }
 }
 
@@ -77,6 +81,8 @@ export interface DataTableProps<TData, TValue> {
   data: TData[];
   /** When false, rows keep server/data order (e.g. manual reorder tables). Default true. */
   enableSorting?: boolean;
+  /** The sort the table starts with, before any heading is clicked. Default unsorted. */
+  initialSorting?: SortingState;
   emptyMessage?: string;
   /** Vertical alignment of body cells. Default "middle". */
   cellAlign?: "middle" | "top";
@@ -98,13 +104,14 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   enableSorting = true,
+  initialSorting = [],
   emptyMessage = "Inga rader.",
   cellAlign = "middle",
   getRowId,
   renderRowDivider,
   className,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting);
 
   const table = useReactTable({
     data,
@@ -127,7 +134,10 @@ export function DataTable<TData, TValue>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
+                <TableHead
+                  key={header.id}
+                  className={header.column.columnDef.meta?.headerClassName}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(

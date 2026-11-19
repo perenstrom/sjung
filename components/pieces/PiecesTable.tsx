@@ -313,9 +313,9 @@ export function PiecesTable({
             {
               id: "actions",
               enableSorting: false,
-              header: () => (
-                <span className="w-[1%] whitespace-nowrap">Åtgärder</span>
-              ),
+              // Shrinks the column to fit its buttons.
+              meta: { headerClassName: "w-[1%]" },
+              header: "Åtgärder",
               cell: ({ row }) => {
                 const step = row.original;
                 const piece = step.kind === "piece" ? step.piece : null;
