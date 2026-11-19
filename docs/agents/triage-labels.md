@@ -1,6 +1,18 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+The skills speak in terms of two canonical category roles and five canonical state roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+
+## Category roles
+
+| Role in mattpocock/skills | Label in our tracker | Meaning                                                     |
+| ------------------------- | -------------------- | ----------------------------------------------------------- |
+| `bug`                     | `Bug`                | Something is broken                                         |
+| `enhancement`             | `Improvement`        | Changes or improves something that already exists           |
+| `enhancement`             | `Feature`            | Adds a capability Sjung doesn't have yet                    |
+
+`enhancement` maps to two labels: pick `Improvement` or `Feature` depending on whether the request changes something that exists or adds something new. Either way an issue carries exactly one category label.
+
+## State roles
 
 | Label in mattpocock/skills | Label in our tracker | Meaning                                  |
 | --------------------------- | --------------------- | ----------------------------------------- |
