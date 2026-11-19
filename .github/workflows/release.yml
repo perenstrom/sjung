@@ -55,5 +55,7 @@ jobs:
     uses: ./.github/workflows/deploy-production.yml
     with:
       sha: ${{ needs.release-please.outputs.sha }}
-    # No secrets passed: the deploy job reads its own from the production
-    # environment.
+    # Without this, the called workflow's secrets context is empty, even for
+    # the production environment's own secrets. The caller job has no
+    # environment, so this passes nothing beyond repository-level secrets.
+    secrets: inherit
