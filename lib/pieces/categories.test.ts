@@ -42,8 +42,14 @@ describe("groupByCategory", () => {
   const file = (id: string, category: string | null) => ({ id, category });
   const link = (id: string, category: string | null) => ({ id, category });
 
-  it("is null when nothing has a Category", () => {
-    expect(groupByCategory([file("f1", null)], [link("l1", null)])).toBeNull();
+  it("is one list without a heading, Files before Links, when nothing has a Category", () => {
+    expect(groupByCategory([file("f1", null)], [link("l1", null)])).toEqual([
+      { heading: null, files: [file("f1", null)], links: [link("l1", null)] },
+    ]);
+  });
+
+  it("is empty for a Piece without Files or Links", () => {
+    expect(groupByCategory([], [])).toEqual([]);
   });
 
   it("groups Files and Links in ranking order, Övrigt last, keeping each list's order", () => {

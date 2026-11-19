@@ -11,8 +11,6 @@ import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
 import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
-import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
-import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
@@ -25,7 +23,6 @@ import { formatCreditsLine } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
 import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
-import { groupByCategory } from "@/lib/pieces/categories";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import type { Person } from "@/types/piece-credit-dialog";
@@ -213,12 +210,7 @@ export function PieceRowDetails({
   );
 }
 
-/** Whether any of the piece's Files or Links has a Category, so they show grouped. */
-function hasCategories(piece: PieceWithRelations): boolean {
-  return groupByCategory(piece.files, piece.links) !== null;
-}
-
-/** Read mode: Files, then Links, as 40px full-width lines, then the Piece notes. */
+/** Read mode: the Files and Links as 40px full-width lines, then the Piece notes. */
 function PieceMaterial({
   piece,
   groupSlug,
@@ -237,43 +229,17 @@ function PieceMaterial({
     );
   }
 
-  if (hasCategories(piece)) {
-    return (
-      <>
-        <PieceInlineFilesAndLinksCell
-          readOnly
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          files={toInlineFiles(piece)}
-          links={toInlineLinks(piece)}
-        />
-        {notes}
-      </>
-    );
-  }
-
   return (
     <>
-      <div>
-        <PieceInlineFilesCell
-          readOnly
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          files={toInlineFiles(piece)}
-        />
-        <PieceInlineLinksCell
-          readOnly
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          links={toInlineLinks(piece)}
-        />
-      </div>
+      <PieceInlineFilesAndLinksCell
+        readOnly
+        touch
+        groupSlug={groupSlug}
+        pieceId={piece.id}
+        pieceName={piece.name}
+        files={toInlineFiles(piece)}
+        links={toInlineLinks(piece)}
+      />
       {notes}
     </>
   );
@@ -316,43 +282,17 @@ function PieceEditSections({
           <RemovableCreditsList groupSlug={groupSlug} pieceId={piece.id} credits={piece.credits} />
         ) : null}
       </section>
-      {hasCategories(piece) ? (
-        // Category headings replace the Filer/Länkar split.
-        <section className="space-y-1">
-          <SectionHeading>Filer och länkar</SectionHeading>
-          <PieceInlineFilesAndLinksCell
-            touch
-            groupSlug={groupSlug}
-            pieceId={piece.id}
-            pieceName={piece.name}
-            files={toInlineFiles(piece)}
-            links={toInlineLinks(piece)}
-          />
-        </section>
-      ) : (
-        <>
-          <section className="space-y-1">
-            <SectionHeading>Filer</SectionHeading>
-            <PieceInlineFilesCell
-              touch
-              groupSlug={groupSlug}
-              pieceId={piece.id}
-              pieceName={piece.name}
-              files={toInlineFiles(piece)}
-            />
-          </section>
-          <section className="space-y-1">
-            <SectionHeading>Länkar</SectionHeading>
-            <PieceInlineLinksCell
-              touch
-              groupSlug={groupSlug}
-              pieceId={piece.id}
-              pieceName={piece.name}
-              links={toInlineLinks(piece)}
-            />
-          </section>
-        </>
-      )}
+      <section className="space-y-1">
+        <SectionHeading>Filer och länkar</SectionHeading>
+        <PieceInlineFilesAndLinksCell
+          touch
+          groupSlug={groupSlug}
+          pieceId={piece.id}
+          pieceName={piece.name}
+          files={toInlineFiles(piece)}
+          links={toInlineLinks(piece)}
+        />
+      </section>
       <PieceNotesSection notes={piece.notes}>
         <PieceNotesDialog
           groupSlug={groupSlug}

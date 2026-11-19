@@ -171,7 +171,6 @@ describe("PieceRowDetails, an open piece row", () => {
       );
 
       expect(text).toMatch(/Noter.*Alt\.pdf.*Inspelning.*Övrigt.*Sopran\.pdf/);
-      expect(text).not.toContain("Länkar");
     });
   });
 
@@ -205,10 +204,10 @@ describe("PieceRowDetails, an open piece row", () => {
   });
 
   describe("in edit mode", () => {
-    it("lists the notes after Länkar with a trigger to edit them", () => {
+    it("lists the notes after the Files and Links with a trigger to edit them", () => {
       const text = textOf(renderDetails(true, { notes }));
 
-      expect(text).toMatch(/Länkar.*Anteckningar.*Nyast med radbrytning.*Äldst.*Redigera anteckningar/);
+      expect(text).toMatch(/Filer och länkar.*Inspelning.*Anteckningar.*Nyast med radbrytning.*Äldst.*Redigera anteckningar/);
     });
 
     it("shows the Anteckningar section with an add trigger for a piece without notes", () => {

@@ -48,11 +48,10 @@ const link = (label: string, category: string | null): PieceLink => ({
 });
 
 describe("PieceDetailFilesAndLinksSections", () => {
-  it("shows Filer and Länkar as before when nothing has a Category", () => {
+  it("shows one Filer och länkar section, Files before Links, when nothing has a Category", () => {
     expect(shownSequence(render([file("Sopran.pdf", null)], [link("Inspelning", null)]))).toEqual([
-      "Filer",
+      "Filer och länkar",
       "Sopran.pdf",
-      "Länkar",
       "Inspelning",
     ]);
   });

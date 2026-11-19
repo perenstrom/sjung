@@ -33,23 +33,28 @@ export function resolveCategory(typed: string, groupCategories: readonly string[
 }
 
 export type CategoryGroup<F, L> = {
-  /** The Category, or `UNCATEGORIZED_HEADING` for the uncategorized. */
-  heading: string;
+  /**
+   * The Category, `UNCATEGORIZED_HEADING` for the uncategorized, or `null`
+   * when nothing has a Category and the one list goes without a heading.
+   */
+  heading: string | null;
   files: F[];
   links: L[];
 };
 
 /**
  * A Piece's Files and Links under their Categories, in ranking order with the
- * uncategorized last, each list keeping its order. `null` when nothing has a
- * Category, so the Piece shows no groups at all.
+ * uncategorized last, each list keeping its order. When nothing has a
+ * Category, they are one list without a heading. Empty groups are left out.
  */
 export function groupByCategory<F extends { category: string | null }, L extends { category: string | null }>(
   files: readonly F[],
   links: readonly L[]
-): CategoryGroup<F, L>[] | null {
+): CategoryGroup<F, L>[] {
   const used = [...files, ...links].flatMap((item) => (item.category === null ? [] : [item.category]));
-  if (used.length === 0) return null;
+  if (used.length === 0) {
+    return files.length > 0 || links.length > 0 ? [{ heading: null, files: [...files], links: [...links] }] : [];
+  }
 
   // Only the Categories in use, in ranking order, each once.
   const usedKeys = new Set(used.map(matchKey));
