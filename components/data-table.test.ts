@@ -44,15 +44,16 @@ describe("DataTable sorting", () => {
   });
 
   it("sorts case insensitively", () => {
+    // A case-sensitive sort would put "Charlie" first.
     const mixedCase: Row[] = [
       { name: "bravo" },
-      { name: "Alpha" },
-      { name: "charlie" },
+      { name: "Charlie" },
+      { name: "alpha" },
     ];
     expect(sortedNames(mixedCase, [{ id: "name", desc: false }])).toEqual([
-      "Alpha",
+      "alpha",
       "bravo",
-      "charlie",
+      "Charlie",
     ]);
   });
 });
