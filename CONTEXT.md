@@ -65,8 +65,12 @@ _Avoid_: User, Contributor, Member.
 ### Repertoire
 
 **Piece**:
-The catalog entry for a musical work: a name plus its Credits, Files, Links and Piece notes. Swedish UI: _Stycke_ (the entity), _Alla noter_ (the catalog/list page name).
+The catalog entry for a musical work: a name (and any Aliases) plus its Credits, Files, Links and Piece notes. Swedish UI: _Stycke_ (the entity), _Alla noter_ (the catalog/list page name).
 _Avoid_: Song, Sheet music, Score — those name the physical artifact (see File), not the work entry itself.
+
+**Alias**:
+Another name a Piece goes by — a nickname, a translated title, a first line — so it can be found by the name the choir actually uses. A Piece has any number of Aliases, kept in the order they were added; none repeats another or the Piece's own name (ignoring letter case and spacing), but two Pieces in a Group may share an Alias. Aliases only help finding a Piece: it still sorts and is listed under its name alone. Swedish UI: _Alternativt namn_ / _Alternativa namn_.
+_Avoid_: Nickname, Subtitle.
 
 **File**:
 An uploaded document (e.g. a score PDF) attached to a Piece, stored in object storage. Deleting a File, its Piece or its Group also deletes its stored content. Replacing a File gives it new content but keeps it the same File: its display name and its place on the Piece stay. See ADR-0005.
