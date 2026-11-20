@@ -59,7 +59,7 @@ The state of a Group content page in which it offers controls that change conten
 _Avoid_: Admin mode, Write access — those describe Group access, which Edit mode never grants.
 
 **Person**:
-A credited contributor (composer, arranger, lyricist, …) scoped to a Group — deliberately not a login account. A Person may be credited on Pieces without ever holding a Sjung account, and a User is not automatically a Person. Swedish UI: _Upphovsperson_ / _Upphovspersoner_ — chosen over _Person_ so it can't be mistaken for the Group's own members, and over _Medverkande_, which in a choir reads as the performers.
+A credited contributor (composer, arranger, lyricist, …) scoped to a Group — deliberately not a login account. A Person may be credited on Pieces without ever holding a Sjung account, and a User is not automatically a Person. Two People in a Group may share a name: real people do. Deleting a Person also removes all of their Credits. Swedish UI: _Upphovsperson_ / _Upphovspersoner_ — chosen over _Person_ so it can't be mistaken for the Group's own members, and over _Medverkande_, which in a choir reads as the performers.
 _Avoid_: User, Contributor, Member.
 
 ### Repertoire
