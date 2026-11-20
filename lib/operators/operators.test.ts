@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isOperator } from "@/lib/announcements/operators";
+import { isOperator } from "@/lib/operators/operators";
 
 afterEach(() => {
   vi.unstubAllEnvs();

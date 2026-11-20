@@ -17,7 +17,7 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Boxes, CircleUser, ListMusic, LogOut, Music, Newspaper, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Boxes, CircleUser, Gauge, ListMusic, LogOut, Music, Newspaper, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { logOut } from "@/app/actions/auth";
 import {
   closeMobileSidebar,
@@ -34,6 +34,7 @@ import { ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
 import { isReservedGroupSlug } from "@/lib/group-slug";
 import { MY_GROUPS_PATH } from "@/lib/groups/routes";
 import { PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from "@/lib/legal/routes";
+import { OPERATOR_GROUPS_PATH } from "@/lib/operators/routes";
 
 const navItemIcons: Record<GroupNavItem["key"], ReactNode> = {
   setLists: <ListMusic />,
@@ -114,9 +115,11 @@ type AppSidebarProps = {
   activeGroupSlug: string | null;
   /** Whether the User has any unread Announcement. */
   hasUnreadAnnouncements: boolean;
+  /** Whether the User is an Operator, so the sidebar shows Drift. */
+  isOperator: boolean;
 };
 
-export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: AppSidebarProps) {
+export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, isOperator }: AppSidebarProps) {
   const pathname = usePathname();
   const [isLoggingOut, startLogOutTransition] = useTransition();
   const tenantSlug = tenantSlugFromPathname(pathname);
@@ -215,6 +218,22 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: 
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {isOperator ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Drift</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <NavItem
+                  href={OPERATOR_GROUPS_PATH}
+                  label="Grupper"
+                  tooltip="Drift: Grupper"
+                  icon={<Gauge />}
+                  isActive={isAtOrUnder(pathname, OPERATOR_GROUPS_PATH)}
+                />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
       <SidebarFooter>
         <GroupSwitcher groups={groups} currentGroupSlug={currentGroupSlug} />

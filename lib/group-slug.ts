@@ -10,6 +10,7 @@ export const RESERVED_GROUP_SLUGS: ReadonlySet<string> = new Set([
   // In use.
   "me",
   "news",
+  "operator",
   // App-wide pages we may add.
   "about",
   "account",
