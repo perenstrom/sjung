@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryHeading } from "@/components/pieces/CategoryHeading";
 import {
   type PieceInlineFile,
   PieceInlineFilesCell,
@@ -41,7 +42,7 @@ export function PieceInlineFilesAndLinksCell({
       {groupByCategory(files, links).map((group) => (
         <div key={group.heading ?? ""}>
           {group.heading === null ? null : (
-            <p className="text-xs font-medium text-muted-foreground">{group.heading}</p>
+            <CategoryHeading>{group.heading}</CategoryHeading>
           )}
           <div className="flex flex-col gap-1">
             {group.files.length > 0 ? (

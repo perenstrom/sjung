@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
-import { PieceDetailFilesAndLinksSections } from "./PieceDetailFilesAndLinksSections";
+import { PieceDetailFilesAndLinksSection } from "./PieceDetailFilesAndLinksSection";
 
 // The lists and popovers import server actions, which reach the database.
 vi.mock("@/app/actions/files", () => ({}));
@@ -17,7 +17,7 @@ vi.mock("@/components/EditModeContext", () => ({
 function render(files: PieceFileListItem[], links: PieceLink[], { editing = false } = {}): string {
   isEditing = editing;
   return renderMarkup(
-    createElement(PieceDetailFilesAndLinksSections, {
+    createElement(PieceDetailFilesAndLinksSection, {
       groupSlug: "koren",
       pieceId: "piece-1",
       pieceName: "Vem kan segla",
@@ -58,7 +58,7 @@ const link = (label: string, category: string | null): PieceLink => ({
   category,
 });
 
-describe("PieceDetailFilesAndLinksSections", () => {
+describe("PieceDetailFilesAndLinksSection", () => {
   it("shows one Filer och länkar section, Files before Links, when nothing has a Category", () => {
     expect(shownSequence(render([file("Sopran.pdf", null)], [link("Inspelning", null)]))).toEqual([
       "## Filer och länkar",
