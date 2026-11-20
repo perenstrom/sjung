@@ -26,8 +26,11 @@ import {
 import { setActiveGroup } from "@/app/actions/groups";
 import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
 
+/** A Group the User can switch to. */
+export type SwitchableGroup = { id: string; name: string; slug: string };
+
 type GroupSwitcherProps = {
-  groups: { id: string; name: string; slug: string }[];
+  groups: SwitchableGroup[];
   currentGroupSlug: string;
 };
 

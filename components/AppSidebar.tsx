@@ -26,7 +26,7 @@ import {
   type GroupNavItem,
 } from "@/lib/sidebar-navigation";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
-import { GroupSwitcher } from "@/components/GroupSwitcher";
+import { GroupSwitcher, type SwitchableGroup } from "@/components/GroupSwitcher";
 import { UnreadDot } from "@/components/announcements/UnreadDot";
 import { brandMarkSrc } from "@/lib/app-environment";
 import { ACCOUNT_PATH } from "@/lib/account/routes";
@@ -42,12 +42,7 @@ const navItemIcons: Record<GroupNavItem["key"], ReactNode> = {
   members: <UserPlus />,
 };
 
-type GroupOption = {
-  id: string;
-  name: string;
-  slug: string;
-  canManageMembers: boolean;
-};
+type GroupOption = SwitchableGroup & { canManageMembers: boolean };
 
 function tenantSlugFromPathname(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
