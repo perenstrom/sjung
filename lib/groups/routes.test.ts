@@ -4,6 +4,7 @@ import {
   groupMembersPath,
   groupPath,
   groupPeoplePath,
+  groupPersonPath,
   groupPiecesPath,
   groupSetListPath,
   groupSetListsPath,
@@ -18,6 +19,10 @@ describe("group routes", () => {
     ["Medlemmar", groupMembersPath, "/app/kor/members"],
   ])("addresses %s", (_what, path, expected) => {
     expect(path("kor")).toBe(expected);
+  });
+
+  it("addresses one Person", () => {
+    expect(groupPersonPath("kor", "person-1")).toBe("/app/kor/people/person-1");
   });
 
   it("addresses one Set list", () => {

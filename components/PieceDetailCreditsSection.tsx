@@ -5,6 +5,7 @@ import { AddPieceCreditRow } from "@/components/pieces/AddPieceCreditRow";
 import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
+import { groupPersonPath } from "@/lib/groups/routes";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 type PieceDetailCredit = PieceCredit & { person: { name: string } };
@@ -43,7 +44,11 @@ function PieceDetailCreditsBody({
       {credits.length === 0 ? (
         <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
       ) : readOnly ? (
-        <PieceCreditsList credits={credits} className="space-y-2" />
+        <PieceCreditsList
+          credits={credits}
+          className="space-y-2"
+          personHref={(personId) => groupPersonPath(groupSlug, personId)}
+        />
       ) : (
         <RemovableCreditsList
           groupSlug={groupSlug}

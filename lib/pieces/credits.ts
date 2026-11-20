@@ -144,6 +144,29 @@ export function groupCreditsByPerson(credits: CreditForDisplay[]): CreditedPerso
     .sort((a, b) => compareCreditRoles(a.roles[0], b.roles[0]) || compareCaseInsensitive(a.name, b.name));
 }
 
+/** One of a Person's Credits, with the Piece it is on. */
+export type PersonCreditForDisplay = {
+  pieceId: string;
+  role: string;
+  piece: { name: string };
+};
+
+export type CreditedPiece = {
+  pieceId: string;
+  name: string;
+  roles: string[];
+};
+
+/**
+ * A Person's credits for their page: each Piece once, with the Person's
+ * Credit roles on it, ordered by Piece name as Alla noter orders them.
+ */
+export function groupCreditsByPiece(credits: PersonCreditForDisplay[]): CreditedPiece[] {
+  return mergeRolesBy(credits, (credit) => credit.pieceId, (credit) => credit.piece.name)
+    .map(({ key, name, roles }) => ({ pieceId: key, name, roles }))
+    .sort((a, b) => compareCaseInsensitive(a.name, b.name));
+}
+
 /**
  * A piece's credits on one line, as `Name (role, role) · Name (role)`, in
  * the same order as `groupCreditsByPerson`. Empty when there are none.

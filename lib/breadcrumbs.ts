@@ -1,5 +1,6 @@
 import {
   groupPath,
+  groupPeoplePath,
   groupPiecesPath,
   groupSetListPath,
   groupSetListsPath,
@@ -34,6 +35,10 @@ export function createSetListsAncestor(groupSlug: string): AppBreadcrumbAncestor
 
 export function createPiecesAncestor(groupSlug: string): AppBreadcrumbAncestor {
   return { label: "Alla noter", href: groupPiecesPath(groupSlug) };
+}
+
+export function createPeopleAncestor(groupSlug: string): AppBreadcrumbAncestor {
+  return { label: "Upphovspersoner", href: groupPeoplePath(groupSlug) };
 }
 
 /** A Set list's crumb label: its name, or "Repertoar" when it has none. */
