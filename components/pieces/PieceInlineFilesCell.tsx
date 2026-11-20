@@ -12,6 +12,7 @@ export type PieceInlineFile = PieceFileListItem;
 
 export function PieceInlineFilesCell({
   readOnly = false,
+  withoutAdd = false,
   touch = false,
   groupSlug,
   pieceId,
@@ -19,6 +20,8 @@ export function PieceInlineFilesCell({
   files,
 }: {
   readOnly?: boolean;
+  /** Edit mode without the add button, for a list whose add button is elsewhere. */
+  withoutAdd?: boolean;
   /** 40px lines for touch lists; see the list's `touch`. */
   touch?: boolean;
   groupSlug: string;
@@ -61,6 +64,7 @@ export function PieceInlineFilesCell({
               groupSlug={groupSlug}
               fileId={file.id}
               displayName={file.displayName}
+              category={file.category}
               pieceName={pieceName}
               open={editingFileId === file.id}
               disabled={addPopoverOpen || replacingFileId !== null}
@@ -81,7 +85,7 @@ export function PieceInlineFilesCell({
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
 
-      {readOnly ? null : (
+      {readOnly || withoutAdd ? null : (
         <AddPieceFilePopover
           groupSlug={groupSlug}
           pieceId={pieceId}

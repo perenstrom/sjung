@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 
 import { addLink } from "@/app/actions/pieces";
+import { CategoryPicker } from "@/components/pieces/CategoryPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -21,6 +22,7 @@ export function AddPieceLinkRow({
   const urlInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
+  const [category, setCategory] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +36,12 @@ export function AddPieceLinkRow({
       formData.set("pieceId", pieceId);
       formData.set("url", url);
       formData.set("label", label);
+      formData.set("category", category ?? "");
       await addLink(formData);
       setError(null);
       setUrl("");
       setLabel("");
+      setCategory(null);
       urlInputRef.current?.focus();
       router.refresh();
     } catch (err) {
@@ -67,6 +71,7 @@ export function AddPieceLinkRow({
           onChange={(event) => setLabel(event.target.value)}
           className="min-w-36 flex-1"
         />
+        <CategoryPicker value={category} onValueChange={setCategory} className="min-w-36 flex-1" />
         <Button type="submit" variant="outline" disabled={pending}>
           <Plus className="size-4" aria-hidden="true" />
           {pending ? "Lägger till…" : "Lägg till"}

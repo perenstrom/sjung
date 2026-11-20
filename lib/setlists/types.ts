@@ -28,6 +28,8 @@ export type SetListDetail = {
 export type SetListPieceOption = {
   id: string;
   name: string;
+  /** In the order they were added; the picker finds a Piece by them too. */
+  aliases: { name: string }[];
 };
 
 /** A step's identity and position, stripped of display fields — the unit `SetListSequence` operates on. */

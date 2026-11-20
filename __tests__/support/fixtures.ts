@@ -5,6 +5,7 @@ import type {
   GroupClaim,
   GroupMemberClaim,
   Piece,
+  PieceAlias,
   PieceNote,
   Person,
   SetList,
@@ -222,7 +223,7 @@ export async function createSetListNote(
 }
 
 /** A File row on the Piece, at its own key under the Piece; nothing is uploaded to storage. */
-export async function createFile(piece: Piece): Promise<File> {
+export async function createFile(piece: Piece, category: string | null = null): Promise<File> {
   fileCounter += 1;
   return testPrisma.file.create({
     data: {
@@ -232,16 +233,26 @@ export async function createFile(piece: Piece): Promise<File> {
       storagePath: `groups/${piece.groupId}/pieces/${piece.id}/score-${fileCounter}.pdf`,
       mimeType: "application/pdf",
       size: 1024,
+      category,
       createdById: piece.createdById,
       updatedById: piece.createdById,
     },
   });
 }
 
+/** An Alias of the Piece, added after any it already has. */
+export async function createPieceAlias(piece: Piece, name = "Test Alias"): Promise<PieceAlias> {
+  return testPrisma.pieceAlias.create({ data: { pieceId: piece.id, name } });
+}
+
 /** A Link on the Piece, by the Piece's creator. */
-export async function createLink(piece: Piece, url = "https://example.com"): Promise<Link> {
+export async function createLink(
+  piece: Piece,
+  url = "https://example.com",
+  category: string | null = null
+): Promise<Link> {
   return testPrisma.link.create({
-    data: { pieceId: piece.id, url, createdById: piece.createdById, updatedById: piece.createdById },
+    data: { pieceId: piece.id, url, category, createdById: piece.createdById, updatedById: piece.createdById },
   });
 }
 

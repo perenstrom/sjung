@@ -4,12 +4,16 @@ import { randomUUID } from "node:crypto";
 import { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { findInGroup } from "@/lib/find-in-group";
+import { rankCategories } from "@/lib/pieces/categories";
 import { rankCreditRoles, resolveCreditRole } from "@/lib/pieces/credit-roles";
+import { isNewAlias } from "@/lib/pieces/aliases";
+import { parseCategoryFromFormData } from "@/lib/schemas/categories";
 import { assertNoDuplicateCredits, DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
 import {
   parseCreditPersonIdFromFormData,
   parseCreditRolesFromFormData,
   parseLinkIdFromFormData,
+  parsePieceAliasIdFromFormData,
   parseOptionalLinkLabelFromFormData,
   parsePieceCreditsFromFormData,
   parsePieceIdFromFormData,
@@ -25,11 +29,13 @@ import {
   parseWritableGroupSlugParam,
 } from "@/lib/schemas/people";
 import {
+  getCategoriesUsedInGroup,
   getCreditRolesUsedInGroup,
   getPieceDetailForGroup,
   getPieceImportGroupFor,
   getPiecesForGroup,
   getSetListIdsContainingPiece,
+  resolveCategoryInGroup,
   toPieceNoteListItem,
 } from "@/lib/pieces/queries";
 import { deletePieceFiles, STORE_PIECE_SELECT } from "@/lib/pieces/file-store";
@@ -66,6 +72,12 @@ export async function getPieceDetail(
 export async function getCreditRoles(groupSlug: string): Promise<string[]> {
   const { groupId } = await getWritableGroupIdForSlug(parseWritableGroupSlugParam(groupSlug));
   return rankCreditRoles(await getCreditRolesUsedInGroup(groupId));
+}
+
+/** The Categories to suggest for Files and Links in the Group: the built-in ones, then the Group's own. */
+export async function getCategories(groupSlug: string): Promise<string[]> {
+  const { groupId } = await getWritableGroupIdForSlug(parseWritableGroupSlugParam(groupSlug));
+  return rankCategories(await getCategoriesUsedInGroup(groupId));
 }
 
 /** What a Piece import in the Group matches against, for its preview. */
@@ -202,11 +214,47 @@ export async function updatePiece(formData: FormData) {
   });
 }
 
+/**
+ * Gives a Piece another Alias, after its others. An Alias that repeats the
+ * Piece's name or one of its Aliases (ignoring case and spacing) is quietly
+ * left out.
+ */
+export async function addPieceAlias(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
+  const name = parsePieceNameFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const piece = await findInGroup(groupId, "piece", pieceId, {
+      select: { id: true, name: true, aliases: { select: { name: true } } },
+    });
+    if (!isNewAlias(name, piece)) return;
+
+    await prisma.pieceAlias.create({ data: { pieceId: piece.id, name } });
+    await revalidatePieceRoutes(groupSlug, piece.id);
+  });
+}
+
+export async function removePieceAlias(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceAliasId = parsePieceAliasIdFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const alias = await findInGroup(groupId, "pieceAlias", pieceAliasId, {
+      select: { id: true, pieceId: true },
+    });
+    await prisma.pieceAlias.delete({ where: { id: alias.id } });
+
+    await revalidatePieceRoutes(groupSlug, alias.pieceId);
+  });
+}
+
 export async function addLink(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const parsedUrl = parseRequiredHttpUrlFromFormData(formData);
   const label = parseOptionalLinkLabelFromFormData(formData);
+  const typedCategory = parseCategoryFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
@@ -215,6 +263,7 @@ export async function addLink(formData: FormData) {
         pieceId: piece.id,
         url: parsedUrl.toString(),
         label,
+        category: await resolveCategoryInGroup(groupId, typedCategory),
         createdById: userId,
         updatedById: userId,
       },
@@ -245,6 +294,7 @@ export async function updateLink(formData: FormData) {
   const linkId = parseLinkIdFromFormData(formData);
   const parsedUrl = parseRequiredHttpUrlFromFormData(formData);
   const label = parseOptionalLinkLabelFromFormData(formData);
+  const typedCategory = parseCategoryFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const link = await findInGroup(groupId, "link", linkId, {
@@ -255,6 +305,7 @@ export async function updateLink(formData: FormData) {
       data: {
         url: parsedUrl.toString(),
         label,
+        category: await resolveCategoryInGroup(groupId, typedCategory),
         updatedById: userId,
       },
     });

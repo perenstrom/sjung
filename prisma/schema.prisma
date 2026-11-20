@@ -206,8 +206,23 @@ model Piece {
   links          Link[]
   setListEntries SetListPiece[]
   notes          PieceNote[]
+  aliases        PieceAlias[]
 
   @@map("pieces")
+}
+
+/// Another name a Piece goes by (CONTEXT.md: Alias), listed in the order added.
+model PieceAlias {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  name    String
+  pieceId String @map("piece_id")
+
+  piece Piece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  @@index([pieceId, createdAt])
+  @@map("piece_aliases")
 }
 
 model Link {
@@ -217,8 +232,10 @@ model Link {
   createdById String?  @map("created_by_id")
   updatedById String?  @map("updated_by_id")
 
-  url   String
-  label String?
+  url      String
+  label    String?
+  /// See Category in CONTEXT.md; `null` is uncategorized.
+  category String?
 
   pieceId String @map("piece_id")
 
@@ -241,6 +258,8 @@ model File {
   storagePath String @unique @map("storage_path")
   mimeType    String @map("mime_type")
   size        Int
+  /// See Category in CONTEXT.md; `null` is uncategorized.
+  category    String?
 
   pieceId   String @map("piece_id")
   createdBy User?  @relation("FileCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)

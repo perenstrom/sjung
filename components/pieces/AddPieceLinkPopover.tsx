@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useControllableOpen } from "@/hooks/use-controllable-open";
 
 import { addLink } from "@/app/actions/pieces";
+import { CategoryField } from "@/components/pieces/CategoryPicker";
 import { LinkPlus } from "@/components/pieces/LinkPlus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,6 +79,7 @@ export function AddPieceLinkPopover({
               <Label htmlFor={`add-label-${pieceId}`}>Etikett (valfritt)</Label>
               <Input id={`add-label-${pieceId}`} name="label" />
             </div>
+            <CategoryField />
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

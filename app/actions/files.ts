@@ -3,6 +3,8 @@
 import { findInGroup } from "@/lib/find-in-group";
 import * as fileStore from "@/lib/pieces/file-store";
 import prisma from "@/lib/prisma";
+import { resolveCategoryInGroup } from "@/lib/pieces/queries";
+import { parseCategoryFromFormData } from "@/lib/schemas/categories";
 import { parseWritableGroupSlugFromFormData } from "@/lib/schemas/people";
 import {
   parseCreatePieceFileReplaceUploadFromFormData,
@@ -30,13 +32,18 @@ export async function finalizePieceFileUpload(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const { pieceId, fileName, storagePath, displayName } =
     parseFinalizePieceFileUploadFromFormData(formData);
+  const typedCategory = parseCategoryFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId, { select: fileStore.STORE_PIECE_SELECT });
     await fileStore.addFile(
       piece,
       { storagePath, fileName },
-      { displayName: displayName ?? fileName, userId }
+      {
+        displayName: displayName ?? fileName,
+        category: await resolveCategoryInGroup(groupId, typedCategory),
+        userId,
+      }
     );
 
     await revalidatePieceRoutes(groupSlug, piece.id);
@@ -69,6 +76,7 @@ export async function finalizePieceFileReplace(formData: FormData) {
 export async function updatePieceFileDisplayName(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const { fileId, displayName } = parseUpdatePieceFileDisplayNameFromFormData(formData);
+  const typedCategory = parseCategoryFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const file = await findInGroup(groupId, "file", fileId, {
@@ -78,6 +86,7 @@ export async function updatePieceFileDisplayName(formData: FormData) {
       where: { id: file.id },
       data: {
         displayName,
+        category: await resolveCategoryInGroup(groupId, typedCategory),
         updatedById: userId,
       },
     });

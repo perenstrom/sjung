@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { updateLink } from "@/app/actions/pieces";
+import { CategoryField } from "@/components/pieces/CategoryPicker";
 import { labelForLink } from "@/components/pieces/linkLabel";
 import type { PieceLink } from "@/components/pieces/types";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,7 @@ export function EditPieceLinkPopover({
                 defaultValue={link.label ?? ""}
               />
             </div>
+            <CategoryField defaultValue={link.category} />
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

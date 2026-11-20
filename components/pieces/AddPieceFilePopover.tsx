@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useControllableOpen } from "@/hooks/use-controllable-open";
 
+import { CategoryField } from "@/components/pieces/CategoryPicker";
 import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,6 +93,8 @@ export function AddPieceFilePopover({
             />
             <FileRightsReminder />
           </div>
+
+          <CategoryField />
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

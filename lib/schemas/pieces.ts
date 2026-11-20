@@ -55,6 +55,19 @@ export function parsePieceIdFromFormData(formData: FormData): string {
   return result.data;
 }
 
+const pieceAliasIdFieldSchema = z
+  .string()
+  .trim()
+  .min(1, { error: "Alternativt namn saknas" });
+
+export function parsePieceAliasIdFromFormData(formData: FormData): string {
+  const result = pieceAliasIdFieldSchema.safeParse(formDataString(formData, "pieceAliasId"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Alternativt namn saknas");
+  }
+  return result.data;
+}
+
 export function parseLinkIdFromFormData(formData: FormData): string {
   const result = linkIdFieldSchema.safeParse(
     formDataString(formData, "linkId")

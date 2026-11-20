@@ -76,7 +76,7 @@ export async function signUpload(
 export async function addFile(
   piece: StorePiece,
   upload: FinishedUpload,
-  { displayName, userId }: { displayName: string; userId: string }
+  { displayName, category, userId }: { displayName: string; category: string | null; userId: string }
 ) {
   const stored = await verifyUpload(piece, upload.storagePath);
 
@@ -85,6 +85,7 @@ export async function addFile(
       data: {
         pieceId: piece.id,
         displayName,
+        category,
         fileName: upload.fileName,
         storagePath: upload.storagePath,
         mimeType: stored.contentType,

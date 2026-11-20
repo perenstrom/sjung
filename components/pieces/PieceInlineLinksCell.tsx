@@ -8,6 +8,7 @@ import type { PieceLink } from "@/components/pieces/types";
 
 export function PieceInlineLinksCell({
   readOnly = false,
+  withoutAdd = false,
   touch = false,
   groupSlug,
   pieceId,
@@ -15,6 +16,8 @@ export function PieceInlineLinksCell({
   links,
 }: {
   readOnly?: boolean;
+  /** Edit mode without the add button, for a list whose add button is elsewhere. */
+  withoutAdd?: boolean;
   /** 40px lines for touch lists; see the list's `touch`. */
   touch?: boolean;
   groupSlug: string;
@@ -46,7 +49,7 @@ export function PieceInlineLinksCell({
         />
       </div>
 
-      {readOnly ? null : (
+      {readOnly || withoutAdd ? null : (
         <AddPieceLinkPopover
           groupSlug={groupSlug}
           pieceId={pieceId}

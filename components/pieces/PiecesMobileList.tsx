@@ -10,8 +10,7 @@ import { LetterDividerListItem } from "@/components/pieces/LetterDivider";
 import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
-import { PieceInlineFilesCell } from "@/components/pieces/PieceInlineFilesCell";
-import { PieceInlineLinksCell } from "@/components/pieces/PieceInlineLinksCell";
+import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
@@ -23,6 +22,7 @@ import {
 import { formatCreditsLine } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
+import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import type { Person } from "@/types/piece-credit-dialog";
@@ -59,10 +59,16 @@ export function PiecesMobileList({
   isEditing: boolean;
   emptyMessage: string;
 } & (
-  | { pieces: PieceWithRelations[]; setList?: undefined }
+  | {
+      pieces: PieceWithRelations[];
+      /** Per piece id, the Aliases that explain a search match its name doesn't. */
+      matchingAliases?: ReadonlyMap<string, readonly string[]>;
+      setList?: undefined;
+    }
   | { pieces?: undefined; setList: { id: string; steps: SetListStep[] } }
 )) {
   const { pieces, setList } = props;
+  const matchingAliases = setList ? undefined : props.matchingAliases;
   // Kept by row id (the step id in a set list, where a piece can appear
   // twice), so rows stay open across router.refresh().
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(new Set());
@@ -126,7 +132,12 @@ export function PiecesMobileList({
                 open={openIds.has(row.id)}
                 onOpenChange={(open) => setOpen(row.id, open)}
                 leading={number}
-                primary={<span className="font-medium">{piece.name}</span>}
+                primary={
+                  <>
+                    <span className="font-medium">{piece.name}</span>
+                    <PieceAliasesLine aliases={matchingAliases?.get(piece.id) ?? []} className="truncate" />
+                  </>
+                }
                 // Edit mode lists the credits in its Medverkande section instead.
                 secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
               >
@@ -199,7 +210,7 @@ export function PieceRowDetails({
   );
 }
 
-/** Read mode: Files, then Links, as 40px full-width lines, then the Piece notes. */
+/** Read mode: the Files and Links as 40px full-width lines, then the Piece notes. */
 function PieceMaterial({
   piece,
   groupSlug,
@@ -220,24 +231,15 @@ function PieceMaterial({
 
   return (
     <>
-      <div>
-        <PieceInlineFilesCell
-          readOnly
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          files={toInlineFiles(piece)}
-        />
-        <PieceInlineLinksCell
-          readOnly
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          links={toInlineLinks(piece)}
-        />
-      </div>
+      <PieceInlineFilesAndLinksCell
+        readOnly
+        touch
+        groupSlug={groupSlug}
+        pieceId={piece.id}
+        pieceName={piece.name}
+        files={toInlineFiles(piece)}
+        links={toInlineLinks(piece)}
+      />
       {notes}
     </>
   );
@@ -281,22 +283,13 @@ function PieceEditSections({
         ) : null}
       </section>
       <section className="space-y-1">
-        <SectionHeading>Filer</SectionHeading>
-        <PieceInlineFilesCell
+        <SectionHeading>Filer och länkar</SectionHeading>
+        <PieceInlineFilesAndLinksCell
           touch
           groupSlug={groupSlug}
           pieceId={piece.id}
           pieceName={piece.name}
           files={toInlineFiles(piece)}
-        />
-      </section>
-      <section className="space-y-1">
-        <SectionHeading>Länkar</SectionHeading>
-        <PieceInlineLinksCell
-          touch
-          groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
           links={toInlineLinks(piece)}
         />
       </section>

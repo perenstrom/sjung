@@ -29,6 +29,7 @@ const piece = {
     { personId: "person-1", role: "Kompositör", person: { name: "Anna Andersson" } },
     { personId: "person-1", role: "Textförfattare", person: { name: "Anna Andersson" } },
   ],
+  aliases: [],
   files: [],
   links: [],
   notes: [],
@@ -174,7 +175,11 @@ describe("PiecesTable search on Alla noter", () => {
     ...namedPiece("Pavane"),
     credits: [{ personId: "person-2", role: "Arrangör", person: { name: "Gabriel Fauré" } }],
   } as unknown as PieceWithRelations;
-  const allPieces = [...unsortedNames.map(namedPiece), credited, arranged];
+  const aliased = {
+    ...namedPiece("O helga natt"),
+    aliases: ["Julsången", "Cantique de Noël", "Den långa"].map((name) => ({ id: name, name })),
+  } as unknown as PieceWithRelations;
+  const allPieces = [...unsortedNames.map(namedPiece), credited, arranged, aliased];
   const allNames = allPieces.map((p) => p.name);
 
   function renderSearch(search: string): string {
@@ -211,6 +216,18 @@ describe("PiecesTable search on Alla noter", () => {
           "P",
           "Pavane",
         ]);
+      });
+
+      it("lists a piece found by its Aliases under its own name, showing just the matching ones", () => {
+        const html = part(renderSearch("ÅNG"));
+
+        expect(shownSequence(html, allNames)).toEqual(["O", "O helga natt"]);
+        expect(textOf(html)).toContain("Även kallad Julsången, Den långa");
+        expect(textOf(html)).not.toContain("Noël");
+      });
+
+      it("shows no Aliases for a piece whose name matches", () => {
+        expect(textOf(part(renderSearch("helga")))).not.toContain("Även kallad");
       });
 
       it("says nothing matches, quoting the trimmed text", () => {

@@ -23,6 +23,7 @@ import {
 } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 import { SetListSequence } from "@/lib/setlists/sequence";
+import { PIECE_ALIAS_ORDER } from "@/lib/pieces/types";
 import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
 
 type SetListRow = {
@@ -83,6 +84,7 @@ export async function getSetListPieceOptions(groupSlug: string): Promise<SetList
     select: {
       id: true,
       name: true,
+      aliases: { orderBy: PIECE_ALIAS_ORDER, select: { name: true } },
     },
   });
 }
