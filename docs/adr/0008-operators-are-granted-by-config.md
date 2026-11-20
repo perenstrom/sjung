@@ -13,3 +13,7 @@ Announcements (PER-430) need someone who can publish them, which makes Operator 
 
 - Operator is not a Claim and has nothing to do with Group access (ADR-0002, ADR-0004). Being an Operator gives no rights in any Group.
 - Checking whether someone is an Operator means comparing their normalised email address with the configured list, in the same way `FEEDBACK_EMAIL_TO` is read.
+
+## Amendment: the Group overview (PER-452)
+
+Operators can see every Group's metadata: its name, slug, when it was created, its Creator's name and email address, how many Members, Pieces and Set lists it has, how much File storage it uses, and when its content last changed. They still cannot see any Group's content, such as Piece titles, Member names or Files, and they get no Group access, so a Group's own pages stay closed to them. We chose metadata only, not member lists or read access to content, because running the service needs to know how big Groups are and who to contact, not what choirs keep in them.
