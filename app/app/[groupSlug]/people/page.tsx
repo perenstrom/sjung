@@ -45,7 +45,7 @@ export default async function TenantPeoplePage({ params }: PageProps) {
         />
         <PageHeader
           title="Upphovspersoner"
-          editActions={<CreatePersonDialog groupSlug={groupSlug} />}
+          editActions={<CreatePersonDialog groupSlug={groupSlug} people={people} />}
         />
 
         <MobileList>

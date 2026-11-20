@@ -151,6 +151,8 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
   appendSetListNote: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, content: "Paus" }),
   deleteSetListNote: (g, c) => formData({ groupSlug: g.slug, setListNoteId: c.setListNote.id }),
   createPerson: (g) => formData({ groupSlug: g.slug, name: "Hugo Alfvén" }),
+  renamePerson: (g, c) => formData({ groupSlug: g.slug, personId: c.person.id, name: "Hugo Alfvén" }),
+  deletePerson: (g, c) => formData({ groupSlug: g.slug, personId: c.person.id }),
   importPieces: (g) =>
     formData({
       groupSlug: g.slug,
@@ -240,6 +242,13 @@ describe("content actions require manageContent", () => {
     it("creates a Person", async () => {
       await peopleActions.createPerson(CONTENT_ACTIONS.createPerson(group, content));
       expect(await testPrisma.person.count({ where: { groupId: group.id } })).toBe(2);
+    });
+
+    it("renames a Person", async () => {
+      await peopleActions.renamePerson(CONTENT_ACTIONS.renamePerson(group, content));
+      expect(await testPrisma.person.findUniqueOrThrow({ where: { id: content.person.id } })).toMatchObject({
+        name: "Hugo Alfvén",
+      });
     });
   });
 });

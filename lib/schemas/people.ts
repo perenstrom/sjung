@@ -36,3 +36,13 @@ export function parseWritableGroupSlugParam(groupSlug: string): string {
   }
   return result.data;
 }
+
+const personIdSchema = z.uuid({ error: "Upphovsperson saknas" });
+
+export function parsePersonIdFromFormData(formData: FormData): string {
+  const result = personIdSchema.safeParse(formDataString(formData, "personId"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Upphovsperson saknas");
+  }
+  return result.data;
+}

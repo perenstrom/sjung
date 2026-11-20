@@ -5,6 +5,7 @@ import {
   MY_GROUPS_PATH,
   groupMembersPath,
   groupPeoplePath,
+  groupPersonPath,
   groupPiecesPath,
   groupSetListPath,
   groupSetListsPath,
@@ -19,6 +20,12 @@ export function revalidateGroupPiecesRoute(groupSlug: string) {
 export function revalidateGroupPeopleRoutes(groupSlug: string) {
   revalidateGroupPiecesRoute(groupSlug);
   revalidatePath(groupPeoplePath(groupSlug));
+}
+
+/** Also refreshes the Person's own page, after it is renamed or deleted. */
+export function revalidateGroupPersonRoutes(groupSlug: string, personId: string) {
+  revalidateGroupPeopleRoutes(groupSlug);
+  revalidatePath(groupPersonPath(groupSlug, personId));
 }
 
 export function revalidateGroupSetListsRoutes(groupSlug: string) {
