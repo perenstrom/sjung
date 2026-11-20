@@ -1,5 +1,6 @@
 "use server";
 
+import { getPeopleForGroup } from "@/lib/people/queries";
 import prisma from "@/lib/prisma";
 import {
   parsePersonNameFromFormData,
@@ -12,10 +13,7 @@ import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-grou
 export async function getPeople(groupSlug: string) {
   const slug = parseWritableGroupSlugParam(groupSlug);
   const { groupId } = await getWritableGroupIdForSlug(slug);
-  return prisma.person.findMany({
-    where: { groupId },
-    orderBy: { name: "asc" },
-  });
+  return getPeopleForGroup(groupId);
 }
 
 export async function createPerson(formData: FormData) {
