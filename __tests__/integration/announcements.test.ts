@@ -15,6 +15,7 @@ import type { User } from "@/app/generated/prisma/client";
 import { testPrisma } from "../support/db";
 import { createAnnouncement, createGroup, createMember, createUser } from "../support/fixtures";
 import { formData } from "../support/form-data";
+import { createOperator, OPERATOR_EMAIL } from "../support/operators";
 import { actAs } from "../support/session";
 import {
   createAnnouncement as publishAnnouncement,
@@ -30,8 +31,6 @@ import {
 import { hasUnreadAnnouncements } from "@/lib/announcements/announcements";
 import { MANAGE_ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
 
-const OPERATOR_EMAIL = "operator@sjung.test";
-
 beforeEach(() => {
   vi.stubEnv("OPERATORS_EMAIL", `someone-else@sjung.test, ${OPERATOR_EMAIL.toUpperCase()}`);
 });
@@ -43,10 +42,6 @@ afterEach(() => {
 /** A time `minutes` after the User's account was created. */
 function after(user: User, minutes: number): Date {
   return new Date(user.createdAt.getTime() + minutes * 60_000);
-}
-
-function createOperator() {
-  return createUser({ email: OPERATOR_EMAIL });
 }
 
 /** Which Announcements the User sees in the list, by title, and whether each is read. */
