@@ -19,6 +19,11 @@ export function groupPeoplePath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/people`;
 }
 
+/** One Person's page: the Pieces they are credited on. */
+export function groupPersonPath(groupSlug: string, personId: string): string {
+  return `${groupPeoplePath(groupSlug)}/${personId}`;
+}
+
 /** Repertoarer: the Group's Set lists, and its start page. */
 export function groupSetListsPath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/setlists`;

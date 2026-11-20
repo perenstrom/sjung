@@ -115,25 +115,56 @@ export type CreditedPerson = {
   roles: string[];
 };
 
+/** Credits merged by `key`: one entry per key, with its Credit roles in ranked order. */
+function mergeRolesBy<T extends { role: string }>(
+  credits: T[],
+  key: (credit: T) => string,
+  name: (credit: T) => string
+): { key: string; name: string; roles: string[] }[] {
+  const merged = new Map<string, { key: string; name: string; roles: string[] }>();
+
+  for (const credit of credits) {
+    const entry = merged.get(key(credit));
+    if (entry) entry.roles.push(credit.role);
+    else merged.set(key(credit), { key: key(credit), name: name(credit), roles: [credit.role] });
+  }
+
+  const entries = [...merged.values()];
+  for (const entry of entries) entry.roles.sort(compareCreditRoles);
+  return entries;
+}
+
 /**
  * A piece's credits for display: each Person once, with their Credit roles.
  * People are ordered by their highest-ranked role, then by name.
  */
 export function groupCreditsByPerson(credits: CreditForDisplay[]): CreditedPerson[] {
-  const people = new Map<string, CreditedPerson>();
+  return mergeRolesBy(credits, (credit) => credit.personId, (credit) => credit.person.name)
+    .map(({ key, name, roles }) => ({ personId: key, name, roles }))
+    .sort((a, b) => compareCreditRoles(a.roles[0], b.roles[0]) || compareCaseInsensitive(a.name, b.name));
+}
 
-  for (const credit of credits) {
-    const person = people.get(credit.personId);
-    if (person) person.roles.push(credit.role);
-    else people.set(credit.personId, { personId: credit.personId, name: credit.person.name, roles: [credit.role] });
-  }
+/** One of a Person's Credits, with the Piece it is on. */
+export type PersonCreditForDisplay = {
+  pieceId: string;
+  role: string;
+  piece: { name: string };
+};
 
-  const grouped = [...people.values()];
-  for (const person of grouped) person.roles.sort(compareCreditRoles);
+export type CreditedPiece = {
+  pieceId: string;
+  name: string;
+  roles: string[];
+};
 
-  return grouped.sort(
-    (a, b) => compareCreditRoles(a.roles[0], b.roles[0]) || compareCaseInsensitive(a.name, b.name)
-  );
+/**
+ * A Person's credits for their page: each Piece once, with the Person's
+ * Credit roles on it, ordered by Piece name as Alla noter orders them.
+ */
+export function groupCreditsByPiece(credits: PersonCreditForDisplay[]): CreditedPiece[] {
+  return mergeRolesBy(credits, (credit) => credit.pieceId, (credit) => credit.piece.name)
+    .map(({ key, name, roles }) => ({ pieceId: key, name, roles }))
+    .sort((a, b) => compareCaseInsensitive(a.name, b.name));
 }
 
 /**

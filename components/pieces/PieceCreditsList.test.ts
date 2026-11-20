@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 
-import { renderMarkup } from "@/lib/testing/markup";
+import { hasLink, renderMarkup } from "@/lib/testing/markup";
 import { PieceCreditsList, RemoveCreditedPersonButton } from "./PieceCreditsList";
 
 const credits = [
@@ -37,5 +37,20 @@ describe("PieceCreditsList", () => {
     );
 
     expect(html.match(/aria-label="Ta bort Anna Andersson"/g)).toHaveLength(1);
+  });
+
+  it("links each name to the Person's page when given personHref", () => {
+    const html = renderMarkup(
+      createElement(PieceCreditsList, {
+        credits,
+        personHref: (personId) => `/app/kor/people/${personId}`,
+      }),
+    );
+
+    expect(hasLink(html, "/app/kor/people/person-1", "Anna Andersson")).toBe(true);
+  });
+
+  it("shows names as plain text without personHref, as in Alla noter", () => {
+    expect(renderCredits()).not.toContain("<a");
   });
 });

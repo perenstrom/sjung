@@ -1,5 +1,12 @@
 "use server";
 
+import {
+  getPeopleForGroup,
+  getPeopleWithPieceCountsForGroup,
+  getPersonDetailForGroup,
+  type PersonDetail,
+  type PersonWithPieceCount,
+} from "@/lib/people/queries";
 import prisma from "@/lib/prisma";
 import {
   parsePersonNameFromFormData,
@@ -12,10 +19,19 @@ import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-grou
 export async function getPeople(groupSlug: string) {
   const slug = parseWritableGroupSlugParam(groupSlug);
   const { groupId } = await getWritableGroupIdForSlug(slug);
-  return prisma.person.findMany({
-    where: { groupId },
-    orderBy: { name: "asc" },
-  });
+  return getPeopleForGroup(groupId);
+}
+
+/** The Group's People for Upphovspersoner, each with how many Pieces they are credited on. */
+export async function getPeopleWithPieceCounts(groupSlug: string): Promise<PersonWithPieceCount[]> {
+  const { groupId } = await getWritableGroupIdForSlug(parseWritableGroupSlugParam(groupSlug));
+  return getPeopleWithPieceCountsForGroup(groupId);
+}
+
+/** One Person's page: the Pieces they are credited on. Null when the Person isn't in the Group. */
+export async function getPersonDetail(groupSlug: string, personId: string): Promise<PersonDetail | null> {
+  const { groupId } = await getWritableGroupIdForSlug(parseWritableGroupSlugParam(groupSlug));
+  return getPersonDetailForGroup(groupId, personId);
 }
 
 export async function createPerson(formData: FormData) {

@@ -10,6 +10,7 @@ import {
   EMPTY_CREDIT_DRAFT,
   formatCreditsLine,
   groupCreditsByPerson,
+  groupCreditsByPiece,
   MISSING_CREDIT_FIELDS_ERROR,
   MISSING_CREDIT_PERSON_ERROR,
   MISSING_CREDIT_ROLE_ERROR,
@@ -189,6 +190,48 @@ describe("groupCreditsByPerson", () => {
       { personId: "p1", name: "Anna", roles: ["Kompositör"] },
       { personId: "p2", name: "Anna", roles: ["Textförfattare"] },
     ]);
+  });
+});
+
+describe("groupCreditsByPiece", () => {
+  const credit = (pieceId: string, name: string, role: string) => ({
+    pieceId,
+    role,
+    piece: { name },
+  });
+
+  it("lists each Piece once, with the Person's roles in Credit role order", () => {
+    const credits = [
+      credit("ave", "Ave Maria", "Textförfattare"),
+      credit("ave", "Ave Maria", "Övrigt"),
+      credit("ave", "Ave Maria", "Arrangör"),
+    ];
+
+    expect(groupCreditsByPiece(credits)).toEqual([
+      { pieceId: "ave", name: "Ave Maria", roles: ["Arrangör", "Textförfattare", "Övrigt"] },
+    ]);
+  });
+
+  it("orders Pieces by name using Swedish collation, as Alla noter does", () => {
+    const credits = [
+      credit("p1", "Översten", "Kompositör"),
+      credit("p2", "ave maria", "Arrangör"),
+      credit("p3", "Bred dina vida vingar", "Textförfattare"),
+      credit("p4", "Ännu en", "Kompositör"),
+    ];
+
+    expect(groupCreditsByPiece(credits).map((piece) => piece.name)).toEqual([
+      "ave maria",
+      "Bred dina vida vingar",
+      "Ännu en",
+      "Översten",
+    ]);
+  });
+
+  it("keeps two Pieces with the same name apart", () => {
+    const credits = [credit("p1", "Kyrie", "Kompositör"), credit("p2", "Kyrie", "Arrangör")];
+
+    expect(groupCreditsByPiece(credits).map((piece) => piece.pieceId).sort()).toEqual(["p1", "p2"]);
   });
 });
 

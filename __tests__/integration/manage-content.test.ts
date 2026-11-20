@@ -39,6 +39,8 @@ const READS = new Set([
   "getPieceImportGroup",
   "listPieceNotes",
   "getPeople",
+  "getPeopleWithPieceCounts",
+  "getPersonDetail",
   "getSetLists",
   "getSetListDetail",
   "getSetListPieceOptions",

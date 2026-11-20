@@ -1,4 +1,6 @@
-import { getPeople } from "@/app/actions/people";
+import Link from "next/link";
+
+import { getPeopleWithPieceCounts } from "@/app/actions/people";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreatePersonDialog } from "@/components/CreatePersonDialog";
@@ -15,6 +17,8 @@ import {
 } from "@/components/ui/table";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
+import { groupPersonPath } from "@/lib/groups/routes";
+import { formatPieceCount } from "@/lib/people/piece-count";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;
@@ -23,7 +27,7 @@ type PageProps = {
 export default async function TenantPeoplePage({ params }: PageProps) {
   const { groupSlug } = await params;
   const [people, groups, access] = await Promise.all([
-    getPeople(groupSlug),
+    getPeopleWithPieceCounts(groupSlug),
     getGroups(),
     findGroupAccess(groupSlug),
   ]);
@@ -48,7 +52,14 @@ export default async function TenantPeoplePage({ params }: PageProps) {
           {people.length === 0 ? (
             <MobileListEmpty>Inga upphovspersoner tillagda ännu.</MobileListEmpty>
           ) : (
-            people.map((person) => <MobileListRow key={person.id} primary={person.name} />)
+            people.map((person) => (
+              <MobileListRow
+                key={person.id}
+                primary={person.name}
+                secondary={formatPieceCount(person.pieceCount)}
+                href={groupPersonPath(groupSlug, person.id)}
+              />
+            ))
           )}
         </MobileList>
 
@@ -57,19 +68,25 @@ export default async function TenantPeoplePage({ params }: PageProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Namn</TableHead>
+                <TableHead className="text-right">Stycken</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {people.length === 0 ? (
                 <TableRow>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell colSpan={2} className="text-muted-foreground">
                     Inga upphovspersoner tillagda ännu.
                   </TableCell>
                 </TableRow>
               ) : (
                 people.map((person) => (
                   <TableRow key={person.id}>
-                    <TableCell>{person.name}</TableCell>
+                    <TableCell>
+                      <Link className="underline" href={groupPersonPath(groupSlug, person.id)}>
+                        {person.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{person.pieceCount}</TableCell>
                   </TableRow>
                 ))
               )}

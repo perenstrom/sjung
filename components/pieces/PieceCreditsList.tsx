@@ -1,6 +1,8 @@
 import { Trash2 } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { CreditRoleBadge } from "@/components/pieces/CreditRoleBadge";
 import { Button } from "@/components/ui/button";
 import { type CreditedPerson, type CreditForDisplay, groupCreditsByPerson } from "@/lib/pieces/credits";
 import { cn } from "@/lib/utils";
@@ -13,10 +15,13 @@ import { cn } from "@/lib/utils";
 export function PieceCreditsList({
   credits,
   className,
+  personHref,
   renderPersonAction,
 }: {
   credits: CreditForDisplay[];
   className?: string;
+  /** Where a Person's name links to. Without it names are plain text, as in Alla noter. */
+  personHref?: (personId: string) => string;
   /** Trailing control at the end of a Person's row, e.g. a remove button. */
   renderPersonAction?: (person: CreditedPerson) => ReactNode;
 }) {
@@ -25,14 +30,18 @@ export function PieceCreditsList({
       {groupCreditsByPerson(credits).map((person) => (
         <li key={person.personId} className="flex min-h-7 items-start gap-2">
           <div className="flex min-h-7 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="min-w-0 font-medium break-words">{person.name}</span>
-            {person.roles.map((role) => (
-              <span
-                key={role}
-                className="inline-flex items-center rounded-md border border-input bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground"
+            {personHref ? (
+              <Link
+                href={personHref(person.personId)}
+                className="min-w-0 font-medium break-words underline"
               >
-                {role}
-              </span>
+                {person.name}
+              </Link>
+            ) : (
+              <span className="min-w-0 font-medium break-words">{person.name}</span>
+            )}
+            {person.roles.map((role) => (
+              <CreditRoleBadge key={role} role={role} />
             ))}
           </div>
           {renderPersonAction?.(person)}
