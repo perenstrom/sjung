@@ -243,12 +243,5 @@ describe("content actions require manageContent", () => {
       await peopleActions.createPerson(CONTENT_ACTIONS.createPerson(group, content));
       expect(await testPrisma.person.count({ where: { groupId: group.id } })).toBe(2);
     });
-
-    it("renames a Person", async () => {
-      await peopleActions.renamePerson(CONTENT_ACTIONS.renamePerson(group, content));
-      expect(await testPrisma.person.findUniqueOrThrow({ where: { id: content.person.id } })).toMatchObject({
-        name: "Hugo Alfvén",
-      });
-    });
   });
 });

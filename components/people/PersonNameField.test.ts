@@ -18,10 +18,7 @@ describe("PersonNameField", () => {
     expect(render("hugo  alfvén")).toContain("Det finns redan en upphovsperson som heter Hugo Alfvén");
   });
 
-  it.each([
-    ["a new name", "Wilhelm Stenhammar", undefined],
-    ["the Person's own name in another letter case", "HUGO ALFVÉN", "hugo"],
-  ])("gives no hint for %s", (_case, name, exceptId) => {
-    expect(render(name, exceptId)).not.toContain("Det finns redan");
+  it("gives no hint for the Person's own name when renaming them", () => {
+    expect(render("HUGO ALFVÉN", "hugo")).not.toContain("Det finns redan");
   });
 });

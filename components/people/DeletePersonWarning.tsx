@@ -25,7 +25,7 @@ export function DeletePersonWarning({
         <strong>{personName}</strong> tas bort permanent, och tas då också bort som medverkande på de
         här styckena:
       </DialogDescription>
-      <ul className="max-h-48 list-disc space-y-1 overflow-y-auto pl-5">
+      <ul className="list-disc space-y-1 pl-5">
         {pieces.map((piece) => (
           <li key={piece.pieceId}>{piece.name}</li>
         ))}
