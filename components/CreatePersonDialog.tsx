@@ -2,11 +2,17 @@
 
 import { createPerson } from "@/app/actions/people";
 import { EntityFormDialog } from "@/components/EntityFormDialog";
+import { PersonNameField } from "@/components/people/PersonNameField";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
-export function CreatePersonDialog({ groupSlug }: { groupSlug: string }) {
+export function CreatePersonDialog({
+  groupSlug,
+  people,
+}: {
+  groupSlug: string;
+  /** The Group's People, for the same-name hint. */
+  people: readonly { id: string; name: string }[];
+}) {
   return (
     <EntityFormDialog.Root fallbackSv="Kunde inte lägga till upphovsperson">
       <EntityFormDialog.Trigger asChild>
@@ -23,10 +29,7 @@ export function CreatePersonDialog({ groupSlug }: { groupSlug: string }) {
           className="space-y-4"
         >
           <input type="hidden" name="groupSlug" value={groupSlug} />
-          <div className="space-y-2">
-            <Label htmlFor="name">Namn</Label>
-            <Input id="name" name="name" required autoFocus />
-          </div>
+          <PersonNameField people={people} />
           <EntityFormDialog.Error />
           <EntityFormDialog.Footer>
             <Button type="submit">Spara</Button>

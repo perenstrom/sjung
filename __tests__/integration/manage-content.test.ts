@@ -151,6 +151,8 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
   appendSetListNote: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, content: "Paus" }),
   deleteSetListNote: (g, c) => formData({ groupSlug: g.slug, setListNoteId: c.setListNote.id }),
   createPerson: (g) => formData({ groupSlug: g.slug, name: "Hugo Alfvén" }),
+  renamePerson: (g, c) => formData({ groupSlug: g.slug, personId: c.person.id, name: "Hugo Alfvén" }),
+  deletePerson: (g, c) => formData({ groupSlug: g.slug, personId: c.person.id }),
   importPieces: (g) =>
     formData({
       groupSlug: g.slug,
