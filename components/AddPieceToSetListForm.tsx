@@ -1,21 +1,23 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useActionState, useMemo, useState } from "react";
 import { addPieceToSetList } from "@/app/actions/setlists";
 import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
+import { SearchCombobox, useCloseSearchCombobox } from "@/components/SearchCombobox";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { searchPieces } from "@/lib/pieces/search";
 import type { SetListPieceOption } from "@/lib/setlists/types";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type AddPieceToSetListFormProps = {
   groupSlug: string;
@@ -25,19 +27,19 @@ type AddPieceToSetListFormProps = {
 };
 
 /**
- * Search for a Piece and add it to the end of a Set list. The search finds a
- * Piece by its name or an Alias, like Alla noter but not by credited People,
- * and an option found only by its Aliases shows the matching ones under its
- * name. After a successful add the search and selection start over, ready for
- * the next Piece; after a failed add they are kept so the user can retry.
+ * Pick a Piece and add it to the end of a Set list. The picker finds a Piece
+ * by its name or an Alias, like Alla noter but not by credited People, and a
+ * result found only by its Aliases shows the matching ones under its name.
+ * After a successful add the pick starts over, ready for the next Piece; after
+ * a failed add it is kept so the user can retry.
  */
 export function AddPieceToSetListForm({
   groupSlug,
   setListId,
   pieces,
 }: AddPieceToSetListFormProps) {
-  const [query, setQuery] = useState("");
-  const [selectedPieceId, setSelectedPieceId] = useState<string>(pieces[0]?.id ?? "");
+  const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
+  const selectedPiece = pieces.find((piece) => piece.id === selectedPieceId);
 
   const [error, formAction, isPending] = useActionState(
     async (_previousError: string | null, formData: FormData) => {
@@ -46,79 +48,34 @@ export function AddPieceToSetListForm({
       } catch (err) {
         return getThrownMessage(err, "Kunde inte lägga till stycke");
       }
-      setQuery("");
-      setSelectedPieceId(pieces[0]?.id ?? "");
+      setSelectedPieceId(null);
       return null;
     },
     null
   );
 
-  const searchResults = useMemo(() => searchPieces(pieces, query), [pieces, query]);
-  const filteredPieces = useMemo(() => searchResults.map(({ piece }) => piece), [searchResults]);
-
-  const resolvedPieceId = useMemo(() => {
-    if (filteredPieces.length === 0) {
-      return "";
-    }
-    const stillValid = filteredPieces.some(
-      (piece) => piece.id === selectedPieceId
-    );
-    return stillValid ? selectedPieceId : filteredPieces[0].id;
-  }, [filteredPieces, selectedPieceId]);
-
-  const noFilteredMatches = filteredPieces.length === 0;
-  const selectValue =
-    noFilteredMatches || !resolvedPieceId ? undefined : resolvedPieceId;
-
   return (
     <form action={formAction} className="space-y-2">
       <input type="hidden" name="groupSlug" value={groupSlug} />
       <input type="hidden" name="setListId" value={setListId} />
-      <input type="hidden" name="pieceId" value={resolvedPieceId} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="space-y-1 sm:w-80">
-          <Label htmlFor="piece-search">Stycke</Label>
-          <Input
-            id="piece-search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Sök stycke..."
-          />
-          <Select
-            disabled={noFilteredMatches}
-            value={selectValue}
-            onValueChange={setSelectedPieceId}
+      <input type="hidden" name="pieceId" value={selectedPiece?.id ?? ""} />
+      <div className="flex flex-wrap gap-3 sm:items-end">
+        <div className="flex w-full flex-wrap gap-2 sm:w-80">
+          <Label className="w-full">Stycke</Label>
+          <SearchCombobox
+            aria-label="Stycke"
+            className="w-full"
+            selectedLabel={selectedPiece?.name}
+            placeholder="Välj stycke…"
           >
-            <SelectTrigger
-              className="w-full min-w-0"
-              aria-describedby="add-piece-hint"
-            >
-              <SelectValue placeholder="Inga stycken matchar" />
-            </SelectTrigger>
-            <SelectContent>
-              {searchResults.map(({ piece, matchingAliases }) => (
-                <SelectItem key={piece.id} value={piece.id}>
-                  <span className="flex flex-col items-start">
-                    {piece.name}
-                    {/* Explains the match in the list, not in the chosen value. */}
-                    <PieceAliasesLine
-                      aliases={matchingAliases}
-                      className="text-xs in-data-[slot=select-value]:hidden"
-                    />
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p
-            id="add-piece-hint"
-            className="text-xs text-muted-foreground"
-          >
-            Filtrera och välj sedan stycke i listan.
-          </p>
+            <PieceSearch
+              pieces={pieces}
+              selectedPieceId={selectedPiece?.id}
+              onPick={setSelectedPieceId}
+            />
+          </SearchCombobox>
         </div>
-        <Button type="submit" disabled={pieces.length === 0 || isPending}>
+        <Button type="submit" disabled={!selectedPiece || isPending}>
           Lägg till
         </Button>
       </div>
@@ -128,5 +85,51 @@ export function AddPieceToSetListForm({
         </p>
       ) : null}
     </form>
+  );
+}
+
+/** Mounts when the picker opens, so the typed text starts empty each time. */
+function PieceSearch({
+  pieces,
+  selectedPieceId,
+  onPick,
+}: {
+  pieces: SetListPieceOption[];
+  selectedPieceId: string | undefined;
+  onPick: (pieceId: string) => void;
+}) {
+  const close = useCloseSearchCombobox();
+  const [query, setQuery] = useState("");
+  const results = useMemo(() => searchPieces(pieces, query), [pieces, query]);
+
+  return (
+    <Command shouldFilter={false}>
+      <CommandInput placeholder="Sök stycke…" autoFocus value={query} onValueChange={setQuery} />
+      <CommandList>
+        <CommandEmpty>Inga stycken matchar</CommandEmpty>
+        {results.map(({ piece, matchingAliases }) => {
+          const checked = piece.id === selectedPieceId;
+          return (
+            <CommandItem
+              key={piece.id}
+              value={piece.id}
+              onSelect={() => {
+                onPick(piece.id);
+                close();
+              }}
+            >
+              <Check className={cn("size-4", !checked && "invisible")} aria-hidden="true" />
+              <span className="flex flex-1 flex-col">
+                <span>
+                  {piece.name}
+                  {checked ? <span className="sr-only">, vald</span> : null}
+                </span>
+                <PieceAliasesLine aliases={matchingAliases} className="text-xs" />
+              </span>
+            </CommandItem>
+          );
+        })}
+      </CommandList>
+    </Command>
   );
 }
