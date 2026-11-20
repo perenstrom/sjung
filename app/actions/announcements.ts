@@ -8,8 +8,8 @@ import type {
   AnnouncementListItem,
   ManagedAnnouncement,
 } from "@/lib/announcements/announcements";
-import { isOperator } from "@/lib/announcements/operators";
-import { requireOperator, requireOperatorPage } from "@/lib/announcements/require-operator";
+import { isOperator } from "@/lib/operators/operators";
+import { requireOperator, requireOperatorPage } from "@/lib/operators/require-operator";
 import { MANAGE_ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
 import { requireUser, type SessionUser } from "@/lib/auth/require-user";
 import prisma from "@/lib/prisma";

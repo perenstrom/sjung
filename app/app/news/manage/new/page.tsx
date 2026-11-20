@@ -1,7 +1,7 @@
 import { AnnouncementEditor } from "@/components/announcements/AnnouncementEditor";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { manageAnnouncementsTrail } from "@/lib/announcements/breadcrumbs";
-import { requireOperatorPage } from "@/lib/announcements/require-operator";
+import { requireOperatorPage } from "@/lib/operators/require-operator";
 
 export default async function NewAnnouncementPage() {
   await requireOperatorPage();
