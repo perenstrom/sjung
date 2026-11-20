@@ -104,7 +104,11 @@ One entry in a Set list's running order: either a Set list piece or a Running-or
 _Avoid_: Item, Entry, Slot.
 
 **Set list piece**:
-One occurrence of a Piece within a Set list, at a specific position. A Piece may appear more than once in the same Set list, each occurrence with its own position and Performance notes. Swedish UI: _Repertoarpost_.
+One occurrence of a Piece within a Set list, at a specific position. A Piece may appear more than once in the same Set list, each occurrence with its own position, Performance notes and Hidden Files and Links. Swedish UI: _Repertoarpost_.
+
+**Hidden**:
+A File or Link marked as not shown on one Set list piece, to keep only what that appearance needs. Everything is shown unless hidden, so a File or Link added to the Piece later shows up on its Set list pieces too. Hiding never affects the Piece itself, its other Set list pieces or other Set lists, and a hidden File or Link stays hidden when it is replaced or edited. Outside Edit mode a hidden File or Link is simply absent wherever that Set list piece is shown, and Categories are grouped as if it did not exist; in Edit mode it shows dimmed, so it can be unhidden. The Piece's page, opened from that Set list piece, tells anyone viewing it how many Files and Links are hidden and lets them show those too, dimmed, until they leave the page. Swedish UI: _Dold_, _Dölj i repertoaren_ (the action).
+_Avoid_: Allowed, Excluded, Filtered.
 
 **Piece note**:
 A note attached directly to a Piece and visible everywhere that Piece appears — persistent, Group-wide. Swedish UI: _Anteckning_ / _Anteckningar_.
