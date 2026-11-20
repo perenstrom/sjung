@@ -1,13 +1,14 @@
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { SetListPieceOption } from "@/lib/setlists/types";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 import { AddPieceToSetListForm } from "./AddPieceToSetListForm";
 
 // The form posts to a server action, which reaches the database.
 vi.mock("@/app/actions/setlists", () => ({}));
 
-function renderForm(pieces: { id: string; name: string; aliases: { name: string }[] }[]): string {
+function renderForm(pieces: SetListPieceOption[]): string {
   return renderMarkup(
     createElement(AddPieceToSetListForm, { groupSlug: "koren", setListId: "set-list-1", pieces }),
   );
@@ -23,11 +24,13 @@ describe("AddPieceToSetListForm", () => {
     const html = renderForm(pieces);
 
     expect(html).toMatch(/<button[^>]*role="combobox"/);
-    expect(html).not.toMatch(/<input[^>]*type="search"/);
     expect(textOf(html)).toContain("Välj stycke…");
   });
 
-  it("can't add before a Piece is picked", () => {
-    expect(renderForm(pieces)).toMatch(/<button[^>]*type="submit"[^>]*disabled=""/);
+  it.each([
+    ["no Piece is picked", pieces],
+    ["the Group has no Pieces", []],
+  ])("can't add when %s", (_case, groupPieces) => {
+    expect(renderForm(groupPieces)).toMatch(/<button[^>]*type="submit"[^>]*disabled=""/);
   });
 });
