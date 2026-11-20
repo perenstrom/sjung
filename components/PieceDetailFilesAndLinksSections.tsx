@@ -22,8 +22,8 @@ type PieceDetailFilesAndLinksSectionsProps = {
 };
 
 /**
- * The Piece detail page's Files and Links as one list: a single Filer och
- * länkar section, or, once anything has a Category, one section per Category
+ * The Piece detail page's Files and Links as one Filer och länkar section.
+ * Once anything has a Category, they show under a subheading per Category
  * (see `groupByCategory`). Files come before Links in each.
  */
 export function PieceDetailFilesAndLinksSections(props: PieceDetailFilesAndLinksSectionsProps) {
@@ -105,27 +105,23 @@ function FilesAndLinksSections({
     </>
   );
 
-  if (!categorized) {
-    return (
-      <PieceDetailSectionLayout title="Filer och länkar">
-        {groups[0] ? (
-          <div className="space-y-2">{groupLists(groups[0])}</div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Inga filer eller länkar tillagda ännu.</p>
-        )}
-        {addRows === null ? null : <div className="space-y-3 border-t pt-3">{addRows}</div>}
-      </PieceDetailSectionLayout>
-    );
-  }
-
   return (
-    <>
-      {groups.map((group) => (
-        <PieceDetailSectionLayout key={group.heading} title={group.heading ?? ""}>
-          {groupLists(group)}
-        </PieceDetailSectionLayout>
-      ))}
-      {addRows === null ? null : <PieceDetailSectionLayout title="Lägg till">{addRows}</PieceDetailSectionLayout>}
-    </>
+    <PieceDetailSectionLayout title="Filer och länkar">
+      {groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Inga filer eller länkar tillagda ännu.</p>
+      ) : categorized ? (
+        <div className="space-y-4">
+          {groups.map((group) => (
+            <div key={group.heading} className="space-y-1">
+              <h3 className="text-xs font-medium text-muted-foreground">{group.heading}</h3>
+              <div className="space-y-2">{groupLists(group)}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2">{groupLists(groups[0])}</div>
+      )}
+      {addRows === null ? null : <div className="space-y-3 border-t pt-3">{addRows}</div>}
+    </PieceDetailSectionLayout>
   );
 }
