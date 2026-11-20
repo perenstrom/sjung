@@ -9,8 +9,8 @@ import { AddPieceCreditPopover } from "@/components/pieces/AddPieceCreditPopover
 import { LetterDividerListItem } from "@/components/pieces/LetterDivider";
 import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
-import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
-import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
+import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFilesAndLinks";
+import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
@@ -231,14 +231,12 @@ function PieceMaterial({
 
   return (
     <>
-      <PieceInlineFilesAndLinksCell
-        readOnly
+      <PieceFilesAndLinks
+        layout="inline"
         touch
         groupSlug={groupSlug}
-        pieceId={piece.id}
-        pieceName={piece.name}
-        files={toInlineFiles(piece)}
-        links={toInlineLinks(piece)}
+        piece={{ id: piece.id, name: piece.name }}
+        filesAndLinks={toPieceFilesAndLinks(piece)}
       />
       {notes}
     </>
@@ -284,13 +282,12 @@ function PieceEditSections({
       </section>
       <section className="space-y-1">
         <SectionHeading>Filer och länkar</SectionHeading>
-        <PieceInlineFilesAndLinksCell
+        <PieceFilesAndLinks
+          layout="inline"
           touch
           groupSlug={groupSlug}
-          pieceId={piece.id}
-          pieceName={piece.name}
-          files={toInlineFiles(piece)}
-          links={toInlineLinks(piece)}
+          piece={{ id: piece.id, name: piece.name }}
+          filesAndLinks={toPieceFilesAndLinks(piece)}
         />
       </section>
       <PieceNotesSection notes={piece.notes}>

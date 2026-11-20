@@ -6,12 +6,13 @@ import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
 import { PieceDetailCreditsSection } from "@/components/PieceDetailCreditsSection";
-import { PieceDetailFilesAndLinksSection } from "@/components/PieceDetailFilesAndLinksSection";
 import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
 import { PieceCategoriesProvider } from "@/components/pieces/CategoryPicker";
-import { PieceDetailSectionStack } from "@/components/pieces/PieceDetailSectionLayout";
+import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFilesAndLinks";
+import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
+import { PieceDetailSectionLayout, PieceDetailSectionStack } from "@/components/pieces/PieceDetailSectionLayout";
 import { pieceDetailTrail } from "@/lib/breadcrumbs";
 import { fromSetListIdParam } from "@/lib/pieces/href";
 import { notFound } from "next/navigation";
@@ -73,24 +74,14 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
               creditRoles={creditRoles}
             />
 
-            <PieceDetailFilesAndLinksSection
-              groupSlug={groupSlug}
-              pieceId={piece.id}
-              pieceName={piece.name}
-              files={piece.files.map((file) => ({
-                id: file.id,
-                displayName: file.displayName,
-                size: file.size,
-                category: file.category,
-                createdAt: file.createdAt,
-              }))}
-              links={piece.links.map((link) => ({
-                id: link.id,
-                url: link.url,
-                label: link.label,
-                category: link.category,
-              }))}
-            />
+            <PieceDetailSectionLayout title="Filer och länkar">
+              <PieceFilesAndLinks
+                layout="detail"
+                groupSlug={groupSlug}
+                piece={{ id: piece.id, name: piece.name }}
+                filesAndLinks={toPieceFilesAndLinks(piece)}
+              />
+            </PieceDetailSectionLayout>
 
             <PieceDetailNotesSection
               key={`notes-${piece.id}`}

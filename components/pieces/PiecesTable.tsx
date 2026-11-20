@@ -10,8 +10,8 @@ import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { type ColumnDef, DataTable, DataTableColumnHeader } from "@/components/data-table";
-import { toInlineFiles, toInlineLinks } from "@/components/pieces/inlineItems";
-import { PieceInlineFilesAndLinksCell } from "@/components/pieces/PieceInlineFilesAndLinksCell";
+import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFilesAndLinks";
+import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { LetterDividerTableRow } from "@/components/pieces/LetterDivider";
@@ -310,13 +310,11 @@ export function PiecesTable({
         cell: pieceCell((piece) => {
           return (
             <div className={cn(LIST_COLUMN_WIDTH_CLASS, LIST_CELL_OFFSET_CLASS)}>
-              <PieceInlineFilesAndLinksCell
-                readOnly={!isEditing}
+              <PieceFilesAndLinks
+                layout="inline"
                 groupSlug={groupSlug}
-                pieceId={piece.id}
-                pieceName={piece.name}
-                files={toInlineFiles(piece)}
-                links={toInlineLinks(piece)}
+                piece={{ id: piece.id, name: piece.name }}
+                filesAndLinks={toPieceFilesAndLinks(piece)}
               />
             </div>
           );

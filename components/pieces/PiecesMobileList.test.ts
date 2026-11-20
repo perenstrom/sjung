@@ -13,6 +13,11 @@ vi.mock("@/app/actions/people", () => ({}));
 vi.mock("@/app/actions/pieces", () => ({}));
 vi.mock("@/app/actions/setlists", () => ({}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+// The Files and Links read Edit mode themselves; it follows the list's `isEditing`.
+let editMode = false;
+vi.mock("@/components/EditModeContext", () => ({
+  useEditMode: () => ({ canEdit: true, isEditing: editMode, setIsEditing: vi.fn() }),
+}));
 
 const piece = {
   id: "piece-1",
@@ -33,12 +38,14 @@ const notes = [
 ];
 
 function renderPieces(isEditing: boolean): string {
+  editMode = isEditing;
   return renderMarkup(
     createElement(PiecesMobileList, { people: [], creditRoles: [], groupSlug: "koren", isEditing, emptyMessage: "", pieces: [piece] }),
   );
 }
 
 function renderSetList(isEditing: boolean): string {
+  editMode = isEditing;
   const steps = [{ kind: "piece", id: "step-1", position: 0, piece }] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesMobileList, {
@@ -144,6 +151,7 @@ describe("PieceRowDetails, an open piece row", () => {
     overrides: Partial<PieceWithRelations> = {},
     setListId?: string,
   ): string {
+    editMode = isEditing;
     return renderMarkup(
       createElement(PieceRowDetails, {
         piece: { ...piece, ...overrides } as PieceWithRelations,
