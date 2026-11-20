@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useState, useTransition, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { useTransition, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -18,23 +18,15 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Boxes, CircleUser, ListMusic, LogOut, Music, Newspaper, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { setActiveGroup } from "@/app/actions/groups";
 import { logOut } from "@/app/actions/auth";
 import {
   closeMobileSidebar,
   groupNavItems,
   isAtOrUnder,
-  switchGroup,
   type GroupNavItem,
 } from "@/lib/sidebar-navigation";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { GroupSwitcher } from "@/components/GroupSwitcher";
 import { UnreadDot } from "@/components/announcements/UnreadDot";
 import { brandMarkSrc } from "@/lib/app-environment";
 import { ACCOUNT_PATH } from "@/lib/account/routes";
@@ -131,10 +123,6 @@ type AppSidebarProps = {
 
 export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: AppSidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const sidebar = useSidebar();
-  const [groupSwitchError, setGroupSwitchError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
   const [isLoggingOut, startLogOutTransition] = useTransition();
   const tenantSlug = tenantSlugFromPathname(pathname);
   const currentGroupSlug =
@@ -146,22 +134,6 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: 
     canManageMembers: currentGroup?.canManageMembers ?? false,
   });
   const groupsHref = MY_GROUPS_PATH;
-
-  function handleGroupChange(nextGroupSlug: string) {
-    if (!nextGroupSlug || nextGroupSlug === currentGroupSlug) {
-      return;
-    }
-
-    startTransition(async () => {
-      setGroupSwitchError(null);
-      const error = await switchGroup(nextGroupSlug, {
-        setActiveGroup,
-        navigate: (href) => router.push(href),
-        onSwitched: () => closeMobileSidebar(sidebar),
-      });
-      setGroupSwitchError(error);
-    });
-  }
 
   function handleLogOut() {
     startLogOutTransition(async () => {
@@ -250,35 +222,7 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements }: 
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        {groups.length > 1 ? (
-          <div className="space-y-1">
-            <Select
-              value={currentGroupSlug}
-              onValueChange={handleGroupChange}
-              disabled={isPending}
-            >
-              <SelectTrigger size="sm" className="w-full">
-                <SelectValue placeholder="Välj grupp" />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map((group) => (
-                  <SelectItem key={group.id} value={group.slug}>
-                    {group.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {groupSwitchError ? (
-              <p
-                role="status"
-                aria-live="polite"
-                className="text-sm text-destructive"
-              >
-                {groupSwitchError}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+        <GroupSwitcher groups={groups} currentGroupSlug={currentGroupSlug} />
         <SidebarMenu>
           <AnnouncementsNavItem
             hasUnread={hasUnreadAnnouncements}
