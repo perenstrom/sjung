@@ -1,6 +1,6 @@
 "use client";
 
-import { addPieceToSetList, removePieceFromSetList } from "@/app/actions/setlists";
+import { addPieceToSetList, removePieceFromWholeSetList } from "@/app/actions/setlists";
 import { useEditMode } from "@/components/EditModeContext";
 import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
 export type PieceSetListEntry = {
-  id: string;
   setListId: string;
   setListName: string;
 };
@@ -88,14 +87,15 @@ function PieceSetListsBody({
     });
   }
 
-  function submitRemove(setListPieceId: string) {
+  function submitRemove(setListId: string) {
     setError(null);
     const formData = new FormData();
     formData.set("groupSlug", groupSlug);
-    formData.set("setListPieceId", setListPieceId);
+    formData.set("setListId", setListId);
+    formData.set("pieceId", pieceId);
     startTransition(async () => {
       try {
-        await removePieceFromSetList(formData);
+        await removePieceFromWholeSetList(formData);
         router.refresh();
       } catch (err) {
         setError(getThrownMessage(err, "Kunde inte ta bort kopplingen"));
@@ -112,7 +112,7 @@ function PieceSetListsBody({
       ) : (
         <ul className="space-y-2 text-sm">
           {entries.map((entry) => (
-            <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2">
+            <li key={entry.setListId} className="flex flex-wrap items-center justify-between gap-2">
               <Link className="underline" href={`/app/${groupSlug}/setlists/${entry.setListId}`}>
                 {entry.setListName}
               </Link>
@@ -122,7 +122,7 @@ function PieceSetListsBody({
                   variant="destructive"
                   size="sm"
                   disabled={isPending}
-                  onClick={() => submitRemove(entry.id)}
+                  onClick={() => submitRemove(entry.setListId)}
                 >
                   Ta bort från repertoar
                 </Button>

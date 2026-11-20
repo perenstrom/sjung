@@ -3,6 +3,7 @@ import {
   pieceDetailSelect,
   pieceWithRelationsInclude,
   type PieceDetail,
+  type PieceDetailQueryResult,
   type PieceNoteListItem,
   type PieceNoteListItemQueryResult,
   type PieceWithRelations,
@@ -39,14 +40,16 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
     files: piece.files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     links: piece.links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     notes: piece.notes.map(toPieceNoteListItem),
-    setListEntries: piece.setListEntries
-      .map((entry) => ({
-        id: entry.id,
-        setListId: entry.setListId,
-        setListName: entry.setList.name,
-      }))
-      .sort((a, b) => a.setListName.localeCompare(b.setListName, "sv-SE")),
+    setListEntries: toSetListEntries(piece.setListEntries),
   };
+}
+
+/** One entry per Set list the Piece is in, however many times it appears there, by name. */
+function toSetListEntries(setListPieces: PieceDetailQueryResult["setListEntries"]): PieceDetail["setListEntries"] {
+  const bySetList = new Map(
+    setListPieces.map((entry) => [entry.setListId, { setListId: entry.setListId, setListName: entry.setList.name }])
+  );
+  return [...bySetList.values()].sort((a, b) => a.setListName.localeCompare(b.setListName, "sv-SE"));
 }
 
 export function toPieceNoteListItem({

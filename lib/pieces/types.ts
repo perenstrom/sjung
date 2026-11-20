@@ -97,7 +97,6 @@ export const pieceDetailSelect = {
   },
   setListEntries: {
     select: {
-      id: true,
       setListId: true,
       setList: {
         select: {
@@ -108,14 +107,14 @@ export const pieceDetailSelect = {
   },
 } as const satisfies Prisma.PieceFindFirstArgs["select"];
 
-type PieceDetailQueryResult = Prisma.PieceGetPayload<{
+export type PieceDetailQueryResult = Prisma.PieceGetPayload<{
   select: typeof pieceDetailSelect;
 }>;
 
 export type PieceDetail = Omit<PieceDetailQueryResult, "notes" | "setListEntries"> & {
   notes: PieceNoteListItem[];
+  /** One per Set list the Piece is in, sorted by Set list name. */
   setListEntries: Array<{
-    id: PieceDetailQueryResult["setListEntries"][number]["id"];
     setListId: PieceDetailQueryResult["setListEntries"][number]["setListId"];
     setListName: PieceDetailQueryResult["setListEntries"][number]["setList"]["name"];
   }>;
