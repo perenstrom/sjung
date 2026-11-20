@@ -138,6 +138,8 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
     formData({ groupSlug: g.slug, setListId: c.setList.id, pieceId: c.piece.id }),
   removePieceFromSetList: (g, c) =>
     formData({ groupSlug: g.slug, setListPieceId: c.setListPiece.id }),
+  removePieceFromWholeSetList: (g, c) =>
+    formData({ groupSlug: g.slug, setListId: c.setList.id, pieceId: c.piece.id }),
   reorderSetListSteps: (g, c) =>
     formData({
       groupSlug: g.slug,

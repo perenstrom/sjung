@@ -102,7 +102,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
             <PieceSetListsSection
               groupSlug={groupSlug}
               pieceId={piece.id}
-              entries={piece.setListEntries}
+              setLists={piece.setLists}
               allSetLists={setLists.map((sl) => ({ id: sl.id, name: sl.name }))}
             />
           </PieceDetailSectionStack>

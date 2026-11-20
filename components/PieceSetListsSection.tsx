@@ -1,20 +1,15 @@
 "use client";
 
-import { addPieceToSetList, removePieceFromSetList } from "@/app/actions/setlists";
+import { addPieceToSetList, removePieceFromWholeSetList } from "@/app/actions/setlists";
 import { useEditMode } from "@/components/EditModeContext";
 import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
 import { getThrownMessage } from "@/lib/getThrownMessage";
+import type { PieceSetList } from "@/lib/pieces/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-
-export type PieceSetListEntry = {
-  id: string;
-  setListId: string;
-  setListName: string;
-};
 
 export type PieceSetListOption = {
   id: string;
@@ -24,7 +19,7 @@ export type PieceSetListOption = {
 type PieceSetListsSectionProps = {
   groupSlug: string;
   pieceId: string;
-  entries: PieceSetListEntry[];
+  setLists: PieceSetList[];
   allSetLists: PieceSetListOption[];
 };
 
@@ -44,7 +39,7 @@ function PieceSetListsBody({
   readOnly,
   groupSlug,
   pieceId,
-  entries,
+  setLists,
   allSetLists,
 }: PieceSetListsSectionProps & { readOnly: boolean }) {
   const router = useRouter();
@@ -53,8 +48,8 @@ function PieceSetListsBody({
   const [pickedSetListId, setPickedSetListId] = useState("");
 
   const memberSetIds = useMemo(
-    () => new Set(entries.map((e) => e.setListId)),
-    [entries]
+    () => new Set(setLists.map((sl) => sl.setListId)),
+    [setLists]
   );
   const available = useMemo(
     () => allSetLists.filter((sl) => !memberSetIds.has(sl.id)),
@@ -88,14 +83,15 @@ function PieceSetListsBody({
     });
   }
 
-  function submitRemove(setListPieceId: string) {
+  function submitRemove(setListId: string) {
     setError(null);
     const formData = new FormData();
     formData.set("groupSlug", groupSlug);
-    formData.set("setListPieceId", setListPieceId);
+    formData.set("setListId", setListId);
+    formData.set("pieceId", pieceId);
     startTransition(async () => {
       try {
-        await removePieceFromSetList(formData);
+        await removePieceFromWholeSetList(formData);
         router.refresh();
       } catch (err) {
         setError(getThrownMessage(err, "Kunde inte ta bort kopplingen"));
@@ -105,16 +101,16 @@ function PieceSetListsBody({
 
   return (
     <PieceDetailSectionLayout title="Repertoarer">
-      {entries.length === 0 ? (
+      {setLists.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Stycket finns inte i någon repertoar ännu.
         </p>
       ) : (
         <ul className="space-y-2 text-sm">
-          {entries.map((entry) => (
-            <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2">
-              <Link className="underline" href={`/app/${groupSlug}/setlists/${entry.setListId}`}>
-                {entry.setListName}
+          {setLists.map((setList) => (
+            <li key={setList.setListId} className="flex flex-wrap items-center justify-between gap-2">
+              <Link className="underline" href={`/app/${groupSlug}/setlists/${setList.setListId}`}>
+                {setList.setListName}
               </Link>
               {readOnly ? null : (
                 <Button
@@ -122,7 +118,7 @@ function PieceSetListsBody({
                   variant="destructive"
                   size="sm"
                   disabled={isPending}
-                  onClick={() => submitRemove(entry.id)}
+                  onClick={() => submitRemove(setList.setListId)}
                 >
                   Ta bort från repertoar
                 </Button>

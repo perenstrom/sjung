@@ -178,6 +178,26 @@ export async function removePieceFromSetList(formData: FormData) {
   });
 }
 
+/** Removes every occurrence of the Piece from the Set list, as the Piece page does. */
+export async function removePieceFromWholeSetList(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListId = parseSetListIdFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const [setList, piece] = await Promise.all([
+      findInGroup(groupId, "setList", setListId),
+      findInGroup(groupId, "piece", pieceId),
+    ]);
+    await prisma.setListPiece.deleteMany({
+      where: { setListId: setList.id, pieceId: piece.id },
+    });
+
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+    revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+  });
+}
+
 export async function reorderSetListSteps(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListId = parseSetListIdFromFormData(formData);
