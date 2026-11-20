@@ -1,5 +1,6 @@
 "use client";
 
+import { CategoryHeading } from "@/components/pieces/CategoryHeading";
 import {
   type PieceInlineFile,
   PieceInlineFilesCell,
@@ -34,18 +35,23 @@ export function PieceInlineFilesAndLinksCell({
   const shared = { touch, groupSlug, pieceId, pieceName };
 
   return (
-    <div className="flex flex-col gap-2">
+    // The item rows are taller than their text, which already spaces a
+    // heading from its first item; the wider gap between groups ties each
+    // heading to its own items rather than the group above.
+    <div className="flex flex-col gap-3">
       {groupByCategory(files, links).map((group) => (
-        <div key={group.heading ?? ""} className="flex flex-col gap-1">
+        <div key={group.heading ?? ""}>
           {group.heading === null ? null : (
-            <p className="text-xs font-medium text-muted-foreground">{group.heading}</p>
+            <CategoryHeading>{group.heading}</CategoryHeading>
           )}
-          {group.files.length > 0 ? (
-            <PieceInlineFilesCell readOnly={readOnly} withoutAdd {...shared} files={group.files} />
-          ) : null}
-          {group.links.length > 0 ? (
-            <PieceInlineLinksCell readOnly={readOnly} withoutAdd {...shared} links={group.links} />
-          ) : null}
+          <div className="flex flex-col gap-1">
+            {group.files.length > 0 ? (
+              <PieceInlineFilesCell readOnly={readOnly} withoutAdd {...shared} files={group.files} />
+            ) : null}
+            {group.links.length > 0 ? (
+              <PieceInlineLinksCell readOnly={readOnly} withoutAdd {...shared} links={group.links} />
+            ) : null}
+          </div>
         </div>
       ))}
       {readOnly ? null : (

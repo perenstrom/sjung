@@ -6,7 +6,7 @@ import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
 import { PieceDetailCreditsSection } from "@/components/PieceDetailCreditsSection";
-import { PieceDetailFilesAndLinksSections } from "@/components/PieceDetailFilesAndLinksSections";
+import { PieceDetailFilesAndLinksSection } from "@/components/PieceDetailFilesAndLinksSection";
 import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
 import { PieceSetListsSection } from "@/components/PieceSetListsSection";
@@ -73,7 +73,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
               creditRoles={creditRoles}
             />
 
-            <PieceDetailFilesAndLinksSections
+            <PieceDetailFilesAndLinksSection
               groupSlug={groupSlug}
               pieceId={piece.id}
               pieceName={piece.name}
