@@ -28,7 +28,7 @@ export type GroupOverview = {
   totalStorageBytes: number;
 };
 
-type FileTotals = { group_id: string; storage: bigint; last_updated: Date };
+type FileTotals = { group_id: string; storage_bytes: bigint; last_updated: Date };
 
 /** Every Group in Sjung, by name ignoring case. Callers must check the User is an Operator. */
 export async function listGroupOverview(): Promise<GroupOverview> {
@@ -48,29 +48,28 @@ export async function listGroupOverview(): Promise<GroupOverview> {
     prisma.person.groupBy({ by: ["groupId"], _max: { updatedAt: true } }),
     // Files belong to a Piece, not directly to a Group, so Prisma's groupBy can't reach the Group.
     prisma.$queryRaw<FileTotals[]>`
-      SELECT p.group_id, SUM(f.size)::bigint AS storage, MAX(f.updated_at) AS last_updated
+      SELECT p.group_id, SUM(f.size)::bigint AS storage_bytes, MAX(f.updated_at) AS last_updated
       FROM files f JOIN pieces p ON p.id = f.piece_id
       GROUP BY p.group_id`,
   ]);
 
-  const lastUpdateByGroup = new Map<string, Date>();
+  // Each Group's latest change, starting from its own creation.
+  const lastChangeByGroup = new Map(groups.map(({ id, createdAt }) => [id, createdAt]));
   const updates = [
     ...[...pieceUpdates, ...setListUpdates, ...personUpdates].map(({ groupId, _max }) => [groupId, _max.updatedAt] as const),
     ...fileTotals.map(({ group_id, last_updated }) => [group_id, last_updated] as const),
   ];
   for (const [groupId, updatedAt] of updates) {
-    const latest = lastUpdateByGroup.get(groupId);
-    if (updatedAt && (!latest || updatedAt > latest)) {
-      lastUpdateByGroup.set(groupId, updatedAt);
+    const latest = lastChangeByGroup.get(groupId);
+    if (updatedAt && latest && updatedAt > latest) {
+      lastChangeByGroup.set(groupId, updatedAt);
     }
   }
-  const storageByGroup = new Map(fileTotals.map(({ group_id, storage }) => [group_id, Number(storage)]));
+  const storageByGroup = new Map(fileTotals.map(({ group_id, storage_bytes }) => [group_id, Number(storage_bytes)]));
 
   const rows = groups
-    .map((group): GroupOverviewRow => {
-      const lastUpdate = lastUpdateByGroup.get(group.id);
-      const lastChangedAt = lastUpdate && lastUpdate > group.createdAt ? lastUpdate : group.createdAt;
-      return {
+    .map(
+      (group): GroupOverviewRow => ({
         id: group.id,
         name: group.name,
         slug: group.slug,
@@ -80,9 +79,9 @@ export async function listGroupOverview(): Promise<GroupOverview> {
         pieceCount: group._count.pieces,
         setListCount: group._count.setLists,
         storageBytes: storageByGroup.get(group.id) ?? 0,
-        lastChangedAt,
-      };
-    })
+        lastChangedAt: lastChangeByGroup.get(group.id) ?? group.createdAt,
+      }),
+    )
     .sort((a, b) => swedishCollator.compare(a.name, b.name));
 
   return {

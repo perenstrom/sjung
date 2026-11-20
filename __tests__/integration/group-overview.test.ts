@@ -17,10 +17,9 @@ import {
   createSetList,
   createUser,
 } from "../support/fixtures";
+import { createOperator, OPERATOR_EMAIL } from "../support/operators";
 import { actAs } from "../support/session";
 import { getGroupOverview } from "@/app/actions/operators";
-
-const OPERATOR_EMAIL = "operator@sjung.test";
 
 beforeEach(() => {
   vi.stubEnv("OPERATORS_EMAIL", OPERATOR_EMAIL);
@@ -30,7 +29,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe("Group overview access", () => {
+describe("Group overview", () => {
   it("is not found for a Verified user who isn't an Operator, even the Group's Creator", async () => {
     const creator = await createUser({ email: "creator@sjung.test" });
     await createGroup({ createdById: creator.id });
@@ -39,20 +38,8 @@ describe("Group overview access", () => {
     await expect(getGroupOverview()).rejects.toThrow("notFound");
   });
 
-  it("lists every Group for an Operator, who is in none of them", async () => {
-    const operator = await createUser({ email: OPERATOR_EMAIL });
-    await createGroup({ name: "Kören" });
-    actAs(operator.id);
-
-    const { groups } = await getGroupOverview();
-
-    expect(groups.map(({ name }) => name)).toEqual(["Kören"]);
-  });
-});
-
-describe("Group overview", () => {
-  it("counts each Group's Members, Pieces, Set lists and storage, and when its content last changed", async () => {
-    const operator = await createUser({ email: OPERATOR_EMAIL });
+  it("counts, for an Operator in none of them, each Group's Members, Pieces, Set lists and storage, and when its content last changed", async () => {
+    const operator = await createOperator();
 
     const creator = await createUser({ name: "Bo Ek", email: "bo@sjung.test" });
     const busy = await createGroup({ name: "Bkören", slug: "bkoren", createdById: creator.id });
