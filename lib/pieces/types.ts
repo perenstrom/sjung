@@ -111,11 +111,14 @@ export type PieceDetailQueryResult = Prisma.PieceGetPayload<{
   select: typeof pieceDetailSelect;
 }>;
 
+/** A Set list the Piece is in, however many times it appears there. */
+export type PieceSetList = {
+  setListId: string;
+  setListName: string;
+};
+
 export type PieceDetail = Omit<PieceDetailQueryResult, "notes" | "setListEntries"> & {
   notes: PieceNoteListItem[];
   /** One per Set list the Piece is in, sorted by Set list name. */
-  setListEntries: Array<{
-    setListId: PieceDetailQueryResult["setListEntries"][number]["setListId"];
-    setListName: PieceDetailQueryResult["setListEntries"][number]["setList"]["name"];
-  }>;
+  setLists: PieceSetList[];
 };

@@ -6,6 +6,7 @@ import {
   type PieceDetailQueryResult,
   type PieceNoteListItem,
   type PieceNoteListItemQueryResult,
+  type PieceSetList,
   type PieceWithRelations,
 } from "@/lib/pieces/types";
 import type { ImportGroup } from "@/lib/pieces/import";
@@ -40,12 +41,12 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
     files: piece.files.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     links: piece.links.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     notes: piece.notes.map(toPieceNoteListItem),
-    setListEntries: toSetListEntries(piece.setListEntries),
+    setLists: toPieceSetLists(piece.setListEntries),
   };
 }
 
 /** One entry per Set list the Piece is in, however many times it appears there, by name. */
-function toSetListEntries(setListPieces: PieceDetailQueryResult["setListEntries"]): PieceDetail["setListEntries"] {
+function toPieceSetLists(setListPieces: PieceDetailQueryResult["setListEntries"]): PieceSetList[] {
   const bySetList = new Map(
     setListPieces.map((entry) => [entry.setListId, { setListId: entry.setListId, setListName: entry.setList.name }])
   );
