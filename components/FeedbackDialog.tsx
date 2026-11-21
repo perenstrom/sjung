@@ -23,10 +23,12 @@ type FeedbackDialogProps = {
   pagePath: string;
   /** The Group whose pages the dialog is opened on, if any. */
   groupSlug: string | null;
+  /** The version this page was served with, so Feedback says which one the sender saw. */
+  appVersion: string;
 };
 
 /** The sidebar's "Feedback" item and the dialog it opens for sending Feedback about Sjung. */
-export function FeedbackDialog({ pagePath, groupSlug }: FeedbackDialogProps) {
+export function FeedbackDialog({ pagePath, groupSlug, appVersion }: FeedbackDialogProps) {
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(
     async (prevState: SendFeedbackState, formData: FormData): Promise<SendFeedbackState> => {
@@ -70,6 +72,7 @@ export function FeedbackDialog({ pagePath, groupSlug }: FeedbackDialogProps) {
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="pagePath" value={pagePath} />
             <input type="hidden" name="groupSlug" value={groupSlug ?? ""} />
+            <input type="hidden" name="browserAppVersion" value={appVersion} />
             <input
               type="hidden"
               name="userAgent"

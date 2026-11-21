@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { getGroups } from "@/app/actions/groups";
 import { getActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { hasUnreadAnnouncements } from "@/lib/announcements/announcements";
+import { appVersion } from "@/lib/app-version";
 import { getSessionUser } from "@/lib/auth/require-user";
 import { SESSION_ENDED_PATH, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 import { isOperator } from "@/lib/operators/operators";
@@ -47,6 +48,7 @@ export default async function ProtectedLayout({
           activeGroupSlug={activeGroupSlug}
           hasUnreadAnnouncements={unreadAnnouncements}
           isOperator={isOperator(user)}
+          appVersion={appVersion()}
         />
         <SidebarInset className="min-w-0">
           {/* Below md: a 56px bar (plus hairline) that scrolls away, with a flush,

@@ -117,9 +117,11 @@ type AppSidebarProps = {
   hasUnreadAnnouncements: boolean;
   /** Whether the User is an Operator, so the sidebar shows Drift. */
   isOperator: boolean;
+  /** The running version, from appVersion() on the server. */
+  appVersion: string;
 };
 
-export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, isOperator }: AppSidebarProps) {
+export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, isOperator, appVersion }: AppSidebarProps) {
   const pathname = usePathname();
   const [isLoggingOut, startLogOutTransition] = useTransition();
   const tenantSlug = tenantSlugFromPathname(pathname);
@@ -242,7 +244,7 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, is
             hasUnread={hasUnreadAnnouncements}
             isActive={isAtOrUnder(pathname, ANNOUNCEMENTS_PATH)}
           />
-          <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} />
+          <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} appVersion={appVersion} />
           <NavItem
             href={PRIVACY_POLICY_PATH}
             label="Integritetspolicy"
@@ -256,6 +258,9 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, is
             isActive={false}
           />
         </SidebarMenu>
+        <p className="px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+          Version {appVersion}
+        </p>
       </SidebarFooter>
     </Sidebar>
   );
