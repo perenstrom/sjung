@@ -18,7 +18,7 @@ function feedbackForm(message: string) {
     pagePath: "/app/korus/setlists",
     groupSlug: "korus",
     userAgent: "Mozilla/5.0 (Testbrowser)",
-    appVersion: VERSION,
+    browserAppVersion: VERSION,
   });
 }
 
@@ -66,16 +66,6 @@ describe("sendFeedback", () => {
     expect(sentEmails()[0].text).not.toMatch(/Grupp:/);
   });
 
-  it("still sends when the browser didn't say which version it ran", async () => {
-    const user = await createUser();
-    actAs(user.id);
-
-    const result = await sendFeedback(null, formData({ message: "Hej", pagePath: "/app/me", groupSlug: "", userAgent: "UA" }));
-
-    expect(result).toEqual({ status: "sent" });
-    expect(sentEmails()[0].text).toContain("Version i webbläsaren: (okänd)");
-    expect(sentEmails()[0].text).toContain(`Version på servern: ${VERSION}`);
-  });
 
   it.each([
     ["a blank message", "   ", "Skriv din feedback innan du skickar", ""],

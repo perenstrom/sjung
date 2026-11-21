@@ -29,7 +29,7 @@ export type FeedbackForm = {
    * The version the browser's page showed (see appVersion()), empty when
    * unknown. Untrusted: only ever shown as text, never used for logic.
    */
-  appVersion: string;
+  browserAppVersion: string;
 };
 
 export type ParseFeedbackFormResult =
@@ -58,7 +58,7 @@ export function parseFeedbackForm(formData: FormData): ParseFeedbackFormResult {
       pagePath: contextField(formData, "pagePath"),
       groupSlug: contextField(formData, "groupSlug") || null,
       userAgent: contextField(formData, "userAgent"),
-      appVersion: contextField(formData, "appVersion", APP_VERSION_MAX_LENGTH),
+      browserAppVersion: contextField(formData, "browserAppVersion", APP_VERSION_MAX_LENGTH),
     },
   };
 }

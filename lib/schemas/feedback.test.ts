@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { FEEDBACK_MAX_LENGTH, parseFeedbackForm } from "@/lib/schemas/feedback";
 import { formData } from "@/__tests__/support/form-data";
 
-const context = { pagePath: "/app/korus/setlists", groupSlug: "korus", userAgent: "Firefox", appVersion: "0.2.0 · a1b2c3d" };
+const context = { pagePath: "/app/korus/setlists", groupSlug: "korus", userAgent: "Firefox", browserAppVersion: "0.2.0 · a1b2c3d" };
 
 describe("parseFeedbackForm", () => {
   it("trims the message and reads the page context", () => {
@@ -16,7 +16,7 @@ describe("parseFeedbackForm", () => {
   it("treats a missing or empty Group slug as none", () => {
     const result = parseFeedbackForm(formData({ message: "Hej", pagePath: "/app/me", groupSlug: "", userAgent: "" }));
 
-    expect(result).toMatchObject({ success: true, data: { groupSlug: null, userAgent: "", appVersion: "" } });
+    expect(result).toMatchObject({ success: true, data: { groupSlug: null, userAgent: "", browserAppVersion: "" } });
   });
 
   it("rejects a blank message, keeping what was typed trimmed", () => {
@@ -57,8 +57,8 @@ describe("parseFeedbackForm", () => {
   });
 
   it("trims the browser's app version and caps it at 64 characters", () => {
-    const result = parseFeedbackForm(formData({ message: "Hej", ...context, appVersion: `  ${"v".repeat(100)}  ` }));
+    const result = parseFeedbackForm(formData({ message: "Hej", ...context, browserAppVersion: `  ${"v".repeat(100)}  ` }));
 
-    expect(result).toMatchObject({ success: true, data: { appVersion: "v".repeat(64) } });
+    expect(result).toMatchObject({ success: true, data: { browserAppVersion: "v".repeat(64) } });
   });
 });

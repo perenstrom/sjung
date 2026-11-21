@@ -72,7 +72,7 @@ export function FeedbackDialog({ pagePath, groupSlug, appVersion }: FeedbackDial
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="pagePath" value={pagePath} />
             <input type="hidden" name="groupSlug" value={groupSlug ?? ""} />
-            <input type="hidden" name="appVersion" value={appVersion} />
+            <input type="hidden" name="browserAppVersion" value={appVersion} />
             <input
               type="hidden"
               name="userAgent"
