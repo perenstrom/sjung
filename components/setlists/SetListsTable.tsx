@@ -165,21 +165,8 @@ function SetListRowActions({
 }) {
   return (
     <>
-      <EditSetListDialog
-        groupSlug={groupSlug}
-        setList={{
-          id: setList.id,
-          name: setList.name,
-          date: setList.date,
-          current: setList.current,
-        }}
-        trigger={trigger}
-      />
-      <DeleteSetListDialog
-        groupSlug={groupSlug}
-        setList={{ id: setList.id, name: setList.name }}
-        trigger={trigger}
-      />
+      <EditSetListDialog groupSlug={groupSlug} setList={setList} trigger={trigger} />
+      <DeleteSetListDialog groupSlug={groupSlug} setList={setList} trigger={trigger} />
     </>
   );
 }
