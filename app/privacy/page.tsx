@@ -10,7 +10,7 @@ function ContactLink() {
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalPage title="Integritetspolicy" lastUpdated="14 november 2026">
+    <LegalPage title="Integritetspolicy" lastUpdated="21 november 2026">
       <p>
         Här beskriver vi vilka personuppgifter Sjung sparar, varför, vilka som hjälper oss att hantera dem och hur du
         får dem raderade. Reglerna för att använda tjänsten står i{" "}
@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
         </li>
         <li>
           <strong>Gruppens innehåll:</strong> det gruppens medlemmar lägger in – noter, repertoarer, länkar,
-          anteckningar och uppladdade filer, och vem som skapade eller senast ändrade dem. Personer i medverkande
+          anteckningar och uppladdade filer, och vem som skapade eller senast ändrade dem. Upphovspersoner
           sparas bara med namn och roll, aldrig med kontaktuppgifter.
         </li>
         <li>
@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
       <h2>Varför vi får spara dem</h2>
       <p>
         Uppgifterna om dig som har ett konto behövs för att ge dig tjänsten du har registrerat dig för (avtal).
-        E-postadresser till inbjudna som inte har något konto, och namn på personer i medverkande, sparas för att gruppen har
+        E-postadresser till inbjudna som inte har något konto, och namn på upphovspersoner, sparas för att gruppen har
         ett berättigat intresse av att kunna bjuda in nya medlemmar och hålla ordning på sina noter.
       </p>
 

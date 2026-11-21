@@ -33,7 +33,7 @@ import type { Person } from "@/types/piece-credit-dialog";
 const FIRST_LINE_CLASS = "flex min-h-8 items-center";
 const LIST_CELL_OFFSET_CLASS = "pt-0.5";
 
-// A Running-order note row's text spans the Namn, Medverkande, Anteckningar
+// A Running-order note row's text spans the Namn, Upphovspersoner, Anteckningar
 // and Filer och länkar columns.
 const RUNNING_ORDER_NOTE_COL_SPAN = 4;
 
@@ -255,7 +255,7 @@ export function PiecesTable({
       {
         id: "credits",
         enableSorting: false,
-        header: () => "Medverkande",
+        header: () => "Upphovspersoner",
         cell: pieceCell((piece) => {
           return (
             <div className={cn(LIST_COLUMN_WIDTH_CLASS, "flex items-start gap-2 whitespace-normal")}>

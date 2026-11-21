@@ -6,7 +6,7 @@ import type { ImportChoices } from "@/lib/pieces/import";
 import { personNameSchema } from "@/lib/schemas/people";
 import { formDataString } from "@/lib/schemas/form-data";
 
-const INVALID_CREDITS_ERROR = "Ogiltigt format för medverkande";
+const INVALID_CREDITS_ERROR = "Ogiltigt format för upphovspersoner";
 
 export function parsePieceNameFromFormData(formData: FormData): string {
   const result = personNameSchema.safeParse(formDataString(formData, "name"));

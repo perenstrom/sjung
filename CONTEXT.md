@@ -84,8 +84,8 @@ The free-text label on a File or Link saying what kind of resource it is. A File
 _Avoid_: Tag (a File or Link has only one), Type (clashes with the file's format).
 
 **Credit**:
-A role-tagged link between a Person and a Piece. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Medverkande_.
-_Avoid_: Role on its own — always say "Credit role" to avoid confusion with anything membership-related.
+A role-tagged link between a Person and a Piece. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Upphovspersoner_ — a Piece's Credits are listed under that heading.
+_Avoid_: Role on its own — always say "Credit role" to avoid confusion with anything membership-related. _Medverkande_, which in a choir reads as the performers.
 
 **Credit role**:
 The free-text label on a Credit saying what the Person did for the Piece. Each Group uses its own vocabulary: a Group's Credit roles are simply those on its Credits — there is no separate list of them, so a Credit role nobody holds any more is gone. Two Credit roles are the same if they differ only in letter case or spacing; the spelling already in use wins. Three are built in and always offered, even to a Group that has never used them — Arrangör (arranger), Kompositör (composer), Textförfattare (lyricist) — and they rank first, in that order, ahead of every other Credit role in alphabetical order. That ranking also orders the People on a Piece, by their highest-ranked Credit role. Swedish UI: _Roll_.

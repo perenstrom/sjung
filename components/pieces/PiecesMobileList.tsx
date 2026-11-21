@@ -138,7 +138,7 @@ export function PiecesMobileList({
                     <PieceAliasesLine aliases={matchingAliases?.get(piece.id) ?? []} className="truncate" />
                   </>
                 }
-                // Edit mode lists the credits in its Medverkande section instead.
+                // Edit mode lists the credits in its Upphovspersoner section instead.
                 secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
               >
                 <PieceRowDetails
@@ -268,7 +268,7 @@ function PieceEditSections({
       </section>
       <section className="space-y-1">
         <div className="flex items-center justify-between gap-2">
-          <SectionHeading>Medverkande</SectionHeading>
+          <SectionHeading>Upphovspersoner</SectionHeading>
           <AddPieceCreditPopover
             people={people}
             creditRoles={creditRoles}

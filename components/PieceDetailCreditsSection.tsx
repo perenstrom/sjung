@@ -40,9 +40,9 @@ function PieceDetailCreditsBody({
   creditRoles,
 }: PieceDetailCreditsSectionProps & { readOnly: boolean }) {
   return (
-    <PieceDetailSectionLayout title="Medverkande">
+    <PieceDetailSectionLayout title="Upphovspersoner">
       {credits.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+        <p className="text-sm text-muted-foreground">Inga upphovspersoner tillagda ännu.</p>
       ) : readOnly ? (
         <PieceCreditsList
           credits={credits}

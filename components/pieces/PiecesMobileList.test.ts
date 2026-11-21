@@ -231,7 +231,7 @@ describe("PieceRowDetails, an open piece row", () => {
     it("starts with a Namn section that offers to rename the piece", () => {
       const html = renderDetails(true);
 
-      expect(textOf(html)).toMatch(/^Namn\s*Vem kan segla\s*Medverkande/);
+      expect(textOf(html)).toMatch(/^Namn\s*Vem kan segla\s*Upphovspersoner/);
       expect(html).toContain('aria-label="Byt namn på Vem kan segla"');
     });
 

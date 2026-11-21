@@ -4,7 +4,7 @@ import { PRIVACY_POLICY_PATH } from "@/lib/legal/routes";
 
 export default function TermsOfUsePage() {
   return (
-    <LegalPage title="Användarvillkor" lastUpdated="14 november 2026">
+    <LegalPage title="Användarvillkor" lastUpdated="21 november 2026">
       <p>
         Sjung är ett notbibliotek för körer och andra grupper. Genom att skapa ett konto godkänner du de här
         villkoren. Hur vi hanterar personuppgifter står i vår{" "}
@@ -16,7 +16,7 @@ export default function TermsOfUsePage() {
           och att du har köpt ett tryckt exemplar betyder inte alltid att du får skanna in och lagra det.
         </li>
         <li>
-          Lägg bara in uppgifter om andra – personer i medverkande, e-postadresser du bjuder in och anteckningar –
+          Lägg bara in uppgifter om andra – upphovspersoner, e-postadresser du bjuder in och anteckningar –
           när gruppens arbete behöver dem. Du ansvarar för det du lägger in.
         </li>
         <li>

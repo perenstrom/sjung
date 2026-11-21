@@ -25,7 +25,7 @@ describe("DeletePersonWarning", () => {
         { pieceId: "kyrie", name: "Kyrie" },
       ])
     ).toBe(
-      "Hugo Alfvén tas bort permanent, och tas då också bort som medverkande på de här styckena:" +
+      "Hugo Alfvén tas bort permanent, och tas då också bort som upphovsperson på de här styckena:" +
         "Ave MariaKyrieDetta går inte att ångra."
     );
   });

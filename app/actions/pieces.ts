@@ -360,7 +360,7 @@ export async function removePersonCredits(formData: FormData) {
     });
 
     if (count === 0) {
-      throw new Error("Medverkande hittades inte");
+      throw new Error("Upphovspersonen finns inte på stycket");
     }
 
     await revalidatePieceRoutes(groupSlug, piece.id);

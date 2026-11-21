@@ -111,10 +111,10 @@ export function CreatePieceDialog({
           </div>
 
           <div className="space-y-3">
-            <Label>Medverkande</Label>
+            <Label>Upphovspersoner</Label>
 
             {credits.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+              <p className="text-sm text-muted-foreground">Inga upphovspersoner tillagda ännu.</p>
             ) : (
               <PieceCreditsList
                 credits={credits}
