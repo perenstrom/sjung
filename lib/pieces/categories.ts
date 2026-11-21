@@ -1,3 +1,5 @@
+import { swedishNumericCollator } from "@/lib/data-table/sorting";
+import { labelForLink, type NamedLink } from "@/lib/pieces/linkLabel";
 import { matchKey } from "@/lib/text/match-key";
 import { createVocabulary } from "@/lib/text/vocabulary";
 
@@ -32,43 +34,63 @@ export function resolveCategory(typed: string, groupCategories: readonly string[
   return categories.resolve(typed, groupCategories);
 }
 
+/** A File or a Link in a Category group. */
+export type CategoryEntry<F, L> = { kind: "file"; file: F } | { kind: "link"; link: L };
+
 export type CategoryGroup<F, L> = {
   /**
    * The Category, `UNCATEGORIZED_HEADING` for the uncategorized, or `null`
    * when nothing has a Category and the one list goes without a heading.
    */
   heading: string | null;
-  files: F[];
-  links: L[];
+  /** Files and Links together, alphabetically by name, a File before a Link of the same name. */
+  entries: CategoryEntry<F, L>[];
 };
+
+type Groupable = { id: string; category: string | null };
 
 /**
  * A Piece's Files and Links under their Categories, in ranking order with the
- * uncategorized last, each list keeping its order. When nothing has a
- * Category, they are one list without a heading. Empty groups are left out.
+ * uncategorized last. Each group is one list of Files and Links together,
+ * sorted alphabetically by the name each shows (a File's `displayName`, a
+ * Link's `labelForLink`) in Swedish order with numbers by value, a File
+ * before a Link of the same name. When nothing has a Category, they are one
+ * list without a heading. Empty groups are left out.
  */
-export function groupByCategory<F extends { category: string | null }, L extends { category: string | null }>(
+export function groupByCategory<F extends Groupable & { displayName: string }, L extends Groupable & NamedLink>(
   files: readonly F[],
   links: readonly L[]
 ): CategoryGroup<F, L>[] {
-  const used = [...files, ...links].flatMap((item) => (item.category === null ? [] : [item.category]));
+  // Sorted with `id` breaking the last tie, so the order and the spelling of
+  // each heading don't depend on the order the database returns them in.
+  const sorted = [
+    ...files.map((file) => ({ entry: { kind: "file" as const, file }, item: file, name: file.displayName })),
+    ...links.map((link) => ({ entry: { kind: "link" as const, link }, item: link, name: labelForLink(link) })),
+  ].sort(
+    (a, b) =>
+      swedishNumericCollator.compare(a.name, b.name) ||
+      Number(a.entry.kind === "link") - Number(b.entry.kind === "link") ||
+      (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0)
+  );
+
+  const entriesOf = (inGroup: (category: string | null) => boolean): CategoryEntry<F, L>[] =>
+    sorted.filter(({ item }) => inGroup(item.category)).map(({ entry }) => entry);
+
+  const used = sorted.flatMap(({ item }) => (item.category === null ? [] : [item.category]));
   if (used.length === 0) {
-    return files.length > 0 || links.length > 0 ? [{ heading: null, files: [...files], links: [...links] }] : [];
+    return sorted.length > 0 ? [{ heading: null, entries: entriesOf(() => true) }] : [];
   }
 
   // Only the Categories in use, in ranking order, each once.
   const usedKeys = new Set(used.map(matchKey));
   const headings = rankCategories(used).filter((category) => usedKeys.has(matchKey(category)));
 
-  const groups = [...headings, null].map((category) => {
-    const key = category === null ? null : matchKey(category);
-    const inGroup = (item: { category: string | null }) =>
-      (item.category === null ? null : matchKey(item.category)) === key;
+  const groups = [...headings, null].map((heading) => {
+    const key = heading === null ? null : matchKey(heading);
     return {
-      heading: category ?? UNCATEGORIZED_HEADING,
-      files: files.filter(inGroup),
-      links: links.filter(inGroup),
+      heading: heading ?? UNCATEGORIZED_HEADING,
+      entries: entriesOf((category) => (category === null ? null : matchKey(category)) === key),
     };
   });
-  return groups.filter((group) => group.files.length > 0 || group.links.length > 0);
+  return groups.filter((group) => group.entries.length > 0);
 }

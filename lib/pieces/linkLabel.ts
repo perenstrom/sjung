@@ -1,7 +1,5 @@
-import type { PieceLink } from "./types";
-
 /** What a Link's name and metadata are made from. */
-type NamedLink = Pick<PieceLink, "url" | "label">;
+export type NamedLink = { url: string; label: string | null };
 
 function hasLabel(link: NamedLink): link is NamedLink & { label: string } {
   return link.label !== null && link.label.trim() !== "";
