@@ -65,31 +65,39 @@ function shownSequence(html: string): string[] {
 }
 
 describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (layout) => {
-  it("lists Files before Links without headings when nothing has a Category", () => {
-    expect(shownSequence(render(layout, [file("Sopran.pdf")], [link("Inspelning")]))).toEqual([
-      "Sopran.pdf",
-      "Inspelning",
-    ]);
-  });
-
-  it("shows a heading per Category in ranking order, Files before Links, Övrigt last", () => {
+  it("lists Files and Links together by name without headings when nothing has a Category", () => {
     const html = render(
       layout,
-      [file("Sopran.pdf", "Inspelningar"), file("Alt.pdf"), file("Tenor.pdf", "Noter")],
-      [link("Inspelning", "Inspelningar"), link("Text")]
+      [file("sopran.pdf"), file("Alt.pdf")],
+      [link("Bas"), { id: "l2", url: "https://www.youtube.com/watch", label: null, category: null }]
     );
 
-    expect(shownSequence(html)).toEqual([
-      "### Noter",
-      "Tenor.pdf",
-      "### Inspelningar",
-      "Sopran.pdf",
-      "Inspelning",
-      "### Övrigt",
-      "Alt.pdf",
-      "Text",
-    ]);
+    expect(shownSequence(html)).toEqual(["Alt.pdf", "Bas", "sopran.pdf", "www.youtube.com"]);
   });
+
+  it.each([false, true])(
+    "shows a heading per Category in ranking order, each sorted by name, Övrigt last (Edit mode: %s)",
+    (editing) => {
+      const html = render(
+        layout,
+        [file("Sopran.pdf", "Inspelningar"), file("Text.pdf"), file("Tenor.pdf", "Noter")],
+        [link("Alt", "Inspelningar"), link("Annat")],
+        { editing }
+      );
+
+      expect(shownSequence(html)).toEqual([
+        "### Noter",
+        "Tenor.pdf",
+        "### Inspelningar",
+        "Alt",
+        "Sopran.pdf",
+        "### Övrigt",
+        "Annat",
+        "Text.pdf",
+        ...(editing ? ["[add]"] : []),
+      ]);
+    }
+  );
 
   it.each([
     { case: "nothing has a Category", category: null, expected: ["Sopran.pdf"] },

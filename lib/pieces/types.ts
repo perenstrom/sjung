@@ -22,12 +22,9 @@ export const pieceWithRelationsInclude = {
       person: { select: { name: true } },
     },
   },
-  files: {
-    orderBy: { createdAt: "desc" },
-  },
-  links: {
-    orderBy: { createdAt: "desc" },
-  },
+  // Unordered: `groupByCategory` sorts them by name for display.
+  files: true,
+  links: true,
   // Text only: the list shows no author or date, those stay on piece detail.
   notes: {
     orderBy: { updatedAt: "desc" },
@@ -85,7 +82,6 @@ export const pieceDetailSelect = {
   links: {
     select: {
       id: true,
-      createdAt: true,
       url: true,
       label: true,
       category: true,

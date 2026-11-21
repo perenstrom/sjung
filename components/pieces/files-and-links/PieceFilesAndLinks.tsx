@@ -11,6 +11,7 @@ import { AddPieceFileRow } from "@/components/pieces/AddPieceFileRow";
 import { AddPieceLinkPopover } from "@/components/pieces/AddPieceLinkPopover";
 import { AddPieceLinkRow } from "@/components/pieces/AddPieceLinkRow";
 import { CategoryHeading } from "@/components/pieces/CategoryHeading";
+import { labelForLink } from "@/components/pieces/linkLabel";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { groupByCategory } from "@/lib/pieces/categories";
 import { cn } from "@/lib/utils";
@@ -36,9 +37,9 @@ type PieceFilesAndLinksProps = {
 
 /**
  * A Piece's Files and Links under their Categories (see Category in
- * CONTEXT.md), Files before Links in each. In Edit mode it offers adding,
- * renaming, replacing, editing and removing them, with one editor open at a
- * time for the Piece. Leaving or entering Edit mode closes any editor.
+ * CONTEXT.md), each group one list sorted by name. In Edit mode it offers
+ * adding, renaming, replacing, editing and removing them, with one editor
+ * open at a time for the Piece. Leaving or entering Edit mode closes any editor.
  */
 export function PieceFilesAndLinks(props: PieceFilesAndLinksProps) {
   const { isEditing } = useEditMode();
@@ -98,7 +99,10 @@ function Body({
     onRefresh: () => router.refresh(),
   };
 
-  const groups = groupByCategory(filesAndLinks.files, filesAndLinks.links);
+  const groups = groupByCategory(filesAndLinks.files, filesAndLinks.links, {
+    file: (file) => file.displayName,
+    link: labelForLink,
+  });
   const rowProps = (kind: "file" | "link", id: string) => ({
     ctx,
     removing: removing.has(`${kind}:${id}`),
@@ -106,28 +110,19 @@ function Body({
     onRemove: () => void remove(kind, id),
   });
 
-  const lists = (group: (typeof groups)[number]) => {
-    const listClass =
-      layout === "inline" ? cn("min-w-0 text-sm", isEditing && !touch && "space-y-2") : "space-y-2 text-sm";
-    return (
-      <>
-        {group.files.length > 0 ? (
-          <ul className={listClass}>
-            {group.files.map((file) => (
-              <FileRow key={file.id} item={file} {...rowProps("file", file.id)} />
-            ))}
-          </ul>
-        ) : null}
-        {group.links.length > 0 ? (
-          <ul className={listClass}>
-            {group.links.map((link) => (
-              <LinkRow key={link.id} item={link} {...rowProps("link", link.id)} />
-            ))}
-          </ul>
-        ) : null}
-      </>
-    );
-  };
+  const list = (group: (typeof groups)[number]) => (
+    <ul
+      className={layout === "inline" ? cn("min-w-0 text-sm", isEditing && !touch && "space-y-2") : "space-y-2 text-sm"}
+    >
+      {group.entries.map((entry) =>
+        entry.kind === "file" ? (
+          <FileRow key={`file:${entry.file.id}`} item={entry.file} {...rowProps("file", entry.file.id)} />
+        ) : (
+          <LinkRow key={`link:${entry.link.id}`} item={entry.link} {...rowProps("link", entry.link.id)} />
+        )
+      )}
+    </ul>
+  );
 
   if (layout === "inline") {
     const editorProps = (target: EditorTarget) => ({
@@ -147,7 +142,7 @@ function Body({
         {groups.map((group) => (
           <div key={group.heading ?? ""}>
             {group.heading === null ? null : <CategoryHeading>{group.heading}</CategoryHeading>}
-            <div className="flex flex-col gap-1">{lists(group)}</div>
+            {list(group)}
           </div>
         ))}
         {isEditing ? (
@@ -175,12 +170,12 @@ function Body({
           {groups.map((group) => (
             <div key={group.heading} className="space-y-1">
               <CategoryHeading as="h3">{group.heading}</CategoryHeading>
-              <div className="space-y-2">{lists(group)}</div>
+              {list(group)}
             </div>
           ))}
         </div>
       ) : (
-        <div className="space-y-2">{lists(groups[0])}</div>
+        list(groups[0])
       )}
       {isEditing ? (
         // Errors come from editing, so they show with the add rows.
