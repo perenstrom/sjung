@@ -19,6 +19,7 @@ import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { compareCaseInsensitive } from "@/lib/data-table/sorting";
+import { CREDITS_HEADING } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
 import { searchPieces } from "@/lib/pieces/search";
@@ -255,7 +256,7 @@ export function PiecesTable({
       {
         id: "credits",
         enableSorting: false,
-        header: () => "Upphovspersoner",
+        header: () => CREDITS_HEADING,
         cell: pieceCell((piece) => {
           return (
             <div className={cn(LIST_COLUMN_WIDTH_CLASS, "flex items-start gap-2 whitespace-normal")}>
