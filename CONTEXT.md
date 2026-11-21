@@ -99,6 +99,10 @@ _Avoid_: Bulk add, Upload — no file is uploaded; the rows are pasted.
 An ordered rehearsal/performance program for a Group: an interleaved sequence of Set list pieces and Running-order notes. Swedish UI: _Repertoar_ / _Repertoarer_.
 _Avoid_: Repertoire (English) — keep "Set list" as the English name even though the Swedish UI says _Repertoar_; Program.
 
+**Current**:
+A Set list the Group is working on right now. Any number of a Group's Set lists can be Current at once. Only a Member who can manage content marks or unmarks it, and it never ends on its own: a Set list stays Current until someone unmarks it, even after its date has passed. Current Set lists come first in the Set lists list's default order. Swedish UI: _Aktuell_.
+_Avoid_: Active, Featured, Pinned.
+
 **Set list step**:
 One entry in a Set list's running order: either a Set list piece or a Running-order note. Steps of both kinds share one order; only their relative order matters, not the numbers stored for it. A newly added step goes last. Swedish UI: _Ordning_ (the running order as a whole).
 _Avoid_: Item, Entry, Slot.

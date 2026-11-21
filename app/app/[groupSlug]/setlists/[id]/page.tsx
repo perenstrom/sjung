@@ -10,6 +10,7 @@ import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
 import { PageHeader } from "@/components/PageHeader";
+import { SetListName } from "@/components/setlists/SetListName";
 import { PieceCategoriesProvider } from "@/components/pieces/CategoryPicker";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
 import { AddPieceToSetListForm } from "@/components/AddPieceToSetListForm";
@@ -59,7 +60,9 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
             }}
           />
           <div className="space-y-2">
-            <PageHeader title={setList.name} />
+            <PageHeader
+              title={<SetListName current={setList.current}>{setList.name}</SetListName>}
+            />
             <p className="text-sm text-muted-foreground">Datum: {formatDate(setList.date) ?? "–"}</p>
           </div>
 

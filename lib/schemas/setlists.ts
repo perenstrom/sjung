@@ -63,6 +63,11 @@ export function parseSetListNoteContentFromFormData(formData: FormData): string 
   return result.data;
 }
 
+/** The Aktuell checkbox: a checked box submits a value, an unchecked one submits nothing. */
+export function parseSetListCurrentFromFormData(formData: FormData): boolean {
+  return formData.has("current");
+}
+
 export function parseOptionalSetListDateFromFormData(formData: FormData): Date | null {
   const raw = formDataString(formData, "date").trim();
   if (raw === "") {
