@@ -66,13 +66,9 @@ function shownSequence(html: string): string[] {
 
 describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (layout) => {
   it("lists Files and Links together by name without headings when nothing has a Category", () => {
-    const html = render(
-      layout,
-      [file("sopran.pdf"), file("Alt.pdf")],
-      [link("Bas"), { id: "l2", url: "https://www.youtube.com/watch", label: null, category: null }]
-    );
+    const html = render(layout, [file("sopran.pdf"), file("Alt.pdf")], [link("Bas")]);
 
-    expect(shownSequence(html)).toEqual(["Alt.pdf", "Bas", "sopran.pdf", "www.youtube.com"]);
+    expect(shownSequence(html)).toEqual(["Alt.pdf", "Bas", "sopran.pdf"]);
   });
 
   it.each([false, true])(

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 import { EditPieceLinkPopover } from "@/components/pieces/EditPieceLinkPopover";
 import { metadataForFile } from "@/components/pieces/fileMetadata";
-import { labelForLink, metadataForLink } from "@/components/pieces/linkLabel";
+import { labelForLink, metadataForLink } from "@/lib/pieces/linkLabel";
 import { splitForMiddleTruncation } from "@/components/pieces/middleTruncation";
 import { RenamePieceFilePopover } from "@/components/pieces/RenamePieceFilePopover";
 import { ReplacePieceFilePopover } from "@/components/pieces/ReplacePieceFilePopover";

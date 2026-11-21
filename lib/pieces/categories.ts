@@ -1,4 +1,5 @@
 import { swedishNumericCollator } from "@/lib/data-table/sorting";
+import { labelForLink, type NamedLink } from "@/lib/pieces/linkLabel";
 import { matchKey } from "@/lib/text/match-key";
 import { createVocabulary } from "@/lib/text/vocabulary";
 
@@ -46,28 +47,25 @@ export type CategoryGroup<F, L> = {
   entries: CategoryEntry<F, L>[];
 };
 
-/** The name a File or Link shows, which its group is sorted by. */
-export type NameOf<F, L> = { file: (file: F) => string; link: (link: L) => string };
-
 type Groupable = { id: string; category: string | null };
 
 /**
  * A Piece's Files and Links under their Categories, in ranking order with the
  * uncategorized last. Each group is one list of Files and Links together,
- * sorted alphabetically by the name each shows (Swedish order, numbers by
- * value), a File before a Link of the same name. When nothing has a Category,
- * they are one list without a heading. Empty groups are left out.
+ * sorted alphabetically by the name each shows (a File's `displayName`, a
+ * Link's `labelForLink`) in Swedish order with numbers by value, a File
+ * before a Link of the same name. When nothing has a Category, they are one
+ * list without a heading. Empty groups are left out.
  */
-export function groupByCategory<F extends Groupable, L extends Groupable>(
+export function groupByCategory<F extends Groupable & { displayName: string }, L extends Groupable & NamedLink>(
   files: readonly F[],
-  links: readonly L[],
-  nameOf: NameOf<F, L>
+  links: readonly L[]
 ): CategoryGroup<F, L>[] {
   // Sorted with `id` breaking the last tie, so the order and the spelling of
   // each heading don't depend on the order the database returns them in.
   const sorted = [
-    ...files.map((file) => ({ entry: { kind: "file" as const, file }, item: file, name: nameOf.file(file) })),
-    ...links.map((link) => ({ entry: { kind: "link" as const, link }, item: link, name: nameOf.link(link) })),
+    ...files.map((file) => ({ entry: { kind: "file" as const, file }, item: file, name: file.displayName })),
+    ...links.map((link) => ({ entry: { kind: "link" as const, link }, item: link, name: labelForLink(link) })),
   ].sort(
     (a, b) =>
       swedishNumericCollator.compare(a.name, b.name) ||

@@ -11,7 +11,6 @@ import { AddPieceFileRow } from "@/components/pieces/AddPieceFileRow";
 import { AddPieceLinkPopover } from "@/components/pieces/AddPieceLinkPopover";
 import { AddPieceLinkRow } from "@/components/pieces/AddPieceLinkRow";
 import { CategoryHeading } from "@/components/pieces/CategoryHeading";
-import { labelForLink } from "@/components/pieces/linkLabel";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { groupByCategory } from "@/lib/pieces/categories";
 import { cn } from "@/lib/utils";
@@ -99,10 +98,7 @@ function Body({
     onRefresh: () => router.refresh(),
   };
 
-  const groups = groupByCategory(filesAndLinks.files, filesAndLinks.links, {
-    file: (file) => file.displayName,
-    link: labelForLink,
-  });
+  const groups = groupByCategory(filesAndLinks.files, filesAndLinks.links);
   const rowProps = (kind: "file" | "link", id: string) => ({
     ctx,
     removing: removing.has(`${kind}:${id}`),

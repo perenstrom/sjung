@@ -39,23 +39,25 @@ describe("rankCategories", () => {
 });
 
 describe("groupByCategory", () => {
-  type Item = { id: string; name: string; category: string | null };
-  // Files and Links look alike here; which list an Item is passed in makes it one or the other.
-  const item = (name: string, category: string | null = null, id = name): Item => ({ id, name, category });
-  const [file, link] = [item, item];
-  const nameOf = { file: (f: Item) => f.name, link: (l: Item) => l.name };
+  const file = (name: string, category: string | null = null, id = name) => ({ id, displayName: name, category });
+  const link = (name: string, category: string | null = null) => ({
+    id: name,
+    url: "https://example.com",
+    label: name,
+    category,
+  });
 
   /** Each group as its heading and its entries as "file:name" / "link:name". */
-  const shown = (files: Item[], links: Item[]) =>
-    groupByCategory(files, links, nameOf).map((group) => ({
+  const shown = (files: ReturnType<typeof file>[], links: ReturnType<typeof link>[]) =>
+    groupByCategory(files, links).map((group) => ({
       heading: group.heading,
       entries: group.entries.map((entry) =>
-        entry.kind === "file" ? `file:${entry.file.name}` : `link:${entry.link.name}`
+        entry.kind === "file" ? `file:${entry.file.displayName}` : `link:${entry.link.label}`
       ),
     }));
 
   it("is empty for a Piece without Files or Links", () => {
-    expect(groupByCategory([], [], nameOf)).toEqual([]);
+    expect(groupByCategory([], [])).toEqual([]);
   });
 
   it("is one list without a heading, Files and Links sorted together by name, when nothing has a Category", () => {
@@ -78,6 +80,14 @@ describe("groupByCategory", () => {
     ]);
   });
 
+  it("names an unlabelled Link by its hostname", () => {
+    const unlabelled = { id: "l", url: "https://www.youtube.com/watch", label: null, category: null };
+    const entries = groupByCategory([file("Kör"), file("Alt")], [unlabelled])[0].entries;
+
+    // By its URL it would sort at "h", before "Kör"; by its hostname it sorts at "w".
+    expect(entries.map((entry) => entry.kind)).toEqual(["file", "file", "link"]);
+  });
+
   it("puts a File before a Link of the same name, ignoring case", () => {
     expect(shown([file("sopran")], [link("Sopran")])[0].entries).toEqual(["file:sopran", "link:Sopran"]);
     expect(shown([file("Sopran")], [link("sopran")])[0].entries).toEqual(["file:Sopran", "link:sopran"]);
@@ -85,8 +95,8 @@ describe("groupByCategory", () => {
 
   it("orders Files of the same name the same way whatever order they come in", () => {
     const [a, b] = [file("Alt", null, "a"), file("alt", null, "b")];
-    const ids = (files: Item[]) =>
-      groupByCategory(files, [], nameOf)[0].entries.map((e) => e.kind === "file" && e.file.id);
+    const ids = (files: ReturnType<typeof file>[]) =>
+      groupByCategory(files, [])[0].entries.map((e) => e.kind === "file" && e.file.id);
 
     expect(ids([b, a])).toEqual(ids([a, b]));
   });
@@ -96,6 +106,11 @@ describe("groupByCategory", () => {
     ["Å, Ä and Ö after Z", ["Älg", "Zebra", "Åsna"], ["Zebra", "Åsna", "Älg"]],
     ["accented letters with their plain ones", ["Ester", "Émile", "Dan"], ["Dan", "Émile", "Ester"]],
   ])("sorts %s", (_case, names, expected) => {
-    expect(shown(names.map((name) => file(name)), [])[0].entries).toEqual(expected.map((name) => `file:${name}`));
+    expect(
+      shown(
+        names.map((name) => file(name)),
+        []
+      )[0].entries
+    ).toEqual(expected.map((name) => `file:${name}`));
   });
 });
