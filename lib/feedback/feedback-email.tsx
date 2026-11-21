@@ -14,7 +14,25 @@ export type FeedbackEmailProps = {
   groupSlug: string | null;
   environment: AppEnvironment;
   userAgent: string;
+  /** The version the sender's browser page showed; untrusted, empty when unknown. */
+  appVersion: string;
+  /** The version the server ran when sending, from appVersion(). */
+  serverAppVersion: string;
 };
+
+const UNKNOWN = "(okänd)";
+
+/**
+ * One line when the sender's page ran what the server runs, otherwise both, so
+ * Feedback from a tab left open across a deploy says which version it was about.
+ */
+function versionDetails(appVersion: string, serverAppVersion: string): Array<[string, string]> {
+  if (appVersion === serverAppVersion) return [["Version", serverAppVersion]];
+  return [
+    ["Version i webbläsaren", appVersion || UNKNOWN],
+    ["Version på servern", serverAppVersion],
+  ];
+}
 
 export function FeedbackEmail({
   message,
@@ -23,13 +41,16 @@ export function FeedbackEmail({
   groupSlug,
   environment,
   userAgent,
+  appVersion,
+  serverAppVersion,
 }: FeedbackEmailProps) {
   const details: Array<[string, string]> = [
     ["Från", `${sender.name} <${sender.email}>`],
-    ["Sida", pagePath || "(okänd)"],
+    ["Sida", pagePath || UNKNOWN],
     ...(groupSlug ? [["Grupp", groupSlug] as [string, string]] : []),
+    ...versionDetails(appVersion, serverAppVersion),
     ["Miljö", environment],
-    ["Webbläsare", userAgent || "(okänd)"],
+    ["Webbläsare", userAgent || UNKNOWN],
   ];
 
   return (

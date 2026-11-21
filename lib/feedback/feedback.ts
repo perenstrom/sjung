@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { getAppEnvironment } from "@/lib/app-environment";
+import { appVersion } from "@/lib/app-version";
 import { emailRecipientFromEnv, sendEmail } from "@/lib/email";
 import { FeedbackEmail, feedbackEmailSubject, type FeedbackSender } from "@/lib/feedback/feedback-email";
 import type { FeedbackForm } from "@/lib/schemas/feedback";
@@ -20,6 +21,7 @@ export async function sendFeedbackEmail(sender: FeedbackSender, feedback: Feedba
       ...feedback,
       sender: { name: sender.name, email: sender.email },
       environment,
+      serverAppVersion: appVersion(),
     }),
   });
 }

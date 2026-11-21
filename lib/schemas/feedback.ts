@@ -9,6 +9,9 @@ export const FEEDBACK_SEND_FAILED = "Kunde inte skicka feedback. Försök igen."
 /** Page context fields come from the browser; capped so a crafted post can't bloat the email. */
 const CONTEXT_MAX_LENGTH = 500;
 
+/** A version is far shorter than other context; anything longer is not one. */
+const APP_VERSION_MAX_LENGTH = 64;
+
 export const feedbackMessageSchema = z
   .string()
   .trim()
@@ -22,14 +25,19 @@ export type FeedbackForm = {
   /** The Group whose pages the dialog was opened on, if any. */
   groupSlug: string | null;
   userAgent: string;
+  /**
+   * The version the browser's page showed (see appVersion()), empty when
+   * unknown. Untrusted: only ever shown as text, never used for logic.
+   */
+  appVersion: string;
 };
 
 export type ParseFeedbackFormResult =
   | { success: true; data: FeedbackForm }
   | { success: false; error: string; values: { message: string } };
 
-function contextField(formData: FormData, field: string): string {
-  return formDataString(formData, field).trim().slice(0, CONTEXT_MAX_LENGTH);
+function contextField(formData: FormData, field: string, maxLength = CONTEXT_MAX_LENGTH): string {
+  return formDataString(formData, field).trim().slice(0, maxLength);
 }
 
 export function parseFeedbackForm(formData: FormData): ParseFeedbackFormResult {
@@ -50,6 +58,7 @@ export function parseFeedbackForm(formData: FormData): ParseFeedbackFormResult {
       pagePath: contextField(formData, "pagePath"),
       groupSlug: contextField(formData, "groupSlug") || null,
       userAgent: contextField(formData, "userAgent"),
+      appVersion: contextField(formData, "appVersion", APP_VERSION_MAX_LENGTH),
     },
   };
 }

@@ -7,8 +7,10 @@ import { failEmailsTo, sentEmails } from "../support/fake-email";
 import { formData } from "../support/form-data";
 import { actAs, actAsAnonymous } from "../support/session";
 import { sendFeedback } from "@/app/actions/feedback";
+import packageJson from "@/package.json";
 
 const FEEDBACK_INBOX = "feedback@sjung.test";
+const VERSION = `${packageJson.version} · a1b2c3d`;
 
 function feedbackForm(message: string) {
   return formData({
@@ -16,12 +18,14 @@ function feedbackForm(message: string) {
     pagePath: "/app/korus/setlists",
     groupSlug: "korus",
     userAgent: "Mozilla/5.0 (Testbrowser)",
+    appVersion: VERSION,
   });
 }
 
 beforeEach(() => {
   vi.stubEnv("FEEDBACK_EMAIL_TO", FEEDBACK_INBOX);
   vi.stubEnv("APP_ENV", "staging");
+  vi.stubEnv("APP_COMMIT", "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678");
 });
 
 afterEach(() => {
@@ -50,6 +54,7 @@ describe("sendFeedback", () => {
     expect(email.text).toContain("korus");
     expect(email.text).toContain("staging");
     expect(email.text).toContain("Mozilla/5.0 (Testbrowser)");
+    expect(email.text).toContain(`Version: ${VERSION}`);
   });
 
   it("leaves the Group out when the page isn't inside one", async () => {
@@ -59,6 +64,17 @@ describe("sendFeedback", () => {
     await sendFeedback(null, formData({ message: "Hej", pagePath: "/app/me/groups", groupSlug: "", userAgent: "UA" }));
 
     expect(sentEmails()[0].text).not.toMatch(/Grupp:/);
+  });
+
+  it("still sends when the browser didn't say which version it ran", async () => {
+    const user = await createUser();
+    actAs(user.id);
+
+    const result = await sendFeedback(null, formData({ message: "Hej", pagePath: "/app/me", groupSlug: "", userAgent: "UA" }));
+
+    expect(result).toEqual({ status: "sent" });
+    expect(sentEmails()[0].text).toContain("Version i webbläsaren: (okänd)");
+    expect(sentEmails()[0].text).toContain(`Version på servern: ${VERSION}`);
   });
 
   it.each([

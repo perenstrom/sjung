@@ -54,7 +54,7 @@ describe("the Feedback email", () => {
   it("links to neither, since it goes to the people running Sjung", async () => {
     await sendFeedbackEmail(
       { name: "Anna", email: "anna@example.com" },
-      { message: "Hej", pagePath: "/app", groupSlug: null, userAgent: "UA" }
+      { message: "Hej", pagePath: "/app", groupSlug: null, userAgent: "UA", appVersion: "" }
     );
 
     const [email] = sentEmails();
