@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -57,6 +58,10 @@ export function CreateSetListDialog({ groupSlug }: { groupSlug: string }) {
           <div className="space-y-2">
             <Label htmlFor="setlist-date">Datum</Label>
             <Input id="setlist-date" name="date" type="date" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox id="setlist-current" name="current" />
+            <Label htmlFor="setlist-current">Aktuell</Label>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter>

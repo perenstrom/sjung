@@ -16,11 +16,12 @@ vi.mock("@/components/EditModeContext", () => ({
   useEditMode: () => ({ canEdit: true, isEditing: editMode.isEditing, setIsEditing: vi.fn() }),
 }));
 
-function setList(name: string, isoDate: string | null): SetListsTableRow {
+function setList(name: string, isoDate: string | null, current = false): SetListsTableRow {
   return {
     id: name,
     name,
     date: isoDate ? new Date(isoDate) : null,
+    current,
     dateLabel: isoDate,
   };
 }
@@ -28,7 +29,7 @@ function setList(name: string, isoDate: string | null): SetListsTableRow {
 // The order the database may return: most recently updated first.
 const setLists = [
   setList("Utan datum", null),
-  setList("Vårkonsert", "2026-05-01"),
+  setList("Vårkonsert", "2026-05-01", true),
   setList("Öppet hus", "2026-12-13"),
   setList("Lucia", "2026-12-13"),
   setList("Julkonsert", "2026-12-20"),
@@ -60,16 +61,18 @@ describe("SetListsTable", () => {
   it.each([
     ["desktop table", desktopTable],
     ["mobile list", mobileList],
-  ])("shows the newest date first, undated last and same-date ones by name in the %s", (_, part) => {
-    const html = renderMarkup(createElement(SetListsTable, { setLists, groupSlug: "koren" }));
+  ])("shows Current Set lists first, badged Aktuell, then the rest in the %s", (_, part) => {
+    const html = part(renderMarkup(createElement(SetListsTable, { setLists, groupSlug: "koren" })));
 
-    expect(shownNames(part(html))).toEqual([
+    expect(shownNames(html)).toEqual([
+      "Vårkonsert",
       "Julkonsert",
       "Lucia",
       "Öppet hus",
-      "Vårkonsert",
       "Utan datum",
     ]);
+    expect(textOf(html).match(/Aktuell/g)).toHaveLength(1);
+    expect(textOf(html)).toMatch(/Vårkonsert\s*Aktuell/);
   });
 
   describe.each([
@@ -113,7 +116,7 @@ describe("SetListsTable", () => {
       [{ id: "date", desc: false }],
       ["Vårkonsert", "Lucia", "Öppet hus", "Julkonsert", "Utan datum"],
     ],
-  ])("sorts by %s when its heading is chosen", (_, sorting, expected) => {
+  ])("sorts by %s when its heading is chosen, with Current Set lists not pinned first", (_, sorting, expected) => {
     const html = renderMarkup(
       createElement(DataTable<SetListsTableRow>, {
         columns: setListsColumns("koren", false),

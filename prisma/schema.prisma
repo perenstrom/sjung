@@ -308,6 +308,8 @@ model SetList {
 
   name    String
   date    DateTime?
+  // Marked by hand as being worked on now (CONTEXT.md, "Current"); never ends on its own.
+  current Boolean   @default(false)
   groupId String    @map("group_id")
 
   createdBy User?          @relation("SetListCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)

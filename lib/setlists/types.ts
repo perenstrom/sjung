@@ -21,6 +21,7 @@ export type SetListDetail = {
   id: string;
   name: string;
   date: Date | null;
+  current: boolean;
   updatedAt: Date;
   steps: SetListStep[];
 };
