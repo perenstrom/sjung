@@ -160,28 +160,28 @@ describe("parsePieceCreditsFromFormData", () => {
     ]);
   });
 
-  it("throws Ogiltigt format för medverkande for invalid JSON", () => {
+  it("throws Ogiltigt format för upphovspersoner for invalid JSON", () => {
     const fd = createFormData({ credits: "not-json" });
     expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
-      "Ogiltigt format för medverkande"
+      "Ogiltigt format för upphovspersoner"
     );
   });
 
-  it("throws Ogiltigt format för medverkande for non-array JSON", () => {
+  it("throws Ogiltigt format för upphovspersoner for non-array JSON", () => {
     const fd = createFormData({ credits: "{}" });
     expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
-      "Ogiltigt format för medverkande"
+      "Ogiltigt format för upphovspersoner"
     );
   });
 
-  it("throws Ogiltigt format för medverkande when personId is not a UUID", () => {
+  it("throws Ogiltigt format för upphovspersoner when personId is not a UUID", () => {
     const fd = createFormData({
       credits: JSON.stringify([
         { personId: "not-a-uuid", role: "Kompositör" },
       ]),
     });
     expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
-      "Ogiltigt format för medverkande"
+      "Ogiltigt format för upphovspersoner"
     );
   });
 
@@ -203,16 +203,16 @@ describe("parseCreditPersonIdFromFormData", () => {
     expect(parseCreditPersonIdFromFormData(fd)).toBe(validPersonId);
   });
 
-  it("throws Ogiltigt format för medverkande when missing", () => {
+  it("throws Ogiltigt format för upphovspersoner when missing", () => {
     expect(() =>
       parseCreditPersonIdFromFormData(createFormData({}))
-    ).toThrow("Ogiltigt format för medverkande");
+    ).toThrow("Ogiltigt format för upphovspersoner");
   });
 
-  it("throws Ogiltigt format för medverkande when not a UUID", () => {
+  it("throws Ogiltigt format för upphovspersoner when not a UUID", () => {
     expect(() =>
       parseCreditPersonIdFromFormData(createFormData({ personId: "not-a-uuid" }))
-    ).toThrow("Ogiltigt format för medverkande");
+    ).toThrow("Ogiltigt format för upphovspersoner");
   });
 });
 
@@ -234,8 +234,8 @@ describe("parseCreditRolesFromFormData", () => {
 
   it("throws when the field is missing or not a list", () => {
     expect(() => parseCreditRolesFromFormData(createFormData({}))).toThrow(
-      "Ogiltigt format för medverkande"
+      "Ogiltigt format för upphovspersoner"
     );
-    expect(() => parse("Kompositör")).toThrow("Ogiltigt format för medverkande");
+    expect(() => parse("Kompositör")).toThrow("Ogiltigt format för upphovspersoner");
   });
 });

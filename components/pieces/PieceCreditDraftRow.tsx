@@ -98,7 +98,7 @@ export function PieceCreditDraftRow({
       onDraftChange(EMPTY_CREDIT_DRAFT);
       personPickerRef.current?.focus();
     } catch (err) {
-      setError(getThrownMessage(err, "Kunde inte lägga till medverkande"));
+      setError(getThrownMessage(err, "Kunde inte lägga till upphovspersonen"));
     } finally {
       setPending(false);
     }
@@ -140,7 +140,7 @@ export function PieceCreditDraftRow({
             variant="ghost"
             size="icon"
             onClick={handleClear}
-            aria-label="Rensa medverkande"
+            aria-label="Rensa raden"
             className="hidden @md:inline-flex"
           >
             <X className="size-4" aria-hidden="true" />

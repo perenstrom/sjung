@@ -55,8 +55,12 @@ export type CreditDraft = {
 
 export const EMPTY_CREDIT_DRAFT: CreditDraft = { personId: "", roles: [] };
 
-export const MISSING_CREDIT_ROLE_ERROR = "Välj minst en roll eller rensa medverkande.";
-export const MISSING_CREDIT_PERSON_ERROR = "Välj en upphovsperson eller rensa medverkande.";
+/** What every view heads a Piece's Credits with, and says when it has none. */
+export const CREDITS_HEADING = "Upphovspersoner";
+export const NO_CREDITS_YET = "Inga upphovspersoner tillagda ännu.";
+
+export const MISSING_CREDIT_ROLE_ERROR = "Välj minst en roll eller rensa raden.";
+export const MISSING_CREDIT_PERSON_ERROR = "Välj en upphovsperson eller rensa raden.";
 export const MISSING_CREDIT_FIELDS_ERROR = "Välj upphovsperson och minst en roll.";
 
 /** What is missing before a draft can be added, or null when it is complete. */

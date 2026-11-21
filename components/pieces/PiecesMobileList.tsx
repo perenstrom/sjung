@@ -19,7 +19,7 @@ import {
   MobileListEmpty,
   MobileListExpandableRow,
 } from "@/components/ui/mobile-list";
-import { formatCreditsLine } from "@/lib/pieces/credits";
+import { CREDITS_HEADING, formatCreditsLine } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
 import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
@@ -138,7 +138,7 @@ export function PiecesMobileList({
                     <PieceAliasesLine aliases={matchingAliases?.get(piece.id) ?? []} className="truncate" />
                   </>
                 }
-                // Edit mode lists the credits in its Medverkande section instead.
+                // Edit mode lists the credits in its Upphovspersoner section instead.
                 secondary={isEditing ? undefined : formatCreditsLine(piece.credits)}
               >
                 <PieceRowDetails
@@ -268,7 +268,7 @@ function PieceEditSections({
       </section>
       <section className="space-y-1">
         <div className="flex items-center justify-between gap-2">
-          <SectionHeading>Medverkande</SectionHeading>
+          <SectionHeading>{CREDITS_HEADING}</SectionHeading>
           <AddPieceCreditPopover
             people={people}
             creditRoles={creditRoles}

@@ -6,6 +6,7 @@ import { PieceCreditsList } from "@/components/pieces/PieceCreditsList";
 import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { groupPersonPath } from "@/lib/groups/routes";
+import { CREDITS_HEADING, NO_CREDITS_YET } from "@/lib/pieces/credits";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
 type PieceDetailCredit = PieceCredit & { person: { name: string } };
@@ -40,9 +41,9 @@ function PieceDetailCreditsBody({
   creditRoles,
 }: PieceDetailCreditsSectionProps & { readOnly: boolean }) {
   return (
-    <PieceDetailSectionLayout title="Medverkande">
+    <PieceDetailSectionLayout title={CREDITS_HEADING}>
       {credits.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+        <p className="text-sm text-muted-foreground">{NO_CREDITS_YET}</p>
       ) : readOnly ? (
         <PieceCreditsList
           credits={credits}
