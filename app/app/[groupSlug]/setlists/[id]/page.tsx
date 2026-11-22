@@ -12,6 +12,7 @@ import { findGroupAccess } from "@/lib/group-access";
 import { PageHeader } from "@/components/PageHeader";
 import { PieceCategoriesProvider } from "@/components/pieces/CategoryPicker";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
+import { SetListPlayPrototype } from "@/components/pieces/player-prototype/PlayableFilesPrototype";
 import { AddPieceToSetListForm } from "@/components/AddPieceToSetListForm";
 import {
   createGroupAncestor,
@@ -62,6 +63,14 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
             <PageHeader title={setList.name} />
             <p className="text-sm text-muted-foreground">Datum: {formatDate(setList.date) ?? "–"}</p>
           </div>
+
+          <SetListPlayPrototype
+            groupSlug={groupSlug}
+            setListId={setList.id}
+            pieces={setList.steps.flatMap((step) =>
+              step.kind === "piece" ? [{ id: step.pieceId, name: step.piece.name }] : []
+            )}
+          />
 
           <section aria-label="Ordning">
             <PiecesTable

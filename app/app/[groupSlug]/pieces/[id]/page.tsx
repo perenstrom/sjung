@@ -13,6 +13,7 @@ import { PieceCategoriesProvider } from "@/components/pieces/CategoryPicker";
 import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFilesAndLinks";
 import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
 import { PieceDetailSectionLayout, PieceDetailSectionStack } from "@/components/pieces/PieceDetailSectionLayout";
+import { PiecePlayableFilesPrototype } from "@/components/pieces/player-prototype/PlayableFilesPrototype";
 import { pieceDetailTrail } from "@/lib/breadcrumbs";
 import { fromSetListIdParam } from "@/lib/pieces/href";
 import { notFound } from "next/navigation";
@@ -59,6 +60,8 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
             initialName={piece.name}
             aliases={piece.aliases}
           />
+
+          <PiecePlayableFilesPrototype groupSlug={groupSlug} pieceId={piece.id} />
 
           <PieceDetailSectionStack>
             <PieceDetailCreditsSection
