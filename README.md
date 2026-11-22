@@ -32,9 +32,10 @@ Required variables (from `.env.example`):
 - `RESEND_API_KEY` (optional locally — see "Emails in local development" below)
 - `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`; optional locally)
 - `FEEDBACK_EMAIL_TO` (inbox that Feedback sent from the app goes to; optional locally)
-- `OPERATORS_EMAIL` (comma-separated addresses of the Operators, who publish Announcements under *Nyheter*; empty means nobody, see ADR-0008)
+- `OPERATORS_EMAIL` (comma-separated addresses of the Operators, who publish Announcements under *Nyheter* and see the Group overview under *Drift*; empty means nobody, see ADR-0008)
 - `APP_BASE_URL` (origin for links in emails, e.g. `https://www.sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
+- `APP_COMMIT` (optional; leave empty locally — set on staging only, see "Deploying" below)
 
 Not in `.env.example`: `EMAIL_OUTBOX_DIR` makes the app write emails to files in that folder instead of sending them. Only the Playwright server sets it (see `docs/testing-access-rights.md`); it is refused alongside `RESEND_API_KEY`, so it never applies in staging or production.
 
@@ -108,7 +109,9 @@ Config lives in the `staging` and `production` GitHub environments: variables `C
 
 Each Coolify app sets the runtime variable `APP_ENV`: `staging` on `sjung-staging` and `production` on `sjung-production`. It decides the environment label in the browser tab title (`[staging] Sjung` on staging, plain `Sjung` in production; `npm run dev` always shows `[local] Sjung`). An unset or unknown value counts as production.
 
-Both apps also set four runtime variables for email, and `OPERATORS_EMAIL` for who may publish Announcements. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
+`sjung-staging` also sets the runtime variable `APP_COMMIT` to `$SOURCE_COMMIT`, Coolify's predefined variable for the deployed commit. The version at the bottom of the sidebar, and in Feedback emails, then reads `Version 0.2.0 · a1b2c3d` on staging, with the short commit after the `package.json` version. Without it staging shows the version alone. `sjung-production` doesn't need it: production only runs release commits and never shows a commit. `npm run dev` shows `Version 0.2.0 · lokal`.
+
+Both apps also set four runtime variables for email, and `OPERATORS_EMAIL` for who the Operators are. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
 
 | Variable | `sjung-staging` | `sjung-production` |
 | --- | --- | --- |

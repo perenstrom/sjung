@@ -42,7 +42,7 @@ export function RemovableCreditsList({
       setError(null);
       router.refresh();
     } catch (err) {
-      setError(getThrownMessage(err, "Kunde inte ta bort medverkande"));
+      setError(getThrownMessage(err, "Kunde inte ta bort upphovspersonen från stycket"));
     } finally {
       setRemovingPersonId(null);
     }

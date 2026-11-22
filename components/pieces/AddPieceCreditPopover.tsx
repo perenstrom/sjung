@@ -48,7 +48,7 @@ export function AddPieceCreditPopover({
       size="icon"
       className="size-7 shrink-0"
       disabled={!hasPeople}
-      aria-label="Lägg till medverkande"
+      aria-label="Lägg till upphovsperson"
     >
       <Plus className="size-4" aria-hidden="true" />
     </Button>
@@ -67,7 +67,7 @@ export function AddPieceCreditPopover({
           <TooltipContent side="top">{NO_PEOPLE_TOOLTIP}</TooltipContent>
         </Tooltip>
       )}
-      <FormPopoverContent title="Lägg till medverkande" description={piece.name}>
+      <FormPopoverContent title="Lägg till upphovsperson" description={piece.name}>
         <AddPieceCreditRow
           groupSlug={groupSlug}
           pieceId={piece.id}

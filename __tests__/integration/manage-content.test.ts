@@ -229,9 +229,36 @@ describe("content actions require manageContent", () => {
       expect(await testPrisma.pieceNote.count({ where: { pieceId: content.piece.id } })).toBe(2);
     });
 
-    it("creates a Set list", async () => {
+    it("creates a Set list, marked Current when Aktuell is checked", async () => {
       await setListActions.createSetList(CONTENT_ACTIONS.createSetList(group, content));
-      expect(await testPrisma.setList.count({ where: { groupId: group.id } })).toBe(2);
+      await setListActions.createSetList(
+        formData({ groupSlug: group.slug, name: "Lucia", current: "on" })
+      );
+      expect(
+        await testPrisma.setList.findMany({
+          where: { groupId: group.id, name: { in: ["Julkonsert", "Lucia"] } },
+          orderBy: { name: "asc" },
+          select: { name: true, current: true },
+        })
+      ).toEqual([
+        { name: "Julkonsert", current: false },
+        { name: "Lucia", current: true },
+      ]);
+    });
+
+    it.each([
+      ["marks a Set list Current", { current: "on" }, true],
+      ["unmarks a Current Set list", {}, false],
+    ])("%s", async (_, fields, current) => {
+      await testPrisma.setList.update({ where: { id: content.setList.id }, data: { current: !current } });
+
+      await setListActions.updateSetList(
+        formData({ groupSlug: group.slug, setListId: content.setList.id, name: "Vårkonsert", ...fields })
+      );
+
+      expect(
+        await testPrisma.setList.findUniqueOrThrow({ where: { id: content.setList.id } })
+      ).toMatchObject({ name: "Vårkonsert", current });
     });
 
     it("adds a Set list step", async () => {

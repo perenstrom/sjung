@@ -10,6 +10,7 @@ import {
 import {
   parseOptionalSetListDateFromFormData,
   parseOrderedSetListStepIdsFromFormData,
+  parseSetListCurrentFromFormData,
   parseSetListIdFromFormData,
   parseSetListNameFromFormData,
   parseSetListNoteContentFromFormData,
@@ -30,6 +31,7 @@ type SetListRow = {
   id: string;
   name: string;
   date: Date | null;
+  current: boolean;
   updatedAt: Date;
 };
 
@@ -43,6 +45,7 @@ export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
       id: true,
       name: true,
       date: true,
+      current: true,
       updatedAt: true,
     },
   });
@@ -59,6 +62,7 @@ export async function getSetListDetail(
       id: true,
       name: true,
       date: true,
+      current: true,
       updatedAt: true,
     },
   });
@@ -71,6 +75,7 @@ export async function getSetListDetail(
     id: setList.id,
     name: setList.name,
     date: setList.date,
+    current: setList.current,
     updatedAt: setList.updatedAt,
     steps: await SetListSequence.steps(setList.id),
   };
@@ -93,12 +98,14 @@ export async function createSetList(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const name = parseSetListNameFromFormData(formData);
   const date = parseOptionalSetListDateFromFormData(formData);
+  const current = parseSetListCurrentFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     await prisma.setList.create({
       data: {
         name,
         date,
+        current,
         groupId,
         createdById: userId,
         updatedById: userId,
@@ -114,6 +121,7 @@ export async function updateSetList(formData: FormData) {
   const setListId = parseSetListIdFromFormData(formData);
   const name = parseSetListNameFromFormData(formData);
   const date = parseOptionalSetListDateFromFormData(formData);
+  const current = parseSetListCurrentFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const existing = await findInGroup(groupId, "setList", setListId);
@@ -122,6 +130,7 @@ export async function updateSetList(formData: FormData) {
       data: {
         name,
         date,
+        current,
         updatedById: userId,
       },
     });

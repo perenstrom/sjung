@@ -43,6 +43,7 @@ export default async function TenantSetListsPage({ params }: PageProps) {
             id: setList.id,
             name: setList.name,
             date: setList.date,
+            current: setList.current,
             dateLabel: formatDate(setList.date),
           }))}
         />

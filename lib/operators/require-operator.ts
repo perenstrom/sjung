@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { isOperator } from "@/lib/announcements/operators";
+import { isOperator } from "@/lib/operators/operators";
 import { requireUser, type SessionUser } from "@/lib/auth/require-user";
 
 /**

@@ -18,7 +18,7 @@ describe("slugifyGroupName", () => {
 });
 
 describe("isReservedGroupSlug", () => {
-  it.each(["me", "news", "admin", "settings"])("reserves %s for the app", (slug) => {
+  it.each(["me", "news", "operator", "admin", "settings"])("reserves %s for the app", (slug) => {
     expect(isReservedGroupSlug(slug)).toBe(true);
   });
 

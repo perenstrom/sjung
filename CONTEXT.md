@@ -80,12 +80,12 @@ _Avoid_: Score, Sheet music, Attachment — reserve those for casual conversatio
 An external URL reference attached to a Piece (e.g. a recording or streaming link).
 
 **Category**:
-The free-text label on a File or Link saying what kind of resource it is. A File or Link has at most one Category. Files and Links share one vocabulary per Group: a Group's Categories are simply those on its Files and Links, so a Category nothing uses any more is gone. Two Categories are the same if they differ only in letter case or spacing; the spelling already in use wins. Three are built in and always offered, even to a Group that has never used them — Noter (scores), Övningsfiler (rehearsal files), Inspelningar (recordings) — and they rank first, in that order, ahead of every other Category in alphabetical order. Wherever a Piece's Files and Links are shown, they are grouped under their Categories in that ranking, Files before Links within each, with the uncategorized last under _Övrigt_ (giving something the Category "Övrigt" leaves it uncategorized); a Piece where nothing has a Category shows no groups at all. Swedish UI: _Kategori_.
+The free-text label on a File or Link saying what kind of resource it is. A File or Link has at most one Category. Files and Links share one vocabulary per Group: a Group's Categories are simply those on its Files and Links, so a Category nothing uses any more is gone. Two Categories are the same if they differ only in letter case or spacing; the spelling already in use wins. Three are built in and always offered, even to a Group that has never used them — Noter (scores), Övningsfiler (rehearsal files), Inspelningar (recordings) — and they rank first, in that order, ahead of every other Category in alphabetical order. Wherever a Piece's Files and Links are shown, they are grouped under their Categories in that ranking, Files and Links together within each, sorted alphabetically by the name they show (Swedish order, numbers by value, a File before a Link of the same name), with the uncategorized last under _Övrigt_ (giving something the Category "Övrigt" leaves it uncategorized); a Piece where nothing has a Category shows no groups at all. Swedish UI: _Kategori_.
 _Avoid_: Tag (a File or Link has only one), Type (clashes with the file's format).
 
 **Credit**:
-A role-tagged link between a Person and a Piece. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Medverkande_.
-_Avoid_: Role on its own — always say "Credit role" to avoid confusion with anything membership-related.
+A role-tagged link between a Person and a Piece. Shown grouped per Person: each Person appears once on a Piece, followed by their Credit roles. Swedish UI: _Upphovspersoner_ — a Piece's Credits are listed under that heading.
+_Avoid_: Role on its own — always say "Credit role" to avoid confusion with anything membership-related. _Medverkande_, which in a choir reads as the performers.
 
 **Credit role**:
 The free-text label on a Credit saying what the Person did for the Piece. Each Group uses its own vocabulary: a Group's Credit roles are simply those on its Credits — there is no separate list of them, so a Credit role nobody holds any more is gone. Two Credit roles are the same if they differ only in letter case or spacing; the spelling already in use wins. Three are built in and always offered, even to a Group that has never used them — Arrangör (arranger), Kompositör (composer), Textförfattare (lyricist) — and they rank first, in that order, ahead of every other Credit role in alphabetical order. That ranking also orders the People on a Piece, by their highest-ranked Credit role. Swedish UI: _Roll_.
@@ -98,6 +98,10 @@ _Avoid_: Bulk add, Upload — no file is uploaded; the rows are pasted.
 **Set list**:
 An ordered rehearsal/performance program for a Group: an interleaved sequence of Set list pieces and Running-order notes. Swedish UI: _Repertoar_ / _Repertoarer_.
 _Avoid_: Repertoire (English) — keep "Set list" as the English name even though the Swedish UI says _Repertoar_; Program.
+
+**Current**:
+A Set list the Group is working on right now. Any number of a Group's Set lists can be Current at once. Only a Member who can manage content marks or unmarks it, and it never ends on its own: a Set list stays Current until someone unmarks it, even after its date has passed. Current Set lists come first in the Set lists list's default order. Swedish UI: _Aktuell_.
+_Avoid_: Active, Featured, Pinned.
 
 **Set list step**:
 One entry in a Set list's running order: either a Set list piece or a Running-order note. Steps of both kinds share one order; only their relative order matters, not the numbers stored for it. A newly added step goes last. Swedish UI: _Ordning_ (the running order as a whole).

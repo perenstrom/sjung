@@ -267,7 +267,11 @@ describe.each([
       editMode.isEditing = isEditing;
     });
 
-    it("caps Medverkande at the width of the other list columns and lets it wrap", () => {
+    it("heads the Credits column Upphovspersoner", () => {
+      expect(render()).toMatch(/<th[^>]*>(?:<[^>]+>)*Upphovspersoner</);
+    });
+
+    it("caps Upphovspersoner at the width of the other list columns and lets it wrap", () => {
       const cell = render()
         .split("<td")
         .slice(1)

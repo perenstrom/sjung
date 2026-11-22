@@ -224,6 +224,6 @@ describe("A Person gets several Credit roles on a Piece at once, and loses them 
 
     await expect(
       removePersonCredits(formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id }))
-    ).rejects.toThrow("Medverkande hittades inte");
+    ).rejects.toThrow("Upphovspersonen finns inte på stycket");
   });
 });

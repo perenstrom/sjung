@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -20,6 +21,7 @@ type SetListRow = {
   id: string;
   name: string;
   date: Date | null;
+  current: boolean;
 };
 
 function toDateInputValue(date: Date | null): string {
@@ -98,6 +100,14 @@ export function EditSetListDialog({
               type="date"
               defaultValue={toDateInputValue(setList.date)}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`setlist-current-${setList.id}`}
+              name="current"
+              defaultChecked={setList.current}
+            />
+            <Label htmlFor={`setlist-current-${setList.id}`}>Aktuell</Label>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter>

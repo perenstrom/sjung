@@ -26,7 +26,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
       ) : null}
       <h1 className="text-4xl font-semibold">Sjung</h1>
       <p className="text-muted-foreground">
-        Hantera noter och medverkande tillsammans med din grupp.
+        Hantera noter och upphovspersoner tillsammans med din grupp.
       </p>
       <div className="flex gap-3">
         <Button asChild>

@@ -11,7 +11,9 @@ import { getThrownMessage } from "@/lib/getThrownMessage";
 import {
   type CreditedPerson,
   type CreditForDisplay,
+  CREDITS_HEADING,
   EMPTY_CREDIT_DRAFT,
+  NO_CREDITS_YET,
   resolveCreditsToSubmit,
 } from "@/lib/pieces/credits";
 import type { Person } from "@/types/piece-credit-dialog";
@@ -111,10 +113,10 @@ export function CreatePieceDialog({
           </div>
 
           <div className="space-y-3">
-            <Label>Medverkande</Label>
+            <Label>{CREDITS_HEADING}</Label>
 
             {credits.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Inga medverkande tillagda ännu.</p>
+              <p className="text-sm text-muted-foreground">{NO_CREDITS_YET}</p>
             ) : (
               <PieceCreditsList
                 credits={credits}

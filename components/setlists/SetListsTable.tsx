@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import type { SortingState } from "@tanstack/react-table";
 import { ChevronRight } from "lucide-react";
 
 import { type ColumnDef, DataTable, DataTableColumnHeader } from "@/components/data-table";
 import { DeleteSetListDialog } from "@/components/DeleteSetListDialog";
 import { EditSetListDialog } from "@/components/EditSetListDialog";
 import { useEditMode } from "@/components/EditModeContext";
+import { SetListName } from "@/components/setlists/SetListName";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
 import { compareSetListsByDefault } from "@/lib/setlists/sorting";
 
@@ -16,6 +16,7 @@ export type SetListsTableRow = {
   id: string;
   name: string;
   date: Date | null;
+  current: boolean;
   /**
    * Formatted on the server so the date doesn't shift with the viewer's time
    * zone. Null when the set list has no date.
@@ -34,12 +35,14 @@ export function setListsColumns(
       sortFn: "caseInsensitive",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namn" />,
       cell: ({ row }) => (
-        <Link
-          href={`/app/${groupSlug}/setlists/${row.original.id}`}
-          className="underline-offset-4 hover:underline"
-        >
-          {row.original.name}
-        </Link>
+        <SetListName current={row.original.current}>
+          <Link
+            href={`/app/${groupSlug}/setlists/${row.original.id}`}
+            className="underline-offset-4 hover:underline"
+          >
+            {row.original.name}
+          </Link>
+        </SetListName>
       ),
     },
     {
@@ -71,19 +74,16 @@ export function setListsColumns(
   ];
 }
 
-// The table's starting sort. With rows handed over already in
-// compareSetListsByDefault order (which settles ties), it reproduces that
-// order, so keep the two in step.
-const DEFAULT_SORTING: SortingState = [{ id: "date", desc: true }];
-
 function getRowId(row: SetListsTableRow): string {
   return row.id;
 }
 
 /**
  * Set lists as a table from `md` up and as the shared mobile list below it,
- * both newest date first, undated last and same-date ones by name. The table's
- * Namn and Datum headings re-sort it; the mobile list keeps that order.
+ * both in the default order (`compareSetListsByDefault`): Current Set lists
+ * first. The table starts unsorted so it keeps that order; its Namn and Datum
+ * headings re-sort every Set list by that column alone. The mobile list keeps
+ * the default order.
  */
 export function SetListsTable({
   setLists,
@@ -108,7 +108,6 @@ export function SetListsTable({
         className="max-md:hidden"
         columns={columns}
         data={sortedSetLists}
-        initialSorting={DEFAULT_SORTING}
         getRowId={getRowId}
         emptyMessage="Inga repertoarer tillagda ännu."
       />
@@ -134,7 +133,12 @@ function SetListsMobileList({
           <MobileListRow
             key={setList.id}
             href={`/app/${groupSlug}/setlists/${setList.id}`}
-            primary={setList.name}
+            primary={
+              // One line: a long name truncates, the badge stays whole.
+              <SetListName current={setList.current}>
+                <span className="min-w-0 flex-1 truncate">{setList.name}</span>
+              </SetListName>
+            }
             secondary={setList.dateLabel}
             trailing={
               isEditing ? (
@@ -161,16 +165,8 @@ function SetListRowActions({
 }) {
   return (
     <>
-      <EditSetListDialog
-        groupSlug={groupSlug}
-        setList={{ id: setList.id, name: setList.name, date: setList.date }}
-        trigger={trigger}
-      />
-      <DeleteSetListDialog
-        groupSlug={groupSlug}
-        setList={{ id: setList.id, name: setList.name }}
-        trigger={trigger}
-      />
+      <EditSetListDialog groupSlug={groupSlug} setList={setList} trigger={trigger} />
+      <DeleteSetListDialog groupSlug={groupSlug} setList={setList} trigger={trigger} />
     </>
   );
 }
