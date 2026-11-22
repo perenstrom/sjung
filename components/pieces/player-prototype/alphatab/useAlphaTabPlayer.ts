@@ -92,6 +92,8 @@ export function useAlphaTabPlayer({
   const scoreObj = useRef<Score | null>(null);
   const split = useRef<SplitResult | null>(null);
   const loopRef = useRef<BarLoop>(null);
+  /** Where to go back to once a regenerated MIDI (sound switch) has loaded. */
+  const resumeRef = useRef<{ tick: number; playing: boolean } | null>(null);
   const channelsRef = useRef(channels);
   channelsRef.current = channels;
 
@@ -168,7 +170,7 @@ export function useAlphaTabPlayer({
           };
       if (options.split) time("split voices", performance.now() - t);
       score = result.score;
-      for (const tr of score.tracks) tr.playbackInfo.program = PROGRAM[options.sound];
+      setProgram(at, score, PROGRAM[options.sound]);
       scoreObj.current = score;
       split.current = result;
 
@@ -228,6 +230,12 @@ export function useAlphaTabPlayer({
       a.midiLoaded.on((e) => {
         setDuration(e.endTime / 1000);
         applyMix(a, channelsRef.current);
+        const resume = resumeRef.current;
+        if (resume) {
+          resumeRef.current = null;
+          a.tickPosition = resume.tick;
+          if (resume.playing) a.play();
+        }
         log(`midi loaded: ${(e.endTime / 1000).toFixed(1)} s, ${e.endTick} ticks`);
       });
       a.playerStateChanged.on((e) => setPlaying(e.state === at.synth.PlayerState.Playing));
@@ -264,7 +272,12 @@ export function useAlphaTabPlayer({
     const api = apiRef.current;
     const score = scoreObj.current;
     if (!api || !score) return;
-    for (const tr of score.tracks) tr.playbackInfo.program = PROGRAM[options.sound];
+    const at = (window as unknown as { __at?: { at: AlphaTab } }).__at?.at;
+    if (!at) return;
+    const changed = setProgram(at, score, PROGRAM[options.sound]);
+    log(`ljud: program ${PROGRAM[options.sound]} på ${score.tracks.length} spår, ${changed} instrumentbyten i noterna skrivna om`);
+    // Regenerating the MIDI rewinds to the start; come back to where we were.
+    resumeRef.current = { tick: api.tickPosition, playing: api.playerState === at.synth.PlayerState.Playing };
     api.loadMidiForScore();
     setDebug((d) => ({ ...d, tracks: d.tracks.map((t) => ({ ...t, program: PROGRAM[options.sound] })) }));
   }, [options.sound]);
@@ -394,6 +407,30 @@ export function useAlphaTabPlayer({
 }
 
 export type AlphaTabPlayerState = ReturnType<typeof useAlphaTabPlayer>;
+
+/**
+ * Sets every track's sound. The MusicXML importer also puts an instrument
+ * change on each track's first beat (from <midi-program>), which overrides
+ * playbackInfo.program when the MIDI is generated, so rewrite those too.
+ * Returns how many beat-level instrument changes were rewritten.
+ */
+function setProgram(at: AlphaTab, score: Score, program: number): number {
+  const instrument = at.model.AutomationType.Instrument;
+  let changed = 0;
+  for (const track of score.tracks) {
+    track.playbackInfo.program = program;
+    for (const staff of track.staves)
+      for (const bar of staff.bars)
+        for (const voice of bar.voices)
+          for (const beat of voice.beats)
+            for (const a of beat.automations ?? [])
+              if (a.type === instrument) {
+                a.value = program;
+                changed++;
+              }
+  }
+  return changed;
+}
 
 /**
  * alphaTab's MusicXML importer turns every <sound dalsegno/dacapo> into a plain
