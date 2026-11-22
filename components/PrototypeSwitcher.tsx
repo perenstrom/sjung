@@ -13,11 +13,14 @@ export function PrototypeSwitcher({
   variants,
   current,
   inline = false,
+  arrowKeys = true,
 }: {
   variants: readonly Variant[];
   current: string;
   /** Render in place instead of floating at the bottom of the screen. */
   inline?: boolean;
+  /** Cycle with ← and →. Off where the page itself uses the arrow keys. */
+  arrowKeys?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -38,6 +41,7 @@ export function PrototypeSwitcher({
   );
 
   useEffect(() => {
+    if (!arrowKeys) return;
     function onKey(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (
@@ -52,7 +56,7 @@ export function PrototypeSwitcher({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go]);
+  }, [go, arrowKeys]);
 
   if (process.env.NODE_ENV === "production") {
     return null;

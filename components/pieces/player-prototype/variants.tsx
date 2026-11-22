@@ -287,4 +287,8 @@ export const VARIANTS = [
   { key: "C", name: "Övningsläge", Component: VariantC },
   // PER-464: variant A with the real alphaTab engine; rendered by AlphaTabPlayer, not here.
   { key: "T", name: "alphaTab", Component: VariantA },
+  // PER-463: desktop / tablet width; rendered by DesktopPlayer, not here.
+  { key: "D", name: "Bred Musikapp", Component: VariantA },
+  { key: "E", name: "Studio", Component: VariantA },
+  { key: "F", name: "I appen", Component: VariantA },
 ] as const;

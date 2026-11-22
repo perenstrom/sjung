@@ -22,6 +22,10 @@ export type Options = {
   scale: number;
   layout: "page" | "horizontal";
   sound: "choir" | "piano";
+  /** PER-463: how the score follows the cursor (default continuous). */
+  scroll?: "continuous" | "offscreen" | "smooth";
+  /** PER-463: fixed bars per row in page layout; -1 lets alphaTab decide. */
+  barsPerRow?: number;
 };
 
 export type BarLoop = { a: number; b: number | null } | null;
@@ -76,6 +80,7 @@ export function useAlphaTabPlayer({
   const [channels, setChannels] = useState<Record<string, Channel>>({});
   const [myPart, setMyPart] = useState<string | null>(null);
   const [preset, setPresetState] = useState<Preset>("all");
+  const [endTick, setEndTick] = useState(0);
   const [debug, setDebug] = useState<Debug>({
     timings: {},
     tracks: [],
@@ -94,6 +99,8 @@ export function useAlphaTabPlayer({
   const loopRef = useRef<BarLoop>(null);
   /** Where to go back to once a regenerated MIDI (sound switch) has loaded. */
   const resumeRef = useRef<{ tick: number; playing: boolean } | null>(null);
+  /** PER-463: where the last bar step sent the playhead; alphaTab's own tickPosition lags behind the worker. */
+  const pendingTick = useRef<{ tick: number; at: number } | null>(null);
   const channelsRef = useRef(channels);
   channelsRef.current = channels;
 
@@ -129,12 +136,18 @@ export function useAlphaTabPlayer({
           layoutMode: options.layout === "page" ? at.LayoutMode.Page : at.LayoutMode.Horizontal,
           staveProfile: at.StaveProfile.Score,
           scale: options.scale,
+          barsPerRow: options.barsPerRow ?? -1,
         },
         player: {
           playerMode: at.PlayerMode.EnabledSynthesizer,
           soundFont: `${ASSETS}/soundfont/sonivox.sf3`,
           scrollElement: scrollRef.current ?? undefined,
-          scrollMode: at.ScrollMode.Continuous,
+          scrollMode:
+            options.scroll === "offscreen"
+              ? at.ScrollMode.OffScreen
+              : options.scroll === "smooth"
+                ? at.ScrollMode.Smooth
+                : at.ScrollMode.Continuous,
           scrollOffsetY: -60,
           enableSeekToClick: false,
           enablePlaybackRangeSelection: false,
@@ -229,6 +242,7 @@ export function useAlphaTabPlayer({
       });
       a.midiLoaded.on((e) => {
         setDuration(e.endTime / 1000);
+        setEndTick(e.endTick);
         applyMix(a, channelsRef.current);
         const resume = resumeRef.current;
         if (resume) {
@@ -241,6 +255,10 @@ export function useAlphaTabPlayer({
       a.playerStateChanged.on((e) => setPlaying(e.state === at.synth.PlayerState.Playing));
       a.playerPositionChanged.on((e) => {
         setPosition(e.currentTime / 1000);
+        // PER-463: also while paused (activeBeatsChanged only fires while playing).
+        const lookup = a.tickCache?.masterBars ?? [];
+        const played = lookup.find((b) => e.currentTick >= b.start && e.currentTick < b.end);
+        if (played) setCurrentBar(played.masterBar.index + 1);
         setDuration(e.endTime / 1000);
         setDebug((d) => (Math.abs(d.tick - e.currentTick) > 240 ? { ...d, tick: e.currentTick } : d));
       });
@@ -265,7 +283,7 @@ export function useAlphaTabPlayer({
       apiRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the file or render options change
-  }, [url, options.split, options.hyphens, options.orderVerses, options.shortBars, options.scale, options.layout]);
+  }, [url, options.split, options.hyphens, options.orderVerses, options.shortBars, options.scale, options.layout, options.scroll, options.barsPerRow]);
 
   // ----------------------------------------------------------- sound switch
   useEffect(() => {
@@ -374,7 +392,67 @@ export function useAlphaTabPlayer({
     }
   }
 
+  // ------------------------------------------------- PER-463: keyboard helpers
+  /** The bar being played (in play order, so repeats count), as an index into the lookup. */
+  function playedBar(api: Api) {
+    const bars = api.tickCache?.masterBars ?? [];
+    const p = pendingTick.current;
+    const tick = p && performance.now() - p.at < 500 ? p.tick : api.tickPosition;
+    let i = bars.findIndex((b) => tick >= b.start && tick < b.end);
+    if (i < 0) i = tick <= 0 ? 0 : bars.length - 1;
+    return { bars, i };
+  }
+
+  /** Move the playhead whole bars; one step back first returns to the bar's start. */
+  function stepBar(delta: number) {
+    const api = apiRef.current;
+    if (!api) return;
+    const { bars, i } = playedBar(api);
+    if (!bars.length) return;
+    const p = pendingTick.current;
+    const tick = p && performance.now() - p.at < 500 ? p.tick : api.tickPosition;
+    let target = i + delta;
+    if (delta < 0 && tick - bars[i].start > 240) target += 1;
+    const to = bars[Math.max(0, Math.min(bars.length - 1, target))];
+    pendingTick.current = { tick: to.start, at: performance.now() };
+    api.tickPosition = to.start;
+    setCurrentBar(to.masterBar.index + 1);
+  }
+
+  /** Set A (start) or B (end) of the passage at the bar under the playhead. */
+  function markAt(which: "a" | "b") {
+    const api = apiRef.current;
+    if (!api) return;
+    const { bars, i } = playedBar(api);
+    const bar = bars[i]?.masterBar.index;
+    if (bar == null) return;
+    const l = loopRef.current;
+    if (which === "a") setLoop({ a: bar, b: l?.b != null && l.b >= bar ? l.b : null });
+    else if (!l) setLoop({ a: bar, b: bar });
+    else setLoop({ a: Math.min(l.a, bar), b: Math.max(l.a, bar) });
+  }
+
+  /** The passage as fractions of the whole piece, for shading a seek bar. */
+  function loopFractions(): { from: number; to: number | null } | null {
+    const api = apiRef.current;
+    const score = scoreObj.current;
+    const l = loopRef.current;
+    if (!api?.tickCache || !score || !l || !endTick) return null;
+    const lookup = api.tickCache;
+    const from = lookup.getMasterBarStart(score.masterBars[l.a]) / endTick;
+    if (l.b === null) return { from, to: null };
+    const last = lookup.getMasterBar(score.masterBars[l.b]);
+    return { from, to: last.end / endTick };
+  }
+
   return {
+    stepBar,
+    markAt,
+    loopFractions,
+    toStart: () => {
+      const api = apiRef.current;
+      if (api) api.tickPosition = api.playbackRange?.startTick ?? 0;
+    },
     status,
     error,
     playerReady,

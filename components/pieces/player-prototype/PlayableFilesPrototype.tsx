@@ -1,6 +1,8 @@
 // PROTOTYPE (PER-458): how a singer opens the player. On a Piece page the stub
 // Playable Files are listed like Files, and tapping one opens the player
 // (download moves to a small button). A Set list gets a play button per Piece.
+// PER-461 dropped the "Öva" button and the Set list play buttons, so PER-463
+// took them out: a singer always opens a specific Playable File from its row.
 
 import { Download, Play } from "lucide-react";
 import Link from "next/link";
@@ -20,17 +22,14 @@ export function PiecePlayableFilesPrototype({ groupSlug, pieceId }: { groupSlug:
         <h2 className="text-sm font-medium">
           Övningsfiler <span className="text-xs font-normal text-amber-700">(prototyp)</span>
         </h2>
-        <Link
-          href={playerHref(groupSlug, pieceId, "staffan")}
-          className="flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-sm text-primary-foreground"
-        >
-          <Play className="size-4" /> Öva
-        </Link>
       </div>
       <ul className="divide-y text-sm">
         {FIXTURES.map((f) => (
           <li key={f.key} className="flex items-center gap-2">
-            <Link href={playerHref(groupSlug, pieceId, f.key)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2">
+            <Link
+              href={playerHref(groupSlug, pieceId, f.key)}
+              className="group flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded hover:bg-muted/60"
+            >
               <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                 <Play className="size-3.5 translate-x-px" />
               </span>
