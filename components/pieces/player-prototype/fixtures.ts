@@ -1,5 +1,6 @@
 // PROTOTYPE (PER-458): stub Playable Files modelled on the real test files on
-// the map PER-443. Nothing here is read from the files; it only drives the UI.
+// the map PER-443. The notation files play for real through alphaTab; for audio
+// and MIDI nothing is read, the fields only drive the fake player.
 
 export type PartKind = "voice" | "instrument" | "percussion";
 
@@ -25,7 +26,7 @@ export type PlayableFixture = {
   parts: Part[];
   /** What this file exercises, shown in the prototype's own notes. */
   note: string;
-  /** PER-464: the real file under /public, for variant T (alphaTab). */
+  /** The real file under /public, played through alphaTab (PER-464). */
   url?: string;
 };
 
@@ -96,19 +97,6 @@ export const FIXTURES: PlayableFixture[] = [
     url: "/prototype-player/files/staffan.mxl",
   },
   {
-    key: "staffan-tocoda",
-    fileName: "Sankt Staffan – med To Coda (testkopia)",
-    format: "musicxml",
-    hasScore: true,
-    bpm: 100,
-    beatsPerBar: 4,
-    bars: 49,
-    verses: 3,
-    parts: satb(),
-    note: "Staffan with bar 18's coda sign changed to a real To Coda, to check that D.S. al Coda plays 10–18 then jumps to 31.",
-    url: "/prototype-player/files/staffan-tocoda.xml",
-  },
-  {
     key: "test-mxl",
     fileName: "Test Score.mxl",
     format: "musicxml",
@@ -120,21 +108,6 @@ export const FIXTURES: PlayableFixture[] = [
     parts: satb(["Women", "Men"]),
     note: "Two voices per staff: Women (S+A) and Men (T+B) drawn as two staves, mixed as four voices.",
     url: "/prototype-player/files/test-score.mxl",
-  },
-  {
-    key: "test-mid",
-    fileName: "Test Score.mid",
-    format: "midi",
-    hasScore: false,
-    bpm: 120,
-    beatsPerBar: 4,
-    bars: 2,
-    verses: 0,
-    parts: [
-      { id: "w", label: "Women", kind: "voice" },
-      { id: "m", label: "Men", kind: "voice" },
-    ],
-    note: "The same score as MIDI: the voice split is lost, so the mixer only has Women and Men.",
   },
 ];
 

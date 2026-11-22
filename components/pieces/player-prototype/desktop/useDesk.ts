@@ -47,7 +47,7 @@ export function useAlphaTabDesk(fixture: PlayableFixture, url: string, options: 
   const s: AlphaTabPlayerState = useAlphaTabPlayer({ url, options, scoreRef, scrollRef });
   const compat = {
     ...s,
-    fixture: { ...fixture, parts: s.parts, bpm: s.debug.tempo ?? fixture.bpm },
+    fixture: { ...fixture, parts: s.parts, bpm: s.bpm ?? fixture.bpm },
   } as unknown as PlayerState;
   return {
     fixture,

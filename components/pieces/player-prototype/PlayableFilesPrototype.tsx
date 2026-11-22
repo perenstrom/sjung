@@ -1,17 +1,15 @@
-// PROTOTYPE (PER-458): how a singer opens the player. On a Piece page the stub
-// Playable Files are listed like Files, and tapping one opens the player
-// (download moves to a small button). A Set list gets a play button per Piece.
-// PER-461 dropped the "Öva" button and the Set list play buttons, so PER-463
-// took them out: a singer always opens a specific Playable File from its row.
+// PROTOTYPE (PER-458, PER-463): how a singer opens the player. On a Piece page
+// the stub Playable Files are listed like Files, and clicking one opens the
+// player (download moves to a small button). There is no "Öva" button and no
+// Set list play buttons (PER-461): a singer always opens a specific File.
 
 import { Download, Play } from "lucide-react";
 import Link from "next/link";
 
 import { FIXTURES, FORMAT_LABEL } from "./fixtures";
 
-function playerHref(groupSlug: string, pieceId: string, file: string, setListId?: string) {
+function playerHref(groupSlug: string, pieceId: string, file: string) {
   const params = new URLSearchParams({ file });
-  if (setListId) params.set("setlist", setListId);
   return `/app/${groupSlug}/pieces/${pieceId}/prototype-player?${params}`;
 }
 
@@ -42,41 +40,6 @@ export function PiecePlayableFilesPrototype({ groupSlug, pieceId }: { groupSlug:
           </li>
         ))}
       </ul>
-    </section>
-  );
-}
-
-export function SetListPlayPrototype({
-  groupSlug,
-  setListId,
-  pieces,
-}: {
-  groupSlug: string;
-  setListId: string;
-  pieces: { id: string; name: string }[];
-}) {
-  if (pieces.length === 0) return null;
-  return (
-    <section className="space-y-2 rounded-lg border border-dashed border-amber-500 p-3">
-      <h2 className="text-sm font-medium">
-        Öva på Set listans stycken <span className="text-xs font-normal text-amber-700">(prototyp)</span>
-      </h2>
-      <ol className="divide-y text-sm">
-        {pieces.map((p, i) => (
-          <li key={p.id}>
-            <Link
-              href={playerHref(groupSlug, p.id, "julklockorna", setListId)}
-              className="flex min-h-11 items-center gap-2"
-            >
-              <span className="w-5 text-right text-xs text-muted-foreground">{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate">{p.name}</span>
-              <span className="grid size-8 place-items-center rounded-full bg-primary text-primary-foreground">
-                <Play className="size-4 translate-x-px" />
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }

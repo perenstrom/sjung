@@ -1,59 +1,32 @@
 "use client";
 
-// PROTOTYPE (PER-464): the real player behind variant T. Loads a notation
-// file into alphaTab, optionally splits shared staves into per-voice parts,
-// and exposes the same play / tempo / A–B / mix controls the fake player in
-// usePlayerState has. Everything it learns is kept in `debug` for the
-// prototype's "Motor" panel.
+// PROTOTYPE: the real player behind the desktop variants (PER-463). Loads a
+// notation file into alphaTab with the fix-ups PER-464 settled on (verses
+// sorted, short bars marked implicit, D.S./D.C. upgraded, every shared staff
+// split into per-voice parts), and exposes play / tempo / A–B / mix controls
+// in the same shape as the fake player in usePlayerState.
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import type { Part } from "../fixtures";
 import type { Channel, Preset } from "../usePlayerState";
-import { ASSETS, installOutputTap, loadAlphaTab, type AlphaTab, type Api, type Beat, type Score } from "./engine";
-import { prepareFile, type PreparedFile } from "./prepareFile";
-import { splitVoices, type SplitResult, type TrackRole } from "./splitVoices";
+import { ASSETS, loadAlphaTab, type AlphaTab, type Api, type Beat, type Score } from "./engine";
+import { prepareFile } from "./prepareFile";
+import { splitVoices, type SplitResult } from "./splitVoices";
 
+/** How the score is drawn and follows the cursor: the questions PER-463 is settling. */
 export type Options = {
-  split: boolean;
-  hyphens: boolean;
-  orderVerses: boolean;
-  shortBars: boolean;
   scale: number;
   layout: "page" | "horizontal";
-  sound: "choir" | "piano";
-  /** PER-463: how the score follows the cursor (default continuous). */
-  scroll?: "continuous" | "offscreen" | "smooth";
-  /** PER-463: fixed bars per row in page layout; -1 lets alphaTab decide. */
-  barsPerRow?: number;
+  scroll: "continuous" | "offscreen" | "smooth";
+  /** Fixed bars per row in page layout; -1 lets alphaTab decide. */
+  barsPerRow: number;
 };
 
 export type BarLoop = { a: number; b: number | null } | null;
 
-type TrackInfo = {
-  index: number;
-  name: string;
-  role: TrackRole;
-  drawn: boolean;
-  channel: number;
-  program: number;
-  voicesPerBar: number;
-};
-
-export type Debug = {
-  timings: Record<string, number>;
-  tracks: TrackInfo[];
-  warnings: string[];
-  file?: Omit<PreparedFile, "bytes">;
-  bars: number;
-  tempo: number | null;
-  tick: number;
-  range: { startTick: number; endTick: number } | null;
-  repeats: string[];
-  log: string[];
-};
-
-const PROGRAM = { choir: 52, piano: 0 } as const;
+/** General MIDI 53 "choir aahs": the Kör sound. */
+const CHOIR = 52;
 const BASE: Channel = { volume: 80, muted: false, solo: false };
 
 export function useAlphaTabPlayer({
@@ -73,40 +46,26 @@ export function useAlphaTabPlayer({
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [endTick, setEndTick] = useState(0);
   const [currentBar, setCurrentBar] = useState(1);
   const [tempo, setTempoState] = useState(100);
+  const [bpm, setBpm] = useState<number | null>(null);
   const [loop, setLoopState] = useState<BarLoop>(null);
   const [parts, setParts] = useState<Part[]>([]);
   const [channels, setChannels] = useState<Record<string, Channel>>({});
   const [myPart, setMyPart] = useState<string | null>(null);
   const [preset, setPresetState] = useState<Preset>("all");
-  const [endTick, setEndTick] = useState(0);
-  const [debug, setDebug] = useState<Debug>({
-    timings: {},
-    tracks: [],
-    warnings: [],
-    bars: 0,
-    tempo: null,
-    tick: 0,
-    range: null,
-    repeats: [],
-    log: [],
-  });
 
   const apiRef = useRef<Api | null>(null);
   const scoreObj = useRef<Score | null>(null);
   const split = useRef<SplitResult | null>(null);
   const loopRef = useRef<BarLoop>(null);
-  /** Where to go back to once a regenerated MIDI (sound switch) has loaded. */
-  const resumeRef = useRef<{ tick: number; playing: boolean } | null>(null);
-  /** PER-463: where the last bar step sent the playhead; alphaTab's own tickPosition lags behind the worker. */
+  /** Where the last bar step sent the playhead; alphaTab's own tickPosition lags behind its worker. */
   const pendingTick = useRef<{ tick: number; at: number } | null>(null);
   const channelsRef = useRef(channels);
-  channelsRef.current = channels;
-
-  const log = (line: string) =>
-    setDebug((d) => ({ ...d, log: [...d.log.slice(-30), `${(performance.now() / 1000).toFixed(1)}s ${line}`] }));
-  const time = (key: string, ms: number) => setDebug((d) => ({ ...d, timings: { ...d.timings, [key]: Math.round(ms) } }));
+  useEffect(() => {
+    channelsRef.current = channels;
+  }, [channels]);
 
   // ------------------------------------------------------------ load & render
   useEffect(() => {
@@ -114,7 +73,6 @@ export function useAlphaTabPlayer({
     if (!el) return;
     let cancelled = false;
     let api: Api | null = null;
-    const t0 = performance.now();
     setStatus("loading");
     setError(null);
     setPlayerReady(false);
@@ -124,10 +82,8 @@ export function useAlphaTabPlayer({
     loopRef.current = null;
 
     (async () => {
-      installOutputTap();
       const at = await loadAlphaTab();
       if (cancelled) return;
-      time("load alphaTab", performance.now() - t0);
       api = new at.AlphaTabApi(el, {
         // Lazy loading left the first screen blank inside our scroll container
         // until the user scrolled; draw everything up front instead.
@@ -136,7 +92,7 @@ export function useAlphaTabPlayer({
           layoutMode: options.layout === "page" ? at.LayoutMode.Page : at.LayoutMode.Horizontal,
           staveProfile: at.StaveProfile.Score,
           scale: options.scale,
-          barsPerRow: options.barsPerRow ?? -1,
+          barsPerRow: options.barsPerRow,
         },
         player: {
           playerMode: at.PlayerMode.EnabledSynthesizer,
@@ -154,38 +110,20 @@ export function useAlphaTabPlayer({
         },
       });
       apiRef.current = api;
-      (window as unknown as { __at?: unknown }).__at = { api, at, get score() { return scoreObj.current; }, get split() { return split.current; } };
-      wire(at, api, t0);
+      // For poking at the player from the browser console.
+      (window as unknown as { __at?: unknown }).__at = { api, at, get score() { return scoreObj.current; } };
+      wire(at, api);
 
-      const file = await prepareFile(url, {
-        hyphens: options.hyphens,
-        orderVerses: options.orderVerses,
-        shortBars: options.shortBars,
-      });
+      const { bytes } = await prepareFile(url, { hyphens: false, orderVerses: true, shortBars: true });
       if (cancelled) return;
-      time("fetch file", file.fetchMs);
-      const { bytes, ...fileInfo } = file;
-
-      let t = performance.now();
       let score = at.importer.ScoreLoader.loadScoreFromBytes(bytes, api.settings);
-      time("parse", performance.now() - t);
-      for (const line of fixJumps(at, score)) log(line);
-
-      t = performance.now();
-      const result = options.split
-        ? splitVoices(at, score, api.settings)
-        : {
-            score,
-            roles: score.tracks.map(() => ({ kind: "plain" }) as TrackRole),
-            display: score.tracks.map((_, i) => i),
-            channels: score.tracks.map((tr) => ({ track: tr.index, channel: tr.playbackInfo.primaryChannel })),
-            warnings: [],
-          };
-      if (options.split) time("split voices", performance.now() - t);
+      fixJumps(at, score);
+      const result = splitVoices(at, score, api.settings);
       score = result.score;
-      setProgram(at, score, PROGRAM[options.sound]);
+      setProgram(at, score, CHOIR);
       scoreObj.current = score;
       split.current = result;
+      setBpm(score.tempo);
 
       const heard = score.tracks.filter((tr) => result.roles[tr.index].kind !== "display");
       const nextParts: Part[] = heard.map((tr) => {
@@ -201,27 +139,8 @@ export function useAlphaTabPlayer({
       setChannels(Object.fromEntries(nextParts.map((p) => [p.id, BASE])));
       setMyPart(null);
       setPresetState("all");
-      setDebug((d) => ({
-        ...d,
-        file: fileInfo,
-        warnings: result.warnings,
-        bars: score.masterBars.length,
-        tempo: score.tempo,
-        repeats: describeRepeats(score),
-        tracks: score.tracks.map((tr) => ({
-          index: tr.index,
-          name: tr.name,
-          role: result.roles[tr.index],
-          drawn: result.display.includes(tr.index),
-          channel: tr.playbackInfo.primaryChannel,
-          program: tr.playbackInfo.program,
-          voicesPerBar: Math.max(...tr.staves[0].bars.map((b) => b.voices.length)),
-        })),
-      }));
 
       setStatus("rendering");
-      t = performance.now();
-      api.renderFinished.on(() => time("render", performance.now() - t));
       api.renderScore(score, result.display);
     })().catch((e: unknown) => {
       if (cancelled) return;
@@ -229,49 +148,27 @@ export function useAlphaTabPlayer({
       setError(e instanceof Error ? e.message : String(e));
     });
 
-    function wire(at: AlphaTab, a: Api, start: number) {
-      a.error.on((e) => {
-        setError(e.message);
-        log(`error: ${e.message}`);
-      });
+    function wire(at: AlphaTab, a: Api) {
+      a.error.on((e) => setError(e.message));
       a.postRenderFinished.on(() => setStatus("ready"));
-      a.soundFontLoaded.on(() => time("soundfont", performance.now() - start));
-      a.playerReady.on(() => {
-        time("player ready", performance.now() - start);
-        setPlayerReady(true);
-      });
+      a.playerReady.on(() => setPlayerReady(true));
       a.midiLoaded.on((e) => {
         setDuration(e.endTime / 1000);
         setEndTick(e.endTick);
         applyMix(a, channelsRef.current);
-        const resume = resumeRef.current;
-        if (resume) {
-          resumeRef.current = null;
-          a.tickPosition = resume.tick;
-          if (resume.playing) a.play();
-        }
-        log(`midi loaded: ${(e.endTime / 1000).toFixed(1)} s, ${e.endTick} ticks`);
       });
       a.playerStateChanged.on((e) => setPlaying(e.state === at.synth.PlayerState.Playing));
       a.playerPositionChanged.on((e) => {
         setPosition(e.currentTime / 1000);
-        // PER-463: also while paused (activeBeatsChanged only fires while playing).
-        const lookup = a.tickCache?.masterBars ?? [];
-        const played = lookup.find((b) => e.currentTick >= b.start && e.currentTick < b.end);
-        if (played) setCurrentBar(played.masterBar.index + 1);
         setDuration(e.endTime / 1000);
-        setDebug((d) => (Math.abs(d.tick - e.currentTick) > 240 ? { ...d, tick: e.currentTick } : d));
+        // Also while paused (activeBeatsChanged only fires while playing).
+        const played = (a.tickCache?.masterBars ?? []).find((b) => e.currentTick >= b.start && e.currentTick < b.end);
+        if (played) setCurrentBar(played.masterBar.index + 1);
       });
       a.activeBeatsChanged.on((e) => {
         const beat = e.activeBeats[0];
         if (beat) setCurrentBar(beat.voice.bar.index + 1);
       });
-      a.playbackRangeChanged.on((e) =>
-        setDebug((d) => ({
-          ...d,
-          range: e.playbackRange ? { startTick: e.playbackRange.startTick, endTick: e.playbackRange.endTick } : null,
-        }))
-      );
       a.beatMouseUp.on((beat) => {
         if (beat) tapBar(a, beat);
       });
@@ -282,23 +179,8 @@ export function useAlphaTabPlayer({
       api?.destroy();
       apiRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the file or render options change
-  }, [url, options.split, options.hyphens, options.orderVerses, options.shortBars, options.scale, options.layout, options.scroll, options.barsPerRow]);
-
-  // ----------------------------------------------------------- sound switch
-  useEffect(() => {
-    const api = apiRef.current;
-    const score = scoreObj.current;
-    if (!api || !score) return;
-    const at = (window as unknown as { __at?: { at: AlphaTab } }).__at?.at;
-    if (!at) return;
-    const changed = setProgram(at, score, PROGRAM[options.sound]);
-    log(`ljud: program ${PROGRAM[options.sound]} på ${score.tracks.length} spår, ${changed} instrumentbyten i noterna skrivna om`);
-    // Regenerating the MIDI rewinds to the start; come back to where we were.
-    resumeRef.current = { tick: api.tickPosition, playing: api.playerState === at.synth.PlayerState.Playing };
-    api.loadMidiForScore();
-    setDebug((d) => ({ ...d, tracks: d.tracks.map((t) => ({ ...t, program: PROGRAM[options.sound] })) }));
-  }, [options.sound]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload only when the file or how it is drawn changes
+  }, [url, options.scale, options.layout, options.scroll, options.barsPerRow]);
 
   // ---------------------------------------------------------------- mixing
   function applyMix(api: Api, chs: Record<string, Channel>) {
@@ -318,7 +200,6 @@ export function useAlphaTabPlayer({
 
   useEffect(() => {
     if (apiRef.current && playerReady) applyMix(apiRef.current, channels);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- applyMix reads refs
   }, [channels, playerReady]);
 
   function setChannel(id: string, patch: Partial<Channel>) {
@@ -359,7 +240,7 @@ export function useAlphaTabPlayer({
   );
 
   // ------------------------------------------------------------- A–B loop
-  /** Tap a bar: the first tap marks the start, the second the end. */
+  /** Click a bar: the first click marks the start, the second the end. */
   function tapBar(api: Api, beat: Beat) {
     const bar = beat.voice.bar;
     const l = loopRef.current;
@@ -392,12 +273,17 @@ export function useAlphaTabPlayer({
     }
   }
 
-  // ------------------------------------------------- PER-463: keyboard helpers
-  /** The bar being played (in play order, so repeats count), as an index into the lookup. */
+  // --------------------------------------------------------- keyboard helpers
+  /** The tick to measure from: a bar step still on its way to the worker, else alphaTab's position. */
+  function nowTick(api: Api) {
+    const p = pendingTick.current;
+    return p && performance.now() - p.at < 500 ? p.tick : api.tickPosition;
+  }
+
+  /** The bar being played (in play order, so repeats count), as an index into the tick lookup. */
   function playedBar(api: Api) {
     const bars = api.tickCache?.masterBars ?? [];
-    const p = pendingTick.current;
-    const tick = p && performance.now() - p.at < 500 ? p.tick : api.tickPosition;
+    const tick = nowTick(api);
     let i = bars.findIndex((b) => tick >= b.start && tick < b.end);
     if (i < 0) i = tick <= 0 ? 0 : bars.length - 1;
     return { bars, i };
@@ -409,10 +295,8 @@ export function useAlphaTabPlayer({
     if (!api) return;
     const { bars, i } = playedBar(api);
     if (!bars.length) return;
-    const p = pendingTick.current;
-    const tick = p && performance.now() - p.at < 500 ? p.tick : api.tickPosition;
     let target = i + delta;
-    if (delta < 0 && tick - bars[i].start > 240) target += 1;
+    if (delta < 0 && nowTick(api) - bars[i].start > 240) target += 1;
     const to = bars[Math.max(0, Math.min(bars.length - 1, target))];
     pendingTick.current = { tick: to.start, at: performance.now() };
     api.tickPosition = to.start;
@@ -441,18 +325,10 @@ export function useAlphaTabPlayer({
     const lookup = api.tickCache;
     const from = lookup.getMasterBarStart(score.masterBars[l.a]) / endTick;
     if (l.b === null) return { from, to: null };
-    const last = lookup.getMasterBar(score.masterBars[l.b]);
-    return { from, to: last.end / endTick };
+    return { from, to: lookup.getMasterBar(score.masterBars[l.b]).end / endTick };
   }
 
   return {
-    stepBar,
-    markAt,
-    loopFractions,
-    toStart: () => {
-      const api = apiRef.current;
-      if (api) api.tickPosition = api.playbackRange?.startTick ?? 0;
-    },
     status,
     error,
     playerReady,
@@ -464,6 +340,7 @@ export function useAlphaTabPlayer({
       if (apiRef.current) apiRef.current.timePosition = s * 1000;
     },
     currentBar,
+    bpm,
     tempo,
     setTempo: (t: number) => {
       const next = Math.max(50, Math.min(120, Math.round(t)));
@@ -472,6 +349,13 @@ export function useAlphaTabPlayer({
     },
     loop,
     setLoop: (l: BarLoop) => setLoop(l),
+    loopFractions,
+    stepBar,
+    markAt,
+    toStart: () => {
+      const api = apiRef.current;
+      if (api) api.tickPosition = api.playbackRange?.startTick ?? 0;
+    },
     parts,
     channels,
     setChannel,
@@ -480,7 +364,6 @@ export function useAlphaTabPlayer({
     chooseMyPart,
     preset,
     applyPreset,
-    debug,
   };
 }
 
@@ -490,24 +373,17 @@ export type AlphaTabPlayerState = ReturnType<typeof useAlphaTabPlayer>;
  * Sets every track's sound. The MusicXML importer also puts an instrument
  * change on each track's first beat (from <midi-program>), which overrides
  * playbackInfo.program when the MIDI is generated, so rewrite those too.
- * Returns how many beat-level instrument changes were rewritten.
  */
-function setProgram(at: AlphaTab, score: Score, program: number): number {
+function setProgram(at: AlphaTab, score: Score, program: number) {
   const instrument = at.model.AutomationType.Instrument;
-  let changed = 0;
   for (const track of score.tracks) {
     track.playbackInfo.program = program;
     for (const staff of track.staves)
       for (const bar of staff.bars)
         for (const voice of bar.voices)
           for (const beat of voice.beats)
-            for (const a of beat.automations ?? [])
-              if (a.type === instrument) {
-                a.value = program;
-                changed++;
-              }
+            for (const a of beat.automations ?? []) if (a.type === instrument) a.value = program;
   }
-  return changed;
 }
 
 /**
@@ -515,41 +391,23 @@ function setProgram(at: AlphaTab, score: Score, program: number): number {
  * D.S./D.C., which never takes a To Coda or stops at Fine. Upgrade them to the
  * "al Coda" / "al Fine" forms when the score has a To Coda / Fine mark.
  */
-function fixJumps(at: AlphaTab, score: Score): string[] {
+function fixJumps(at: AlphaTab, score: Score) {
   const D = at.model.Direction;
   const has = (d: number) => score.masterBars.some((m) => m.directions?.has(d));
   const toCoda = has(D.JumpDaCoda);
   const fine = has(D.TargetFine);
-  const out: string[] = [];
   for (const m of score.masterBars) {
-    const swap = (from: number, to: number, label: string) => {
+    const swap = (from: number, to: number) => {
       if (!m.directions?.has(from)) return;
       m.directions.delete(from);
       m.addDirection(to);
-      out.push(`takt ${m.index + 1}: ${label}`);
     };
     if (toCoda) {
-      swap(D.JumpDalSegno, D.JumpDalSegnoAlCoda, "D.S. → D.S. al Coda");
-      swap(D.JumpDaCapo, D.JumpDaCapoAlCoda, "D.C. → D.C. al Coda");
+      swap(D.JumpDalSegno, D.JumpDalSegnoAlCoda);
+      swap(D.JumpDaCapo, D.JumpDaCapoAlCoda);
     } else if (fine) {
-      swap(D.JumpDalSegno, D.JumpDalSegnoAlFine, "D.S. → D.S. al Fine");
-      swap(D.JumpDaCapo, D.JumpDaCapoAlFine, "D.C. → D.C. al Fine");
+      swap(D.JumpDalSegno, D.JumpDalSegnoAlFine);
+      swap(D.JumpDaCapo, D.JumpDaCapoAlFine);
     }
   }
-  return out;
-}
-
-function describeRepeats(score: Score): string[] {
-  const out: string[] = [];
-  for (const mb of score.masterBars) {
-    const bits: string[] = [];
-    if (mb.isRepeatStart) bits.push("|:");
-    if (mb.repeatCount > 0) bits.push(`:| x${mb.repeatCount}`);
-    if (mb.alternateEndings) bits.push(`volta ${mb.alternateEndings.toString(2)}`);
-    if (mb.directions?.size) bits.push(`dir ${[...mb.directions].join(",")}`);
-    if (mb.tempoAutomations?.length) bits.push(`♩=${mb.tempoAutomations.map((a) => a.value).join("/")}`);
-    if (mb.section) bits.push(`[${mb.section.text}]`);
-    if (bits.length) out.push(`takt ${mb.index + 1}: ${bits.join(" ")}`);
-  }
-  return out;
 }

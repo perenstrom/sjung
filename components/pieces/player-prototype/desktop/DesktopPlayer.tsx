@@ -16,6 +16,8 @@
 // Each variant starts with its own way of showing the score (D follows the
 // cursor, E turns a page when the cursor leaves the screen, F is one long
 // row); the amber strip at the bottom overrides it in any variant.
+// The phone variants (A–C, PER-458) and the alphaTab check (T, PER-464) were
+// removed once decided; they stay in this branch's history.
 
 import { Keyboard, Music, PanelRightClose, PanelRightOpen, Repeat, SlidersHorizontal, Timer, X } from "lucide-react";
 import Link from "next/link";
@@ -36,8 +38,12 @@ import { FIXTURES, FORMAT_LABEL, type PlayableFixture } from "../fixtures";
 import { formatTime } from "../usePlayerState";
 import { type Desk, SHORTCUTS, useAlphaTabDesk, useFakeDesk, useShortcuts } from "./useDesk";
 
-export const DESKTOP_VARIANTS = ["D", "E", "F"] as const;
-type DesktopKey = (typeof DESKTOP_VARIANTS)[number];
+export const DESKTOP_VARIANTS = [
+  { key: "D", name: "Bred Musikapp" },
+  { key: "E", name: "Studio" },
+  { key: "F", name: "I appen" },
+] as const;
+export type DesktopKey = (typeof DESKTOP_VARIANTS)[number]["key"];
 
 type ScoreMode = "follow" | "page" | "smooth" | "row";
 const DEFAULT_SCORE: Record<DesktopKey, { mode: ScoreMode; scale: number }> = {
@@ -51,7 +57,6 @@ type Props = {
   fixture: PlayableFixture;
   ctx: PlayerContext;
   trail: AppBreadcrumbStaticTrail;
-  variants: readonly { key: string; name: string }[];
 };
 
 export function DesktopPlayer(props: Props) {
@@ -59,15 +64,10 @@ export function DesktopPlayer(props: Props) {
   const d = DEFAULT_SCORE[props.variant];
   const mode = (params.get("score") as ScoreMode | null) ?? d.mode;
   const options: Options = {
-    split: params.get("split") !== "0",
-    hyphens: params.get("hyph") === "1",
-    orderVerses: true,
-    shortBars: true,
     scale: Number(params.get("scale") ?? d.scale),
     layout: mode === "row" ? "horizontal" : "page",
     scroll: mode === "page" ? "offscreen" : mode === "smooth" ? "smooth" : "continuous",
     barsPerRow: Number(params.get("bars") ?? -1),
-    sound: params.get("sound") === "piano" ? "piano" : "choir",
   };
   return (
     <>
@@ -658,7 +658,7 @@ function ShortcutHelp({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
 // ---------------------------------------------------------------- prototype strip
 
-function PrototypeStrip({ variants, variant, fixture, mode, options }: Props & { mode: ScoreMode; options: Options }) {
+function PrototypeStrip({ variant, fixture, mode, options }: Props & { mode: ScoreMode; options: Options }) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -681,7 +681,7 @@ function PrototypeStrip({ variants, variant, fixture, mode, options }: Props & {
   const scored = !!fixture.url;
   return (
     <div className="fixed inset-x-0 bottom-0 z-[60] flex h-7 items-center gap-1.5 overflow-x-auto bg-amber-300 px-2 text-[11px] text-black">
-      <PrototypeSwitcher variants={variants} current={variant} inline arrowKeys={false} />
+      <PrototypeSwitcher variants={DESKTOP_VARIANTS} current={variant} inline arrowKeys={false} />
       {scored ? (
         <>
           <span className="ml-2 shrink-0 font-medium">Noter:</span>
@@ -695,7 +695,7 @@ function PrototypeStrip({ variants, variant, fixture, mode, options }: Props & {
           ).map(([m, label]) => chip(mode === m, label, () => set("score", m)))}
           <span className="ml-2 shrink-0 font-medium">Takter/rad:</span>
           {[-1, 2, 4, 6, 8].map((n) =>
-            chip((options.barsPerRow ?? -1) === n, n === -1 ? "auto" : String(n), () => set("bars", n === -1 ? null : String(n)))
+            chip(options.barsPerRow === n, n === -1 ? "auto" : String(n), () => set("bars", n === -1 ? null : String(n)))
           )}
           <span className="ml-2 flex shrink-0 items-center rounded-full border border-black/20">
             <button type="button" className="px-2" onClick={() => set("scale", (options.scale - 0.1).toFixed(1))}>
@@ -706,10 +706,6 @@ function PrototypeStrip({ variants, variant, fixture, mode, options }: Props & {
               +
             </button>
           </span>
-          {chip(options.hyphens, "Bindestreck", () => set("hyph", options.hyphens ? null : "1"))}
-          {chip(options.sound === "piano", options.sound === "piano" ? "Piano" : "Kör", () =>
-            set("sound", options.sound === "piano" ? null : "piano")
-          )}
         </>
       ) : null}
       <span className="ml-2 truncate opacity-70">PROTOTYP · {fixture.note}</span>

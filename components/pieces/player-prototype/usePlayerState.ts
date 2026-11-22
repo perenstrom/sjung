@@ -1,6 +1,6 @@
 "use client";
 
-// PROTOTYPE (PER-458): a fake player. A clock advances the position; nothing
+// PROTOTYPE (PER-458, PER-463): a fake player, for the files alphaTab doesn't play (audio, MIDI). A clock advances the position; nothing
 // makes a sound. Mix, tempo and loop are plain state so the UI can be judged.
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -106,21 +106,6 @@ export function usePlayerState(fixture: PlayableFixture) {
     setTempo: (t: number) => setTempo(Math.max(50, Math.min(120, Math.round(t)))),
     loop,
     setLoop,
-    /** Tap a bar: the first tap sets the start, the second the end. */
-    tapBar: (bar: number) => {
-      const start = (bar - 1) * barSeconds;
-      const end = bar * barSeconds;
-      setLoop((l) => {
-        if (!l || l.b !== null) return { a: start, b: null };
-        return l.a <= start ? { a: l.a, b: end } : { a: start, b: l.a + barSeconds };
-      });
-    },
-    /** For files without bars (audio): mark A, then B, at the playhead. */
-    markLoop: () =>
-      setLoop((l) => {
-        if (!l || l.b !== null) return { a: position, b: null };
-        return position > l.a ? { a: l.a, b: position } : { a: position, b: l.a };
-      }),
     channels,
     setChannel,
     audible,
