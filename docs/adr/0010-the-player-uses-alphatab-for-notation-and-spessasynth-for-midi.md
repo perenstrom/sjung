@@ -9,10 +9,17 @@ Sjung's player (PER-443) plays MIDI files and notation files: MusicXML, `.mxl`, 
 - **Our own score model fed by an importer per format, played with oscillators and drawn with VexFlow** (as Notrummet does). Rejected: we would own all the music-reading and drawing code, and oscillators sound like a synth rather than a piano or a choir.
 - **alphaTab for MIDI as well, by building its MIDI input in code and playing it through `loadMidiFile`.** Rejected: this gives no score or cursor either, per-channel mixing without a score is unproven, and we would own the glue code.
 - **Converting MIDI to MusicXML (in the MuseScore worker, or with our own quantiser) so that alphaTab is the only engine.** Not now: MIDI would depend on the worker, which the slice order brings in last, and the quantised notation may look messy. The MuseScore worker route stays open as a later step that would give MIDI files a score.
-- **Verovio for drawing the score.** Kept as the fallback if alphaTab's choir lyrics, which have no hyphens or melisma lines, turn out to be unacceptable on real files.
+- **Verovio for drawing the score.** Rejected after a prototype with real choir files on a phone (PER-464). alphaTab's lyrics were readable once we add the hyphens ourselves, even though melisma lines are missing and the verse lines don't quite share a baseline.
 
 ## Consequences
 
-- alphaTab mixes per track, not per voice. Two voices on one staff only become separate parts ("Women 1", "Women 2") through hidden per-voice tracks, which a prototype with real files has to prove first. Until then, a staff with two voices mixes as one part.
+- alphaTab mixes per track, not per voice. So after import, every staff with two voices gets one hidden track per voice, and the drawn track is muted. The prototype showed that these parts ("Women 1", "Women 2") work with solo, mute, the A–B loop and the cursor. Each heard track needs its own MIDI channel, so a score can have at most 14 parts.
+- alphaTab's MusicXML import gets parts of real choir scores wrong, so Sjung adjusts each score when loading it:
+  - Bars shorter than their time signature are marked as short. MuseScore doesn't mark a counted pickup or a bar split around a repeat, and alphaTab pads such bars with silence.
+  - Each note's verses are sorted by number. alphaTab orders verse lines by first appearance, and MuseScore can write verse 1, 3, 2.
+  - A D.S. or D.C. becomes "al Coda" or "al Fine" when the score has a To Coda or Fine. alphaTab reads every D.S. and D.C. as plain, so it never takes the coda and never stops at Fine.
+  - The Piano / Kör switch also rewrites the instrument change alphaTab puts on each track's first beat, which otherwise overrides the track's sound.
+  - A hyphen is added after each syllable that continues on the next note.
+- alphaTab requires its "♪ alphaTab.net" attribution to stay visible in the drawn score. Removing it needs the maintainers' permission.
 - A MIDI file mixes by the tracks it was exported with. MuseScore's MIDI export merges both voices on a staff into one track.
 - The player's controls are written against the shared interface. An engine-specific feature has to fit that interface or stay out.
