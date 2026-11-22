@@ -76,6 +76,10 @@ _Avoid_: Nickname, Subtitle.
 An uploaded document (e.g. a score PDF) attached to a Piece, stored in object storage. Deleting a File, its Piece or its Group also deletes its stored content. Replacing a File gives it new content but keeps it the same File: its display name and its place on the Piece stay. See ADR-0005.
 _Avoid_: Score, Sheet music, Attachment — reserve those for casual conversation; "File" is the model.
 
+**Playable File**:
+A File that Sjung's player can open, because of its format: audio (MP3, M4A/AAC, WAV), MIDI, MusicXML or MuseScore. Its Category plays no part: a Category only groups Files. A MuseScore File stays a Playable File while it is being prepared for the player and if preparing it fails, though it can only be played once it is ready. The uploaded file is always the File and can still be downloaded; anything Sjung derives from it for playing has no name or Category of its own and goes wherever the File goes. Opening a Playable File opens the player; any other File is downloaded. See ADR-0009, ADR-0010.
+_Avoid_: Rehearsal file, Audio file, Track — a Playable File may be a score, and "Övningsfiler" is only a Category.
+
 **Link**:
 An external URL reference attached to a Piece (e.g. a recording or streaming link).
 
