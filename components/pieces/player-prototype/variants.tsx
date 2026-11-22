@@ -285,4 +285,6 @@ export const VARIANTS = [
   { key: "A", name: "Musikapp", Component: VariantA },
   { key: "B", name: "Mixerbord", Component: VariantB },
   { key: "C", name: "Övningsläge", Component: VariantC },
+  // PER-464: variant A with the real alphaTab engine; rendered by AlphaTabPlayer, not here.
+  { key: "T", name: "alphaTab", Component: VariantA },
 ] as const;

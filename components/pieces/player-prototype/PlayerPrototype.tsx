@@ -2,11 +2,13 @@
 
 // PROTOTYPE (PER-458): three player variants on one route, switched with
 // `?variant=A|B|C`; `?file=` picks which stub Playable File is open.
+// PER-464 adds `?variant=T`: variant A playing the real file with alphaTab.
 
 import { useSearchParams } from "next/navigation";
 
 import { PrototypeSwitcher } from "@/components/PrototypeSwitcher";
 
+import { AlphaTabPlayer } from "./alphatab/AlphaTabPlayer";
 import { findFixture, type PlayableFixture } from "./fixtures";
 import { usePlayerState } from "./usePlayerState";
 import { VARIANTS } from "./variants";
@@ -36,12 +38,20 @@ export function PlayerPrototype({
 
   return (
     <>
-      <Player
-        key={`${variantKey}:${fixture.key}`}
-        variantKey={variantKey}
-        fixture={fixture}
-        ctx={{ pieceName, backHref, hrefFor, setListName: setList?.name }}
-      />
+      {variantKey === "T" ? (
+        <AlphaTabPlayer
+          key={fixture.key}
+          fixture={fixture}
+          ctx={{ pieceName, backHref, hrefFor, setListName: setList?.name }}
+        />
+      ) : (
+        <Player
+          key={`${variantKey}:${fixture.key}`}
+          variantKey={variantKey}
+          fixture={fixture}
+          ctx={{ pieceName, backHref, hrefFor, setListName: setList?.name }}
+        />
+      )}
       <div className="fixed inset-x-0 top-0 z-50 flex h-9 items-center gap-2 bg-amber-300 px-2 text-[10px] leading-tight text-black">
         <PrototypeSwitcher variants={VARIANTS} current={variantKey} inline />
         <details className="min-w-0 flex-1">

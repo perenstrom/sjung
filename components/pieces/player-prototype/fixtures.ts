@@ -25,6 +25,8 @@ export type PlayableFixture = {
   parts: Part[];
   /** What this file exercises, shown in the prototype's own notes. */
   note: string;
+  /** PER-464: the real file under /public, for variant T (alphaTab). */
+  url?: string;
 };
 
 const satb = (staffs?: [string, string]): Part[] => [
@@ -58,6 +60,7 @@ export const FIXTURES: PlayableFixture[] = [
     verses: 0,
     parts: satb(),
     note: "MusicXML from Sibelius: SATB, one part per voice, a repeat with two voltas, no lyrics.",
+    url: "/prototype-player/files/julklockorna.xml",
   },
   {
     key: "ris",
@@ -89,6 +92,21 @@ export const FIXTURES: PlayableFixture[] = [
     verses: 3,
     parts: satb(),
     note: "MuseScore: SATB on four staves, 49 bars, three verses of lyrics (shown without hyphens).",
+    // Exported with MuseScore 4.7.7's CLI; it needed -f (the score is flagged as corrupted).
+    url: "/prototype-player/files/staffan.mxl",
+  },
+  {
+    key: "staffan-tocoda",
+    fileName: "Sankt Staffan – med To Coda (testkopia)",
+    format: "musicxml",
+    hasScore: true,
+    bpm: 100,
+    beatsPerBar: 4,
+    bars: 49,
+    verses: 3,
+    parts: satb(),
+    note: "Staffan with bar 18's coda sign changed to a real To Coda, to check that D.S. al Coda plays 10–18 then jumps to 31.",
+    url: "/prototype-player/files/staffan-tocoda.xml",
   },
   {
     key: "test-mxl",
@@ -101,6 +119,7 @@ export const FIXTURES: PlayableFixture[] = [
     verses: 0,
     parts: satb(["Women", "Men"]),
     note: "Two voices per staff: Women (S+A) and Men (T+B) drawn as two staves, mixed as four voices.",
+    url: "/prototype-player/files/test-score.mxl",
   },
   {
     key: "test-mid",
