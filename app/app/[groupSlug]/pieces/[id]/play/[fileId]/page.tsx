@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { PlayerView } from "@/components/player/PlayerView";
-import { searchParamId } from "@/lib/pieces/href";
+import { searchParamId } from "@/lib/search-params";
 import { getPlayerData } from "@/lib/pieces/player";
 
 type PageProps = {

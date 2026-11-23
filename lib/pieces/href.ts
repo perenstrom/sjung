@@ -13,14 +13,6 @@ export function pieceHref(
 }
 
 /**
- * The id a link carries in a search param, such as the Set list a Piece link
- * carries in `setlist`; `undefined` when it is missing, empty or repeated.
- */
-export function searchParamId(param: string | string[] | undefined): string | undefined {
-  return typeof param === "string" && param !== "" ? param : undefined;
-}
-
-/**
  * A File's download: a route that redirects to a short-lived signed URL. It is
  * a plain link target, so the tap itself opens the new tab; iOS Safari blocks
  * tabs opened after an await (PER-415).

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fileDownloadHref, searchParamId, pieceHref, playerHref } from "@/lib/pieces/href";
+import { fileDownloadHref, pieceHref, playerHref } from "@/lib/pieces/href";
 
 describe("pieceHref", () => {
   it("links to the piece", () => {
@@ -11,18 +11,6 @@ describe("pieceHref", () => {
     expect(pieceHref("kor", "p-1", { fromSetListId: "sl-1" })).toBe(
       "/app/kor/pieces/p-1?setlist=sl-1"
     );
-  });
-});
-
-describe("searchParamId", () => {
-  it("reads the id a link carries, such as the set list on a piece link", () => {
-    expect(searchParamId("sl-1")).toBe("sl-1");
-  });
-
-  it("ignores a missing, empty or repeated param", () => {
-    expect(searchParamId(undefined)).toBeUndefined();
-    expect(searchParamId("")).toBeUndefined();
-    expect(searchParamId(["sl-1", "sl-2"])).toBeUndefined();
   });
 });
 
