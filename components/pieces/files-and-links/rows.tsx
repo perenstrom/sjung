@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
 import { EditPieceLinkPopover } from "@/components/pieces/EditPieceLinkPopover";
+import { noteOpenedFromList } from "@/components/player/closePlayer";
 import { metadataForFile } from "@/components/pieces/fileMetadata";
 import { labelForLink, metadataForLink } from "@/lib/pieces/linkLabel";
 import { splitForMiddleTruncation } from "@/components/pieces/middleTruncation";
@@ -252,7 +253,12 @@ function FileOpenLink({
     );
   }
   return (
-    <Link href={playerHref(ctx.groupSlug, ctx.pieceId, file.id)} aria-disabled={dimmed || undefined} className={classes}>
+    <Link
+      href={playerHref(ctx.groupSlug, ctx.pieceId, file.id)}
+      onClick={noteOpenedFromList}
+      aria-disabled={dimmed || undefined}
+      className={classes}
+    >
       {children}
     </Link>
   );

@@ -11,6 +11,7 @@ import { DEFAULT_TEMPO, IDLE_SNAPSHOT, markLoop, type Player, type PlayerSnapsho
 import { pieceHref, playerHref } from "@/lib/pieces/href";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
+import { closePlayer } from "./closePlayer";
 import { DockButton, PlayButton, RepeatControls, SeekBar, TempoControls } from "./controls";
 
 type PlayerViewProps = { groupSlug: string; pieceId: string } & PlayerData;
@@ -83,10 +84,12 @@ export function PlayerScreen({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <header className="flex items-center gap-2 border-b px-3 py-2">
-        {/* Replaces the player in the history, so back from the Piece doesn't reopen it. */}
         <Link
           href={pieceHref(groupSlug, pieceId)}
-          replace
+          onClick={(event) => {
+            event.preventDefault();
+            closePlayer(router, pieceHref(groupSlug, pieceId));
+          }}
           aria-label="Stäng spelaren"
           className="-ml-1 rounded-full p-2 hover:bg-muted"
         >
@@ -94,9 +97,9 @@ export function PlayerScreen({
         </Link>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{pieceName}</p>
-          <label className="relative flex items-center text-xs text-muted-foreground">
-            <span className="sr-only">Fil</span>
+          <div className="relative flex items-center text-xs text-muted-foreground">
             <select
+              aria-label="Fil"
               value={file.id}
               onChange={(event) => router.replace(playerHref(groupSlug, pieceId, event.target.value), { scroll: false })}
               className="max-w-full appearance-none truncate bg-transparent pr-4"
@@ -108,14 +111,15 @@ export function PlayerScreen({
               ))}
             </select>
             <ChevronDown className="pointer-events-none absolute right-0 size-3" aria-hidden />
-          </label>
+          </div>
         </div>
         <span className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] tracking-wide text-muted-foreground uppercase">
           {file.formatLabel}
         </span>
       </header>
 
-      <main className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-3">
+      {/* Not a <main>: the player opens inside the app's own. */}
+      <div className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-3">
         <div className="space-y-3 text-center">
           <Music className="mx-auto size-16 text-muted-foreground/40" aria-hidden />
           <p className="font-medium break-words">{file.displayName}</p>
@@ -125,7 +129,7 @@ export function PlayerScreen({
             <p className="text-sm text-muted-foreground">Ljudfil – inga noter att visa.</p>
           )}
         </div>
-      </main>
+      </div>
 
       <footer className="border-t bg-background px-4 pt-2 pb-[max(env(safe-area-inset-bottom),12px)]">
         <SeekBar

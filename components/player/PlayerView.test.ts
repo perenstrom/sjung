@@ -42,7 +42,7 @@ describe("PlayerScreen", () => {
   });
 
   it("shows an audio File's name and that it has no score", () => {
-    expect(renderScreen()).toMatch(/<main[^>]*>.*>Sopran<.*>Ljudfil – inga noter att visa\.</);
+    expect(renderScreen()).toMatch(/<\/header>.*>Sopran<.*>Ljudfil – inga noter att visa\.</);
   });
 
   it("says when the File can't be played", () => {
