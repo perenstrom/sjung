@@ -26,7 +26,9 @@ export function peaksOf(channels: readonly Float32Array[], bars: number): number
  * must allow a cross-origin GET) or decoded; the strip then stays flat.
  */
 export async function loadWaveform(src: string, bars: number, signal: AbortSignal): Promise<number[]> {
-  const response = await fetch(src, { signal });
+  // Not from the cache: the `<audio>` element's own request is cached without
+  // the CORS headers this cross-origin read needs, and would be refused.
+  const response = await fetch(src, { signal, cache: "no-store" });
   if (!response.ok) throw new Error(`Waveform fetch failed: ${response.status}`);
   const encoded = await response.arrayBuffer();
   // An offline context decodes without asking to play anything.
