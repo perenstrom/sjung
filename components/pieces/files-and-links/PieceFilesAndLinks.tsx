@@ -89,6 +89,7 @@ function Body({
 
   const ctx: RowContext = {
     groupSlug,
+    pieceId: piece.id,
     pieceName: piece.name,
     layout,
     touch,

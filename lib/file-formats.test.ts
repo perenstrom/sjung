@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FILE_INPUT_ACCEPT, isAllowedFile, isPlayableFile } from "@/lib/file-formats";
+import { FILE_INPUT_ACCEPT, isAllowedFile, playableFormatOf } from "@/lib/file-formats";
 
 describe("isAllowedFile", () => {
   it.each([
@@ -36,13 +36,18 @@ describe("isAllowedFile", () => {
   });
 });
 
-describe("isPlayableFile", () => {
-  it.each(["Sopran.mp3", "Alt.M4A", "Alt.aac", "Tenor.wav"])("is true for %s", (fileName) => {
-    expect(isPlayableFile({ fileName })).toBe(true);
+describe("playableFormatOf", () => {
+  it.each([
+    ["Sopran.mp3", "MP3"],
+    ["Alt.M4A", "M4A"],
+    ["Alt.aac", "AAC"],
+    ["Tenor.wav", "WAV"],
+  ])("plays %s as audio, labelled %s", (fileName, label) => {
+    expect(playableFormatOf({ fileName })).toEqual({ engine: "audio", label });
   });
 
-  it.each(["Noter.pdf", "foto.jpg", "okänd.exe", "utan-filändelse"])("is false for %s", (fileName) => {
-    expect(isPlayableFile({ fileName })).toBe(false);
+  it.each(["Noter.pdf", "foto.jpg", "okänd.exe", "utan-filändelse"])("is null for %s", (fileName) => {
+    expect(playableFormatOf({ fileName })).toBeNull();
   });
 });
 

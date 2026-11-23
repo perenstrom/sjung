@@ -6,31 +6,41 @@
 type FileFormat = {
   extensions: readonly string[];
   mimeTypes: readonly string[];
-  /** Whether a File of this format is a Playable File (see CONTEXT.md). */
-  playable: boolean;
+  /** How the player plays a File of this format; absent when it is not a Playable File (see CONTEXT.md). */
+  playable?: PlayableFormat;
 };
 
+/** A Playable File's format, as the player needs it. */
+export type PlayableFormat = {
+  /** Which player engine plays it. */
+  engine: "audio";
+  /** The format's name, shown in the player. */
+  label: string;
+};
+
+const audio = (label: string): PlayableFormat => ({ engine: "audio", label });
+
 const FILE_FORMATS: readonly FileFormat[] = [
-  { extensions: [".pdf"], mimeTypes: ["application/pdf"], playable: false },
-  { extensions: [".jpg", ".jpeg"], mimeTypes: ["image/jpeg"], playable: false },
-  { extensions: [".png"], mimeTypes: ["image/png"], playable: false },
-  { extensions: [".webp"], mimeTypes: ["image/webp"], playable: false },
-  { extensions: [".gif"], mimeTypes: ["image/gif"], playable: false },
-  { extensions: [".mp3"], mimeTypes: ["audio/mpeg", "audio/mp3"], playable: true },
+  { extensions: [".pdf"], mimeTypes: ["application/pdf"] },
+  { extensions: [".jpg", ".jpeg"], mimeTypes: ["image/jpeg"] },
+  { extensions: [".png"], mimeTypes: ["image/png"] },
+  { extensions: [".webp"], mimeTypes: ["image/webp"] },
+  { extensions: [".gif"], mimeTypes: ["image/gif"] },
+  { extensions: [".mp3"], mimeTypes: ["audio/mpeg", "audio/mp3"], playable: audio("MP3") },
   {
     extensions: [".m4a"],
     mimeTypes: ["audio/mp4", "audio/x-m4a", "audio/m4a", "audio/aac"],
-    playable: true,
+    playable: audio("M4A"),
   },
   {
     extensions: [".aac"],
     mimeTypes: ["audio/aac", "audio/x-aac", "audio/aacp", "audio/x-hx-aac-adts"],
-    playable: true,
+    playable: audio("AAC"),
   },
   {
     extensions: [".wav"],
     mimeTypes: ["audio/wav", "audio/x-wav", "audio/wave", "audio/vnd.wave"],
-    playable: true,
+    playable: audio("WAV"),
   },
 ];
 
@@ -52,7 +62,7 @@ export function isAllowedFile({ fileName, mimeType }: { fileName: string; mimeTy
   return formatOf(fileName)?.mimeTypes.includes(mimeType) ?? false;
 }
 
-/** Whether the File is a Playable File, which the player opens instead of downloading. */
-export function isPlayableFile({ fileName }: { fileName: string }): boolean {
-  return formatOf(fileName)?.playable ?? false;
+/** The File's format if it is a Playable File, which the player opens instead of downloading; otherwise `null`. */
+export function playableFormatOf({ fileName }: { fileName: string }): PlayableFormat | null {
+  return formatOf(fileName)?.playable ?? null;
 }

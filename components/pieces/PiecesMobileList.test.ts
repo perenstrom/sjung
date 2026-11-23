@@ -24,8 +24,8 @@ const piece = {
   name: "Vem kan segla",
   credits: [],
   files: [
-    { id: "file-1", displayName: "Sopran.pdf", size: 1024, category: null },
-    { id: "file-2", displayName: "Alt.pdf", size: 1024, category: null },
+    { id: "file-1", displayName: "Sopran.pdf", fileName: "Sopran.pdf", size: 1024, category: null },
+    { id: "file-2", displayName: "Alt.pdf", fileName: "Alt.pdf", size: 1024, category: null },
   ],
   links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: null }],
   aliases: [],
@@ -171,8 +171,8 @@ describe("PieceRowDetails, an open piece row", () => {
       const text = textOf(
         renderDetails(isEditing, {
           files: [
-            { id: "file-1", displayName: "Sopran.pdf", size: 1024, category: null },
-            { id: "file-2", displayName: "Alt.pdf", size: 1024, category: "Noter" },
+            { id: "file-1", displayName: "Sopran.pdf", fileName: "Sopran.pdf", size: 1024, category: null },
+            { id: "file-2", displayName: "Alt.pdf", fileName: "Alt.pdf", size: 1024, category: "Noter" },
           ],
           links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: "Noter" }],
         } as unknown as Partial<PieceWithRelations>),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { attachmentDisposition } from "@/lib/content-disposition";
+import { attachmentDisposition, inlineDisposition } from "@/lib/content-disposition";
 
 describe("attachmentDisposition", () => {
   it("keeps a plain ASCII name as it is", () => {
@@ -19,5 +19,11 @@ describe("attachmentDisposition", () => {
     expect(attachmentDisposition("a'b(c)*;\\.pdf")).toBe(
       `attachment; filename="a'b(c)*;_.pdf"; filename*=UTF-8''a%27b%28c%29%2A%3B%5C.pdf`
     );
+  });
+});
+
+describe("inlineDisposition", () => {
+  it("shows the response in the page, named like an attachment", () => {
+    expect(inlineDisposition("Så.mp3")).toBe(`inline; filename="Sa.mp3"; filename*=UTF-8''S%C3%A5.mp3`);
   });
 });

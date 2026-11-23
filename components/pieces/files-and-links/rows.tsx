@@ -1,9 +1,11 @@
 "use client";
 
-import { ExternalLink, FileText, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
+import { Download, ExternalLink, FileText, Play, Trash2 } from "lucide-react";
+import Link from "next/link";
+import type { ComponentProps, ReactNode } from "react";
 
 import { EditPieceLinkPopover } from "@/components/pieces/EditPieceLinkPopover";
+import { noteOpenedFromList } from "@/components/player/closePlayer";
 import { metadataForFile } from "@/components/pieces/fileMetadata";
 import { labelForLink, metadataForLink } from "@/lib/pieces/linkLabel";
 import { splitForMiddleTruncation } from "@/components/pieces/middleTruncation";
@@ -12,7 +14,7 @@ import { ReplacePieceFilePopover } from "@/components/pieces/ReplacePieceFilePop
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
 import { TruncatedTooltip } from "@/components/TruncatedTooltip";
 import { Button } from "@/components/ui/button";
-import { fileDownloadHref } from "@/lib/pieces/href";
+import { fileDownloadHref, playerHref } from "@/lib/pieces/href";
 import { cn } from "@/lib/utils";
 
 import { type EditorTarget, isBlocked, isOpen, type OpenEditor } from "./editor";
@@ -20,6 +22,7 @@ import { type EditorTarget, isBlocked, isOpen, type OpenEditor } from "./editor"
 /** What a row needs from its `PieceFilesAndLinks`; private to this folder. */
 export type RowContext = {
   groupSlug: string;
+  pieceId: string;
   pieceName: string;
   layout: "detail" | "inline";
   touch: boolean;
@@ -77,17 +80,18 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
   if (ctx.layout === "inline") {
     return (
       <InlineRow touch={ctx.touch} error={error}>
-        <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <FileIcon file={file} />
         <TruncatedTooltip content={file.displayName}>
-          <FileDownloadLink
-            groupSlug={ctx.groupSlug}
-            fileId={file.id}
+          <FileOpenLink
+            ctx={ctx}
+            file={file}
             dimmed={removing}
             className={cn("flex min-w-0 flex-1 overflow-hidden", ctx.touch && "leading-10")}
           >
             <MiddleTruncatedText text={file.displayName} />
-          </FileDownloadLink>
+          </FileOpenLink>
         </TruncatedTooltip>
+        {file.playable ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
         {actions}
       </InlineRow>
     );
@@ -97,21 +101,17 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
     <li className="flex min-h-7 flex-wrap items-center gap-x-2">
       {/* The icon and name never wrap apart; the name truncates instead. */}
       <span className="inline-flex max-w-full min-w-0 items-center gap-2">
-        <FileText className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <FileIcon file={file} />
         <TruncatedTooltip content={file.displayName}>
-          <FileDownloadLink
-            groupSlug={ctx.groupSlug}
-            fileId={file.id}
-            dimmed={removing}
-            className="block min-w-0 truncate font-medium"
-          >
+          <FileOpenLink ctx={ctx} file={file} dimmed={removing} className="block min-w-0 truncate font-medium">
             {file.displayName}
-          </FileDownloadLink>
+          </FileOpenLink>
         </TruncatedTooltip>
       </span>
       {/* Metadata and actions wrap onto the next line together. */}
       <span className="inline-flex items-center gap-2">
         <span className="text-xs text-muted-foreground">{metadataForFile(file)}</span>
+        {file.playable ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
         {actions === null ? null : <span className="inline-flex items-center">{actions}</span>}
       </span>
     </li>
@@ -219,38 +219,81 @@ function RemoveButton({ label, disabled, onClick }: { label: string; disabled: b
   );
 }
 
+function FileIcon({ file }: { file: PieceFileListItem }) {
+  const Icon = file.playable ? Play : FileText;
+  return <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />;
+}
+
+const DIMMED = "pointer-events-none opacity-50";
+
 /**
- * Opens a File in a new tab through its download route. A plain link, so the
- * tap itself opens the tab: iOS Safari blocks one opened by script after an
- * await (PER-415). While the File is being removed it dims and stops opening.
+ * Opens a File: a Playable File in the player (see CONTEXT.md), any other
+ * through `FileDownloadLink`. While the File is being removed it dims and
+ * stops opening.
  */
-function FileDownloadLink({
-  groupSlug,
-  fileId,
+function FileOpenLink({
+  ctx,
+  file,
   dimmed,
   className,
   children,
 }: {
-  groupSlug: string;
-  fileId: string;
+  ctx: RowContext;
+  file: PieceFileListItem;
   dimmed: boolean;
   className?: string;
   children: ReactNode;
 }) {
+  const classes = cn("text-left text-primary underline-offset-4 hover:underline", dimmed && DIMMED, className);
+  if (!file.playable) {
+    return (
+      <FileDownloadLink ctx={ctx} file={file} dimmed={dimmed} className={classes}>
+        {children}
+      </FileDownloadLink>
+    );
+  }
+  return (
+    <Link
+      href={playerHref(ctx.groupSlug, ctx.pieceId, file.id)}
+      onClick={noteOpenedFromList}
+      aria-disabled={dimmed || undefined}
+      className={classes}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/** Downloads a Playable File, whose name opens the player instead. */
+function FileDownloadButton({ ctx, file, dimmed }: { ctx: RowContext; file: PieceFileListItem; dimmed: boolean }) {
+  return (
+    <Button asChild variant="ghost" size="icon" className={cn("size-7 shrink-0 text-muted-foreground", dimmed && DIMMED)}>
+      <FileDownloadLink ctx={ctx} file={file} dimmed={dimmed} aria-label={`Ladda ner ${file.displayName}`}>
+        <Download className="size-3.5" aria-hidden />
+      </FileDownloadLink>
+    </Button>
+  );
+}
+
+/**
+ * Opens a File in a new tab through its download route. A plain link, so the
+ * tap itself opens the tab: iOS Safari blocks one opened by script after an
+ * await (PER-415).
+ */
+function FileDownloadLink({
+  ctx,
+  file,
+  dimmed,
+  ...props
+}: { ctx: RowContext; file: PieceFileListItem; dimmed: boolean } & ComponentProps<"a">) {
   return (
     <a
-      href={fileDownloadHref(groupSlug, fileId)}
+      {...props}
+      href={fileDownloadHref(ctx.groupSlug, file.id)}
       target="_blank"
       rel="noopener noreferrer"
       aria-disabled={dimmed || undefined}
-      className={cn(
-        "text-left text-primary underline-offset-4 hover:underline",
-        dimmed && "pointer-events-none opacity-50",
-        className
-      )}
-    >
-      {children}
-    </a>
+    />
   );
 }
 

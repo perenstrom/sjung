@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { Prisma } from "@/app/generated/prisma/client";
-import { attachmentDisposition } from "@/lib/content-disposition";
+import { attachmentDisposition, inlineDisposition } from "@/lib/content-disposition";
 import {
   deleteObjects,
   deletePrefix,
@@ -26,6 +26,11 @@ import { assertAllowedStoredFile } from "@/lib/schemas/files";
 
 const UPLOAD_URL_EXPIRES_SECONDS = 60 * 10;
 const DOWNLOAD_URL_EXPIRES_SECONDS = 60 * 5;
+/**
+ * The player keeps reading the file for as long as it is open, by range
+ * requests to the same URL, so its URL outlives a long practice session.
+ */
+const PLAYBACK_URL_EXPIRES_SECONDS = 60 * 60 * 6;
 const FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
 
 /** The Piece a File belongs to, as far as storage cares. */
@@ -141,12 +146,24 @@ export async function deleteGroupFiles(groupId: string) {
   await cleanUp("deleteGroupFiles", { groupId }, () => deletePrefix(groupStoragePrefix(groupId)));
 }
 
+/** A File's stored content, as signing needs it. */
+type SignableFile = { storagePath: string; fileName: string; mimeType: string };
+
 /** A presigned GET that downloads the File under its original name. */
-export async function signDownload(file: { storagePath: string; fileName: string; mimeType: string }) {
+export async function signDownload(file: SignableFile) {
   return signGet(file.storagePath, {
     contentType: file.mimeType,
     contentDisposition: attachmentDisposition(file.fileName),
     expiresInSeconds: DOWNLOAD_URL_EXPIRES_SECONDS,
+  });
+}
+
+/** A signed URL the player reads a Playable File from while it is open. */
+export async function signPlayback(file: SignableFile) {
+  return signGet(file.storagePath, {
+    contentType: file.mimeType,
+    contentDisposition: inlineDisposition(file.fileName),
+    expiresInSeconds: PLAYBACK_URL_EXPIRES_SECONDS,
   });
 }
 

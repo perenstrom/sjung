@@ -25,3 +25,8 @@ export function fromSetListIdParam(setlist: string | string[] | undefined): stri
 export function fileDownloadHref(groupSlug: string, fileId: string): string {
   return `/app/${groupSlug}/files/${fileId}`;
 }
+
+/** The player, open on one of the Piece's Playable Files (see CONTEXT.md). */
+export function playerHref(groupSlug: string, pieceId: string, fileId: string): string {
+  return `${pieceHref(groupSlug, pieceId)}/play/${fileId}`;
+}

@@ -94,3 +94,10 @@ export function groupByCategory<F extends Groupable & { displayName: string }, L
   });
   return groups.filter((group) => group.entries.length > 0);
 }
+
+/** Files alone in the order `groupByCategory` lists them: by Category, then by name. */
+export function inCategoryOrder<F extends Groupable & { displayName: string }>(files: readonly F[]): F[] {
+  return groupByCategory(files, [] as (Groupable & NamedLink)[]).flatMap((group) =>
+    group.entries.flatMap((entry) => (entry.kind === "file" ? [entry.file] : []))
+  );
+}

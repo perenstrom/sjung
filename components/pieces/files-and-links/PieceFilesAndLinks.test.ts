@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
-import { fileDownloadHref } from "@/lib/pieces/href";
+import { fileDownloadHref, playerHref } from "@/lib/pieces/href";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
 import { PieceFilesAndLinks } from "./PieceFilesAndLinks";
@@ -16,11 +16,12 @@ vi.mock("@/components/EditModeContext", () => ({
   useEditMode: () => ({ canEdit: isEditing, isEditing, setIsEditing: vi.fn() }),
 }));
 
-const file = (displayName: string, category: string | null = null): PieceFileListItem => ({
+const file = (displayName: string, category: string | null = null, playable = false): PieceFileListItem => ({
   id: displayName,
   displayName,
   size: 1024,
   category,
+  playable,
 });
 const link = (label: string, category: string | null = null): PieceLink => ({
   id: label,
@@ -114,6 +115,21 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
     expect(tag).toContain('target="_blank"');
     expect(tag).toContain('rel="noopener noreferrer"');
   });
+
+  it.each([false, true])(
+    "opens a Playable File in the player, with a small button to download it (Edit mode: %s)",
+    (editing) => {
+      const html = render(layout, [file("Sopran.mp3", null, true)], [], { editing });
+      const anchors = [...html.matchAll(/<a[^>]*>/g)].map(([tag]) => tag);
+      const open = anchors.find((tag) => tag.includes(`href="${playerHref("koren", "piece-1", "Sopran.mp3")}"`));
+      const download = anchors.find((tag) => tag.includes(`href="${fileDownloadHref("koren", "Sopran.mp3")}"`));
+
+      expect(open).toBeDefined();
+      expect(open).not.toContain('target="_blank"');
+      expect(download).toContain('aria-label="Ladda ner Sopran.mp3"');
+      expect(download).toContain('target="_blank"');
+    }
+  );
 
   it("offers no changes outside Edit mode", () => {
     const html = render(layout, [file("Sopran.pdf")], [link("Inspelning")]);
