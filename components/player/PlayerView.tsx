@@ -95,23 +95,25 @@ export function PlayerScreen({
         >
           <X className="size-5" aria-hidden />
         </Link>
-        <div className="min-w-0 flex-1">
+        {/* The File switcher covers the whole title, so a tap anywhere on it opens the list. */}
+        <div className="relative min-w-0 flex-1 rounded-md py-1 has-[select:focus-visible]:ring-2 has-[select:focus-visible]:ring-ring">
           <p className="truncate text-sm font-medium">{pieceName}</p>
-          <div className="relative flex items-center text-xs text-muted-foreground">
-            <select
-              aria-label="Fil"
-              value={file.id}
-              onChange={(event) => router.replace(playerHref(groupSlug, pieceId, event.target.value), { scroll: false })}
-              className="max-w-full appearance-none truncate bg-transparent pr-4"
-            >
-              {files.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.displayName}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-0 size-3" aria-hidden />
-          </div>
+          <p className="flex items-center gap-1 text-xs text-muted-foreground" aria-hidden>
+            <span className="truncate">{file.displayName}</span>
+            <ChevronDown className="size-3 shrink-0" />
+          </p>
+          <select
+            aria-label="Fil"
+            value={file.id}
+            onChange={(event) => router.replace(playerHref(groupSlug, pieceId, event.target.value), { scroll: false })}
+            className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+          >
+            {files.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.displayName}
+              </option>
+            ))}
+          </select>
         </div>
         <span className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] tracking-wide text-muted-foreground uppercase">
           {file.formatLabel}
