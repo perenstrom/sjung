@@ -9,7 +9,8 @@ import {
   finalizePieceFileUpload,
 } from "@/app/actions/files";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/schemas/files";
+import { isAllowedFile } from "@/lib/file-formats";
+import { MAX_FILE_SIZE_BYTES, UNSUPPORTED_FILE_TYPE_MESSAGE } from "@/lib/schemas/files";
 
 type PieceFileTransferTarget =
   | { kind: "upload"; groupSlug: string; pieceId: string }
@@ -132,8 +133,8 @@ export function usePieceFileTransfer({
       return;
     }
 
-    if (!ALLOWED_MIME_TYPES.has(selectedFile.type)) {
-      onError("Filtypen stöds inte");
+    if (!isAllowedFile({ fileName: selectedFile.name, mimeType: selectedFile.type })) {
+      onError(UNSUPPORTED_FILE_TYPE_MESSAGE);
       return;
     }
 

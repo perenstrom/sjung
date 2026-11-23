@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form-popover";
 import { Spinner } from "@/components/ui/spinner";
 import { FileRightsReminder } from "@/components/legal/FileRightsReminder";
-import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
+import { FILE_INPUT_ACCEPT } from "@/lib/file-formats";
 
 export function ReplacePieceFilePopover({
   groupSlug,
@@ -95,7 +95,7 @@ export function ReplacePieceFilePopover({
               id={`replace-file-${fileId}`}
               name="file"
               type="file"
-              accept={PIECE_FILE_ACCEPT_ATTR}
+              accept={FILE_INPUT_ACCEPT}
               required
               disabled={isTransferring}
             />

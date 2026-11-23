@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  ALLOWED_MIME_TYPES,
   MAX_FILE_SIZE_BYTES,
-  PIECE_FILE_ACCEPT_ATTR,
   parseCreatePieceFileReplaceUploadFromFormData,
   parseCreatePieceFileUploadFromFormData,
   parseFileIdFromFormData,
@@ -202,10 +200,10 @@ describe("parseCreatePieceFileReplaceUploadFromFormData", () => {
     ).toThrow("Fil saknas");
   });
 
-  it("throws Filtypen stöds inte for disallowed mime", () => {
+  it("throws Filtypen stöds inte for a disallowed extension", () => {
     expect(() =>
       parseCreatePieceFileReplaceUploadFromFormData(
-        createFormData({ ...validReplaceBase, mimeType: "text/plain" })
+        createFormData({ ...validReplaceBase, fileName: "not.exe" })
       )
     ).toThrow("Filtypen stöds inte");
   });
@@ -260,22 +258,6 @@ describe("parseFileIdFromFormData", () => {
   it("throws Fil saknas when fileId is empty", () => {
     expect(() => parseFileIdFromFormData(createFormData({ fileId: "" }))).toThrow("Fil saknas");
     expect(() => parseFileIdFromFormData(createFormData({}))).toThrow("Fil saknas");
-  });
-});
-
-describe("PIECE_FILE_ACCEPT_ATTR", () => {
-  it("lists an accept pattern for every allowed mime type, pdf as an extension", () => {
-    expect(PIECE_FILE_ACCEPT_ATTR).toBe(".pdf,image/jpeg,image/png,image/webp,image/gif");
-  });
-
-  it("stays in sync with ALLOWED_MIME_TYPES", () => {
-    const patterns = PIECE_FILE_ACCEPT_ATTR.split(",");
-    expect(patterns).toHaveLength(ALLOWED_MIME_TYPES.size);
-    expect(patterns).toContain(".pdf");
-    for (const mime of ALLOWED_MIME_TYPES) {
-      if (mime === "application/pdf") continue;
-      expect(patterns).toContain(mime);
-    }
   });
 });
 

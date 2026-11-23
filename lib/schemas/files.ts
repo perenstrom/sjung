@@ -1,23 +1,10 @@
 import { z } from "zod";
+import { isAllowedFile } from "@/lib/file-formats";
 import { formDataString } from "@/lib/schemas/form-data";
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
-export const ALLOWED_MIME_TYPES = new Set([
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]);
-
-const ACCEPT_ATTR_EXTENSION_OVERRIDES: Partial<Record<string, string>> = {
-  "application/pdf": ".pdf",
-};
-
-export const PIECE_FILE_ACCEPT_ATTR = Array.from(ALLOWED_MIME_TYPES)
-  .map((mimeType) => ACCEPT_ATTR_EXTENSION_OVERRIDES[mimeType] ?? mimeType)
-  .join(",");
+export const UNSUPPORTED_FILE_TYPE_MESSAGE = "Filtypen stöds inte";
 
 const pieceIdSchema = z.string().trim().min(1, { error: "Stycke saknas" });
 
@@ -27,15 +14,7 @@ const fileNameSchema = z.string().trim().min(1, { error: "Filnamn saknas" });
 
 const storagePathSchema = z.string().trim().min(1, { error: "Sökväg saknas" });
 
-const mimeTypeFieldSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Filtyp saknas" })
-  .superRefine((val, ctx) => {
-    if (!ALLOWED_MIME_TYPES.has(val)) {
-      ctx.addIssue({ code: "custom", message: "Filtypen stöds inte" });
-    }
-  });
+const mimeTypeFieldSchema = z.string().trim().min(1, { error: "Filtyp saknas" });
 
 const sizeFieldSchema = z
   .string()
@@ -120,6 +99,7 @@ export function parseCreatePieceFileUploadFromFormData(formData: FormData): {
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
   }
+  assertAllowedFormat(result.data);
   return result.data;
 }
 
@@ -160,6 +140,7 @@ export function parseCreatePieceFileReplaceUploadFromFormData(
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
   }
+  assertAllowedFormat(result.data);
   return result.data;
 }
 
@@ -180,11 +161,26 @@ export function parseFinalizePieceFileReplaceFromFormData(formData: FormData): {
   return result.data;
 }
 
+/** Refuses a file whose extension and MIME type aren't an allowed format together. */
+function assertAllowedFormat(file: { fileName: string; mimeType: string }) {
+  if (!isAllowedFile(file)) {
+    throw new Error(UNSUPPORTED_FILE_TYPE_MESSAGE);
+  }
+}
+
 /**
- * Checks a stored upload's type and size against the same rules as the
- * upload request, throwing the same Swedish message.
+ * Checks a finished upload's name, and its type and size in storage, against
+ * the same rules as the upload request, throwing the same Swedish message.
  */
-export function assertAllowedStoredFile({ contentType, size }: { contentType: string; size: number }) {
+export function assertAllowedStoredFile({
+  fileName,
+  contentType,
+  size,
+}: {
+  fileName: string;
+  contentType: string;
+  size: number;
+}) {
   for (const result of [
     mimeTypeFieldSchema.safeParse(contentType),
     sizeFieldSchema.safeParse(String(size)),
@@ -193,6 +189,7 @@ export function assertAllowedStoredFile({ contentType, size }: { contentType: st
       throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
     }
   }
+  assertAllowedFormat({ fileName, mimeType: contentType });
 }
 
 export function parseFileIdFromFormData(formData: FormData): string {

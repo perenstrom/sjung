@@ -10,7 +10,7 @@ import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { FileRightsReminder } from "@/components/legal/FileRightsReminder";
-import { PIECE_FILE_ACCEPT_ATTR } from "@/lib/schemas/files";
+import { FILE_INPUT_ACCEPT } from "@/lib/file-formats";
 import { cn } from "@/lib/utils";
 
 /**
@@ -102,7 +102,7 @@ export function AddPieceFileRow({
         <input
           ref={inputRef}
           type="file"
-          accept={PIECE_FILE_ACCEPT_ATTR}
+          accept={FILE_INPUT_ACCEPT}
           aria-label="Fil"
           className="hidden"
           disabled={isTransferring}

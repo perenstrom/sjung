@@ -78,7 +78,7 @@ export async function addFile(
   upload: FinishedUpload,
   { displayName, category, userId }: { displayName: string; category: string | null; userId: string }
 ) {
-  const stored = await verifyUpload(piece, upload.storagePath);
+  const stored = await verifyUpload(piece, upload);
 
   await rejectingReusedPath(() =>
     prisma.file.create({
@@ -99,7 +99,7 @@ export async function addFile(
 
 /** Points the File at a finished upload, then removes its old content. */
 export async function replaceFile(file: StoreFile, upload: FinishedUpload, userId: string) {
-  const stored = await verifyUpload(file.piece, upload.storagePath);
+  const stored = await verifyUpload(file.piece, upload);
 
   await rejectingReusedPath(() =>
     prisma.file.update({
@@ -162,7 +162,10 @@ function pieceStoragePrefix(piece: StorePiece): string {
  * The stored object a finalize points at, once it is known to be a new,
  * allowed upload under the Piece. Throws a Swedish refusal otherwise.
  */
-async function verifyUpload(piece: StorePiece, storagePath: string): Promise<StoredObject> {
+async function verifyUpload(
+  piece: StorePiece,
+  { storagePath, fileName }: FinishedUpload
+): Promise<StoredObject> {
   if (!storagePath.startsWith(pieceStoragePrefix(piece))) {
     throw new Error("Ogiltig filsökväg");
   }
@@ -174,7 +177,7 @@ async function verifyUpload(piece: StorePiece, storagePath: string): Promise<Sto
   if (!stored) {
     throw new Error("Filen hittades inte i lagringen");
   }
-  assertAllowedStoredFile(stored);
+  assertAllowedStoredFile({ ...stored, fileName });
   return stored;
 }
 
