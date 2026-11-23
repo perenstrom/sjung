@@ -3,15 +3,27 @@
 import { ChevronDown, Music, Repeat, Timer, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { createAudioPlayer } from "@/lib/player/audio-player";
 import { DEFAULT_TEMPO, IDLE_SNAPSHOT, markLoop, type Player, type PlayerSnapshot } from "@/lib/player/player";
+import { loadWaveform } from "@/lib/player/waveform";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
 import { closePlayer } from "./closePlayer";
 import { DockButton, PlayButton, RepeatControls, SeekBar, TempoControls } from "./controls";
+import {
+  type DesktopPanel,
+  DesktopTransport,
+  NoScoreStrip,
+  ShortcutHud,
+  ShortcutsButton,
+  ShortcutsDialog,
+  WAVEFORM_BARS,
+} from "./desktop";
+import { useShortcuts } from "./useShortcuts";
 
 type PlayerViewProps = PlayerData;
 
@@ -38,6 +50,7 @@ export function PlayerView({ pieceName, file, files, closeHref }: PlayerViewProp
     () => player?.getSnapshot() ?? IDLE_SNAPSHOT,
     () => IDLE_SNAPSHOT
   );
+  const peaks = useWaveform(file.src);
 
   return (
     <>
@@ -48,17 +61,44 @@ export function PlayerView({ pieceName, file, files, closeHref }: PlayerViewProp
         closeHref={closeHref}
         snapshot={snapshot}
         player={player}
+        peaks={peaks}
       />
       <audio ref={attachAudio} src={file.src} preload="metadata" />
     </>
   );
 }
 
+/** Desktop and tablet width, where the player has its wide layout (Tailwind's `md`). */
+const WIDE_QUERY = "(min-width: 768px)";
+
+/**
+ * The audio File's waveform for the strip on desktop, or `null` until it is
+ * decoded. Only fetched at desktop width, where the strip shows; if it can't
+ * be fetched or decoded the strip stays flat.
+ */
+function useWaveform(src: string): number[] | null {
+  const isMobile = useIsMobile();
+  const [peaks, setPeaks] = useState<number[] | null>(null);
+  useEffect(() => {
+    if (peaks || isMobile || !window.matchMedia(WIDE_QUERY).matches) return;
+    const controller = new AbortController();
+    loadWaveform(src, WAVEFORM_BARS, controller.signal).then(setPeaks, (error: unknown) => {
+      if (!controller.signal.aborted) console.warn("Kunde inte rita vågformen", error);
+    });
+    return () => controller.abort();
+  }, [peaks, isMobile, src]);
+  return peaks;
+}
+
 type SheetKey = "tempo" | "repeat";
 
 const SHEET_TITLES: Record<SheetKey, string> = { tempo: "Tempo", repeat: "Repetera" };
 
-/** What the player shows for a snapshot; `player` is `null` until the engine is ready to take commands. */
+/**
+ * What the player shows for a snapshot; `player` is `null` until the engine
+ * is ready to take commands. Phone layout below `md`, the wide layout with
+ * its waveform `peaks` and keyboard shortcuts from `md` up.
+ */
 export function PlayerScreen({
   pieceName,
   file,
@@ -66,6 +106,7 @@ export function PlayerScreen({
   closeHref,
   snapshot,
   player,
+  peaks,
 }: {
   pieceName: string;
   file: Pick<PlayerFileOption, "id" | "displayName" | "formatLabel">;
@@ -73,9 +114,13 @@ export function PlayerScreen({
   closeHref: string;
   snapshot: PlayerSnapshot;
   player: Player | null;
+  peaks: readonly number[] | null;
 }) {
   const router = useRouter();
   const [sheet, setSheet] = useState<SheetKey | null>(null);
+  const [panel, setPanel] = useState<DesktopPanel | null>(null);
+  const shortcuts = useShortcuts({ player, snapshot, layerOpen: sheet !== null || panel !== null });
+  const error = snapshot.status === "error";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -117,22 +162,32 @@ export function PlayerScreen({
         <span className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] tracking-wide text-muted-foreground uppercase">
           {file.formatLabel}
         </span>
+        <ShortcutsButton onClick={() => shortcuts.setHelpOpen(true)} className="hidden md:flex" />
       </header>
 
       {/* Not a <main>: the player opens inside the app's own. */}
-      <div className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-3">
+      <div className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-3 md:hidden">
         <div className="space-y-3 text-center">
           <Music className="mx-auto size-16 text-muted-foreground/40" aria-hidden />
           <p className="font-medium break-words">{file.displayName}</p>
-          {snapshot.status === "error" ? (
+          {error ? (
             <p className="text-sm text-destructive">Filen kunde inte spelas upp.</p>
           ) : (
             <p className="text-sm text-muted-foreground">Ljudfil – inga noter att visa.</p>
           )}
         </div>
       </div>
+      <div className="hidden min-h-0 flex-1 overflow-y-auto bg-muted/30 md:block">
+        <NoScoreStrip
+          name={file.displayName}
+          error={error}
+          snapshot={snapshot}
+          peaks={peaks}
+          onSeek={(seconds) => player?.seek(seconds)}
+        />
+      </div>
 
-      <footer className="border-t bg-background px-4 pt-2 pb-[max(env(safe-area-inset-bottom),12px)]">
+      <footer className="border-t bg-background px-4 pt-2 pb-[max(env(safe-area-inset-bottom),12px)] md:hidden">
         <SeekBar
           position={snapshot.position}
           duration={snapshot.duration}
@@ -158,6 +213,10 @@ export function PlayerScreen({
           />
         </div>
       </footer>
+      <DesktopTransport snapshot={snapshot} player={player} panel={panel} onPanel={setPanel} />
+
+      <ShortcutHud message={shortcuts.hud} />
+      <ShortcutsDialog open={shortcuts.helpOpen} onOpenChange={shortcuts.setHelpOpen} />
 
       <Sheet open={sheet !== null} onOpenChange={(open) => !open && setSheet(null)}>
         <SheetContent side="bottom" className="max-h-[80dvh] rounded-t-2xl" aria-describedby={undefined}>

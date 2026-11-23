@@ -62,38 +62,57 @@ export function SeekBar({
   loop: Loop | null;
   onSeek: (seconds: number) => void;
 }) {
-  const percent = (seconds: number) => `${duration > 0 ? (seconds / duration) * 100 : 0}%`;
   return (
     <div className="space-y-1">
-      <div className="relative h-6">
-        {loop ? (
-          <div
-            aria-hidden
-            className="absolute top-2 h-2 rounded bg-amber-300/70"
-            style={{
-              left: percent(loop.start),
-              width: loop.end === null ? "3px" : percent(loop.end - loop.start),
-            }}
-          />
-        ) : null}
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          step={0.1}
-          value={Math.min(position, duration)}
-          disabled={duration === 0}
-          onChange={(event) => onSeek(Number(event.target.value))}
-          aria-label="Position"
-          className="absolute inset-0 w-full accent-primary"
-        />
-      </div>
+      <SeekTrack position={position} duration={duration} loop={loop} onSeek={onSeek} />
       <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
         <span>{formatTime(position)}</span>
         <span>{formatTime(duration)}</span>
       </div>
     </div>
   );
+}
+
+/** The slider over the whole file, with the repeat passage shaded behind it. */
+export function SeekTrack({
+  position,
+  duration,
+  loop,
+  onSeek,
+  className,
+}: {
+  position: number;
+  duration: number;
+  loop: Loop | null;
+  onSeek: (seconds: number) => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("relative h-6", className)}>
+      {loop ? (
+        <div aria-hidden className="absolute top-2 h-2 rounded bg-amber-300/70" style={passageStyle(loop, duration)} />
+      ) : null}
+      <input
+        type="range"
+        min={0}
+        max={duration}
+        step={0.1}
+        value={Math.min(position, duration)}
+        disabled={duration === 0}
+        onChange={(event) => onSeek(Number(event.target.value))}
+        // After a seek with the pointer, the arrow keys and Home go back to the player's shortcuts.
+        onPointerUp={(event) => event.currentTarget.blur()}
+        aria-label="Position"
+        className="absolute inset-0 w-full accent-primary"
+      />
+    </div>
+  );
+}
+
+/** Where the repeat passage sits along the whole file; a thin mark while only its start is set. */
+export function passageStyle(loop: Loop, duration: number) {
+  const percent = (seconds: number) => `${duration > 0 ? (seconds / duration) * 100 : 0}%`;
+  return { left: percent(loop.start), width: loop.end === null ? "3px" : percent(loop.end - loop.start) };
 }
 
 /** The Tempo sheet: a slider and quick buttons. Pitch never changes with tempo. */
