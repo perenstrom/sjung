@@ -222,16 +222,23 @@ export async function createSetListNote(
   });
 }
 
-/** A File row on the Piece, at its own key under the Piece; nothing is uploaded to storage. */
-export async function createFile(piece: Piece, category: string | null = null): Promise<File> {
+/**
+ * A File row on the Piece, at its own key under the Piece; nothing is uploaded
+ * to storage. A PDF named "Score" unless told otherwise.
+ */
+export async function createFile(
+  piece: Piece,
+  category: string | null = null,
+  { displayName = "Score", fileName = "score.pdf", mimeType = "application/pdf" } = {}
+): Promise<File> {
   fileCounter += 1;
   return testPrisma.file.create({
     data: {
       pieceId: piece.id,
-      displayName: "Score",
-      fileName: "score.pdf",
-      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/score-${fileCounter}.pdf`,
-      mimeType: "application/pdf",
+      displayName,
+      fileName,
+      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/${fileCounter}-${fileName}`,
+      mimeType,
       size: 1024,
       category,
       createdById: piece.createdById,

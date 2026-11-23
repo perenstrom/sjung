@@ -4,7 +4,16 @@
  * an ASCII `filename` with accents stripped and anything unsafe replaced.
  */
 export function attachmentDisposition(fileName: string): string {
-  return `attachment; filename="${asciiFallback(fileName)}"; filename*=UTF-8''${encodeRfc5987(fileName)}`;
+  return disposition("attachment", fileName);
+}
+
+/** A `Content-Disposition` that shows the response in the page, named `fileName` if it is saved. */
+export function inlineDisposition(fileName: string): string {
+  return disposition("inline", fileName);
+}
+
+function disposition(type: "attachment" | "inline", fileName: string): string {
+  return `${type}; filename="${asciiFallback(fileName)}"; filename*=UTF-8''${encodeRfc5987(fileName)}`;
 }
 
 function asciiFallback(fileName: string): string {

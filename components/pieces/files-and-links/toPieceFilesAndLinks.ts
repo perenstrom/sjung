@@ -1,4 +1,5 @@
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
+import { playableFormatOf } from "@/lib/file-formats";
 
 export type PieceFilesAndLinksData = {
   files: PieceFileListItem[];
@@ -11,7 +12,7 @@ export type PieceFilesAndLinksData = {
  * so a File's storage key and audit columns must not come along.
  */
 export function toPieceFilesAndLinks(piece: {
-  files: readonly PieceFileListItem[];
+  files: readonly (Omit<PieceFileListItem, "playable"> & { fileName: string })[];
   links: readonly PieceLink[];
 }): PieceFilesAndLinksData {
   return {
@@ -21,6 +22,7 @@ export function toPieceFilesAndLinks(piece: {
       size: file.size,
       category: file.category,
       createdAt: file.createdAt,
+      playable: playableFormatOf(file) !== null,
     })),
     links: piece.links.map((link) => ({
       id: link.id,

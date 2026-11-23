@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fileDownloadHref, fromSetListIdParam, pieceHref } from "@/lib/pieces/href";
+import { fileDownloadHref, fromSetListIdParam, pieceHref, playerHref } from "@/lib/pieces/href";
 
 describe("pieceHref", () => {
   it("links to the piece", () => {
@@ -29,5 +29,11 @@ describe("fromSetListIdParam", () => {
 describe("fileDownloadHref", () => {
   it("links to the route that redirects to the File's download", () => {
     expect(fileDownloadHref("kor", "f-1")).toBe("/app/kor/files/f-1");
+  });
+});
+
+describe("playerHref", () => {
+  it("links to the player for one of the Piece's Files", () => {
+    expect(playerHref("kor", "p-1", "f-1")).toBe("/app/kor/pieces/p-1/play/f-1");
   });
 });

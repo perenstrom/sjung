@@ -13,4 +13,6 @@ export type PieceFileListItem = {
   /** See Category in CONTEXT.md; `null` is uncategorized. */
   category: string | null;
   createdAt?: Date | string;
+  /** Whether it is a Playable File, which opens the player instead of downloading (see CONTEXT.md). */
+  playable: boolean;
 };

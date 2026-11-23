@@ -75,6 +75,7 @@ export const pieceDetailSelect = {
       id: true,
       createdAt: true,
       displayName: true,
+      fileName: true,
       size: true,
       category: true,
     },
