@@ -37,6 +37,8 @@ Required variables (from `.env.example`):
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 - `APP_COMMIT` (optional; leave empty locally — set on staging only, see "Deploying" below)
 
+Each R2 bucket needs a CORS rule for the app's origin (`http://localhost:3000` locally) that allows `PUT`, because the browser uploads Files straight to the bucket, and `GET`, because the player on desktop downloads an audio File to draw its waveform. Without `GET` the waveform strip stays flat; playback still works.
+
 Not in `.env.example`: `EMAIL_OUTBOX_DIR` makes the app write emails to files in that folder instead of sending them. Only the Playwright server sets it (see `docs/testing-access-rights.md`); it is refused alongside `RESEND_API_KEY`, so it never applies in staging or production.
 
 ## Local bootstrap
