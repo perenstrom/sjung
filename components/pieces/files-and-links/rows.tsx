@@ -24,6 +24,7 @@ export type RowContext = {
   groupSlug: string;
   pieceId: string;
   pieceName: string;
+  setListPieceId: string | undefined;
   layout: "detail" | "inline";
   touch: boolean;
   isEditing: boolean;
@@ -254,7 +255,7 @@ function FileOpenLink({
   }
   return (
     <Link
-      href={playerHref(ctx.groupSlug, ctx.pieceId, file.id)}
+      href={playerHref(ctx.groupSlug, ctx.pieceId, file.id, { fromSetListPieceId: ctx.setListPieceId })}
       onClick={noteOpenedFromList}
       aria-disabled={dimmed || undefined}
       className={classes}

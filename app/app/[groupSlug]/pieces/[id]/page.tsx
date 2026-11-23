@@ -14,7 +14,7 @@ import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFil
 import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
 import { PieceDetailSectionLayout, PieceDetailSectionStack } from "@/components/pieces/PieceDetailSectionLayout";
 import { pieceDetailTrail } from "@/lib/breadcrumbs";
-import { fromSetListIdParam } from "@/lib/pieces/href";
+import { searchParamId } from "@/lib/search-params";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -49,7 +49,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
               groupName,
               pieceName: piece.name,
               setLists,
-              fromSetListId: fromSetListIdParam(setlist),
+              fromSetListId: searchParamId(setlist),
             })}
           />
           <PieceMetadataSection

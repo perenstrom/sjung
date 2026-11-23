@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { pieceHref } from "@/lib/pieces/href";
+import { pieceHref, playerHref } from "@/lib/pieces/href";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
@@ -150,6 +150,7 @@ describe("PieceRowDetails, an open piece row", () => {
     isEditing: boolean,
     overrides: Partial<PieceWithRelations> = {},
     setListId?: string,
+    setListPieceId?: string,
   ): string {
     editMode = isEditing;
     return renderMarkup(
@@ -159,6 +160,7 @@ describe("PieceRowDetails, an open piece row", () => {
         groupSlug: "koren",
         isEditing,
         setListId,
+        setListPieceId,
       }),
     );
   }
@@ -244,6 +246,13 @@ describe("PieceRowDetails, an open piece row", () => {
 
       expect(html).toContain('aria-label="Ta bort Anna Andersson"');
     });
+  });
+
+  it("in the running order, opens a Playable File in the player for its Set list piece", () => {
+    const sopran = { id: "file-1", displayName: "Sopran.mp3", fileName: "Sopran.mp3", size: 1024, category: null };
+    const html = renderDetails(false, { files: [sopran] } as Partial<PieceWithRelations>, "setlist-1", "step-1");
+
+    expect(html).toContain(`href="${playerHref("koren", "piece-1", "file-1", { fromSetListPieceId: "step-1" })}"`);
   });
 
   describe.each([

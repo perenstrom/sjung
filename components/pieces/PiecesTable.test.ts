@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { playerHref } from "@/lib/pieces/href";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
@@ -41,8 +42,8 @@ function renderPieces(): string {
   );
 }
 
-function renderSetList(): string {
-  const steps = [{ kind: "piece", id: "step-1", position: 0, piece }] as unknown as SetListStep[];
+function renderSetList(stepPiece: PieceWithRelations = piece): string {
+  const steps = [{ kind: "piece", id: "step-1", position: 0, piece: stepPiece }] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesTable, {
       people: [], creditRoles: [],
@@ -163,6 +164,15 @@ describe("PiecesTable letter dividers", () => {
       expect(html).not.toContain("<h2");
       expect(textOf(html)).toContain("Inga noter tillagda ännu.");
     });
+  });
+});
+
+describe("PiecesTable Files in a set list", () => {
+  it("opens a Playable File in the player for the row's Set list piece", () => {
+    const sopran = { id: "file-1", displayName: "Sopran.mp3", size: 1024, category: null, mimeType: "audio/mpeg", fileName: "Sopran.mp3" };
+    const html = renderSetList({ ...piece, files: [sopran] } as unknown as PieceWithRelations);
+
+    expect(html).toContain(`href="${playerHref("koren", "piece-1", "file-1", { fromSetListPieceId: "step-1" })}"`);
   });
 });
 

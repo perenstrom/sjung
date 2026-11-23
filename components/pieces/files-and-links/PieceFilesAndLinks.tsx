@@ -32,6 +32,8 @@ type PieceFilesAndLinksProps = {
   layout: "detail" | "inline";
   /** Inline only: 40px lines whose names fill the line, for touch lists. */
   touch?: boolean;
+  /** The Set list piece these are shown on, if any: its Playable Files open the player for it. */
+  setListPieceId?: string;
 };
 
 /**
@@ -54,6 +56,7 @@ function Body({
   filesAndLinks,
   layout,
   touch = false,
+  setListPieceId,
 }: PieceFilesAndLinksProps & { isEditing: boolean }) {
   const router = useRouter();
   const [editor, setEditorState] = useState<OpenEditor>(null);
@@ -91,6 +94,7 @@ function Body({
     groupSlug,
     pieceId: piece.id,
     pieceName: piece.name,
+    setListPieceId,
     layout,
     touch,
     isEditing,

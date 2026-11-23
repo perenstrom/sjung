@@ -150,9 +150,9 @@ function PieceNameCell({
 }
 
 /** Cell renderer for piece-only columns; note rows never reach it (spanned) but render nothing. */
-function pieceCell(render: (piece: PieceWithRelations) => ReactNode) {
+function pieceCell(render: (piece: PieceWithRelations, rowId: string) => ReactNode) {
   return function PieceCell({ row }: { row: { original: PiecesTableRow } }) {
-    return row.original.kind === "piece" ? render(row.original.piece) : null;
+    return row.original.kind === "piece" ? render(row.original.piece, row.original.id) : null;
   };
 }
 
@@ -308,7 +308,7 @@ export function PiecesTable({
         id: "filesAndLinks",
         enableSorting: false,
         header: () => "Filer och länkar",
-        cell: pieceCell((piece) => {
+        cell: pieceCell((piece, rowId) => {
           return (
             <div className={cn(LIST_COLUMN_WIDTH_CLASS, LIST_CELL_OFFSET_CLASS)}>
               <PieceFilesAndLinks
@@ -316,6 +316,8 @@ export function PiecesTable({
                 groupSlug={groupSlug}
                 piece={{ id: piece.id, name: piece.name }}
                 filesAndLinks={toPieceFilesAndLinks(piece)}
+                // A Set list row's id is its Set list piece's.
+                setListPieceId={setListId ? rowId : undefined}
               />
             </div>
           );

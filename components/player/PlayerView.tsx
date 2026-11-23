@@ -8,13 +8,12 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { createAudioPlayer } from "@/lib/player/audio-player";
 import { DEFAULT_TEMPO, IDLE_SNAPSHOT, markLoop, type Player, type PlayerSnapshot } from "@/lib/player/player";
-import { pieceHref, playerHref } from "@/lib/pieces/href";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
 import { closePlayer } from "./closePlayer";
 import { DockButton, PlayButton, RepeatControls, SeekBar, TempoControls } from "./controls";
 
-type PlayerViewProps = { groupSlug: string; pieceId: string } & PlayerData;
+type PlayerViewProps = PlayerData;
 
 const noSubscription = () => () => {};
 
@@ -23,7 +22,7 @@ const noSubscription = () => () => {};
  * Files. It talks to the File's engine only through `Player`. Switching File
  * opens the player anew, so nothing carries over, as between visits.
  */
-export function PlayerView({ groupSlug, pieceId, pieceName, file, files }: PlayerViewProps) {
+export function PlayerView({ pieceName, file, files, closeHref }: PlayerViewProps) {
   const [player, setPlayer] = useState<Player | null>(null);
   const attachAudio = useCallback((audio: HTMLAudioElement) => {
     const audioPlayer = createAudioPlayer(audio);
@@ -43,11 +42,10 @@ export function PlayerView({ groupSlug, pieceId, pieceName, file, files }: Playe
   return (
     <>
       <PlayerScreen
-        groupSlug={groupSlug}
-        pieceId={pieceId}
         pieceName={pieceName}
         file={{ id: file.id, displayName: file.displayName, formatLabel: file.format.label }}
         files={files}
+        closeHref={closeHref}
         snapshot={snapshot}
         player={player}
       />
@@ -62,19 +60,17 @@ const SHEET_TITLES: Record<SheetKey, string> = { tempo: "Tempo", repeat: "Repete
 
 /** What the player shows for a snapshot; `player` is `null` until the engine is ready to take commands. */
 export function PlayerScreen({
-  groupSlug,
-  pieceId,
   pieceName,
   file,
   files,
+  closeHref,
   snapshot,
   player,
 }: {
-  groupSlug: string;
-  pieceId: string;
   pieceName: string;
-  file: PlayerFileOption;
+  file: Pick<PlayerFileOption, "id" | "displayName" | "formatLabel">;
   files: readonly PlayerFileOption[];
+  closeHref: string;
   snapshot: PlayerSnapshot;
   player: Player | null;
 }) {
@@ -85,10 +81,10 @@ export function PlayerScreen({
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       <header className="flex items-center gap-2 border-b px-3 py-2">
         <Link
-          href={pieceHref(groupSlug, pieceId)}
+          href={closeHref}
           onClick={(event) => {
             event.preventDefault();
-            closePlayer(router, pieceHref(groupSlug, pieceId));
+            closePlayer(router, closeHref);
           }}
           aria-label="Stäng spelaren"
           className="-ml-1 rounded-full p-2 hover:bg-muted"
@@ -105,7 +101,10 @@ export function PlayerScreen({
           <select
             aria-label="Fil"
             value={file.id}
-            onChange={(event) => router.replace(playerHref(groupSlug, pieceId, event.target.value), { scroll: false })}
+            onChange={(event) => {
+              const option = files.find(({ id }) => id === event.target.value);
+              if (option) router.replace(option.href, { scroll: false });
+            }}
             className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
           >
             {files.map((option) => (
