@@ -64,36 +64,50 @@ function replace(file: File, storagePath: string) {
   );
 }
 
+const UPLOADED_FILE_NAME = "Stämma 1.pdf";
+
 /** Signs an upload to the Piece as the browser would ask for it; nothing is put in storage yet. */
-async function signUploadToPiece(declared = { mimeType: "application/pdf", size: "1024" }) {
+async function signUploadToPiece(
+  declared = { fileName: UPLOADED_FILE_NAME, mimeType: "application/pdf", size: "1024" }
+) {
   const { storagePath } = await createPieceFileUploadUrl(
-    formData({ groupSlug: group.slug, pieceId: piece.id, fileName: "Stämma 1.pdf", ...declared })
+    formData({ groupSlug: group.slug, pieceId: piece.id, ...declared })
   );
   return storagePath;
 }
 
-function finalizeUpload(storagePath: string) {
+function finalizeUpload(storagePath: string, fileName = UPLOADED_FILE_NAME) {
   return finalizePieceFileUpload(
-    formData({ groupSlug: group.slug, pieceId: piece.id, fileName: "Stämma 1.pdf", storagePath })
+    formData({ groupSlug: group.slug, pieceId: piece.id, fileName, storagePath })
   );
 }
 
 describe("adding a File", () => {
   it("creates a File whose size and type come from the stored object", async () => {
-    const storagePath = await signUploadToPiece();
-    putStoredObject(storagePath, { size: 4321, contentType: "image/png" });
+    const storagePath = await signUploadToPiece({
+      fileName: "Stämma 1.mp3",
+      mimeType: "audio/mpeg",
+      size: "1024",
+    });
+    putStoredObject(storagePath, { size: 4321, contentType: "audio/mp3" });
 
-    await finalizeUpload(storagePath);
+    await finalizeUpload(storagePath, "Stämma 1.mp3");
 
     expect(await testPrisma.file.findMany({ where: { pieceId: piece.id } })).toEqual([
       expect.objectContaining({
         storagePath,
-        fileName: "Stämma 1.pdf",
-        displayName: "Stämma 1.pdf",
+        fileName: "Stämma 1.mp3",
+        displayName: "Stämma 1.mp3",
         size: 4321,
-        mimeType: "image/png",
+        mimeType: "audio/mp3",
       }),
     ]);
+  });
+
+  it("is refused before upload when the extension isn't allowed", async () => {
+    await expect(
+      signUploadToPiece({ fileName: "Sopran.exe", mimeType: "audio/mpeg", size: "1024" })
+    ).rejects.toThrow("Filtypen stöds inte");
   });
 
   it("is rejected when nothing was uploaded", async () => {
@@ -119,11 +133,14 @@ describe("adding a File", () => {
     expect(await testPrisma.file.count()).toBe(1);
   });
 
-  it("is rejected when the stored object's type isn't allowed", async () => {
+  it.each([
+    ["the stored object's type isn't allowed", UPLOADED_FILE_NAME, "text/html"],
+    ["the finished upload's name has a disallowed extension", "Stämma 1.exe", "application/pdf"],
+  ])("is rejected when %s", async (_case, fileName, contentType) => {
     const storagePath = await signUploadToPiece();
-    putStoredObject(storagePath, { size: 1024, contentType: "text/html" });
+    putStoredObject(storagePath, { size: 1024, contentType });
 
-    await expect(finalizeUpload(storagePath)).rejects.toThrow("Filtypen stöds inte");
+    await expect(finalizeUpload(storagePath, fileName)).rejects.toThrow("Filtypen stöds inte");
     expect(await testPrisma.file.count()).toBe(0);
   });
 
