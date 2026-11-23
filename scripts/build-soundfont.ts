@@ -8,13 +8,13 @@ import { formatFileSize } from "../lib/formatFileSize";
 import { putObject } from "../lib/object-storage";
 import { PLAYER_SOUNDFONT_KEY, trimToPlayerPresets } from "../lib/player/soundfont";
 
-// Builds the player's soundfont (ADR-0010): GeneralUser GS trimmed to piano,
-// choir aahs and voice oohs, with its samples compressed to Ogg Vorbis (SF3).
+// Builds the player's soundfont (ADR-0010): GeneralUser GS trimmed to
+// PLAYER_PROGRAMS, with its samples compressed to Ogg Vorbis (SF3).
 // Download GeneralUser-GS.sf2 from https://www.schristiancollins.com first.
 // Needs ffmpeg with libvorbis on the PATH. With --upload, the result is also
 // stored at PLAYER_SOUNDFONT_KEY in the R2 bucket named in .env.
 
-const VORBIS_QUALITY = "5";
+const VORBIS_QUALITY = 5;
 
 async function main() {
   const { values, positionals } = parseArgs({
@@ -47,7 +47,7 @@ async function main() {
 
   if (values.upload) {
     await putObject(PLAYER_SOUNDFONT_KEY, sf3, { contentType: "audio/x-sf3" });
-    console.log(`Stored:  ${PLAYER_SOUNDFONT_KEY} in bucket ${process.env.R2_BUCKET}`);
+    console.log(`Stored:  ${PLAYER_SOUNDFONT_KEY}`);
   }
 }
 
@@ -76,7 +76,7 @@ function encodeVorbis(audioData: Float32Array, sampleRate: number): Promise<Uint
         "-c:a",
         "libvorbis",
         "-q:a",
-        VORBIS_QUALITY,
+        String(VORBIS_QUALITY),
         "-f",
         "ogg",
         "pipe:1",

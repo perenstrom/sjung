@@ -3,8 +3,8 @@ import type { BasicPreset, BasicSoundBank } from "spessasynth_core";
 /**
  * Where the player's soundfont lives in object storage: GeneralUser GS,
  * trimmed by `scripts/build-soundfont.ts`. Outside `groups/`, so no Group's
- * cleanup ever deletes it. A new build gets a new key, so a cached copy is
- * never stale.
+ * cleanup ever deletes it. A build that changes the soundfont must bump the
+ * key, so no browser keeps playing a cached old copy.
  */
 export const PLAYER_SOUNDFONT_KEY = "player/soundfonts/generaluser-gs-2.0.3-player.sf3";
 
@@ -19,7 +19,7 @@ export const PLAYER_PROGRAMS = [
 ] as const;
 
 /**
- * Trims a General MIDI bank, in place, to the player's presets: the plain GM
+ * Trims a General MIDI soundfont, in place, to the player's presets: the plain GM
  * (bank 0, not drum) presets for {@link PLAYER_PROGRAMS}. Every other preset
  * goes, and so do the instruments and samples only they used.
  * Throws if the bank lacks one of the programs.
@@ -29,7 +29,7 @@ export function trimToPlayerPresets(bank: BasicSoundBank): void {
   for (const { program, name } of PLAYER_PROGRAMS) {
     const preset = bank.presets.find((candidate) => isPlainGM(candidate) && candidate.program === program);
     if (!preset) {
-      throw new Error(`The sound bank has no GM program ${program} (${name}).`);
+      throw new Error(`The soundfont has no GM program ${program} (${name}).`);
     }
     kept.add(preset);
   }
