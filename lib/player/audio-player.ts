@@ -1,6 +1,7 @@
 import {
   clampTempo,
   IDLE_SNAPSHOT,
+  isRepeating,
   type Loop,
   type Player,
   type PlayerSnapshot,
@@ -61,7 +62,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
   /** Jumps back to the passage's start once playback has reached its end. */
   function followPlayhead() {
     const { loop } = snapshot;
-    if (loop?.end != null && !media.paused && media.currentTime >= loop.end) {
+    if (isRepeating(loop) && !media.paused && media.currentTime >= loop.end) {
       media.currentTime = loop.start;
     }
     update({ position: media.currentTime });
@@ -91,7 +92,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
     },
     ended: () => {
       const { loop } = snapshot;
-      if (loop?.end != null) {
+      if (isRepeating(loop)) {
         // A passage that ends with the file: the element has stopped, so start it again.
         media.currentTime = loop.start;
         update({ position: media.currentTime });
@@ -119,7 +120,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
     play() {
       const { loop } = snapshot;
       // Pressing play outside a whole passage starts at its beginning.
-      if (loop?.end != null && (media.currentTime < loop.start || media.currentTime >= loop.end)) {
+      if (isRepeating(loop) && (media.currentTime < loop.start || media.currentTime >= loop.end)) {
         media.currentTime = loop.start;
       }
       media.play().catch(() => update({ playing: false }));

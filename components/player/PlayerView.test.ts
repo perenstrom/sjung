@@ -14,7 +14,7 @@ const files = [
   { id: "sopran", displayName: "Sopran", formatLabel: "WAV", href: "/play/sopran" },
 ];
 
-function renderScreen(snapshot: Partial<PlayerSnapshot> = {}) {
+function renderScreen(snapshot: Partial<PlayerSnapshot> = {}, peaks: readonly number[] | null = null) {
   return renderMarkup(
     createElement(PlayerScreen, {
       pieceName: "Vem kan segla",
@@ -23,8 +23,14 @@ function renderScreen(snapshot: Partial<PlayerSnapshot> = {}) {
       snapshot: { ...IDLE_SNAPSHOT, status: "ready", duration: 120, ...snapshot },
       closeHref: "/app/koren/setlists/sl-1",
       player: null,
+      peaks,
     })
   );
+}
+
+/** The markup of the desktop layout's transport row. */
+function desktopTransport(html: string) {
+  return html.match(/<footer[^>]*data-layout="desktop"[^>]*>.*?<\/footer>/)?.[0] ?? "";
 }
 
 describe("PlayerScreen", () => {
@@ -55,6 +61,41 @@ describe("PlayerScreen", () => {
     expect(text).toMatch(/75 %.*Repetera/);
     expect(renderScreen()).toContain('aria-label="Spela"');
     expect(renderScreen({ playing: true })).toContain('aria-label="Pausa"');
+  });
+});
+
+describe("PlayerScreen on desktop", () => {
+  it("has a keyboard-shortcuts button in the header", () => {
+    expect(renderScreen().match(/<header.*<\/header>/)?.[0]).toContain('aria-label="Kortkommandon"');
+  });
+
+  it("puts Play, the time, the seek bar, the length, Tempo and Repetera in one transport row", () => {
+    const row = desktopTransport(renderScreen({ position: 12, tempo: 75 }));
+
+    expect(row).toMatch(/aria-label="Spela".*0:12.*aria-label="Position".*2:00/);
+    expect(textOf(row)).toMatch(/0:12.*2:00.*75 %.*Repetera$/);
+  });
+
+  it("shows the passage on Repetera once it is set", () => {
+    expect(textOf(desktopTransport(renderScreen({ loop: { start: 12, end: 30 } })))).toMatch(/0:12–0:30$/);
+    expect(textOf(desktopTransport(renderScreen({ loop: { start: 12, end: null } })))).toMatch(/Repetera$/);
+  });
+
+  it("draws the audio File as a waveform strip, played up to the playhead, with the passage shaded", () => {
+    const html = renderScreen({ position: 60, loop: { start: 30, end: 90 } }, [0.5, 1, 0.25, 0.75]);
+    const strip = html.match(/<div[^>]*data-waveform[^>]*>.*?<\/div><\/div>/)?.[0] ?? html;
+    const bars = [...strip.matchAll(/data-bar="(played|ahead)"[^>]*style="height:(\d+)%"/g)].map(([, state, height]) => [
+      state,
+      Number(height),
+    ]);
+
+    expect(bars).toEqual([
+      ["played", 50],
+      ["played", 100],
+      ["ahead", 25],
+      ["ahead", 75],
+    ]);
+    expect(strip).toMatch(/data-passage[^>]*style="left:25%;width:50%"/);
   });
 });
 
