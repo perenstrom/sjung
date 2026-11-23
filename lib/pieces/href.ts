@@ -12,9 +12,12 @@ export function pieceHref(
   return `${href}?${new URLSearchParams({ setlist: fromSetListId })}`;
 }
 
-/** The Set list a Piece link carries (its `setlist` search param), if any. */
-export function fromSetListIdParam(setlist: string | string[] | undefined): string | undefined {
-  return typeof setlist === "string" && setlist !== "" ? setlist : undefined;
+/**
+ * The id a link carries in a search param, such as the Set list a Piece link
+ * carries in `setlist`; `undefined` when it is missing, empty or repeated.
+ */
+export function searchParamId(param: string | string[] | undefined): string | undefined {
+  return typeof param === "string" && param !== "" ? param : undefined;
 }
 
 /**
