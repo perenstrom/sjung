@@ -7,7 +7,7 @@ function context(snapshot: Partial<PlayerSnapshot> = {}, rest: Partial<Omit<Shor
   return {
     snapshot: { ...IDLE_SNAPSHOT, status: "ready", duration: 120, position: 30, ...snapshot },
     layerOpen: false,
-    onRange: false,
+    sliderFocused: false,
     ...rest,
   } satisfies ShortcutContext;
 }
@@ -101,7 +101,7 @@ describe("shortcutFor", () => {
 
   it.each([
     { case: "a popover is open", rest: { layerOpen: true } },
-    { case: "the slider has focus", rest: { onRange: true } },
+    { case: "the slider has focus", rest: { sliderFocused: true } },
   ])("leaves the arrows and Home to the page when $case", ({ rest }) => {
     for (const key of ["ArrowLeft", "ArrowRight", "Home"]) {
       expect(shortcutFor(press(key), context({}, rest))).toBeNull();

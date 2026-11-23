@@ -5,16 +5,30 @@ import type { ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DEFAULT_TEMPO, formatTime, type Loop, markLoop, type Player, type PlayerSnapshot } from "@/lib/player/player";
+import {
+  DEFAULT_TEMPO,
+  formatTime,
+  isRepeating,
+  type Loop,
+  markLoop,
+  type Player,
+  type PlayerSnapshot,
+} from "@/lib/player/player";
 import { LISTED_SHORTCUTS } from "@/lib/player/shortcuts";
 import { cn } from "@/lib/utils";
 
-import { passageStyle, PlayButton, RepeatControls, SeekTrack, TempoControls } from "./controls";
+import {
+  NoScoreNote,
+  passageStyle,
+  PlayButton,
+  type PlayerPanel,
+  RepeatControls,
+  SeekTrack,
+  TempoControls,
+} from "./controls";
 
 /** How many bars the waveform strip has. */
 export const WAVEFORM_BARS = 160;
-
-export type DesktopPanel = "tempo" | "repeat";
 
 /** The header button that lists the shortcuts, as ? does. */
 export function ShortcutsButton({ onClick, className }: { onClick: () => void; className?: string }) {
@@ -38,13 +52,11 @@ export function ShortcutsButton({ onClick, className }: { onClick: () => void; c
  */
 export function NoScoreStrip({
   name,
-  error,
   snapshot,
   peaks,
   onSeek,
 }: {
   name: string;
-  error: boolean;
   snapshot: PlayerSnapshot;
   peaks: readonly number[] | null;
   onSeek: (seconds: number) => void;
@@ -54,11 +66,7 @@ export function NoScoreStrip({
       <div className="space-y-2 text-center">
         <Music className="mx-auto size-10 text-muted-foreground/50" aria-hidden />
         <p className="font-medium break-words">{name}</p>
-        {error ? (
-          <p className="text-sm text-destructive">Filen kunde inte spelas upp.</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">Ljudfil – inga noter att visa.</p>
-        )}
+        <NoScoreNote status={snapshot.status} />
       </div>
       <WaveformStrip
         peaks={peaks}
@@ -134,18 +142,18 @@ export function DesktopTransport({
 }: {
   snapshot: PlayerSnapshot;
   player: Player | null;
-  panel: DesktopPanel | null;
-  onPanel: (panel: DesktopPanel | null) => void;
+  panel: PlayerPanel | null;
+  onPanel: (panel: PlayerPanel | null) => void;
 }) {
   const { loop } = snapshot;
-  const panelProps = (key: DesktopPanel) => ({
+  const panelProps = (key: PlayerPanel) => ({
     open: panel === key,
     onOpenChange: (open: boolean) => onPanel(open ? key : null),
   });
 
   return (
     <footer data-layout="desktop" className="hidden items-center gap-4 border-t bg-background px-6 py-3 md:flex">
-      <PlayButton playing={snapshot.playing} onToggle={() => (snapshot.playing ? player?.pause() : player?.play())} />
+      <PlayButton playing={snapshot.playing} player={player} />
       <span className="w-12 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
         {formatTime(snapshot.position)}
       </span>
@@ -171,8 +179,8 @@ export function DesktopTransport({
         <PanelButton
           {...panelProps("repeat")}
           icon={<Repeat className="size-4" aria-hidden />}
-          label={loop?.end != null ? `${formatTime(loop.start)}–${formatTime(loop.end)}` : "Repetera"}
-          active={loop?.end != null}
+          label={isRepeating(loop) ? `${formatTime(loop.start)}–${formatTime(loop.end)}` : "Repetera"}
+          active={isRepeating(loop)}
           title="Repetera"
           shortcut="A / B / Esc"
         >

@@ -45,6 +45,11 @@ export type PlayerSnapshot = {
  */
 export type Loop = { start: number; end: number | null };
 
+/** Whether a passage is set and repeats: it has an end, not just a start being marked. */
+export function isRepeating(loop: Loop | null): loop is Loop & { end: number } {
+  return loop?.end != null;
+}
+
 export type PlayerPart = { id: string; name: string; gain: number; muted: boolean; solo: boolean };
 
 /** The instrument a notation or MIDI file is played with. */

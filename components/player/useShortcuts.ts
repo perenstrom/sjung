@@ -30,8 +30,8 @@ export function useShortcuts({
   const onKeyDown = useEffectEvent((event: KeyboardEvent): string | null => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (target?.closest(OWN_KEYS)) return null;
-    const onRange = target instanceof HTMLInputElement && target.type === "range";
-    const shortcut = shortcutFor(event, { snapshot, layerOpen: layerOpen || helpOpen, onRange });
+    const sliderFocused = target instanceof HTMLInputElement && target.type === "range";
+    const shortcut = shortcutFor(event, { snapshot, layerOpen: layerOpen || helpOpen, sliderFocused });
     if (!shortcut) return null;
     // The shortcuts list covers the player, so only ? (to close it) acts there.
     if (helpOpen && shortcut.action?.type !== "help") return null;

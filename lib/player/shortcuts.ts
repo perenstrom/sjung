@@ -1,4 +1,12 @@
-import { clampTempo, formatTime, type Loop, type Player, type PlayerSnapshot } from "@/lib/player/player";
+import {
+  clampTempo,
+  formatTime,
+  isRepeating,
+  type Loop,
+  markLoop,
+  type Player,
+  type PlayerSnapshot,
+} from "@/lib/player/player";
 
 /** The parts of a `KeyboardEvent` a shortcut depends on. */
 export type KeyPress = Pick<KeyboardEvent, "key" | "shiftKey" | "metaKey" | "ctrlKey" | "altKey">;
@@ -8,7 +16,7 @@ export type ShortcutContext = {
   /** A popover or dialog is open, and handles Esc and the arrows itself. */
   layerOpen: boolean;
   /** A slider has focus, so the arrows and Home move it instead. */
-  onRange: boolean;
+  sliderFocused: boolean;
 };
 
 export type ShortcutAction =
@@ -47,10 +55,10 @@ export const LISTED_SHORTCUTS: readonly { keys: readonly string[]; what: string 
  * it to the page. Esc never closes the player: it only stops repeating, and
  * an open popover closes on it by itself.
  */
-export function shortcutFor(press: KeyPress, { snapshot, layerOpen, onRange }: ShortcutContext): Shortcut | null {
+export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocused }: ShortcutContext): Shortcut | null {
   if (press.metaKey || press.ctrlKey || press.altKey) return null;
   const { position, duration, loop, playing, tempo } = snapshot;
-  const navigating = !layerOpen && !onRange;
+  const navigating = !layerOpen && !sliderFocused;
 
   switch (press.key) {
     case " ":
@@ -68,7 +76,7 @@ export function shortcutFor(press: KeyPress, { snapshot, layerOpen, onRange }: S
     }
     case "Home":
       if (!navigating) return null;
-      return loop?.end != null
+      return isRepeating(loop)
         ? { action: { type: "seek", seconds: loop.start }, hud: "Till repetitionens start" }
         : { action: { type: "seek", seconds: 0 }, hud: "Till början" };
     case "a":
@@ -128,15 +136,14 @@ function repeatShortcut(loop: Loop): Shortcut {
 
 /** A: the passage starts here, keeping its end if that is still after it. */
 function markStart(loop: Loop | null, position: number): Loop {
-  return { start: position, end: loop?.end != null && loop.end > position ? loop.end : null };
+  return { start: position, end: isRepeating(loop) && loop.end > position ? loop.end : null };
 }
 
 /**
- * B: the passage ends here, from its start or the start of the file. An end
- * before the start swaps them; `null` for an end at the start.
+ * B: the passage ends here, from its start or the start of the file, as
+ * "Slut här" does; `null` for an end at the start.
  */
 function markEnd(loop: Loop | null, position: number): Loop | null {
-  const start = loop?.start ?? 0;
-  if (position === start) return null;
-  return position > start ? { start, end: position } : { start: position, end: start };
+  const marked = markLoop({ start: loop?.start ?? 0, end: null }, position);
+  return isRepeating(marked) ? marked : null;
 }

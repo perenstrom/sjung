@@ -8,14 +8,21 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createAudioPlayer } from "@/lib/player/audio-player";
-import { DEFAULT_TEMPO, IDLE_SNAPSHOT, markLoop, type Player, type PlayerSnapshot } from "@/lib/player/player";
+import { DEFAULT_TEMPO, IDLE_SNAPSHOT, isRepeating, markLoop, type Player, type PlayerSnapshot } from "@/lib/player/player";
 import { loadWaveform } from "@/lib/player/waveform";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
 import { closePlayer } from "./closePlayer";
-import { DockButton, PlayButton, RepeatControls, SeekBar, TempoControls } from "./controls";
 import {
-  type DesktopPanel,
+  DockButton,
+  NoScoreNote,
+  PlayButton,
+  type PlayerPanel,
+  RepeatControls,
+  SeekBar,
+  TempoControls,
+} from "./controls";
+import {
   DesktopTransport,
   NoScoreStrip,
   ShortcutHud,
@@ -90,9 +97,7 @@ function useWaveform(src: string): number[] | null {
   return peaks;
 }
 
-type SheetKey = "tempo" | "repeat";
-
-const SHEET_TITLES: Record<SheetKey, string> = { tempo: "Tempo", repeat: "Repetera" };
+const SHEET_TITLES: Record<PlayerPanel, string> = { tempo: "Tempo", repeat: "Repetera" };
 
 /**
  * What the player shows for a snapshot; `player` is `null` until the engine
@@ -117,10 +122,9 @@ export function PlayerScreen({
   peaks: readonly number[] | null;
 }) {
   const router = useRouter();
-  const [sheet, setSheet] = useState<SheetKey | null>(null);
-  const [panel, setPanel] = useState<DesktopPanel | null>(null);
+  const [sheet, setSheet] = useState<PlayerPanel | null>(null);
+  const [panel, setPanel] = useState<PlayerPanel | null>(null);
   const shortcuts = useShortcuts({ player, snapshot, layerOpen: sheet !== null || panel !== null });
-  const error = snapshot.status === "error";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -170,17 +174,12 @@ export function PlayerScreen({
         <div className="space-y-3 text-center">
           <Music className="mx-auto size-16 text-muted-foreground/40" aria-hidden />
           <p className="font-medium break-words">{file.displayName}</p>
-          {error ? (
-            <p className="text-sm text-destructive">Filen kunde inte spelas upp.</p>
-          ) : (
-            <p className="text-sm text-muted-foreground">Ljudfil – inga noter att visa.</p>
-          )}
+          <NoScoreNote status={snapshot.status} />
         </div>
       </div>
       <div className="hidden min-h-0 flex-1 overflow-y-auto bg-muted/30 md:block">
         <NoScoreStrip
           name={file.displayName}
-          error={error}
           snapshot={snapshot}
           peaks={peaks}
           onSeek={(seconds) => player?.seek(seconds)}
@@ -204,13 +203,10 @@ export function PlayerScreen({
           <DockButton
             icon={<Repeat className="size-5" aria-hidden />}
             label="Repetera"
-            active={snapshot.loop?.end != null}
+            active={isRepeating(snapshot.loop)}
             onClick={() => setSheet("repeat")}
           />
-          <PlayButton
-            playing={snapshot.playing}
-            onToggle={() => (snapshot.playing ? player?.pause() : player?.play())}
-          />
+          <PlayButton playing={snapshot.playing} player={player} />
         </div>
       </footer>
       <DesktopTransport snapshot={snapshot} player={player} panel={panel} onPanel={setPanel} />

@@ -4,22 +4,34 @@ import { Pause, Play } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { formatTime, type Loop, TEMPO_MAX, TEMPO_MIN } from "@/lib/player/player";
+import { formatTime, type Loop, type Player, type PlayerSnapshot, TEMPO_MAX, TEMPO_MIN } from "@/lib/player/player";
 import { cn } from "@/lib/utils";
 
 const QUICK_TEMPOS = [60, 75, 90, 100] as const;
 
-/** The large Play/Pause in the dock. */
-export function PlayButton({ playing, onToggle }: { playing: boolean; onToggle: () => void }) {
+/** The Tempo and Repetera controls: a bottom sheet each on a phone, a popover each on desktop. */
+export type PlayerPanel = "tempo" | "repeat";
+
+/** Play/Pause: pauses while playing, plays otherwise. Does nothing until the engine is ready. */
+export function PlayButton({ playing, player }: { playing: boolean; player: Player | null }) {
   return (
     <button
       type="button"
-      onClick={onToggle}
+      onClick={() => (playing ? player?.pause() : player?.play())}
       aria-label={playing ? "Pausa" : "Spela"}
       className="grid size-14 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow"
     >
       {playing ? <Pause className="size-7" aria-hidden /> : <Play className="size-7 translate-x-0.5" aria-hidden />}
     </button>
+  );
+}
+
+/** What shows in place of a score for a file without one, or that it can't be played. */
+export function NoScoreNote({ status }: { status: PlayerSnapshot["status"] }) {
+  return status === "error" ? (
+    <p className="text-sm text-destructive">Filen kunde inte spelas upp.</p>
+  ) : (
+    <p className="text-sm text-muted-foreground">Ljudfil – inga noter att visa.</p>
   );
 }
 
