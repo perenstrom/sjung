@@ -22,6 +22,14 @@ export async function signGet(
   return `fake-storage://get/${key}?disposition=${encodeURIComponent(contentDisposition)}`;
 }
 
+export async function putObject(
+  key: string,
+  body: Uint8Array,
+  { contentType }: { contentType: string }
+): Promise<void> {
+  objects.set(key, { size: body.byteLength, contentType });
+}
+
 export async function headObject(key: string): Promise<StoredObject | null> {
   return objects.get(key) ?? null;
 }
