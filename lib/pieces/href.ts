@@ -29,7 +29,18 @@ export function fileDownloadHref(groupSlug: string, fileId: string): string {
   return `/app/${groupSlug}/files/${fileId}`;
 }
 
-/** The player, open on one of the Piece's Playable Files (see CONTEXT.md). */
-export function playerHref(groupSlug: string, pieceId: string, fileId: string): string {
-  return `${pieceHref(groupSlug, pieceId)}/play/${fileId}`;
+/**
+ * The player, open on one of the Piece's Playable Files (see CONTEXT.md).
+ * Opened from a Set list piece, it passes `fromSetListPieceId`, so the player
+ * offers that Set list piece's Files and closes back to its Set list.
+ */
+export function playerHref(
+  groupSlug: string,
+  pieceId: string,
+  fileId: string,
+  { fromSetListPieceId }: { fromSetListPieceId?: string } = {}
+): string {
+  const href = `${pieceHref(groupSlug, pieceId)}/play/${fileId}`;
+  if (!fromSetListPieceId) return href;
+  return `${href}?${new URLSearchParams({ setlistpiece: fromSetListPieceId })}`;
 }

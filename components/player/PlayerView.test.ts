@@ -2,7 +2,6 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
-import { pieceHref } from "@/lib/pieces/href";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
 import { RepeatControls, TempoControls } from "./controls";
@@ -11,30 +10,29 @@ import { PlayerScreen } from "./PlayerView";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 const files = [
-  { id: "alt", displayName: "Alt", formatLabel: "MP3" },
-  { id: "sopran", displayName: "Sopran", formatLabel: "WAV" },
+  { id: "alt", displayName: "Alt", formatLabel: "MP3", href: "/play/alt" },
+  { id: "sopran", displayName: "Sopran", formatLabel: "WAV", href: "/play/sopran" },
 ];
 
 function renderScreen(snapshot: Partial<PlayerSnapshot> = {}) {
   return renderMarkup(
     createElement(PlayerScreen, {
-      groupSlug: "koren",
-      pieceId: "piece-1",
       pieceName: "Vem kan segla",
       file: files[1],
       files,
       snapshot: { ...IDLE_SNAPSHOT, status: "ready", duration: 120, ...snapshot },
+      closeHref: "/app/koren/setlists/sl-1",
       player: null,
     })
   );
 }
 
 describe("PlayerScreen", () => {
-  it("heads the player with a way back to the Piece, its name, the Piece's Playable Files and the format", () => {
+  it("heads the player with a way back to where it was opened, the Piece's name, the Playable Files there and the format", () => {
     const html = renderScreen();
 
     const close = html.match(/<a[^>]*aria-label="Stäng spelaren"[^>]*>/)?.[0];
-    expect(close).toContain(`href="${pieceHref("koren", "piece-1")}"`);
+    expect(close).toContain('href="/app/koren/setlists/sl-1"');
     expect(textOf(html)).toContain("Vem kan segla");
     expect([...html.matchAll(/<option[^>]*>(.*?)<\/option>/g)].map(([, name]) => name)).toEqual(["Alt", "Sopran"]);
     expect(html).toMatch(/<option[^>]*value="sopran"[^>]*selected/);

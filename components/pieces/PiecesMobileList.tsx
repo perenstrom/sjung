@@ -148,6 +148,7 @@ export function PiecesMobileList({
                   groupSlug={groupSlug}
                   isEditing={isEditing}
                   setListId={setList?.id}
+                  setListPieceId={setList ? row.id : undefined}
                   stepActions={stepActions}
                 />
               </MobileListExpandableRow>
@@ -162,7 +163,8 @@ export function PiecesMobileList({
 /**
  * What an open piece row shows: its Files, Links and Piece notes (or, in edit
  * mode, their edit sections), then the row's actions and the Detaljsida link.
- * In a set list (`setListId`) the step actions replace delete-piece.
+ * In a Set list (`setListId`, on its Set list piece `setListPieceId`) the
+ * step actions replace delete-piece.
  */
 export function PieceRowDetails({
   piece,
@@ -171,6 +173,7 @@ export function PieceRowDetails({
   groupSlug,
   isEditing,
   setListId,
+  setListPieceId,
   stepActions,
 }: {
   piece: PieceWithRelations;
@@ -179,6 +182,7 @@ export function PieceRowDetails({
   groupSlug: string;
   isEditing: boolean;
   setListId?: string;
+  setListPieceId?: string;
   stepActions?: ReactNode;
 }) {
   return (
@@ -189,9 +193,10 @@ export function PieceRowDetails({
           people={people}
           creditRoles={creditRoles}
           groupSlug={groupSlug}
+          setListPieceId={setListPieceId}
         />
       ) : (
-        <PieceMaterial piece={piece} groupSlug={groupSlug} />
+        <PieceMaterial piece={piece} groupSlug={groupSlug} setListPieceId={setListPieceId} />
       )}
       <div className="flex flex-wrap items-center gap-2">
         {stepActions}
@@ -214,9 +219,11 @@ export function PieceRowDetails({
 function PieceMaterial({
   piece,
   groupSlug,
+  setListPieceId,
 }: {
   piece: PieceWithRelations;
   groupSlug: string;
+  setListPieceId: string | undefined;
 }) {
   const notes = piece.notes.length > 0 ? <PieceNotesSection notes={piece.notes} /> : null;
 
@@ -237,6 +244,7 @@ function PieceMaterial({
         groupSlug={groupSlug}
         piece={{ id: piece.id, name: piece.name }}
         filesAndLinks={toPieceFilesAndLinks(piece)}
+        setListPieceId={setListPieceId}
       />
       {notes}
     </>
@@ -249,11 +257,13 @@ function PieceEditSections({
   people,
   creditRoles,
   groupSlug,
+  setListPieceId,
 }: {
   piece: PieceWithRelations;
   people: Person[];
   creditRoles: string[];
   groupSlug: string;
+  setListPieceId: string | undefined;
 }) {
   return (
     <div className="space-y-3">
@@ -288,6 +298,7 @@ function PieceEditSections({
           groupSlug={groupSlug}
           piece={{ id: piece.id, name: piece.name }}
           filesAndLinks={toPieceFilesAndLinks(piece)}
+          setListPieceId={setListPieceId}
         />
       </section>
       <PieceNotesSection notes={piece.notes}>

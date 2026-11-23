@@ -36,4 +36,10 @@ describe("playerHref", () => {
   it("links to the player for one of the Piece's Files", () => {
     expect(playerHref("kor", "p-1", "f-1")).toBe("/app/kor/pieces/p-1/play/f-1");
   });
+
+  it("carries the Set list piece it was opened from", () => {
+    expect(playerHref("kor", "p-1", "f-1", { fromSetListPieceId: "slp-1" })).toBe(
+      "/app/kor/pieces/p-1/play/f-1?setlistpiece=slp-1"
+    );
+  });
 });

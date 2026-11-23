@@ -34,7 +34,7 @@ function render(
   layout: "detail" | "inline",
   files: PieceFileListItem[],
   links: PieceLink[],
-  { editing = false } = {}
+  { editing = false, setListPieceId }: { editing?: boolean; setListPieceId?: string } = {}
 ): string {
   isEditing = editing;
   return renderMarkup(
@@ -43,6 +43,7 @@ function render(
       groupSlug: "koren",
       piece: { id: "piece-1", name: "Vem kan segla" },
       filesAndLinks: { files, links },
+      setListPieceId,
     })
   );
 }
@@ -130,6 +131,13 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
       expect(download).toContain('target="_blank"');
     }
   );
+
+  it("on a Set list piece, opens the player for that Set list piece", () => {
+    const html = render(layout, [file("Sopran.mp3", null, true)], [], { setListPieceId: "slp-1" });
+    const href = playerHref("koren", "piece-1", "Sopran.mp3", { fromSetListPieceId: "slp-1" });
+
+    expect(html).toContain(`href="${href}"`);
+  });
 
   it("offers no changes outside Edit mode", () => {
     const html = render(layout, [file("Sopran.pdf")], [link("Inspelning")]);
