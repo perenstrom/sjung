@@ -94,6 +94,32 @@ describe("PlayerScreen for a MIDI File", () => {
   });
 });
 
+describe("PlayerScreen for a notation File", () => {
+  it("draws the score in place of the no-score note, saying so while it loads", () => {
+    const loading = renderScreen({ status: "loading" }, null, "notation");
+
+    expect(loading).toMatch(/<\/header>.*data-score-scroll.*data-score/);
+    expect(textOf(loading)).toContain("Laddar noterna…");
+    expect(textOf(loading)).not.toContain("inga noter");
+    expect(textOf(renderScreen({}, null, "notation"))).not.toContain("Laddar noterna…");
+    expect(textOf(renderScreen({ status: "error" }, null, "notation"))).toContain("Filen kunde inte spelas upp.");
+  });
+
+  it("names the bar at the playhead as the score numbers it, on the phone and on desktop", () => {
+    // Bars 1–2 repeated: at 4.5 s bar 1 plays the second time.
+    const html = renderScreen({ bars: [0, 2, 4, 6], barNumbers: [1, 2, 1, 2], position: 4.5 }, null, "notation");
+
+    expect(textOf(html.match(/<footer[^>]*md:hidden[^>]*>.*?<\/footer>/)?.[0] ?? "")).toContain("0:04 · takt 1");
+    expect(textOf(desktopTransport(html))).toMatch(/0:04\s*takt 1/);
+  });
+
+  it("shows the passage by bar on Repetera once it is set", () => {
+    const html = renderScreen({ bars: [0, 2, 4, 6], loop: { start: 2, end: 6 } }, null, "notation");
+
+    expect(textOf(desktopTransport(html))).toMatch(/takt 2–3$/);
+  });
+});
+
 describe("PlayerScreen with parts", () => {
   const parts = [part("Sopran"), part("Alt")];
 
@@ -241,8 +267,23 @@ describe("RepeatControls", () => {
     { loop: { start: 12, end: 30 }, expected: "Repeterar 0:12–0:30 Start här Sluta repetera" },
   ])("with passage $loop shows: $expected", ({ loop, expected }) => {
     const html = renderMarkup(createElement(RepeatControls, { loop, onMark: () => {}, onStop: () => {} }));
-    const shown = [...html.matchAll(/<(?:p|button)[^>]*>(.*?)<\/(?:p|button)>/g)].map(([, text]) => textOf(text));
 
-    expect(shown.join(" ")).toBe(expected);
+    expect(shownIn(html)).toBe(expected);
   });
+
+  it.each<{ loop: Loop | null; expected: string }>([
+    { loop: null, expected: "Tryck på en takt i noterna där avsnittet börjar." },
+    { loop: { start: 2, end: null }, expected: "Start: takt 2. Tryck på takten där avsnittet slutar. Sluta repetera" },
+    { loop: { start: 2, end: 6 }, expected: "Repeterar takt 2–3 Sluta repetera" },
+  ])("in a score, with passage $loop, says to tap bars: $expected", ({ loop, expected }) => {
+    const score = { bars: [0, 2, 4, 6], barNumbers: [] };
+    const html = renderMarkup(createElement(RepeatControls, { loop, score, onMark: () => {}, onStop: () => {} }));
+
+    expect(shownIn(html)).toBe(expected);
+  });
+
+  /** The texts and buttons the sheet shows, in order. */
+  function shownIn(html: string) {
+    return [...html.matchAll(/<(?:p|button)[^>]*>(.*?)<\/(?:p|button)>/g)].map(([, text]) => textOf(text)).join(" ");
+  }
 });

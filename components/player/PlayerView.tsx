@@ -3,7 +3,7 @@
 import { ChevronDown, Music, Repeat, SlidersHorizontal, Timer, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -40,6 +40,7 @@ import {
   ShortcutsDialog,
   WAVEFORM_BARS,
 } from "./desktop";
+import { ScoreArea } from "./score";
 import { useShortcuts } from "./useShortcuts";
 
 type PlayerViewProps = PlayerData;
@@ -64,8 +65,13 @@ export function PlayerView({ pieceName, file, soundfontSrc, files, closeHref }: 
       setAudioPlayer(null);
     };
   }, []);
-  const midi = useMidiPlayer(engine === "midi" ? file.src : null, soundfontSrc);
-  const player = engine === "audio" ? audioPlayer : midi.player;
+  const [scoreElement, setScoreElement] = useState<HTMLDivElement | null>(null);
+  const load = useMemo(
+    () => engineLoader({ engine, src: file.src, soundfontSrc, scoreElement }),
+    [engine, file.src, soundfontSrc, scoreElement],
+  );
+  const loaded = useLoadedPlayer(load);
+  const player = engine === "audio" ? audioPlayer : loaded.player;
 
   const playerSnapshot = useSyncExternalStore(
     player?.subscribe ?? noSubscription,
@@ -81,51 +87,88 @@ export function PlayerView({ pieceName, file, soundfontSrc, files, closeHref }: 
         file={{ id: file.id, displayName: file.displayName, formatLabel: file.format.label, engine }}
         files={files}
         closeHref={closeHref}
-        snapshot={midi.failed ? FAILED_SNAPSHOT : playerSnapshot}
+        snapshot={loaded.failed ? FAILED_SNAPSHOT : playerSnapshot}
         player={player}
         peaks={peaks}
+        attachScore={setScoreElement}
       />
       {engine === "audio" ? <audio ref={attachAudio} src={file.src} preload="metadata" /> : null}
     </>
   );
 }
 
+/** Loads an engine's player; it rejects with an `AbortError` once `signal` aborts. */
+type LoadPlayer = (signal: AbortSignal) => Promise<Player>;
+
 /**
- * The MIDI engine for the file at `src`, played with the soundfont at
- * `soundfontSrc`; nothing for `null`. SpessaSynth is imported only here, so
- * it is downloaded only once a MIDI File is opened. `failed` once the file,
- * the soundfont or the synthesizer couldn't be loaded.
+ * How to load the engine for a MIDI or notation File, which needs the
+ * player's soundfont, and for notation the element to draw the score in
+ * once it is there; `null` for audio, or until then. Each engine is imported
+ * only here, so it is downloaded only once a File that needs it is opened.
  */
-function useMidiPlayer(src: string | null, soundfontSrc: string | null) {
+function engineLoader({
+  engine,
+  src,
+  soundfontSrc,
+  scoreElement,
+}: {
+  engine: PlayerEngine;
+  src: string;
+  soundfontSrc: string | null;
+  scoreElement: HTMLElement | null;
+}): LoadPlayer | null {
+  const needSoundfont = () => {
+    if (soundfontSrc === null) throw new Error("A MIDI or notation File needs the player's soundfont");
+    return soundfontSrc;
+  };
+  switch (engine) {
+    case "audio":
+      return null;
+    case "midi":
+      return async (signal) => {
+        const { loadMidiPlayer } = await import("@/lib/player/load-midi-player");
+        return loadMidiPlayer({ src, soundfontSrc: needSoundfont(), signal });
+      };
+    case "notation": {
+      const scrollElement = scoreElement?.closest<HTMLElement>("[data-score-scroll]");
+      if (!scoreElement || !scrollElement) return null;
+      return async (signal) => {
+        const { loadNotationPlayer } = await import("@/lib/player/load-notation-player");
+        return loadNotationPlayer({ src, soundfontSrc: needSoundfont(), element: scoreElement, scrollElement, signal });
+      };
+    }
+  }
+}
+
+/**
+ * The player `load` gives, once loaded; nothing for `null`. `failed` once
+ * the file, the soundfont or the engine couldn't be loaded.
+ */
+function useLoadedPlayer(load: LoadPlayer | null) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (src === null) return;
+    if (load === null) return;
     const controller = new AbortController();
     let loaded: Player | null = null;
-    import("@/lib/player/load-midi-player")
-      .then(({ loadMidiPlayer }) => {
-        if (soundfontSrc === null) throw new Error("A MIDI File needs the player's soundfont");
-        return loadMidiPlayer({ src, soundfontSrc, signal: controller.signal });
-      })
-      .then(
-        (midiPlayer) => {
-          if (controller.signal.aborted) return midiPlayer.destroy();
-          loaded = midiPlayer;
-          setPlayer(midiPlayer);
-        },
-        (error: unknown) => {
-          if (controller.signal.aborted) return;
-          console.error("Kunde inte ladda MIDI-filen", error);
-          setFailed(true);
-        },
-      );
+    load(controller.signal).then(
+      (created) => {
+        if (controller.signal.aborted) return created.destroy();
+        loaded = created;
+        setPlayer(created);
+      },
+      (error: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Kunde inte ladda filen", error);
+        setFailed(true);
+      },
+    );
     return () => {
       controller.abort();
       loaded?.destroy();
       setPlayer(null);
     };
-  }, [src, soundfontSrc]);
+  }, [load]);
   return { player, failed };
 }
 
@@ -156,7 +199,8 @@ const SHEET_TITLES: Record<PlayerPanel, string> = { tempo: "Tempo", repeat: "Rep
 /**
  * What the player shows for a snapshot; `player` is `null` until the engine
  * is ready to take commands. Phone layout below `md`, the wide layout with
- * its waveform `peaks` and keyboard shortcuts from `md` up.
+ * its waveform `peaks` and keyboard shortcuts from `md` up. A notation File's
+ * score is drawn in the element given to `attachScore`.
  */
 export function PlayerScreen({
   pieceName,
@@ -166,6 +210,7 @@ export function PlayerScreen({
   snapshot,
   player,
   peaks,
+  attachScore,
 }: {
   pieceName: string;
   file: Pick<PlayerFileOption, "id" | "displayName" | "formatLabel"> & { engine: PlayerEngine };
@@ -174,8 +219,10 @@ export function PlayerScreen({
   snapshot: PlayerSnapshot;
   player: Player | null;
   peaks: readonly number[] | null;
+  attachScore?: (element: HTMLDivElement | null) => void;
 }) {
   const router = useRouter();
+  const hasScore = file.engine === "notation";
   const [sheet, setSheet] = useState<PlayerPanel | null>(null);
   const [panel, setPanel] = useState<PlayerPanel | null>(null);
   // The singer's own part in Stämmor, for this visit only.
@@ -226,28 +273,35 @@ export function PlayerScreen({
       </header>
 
       {/* Not a <main>: the player opens inside the app's own. */}
-      <div className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-3 md:hidden">
-        <div className="space-y-3 text-center">
-          <Music className="mx-auto size-16 text-muted-foreground/40" aria-hidden />
-          <p className="font-medium break-words">{file.displayName}</p>
-          <NoScoreNote status={snapshot.status} engine={file.engine} />
-        </div>
-      </div>
-      <div className="hidden min-h-0 flex-1 overflow-y-auto bg-muted/30 md:block">
-        <NoScoreStrip
-          name={file.displayName}
-          engine={file.engine}
-          snapshot={snapshot}
-          peaks={peaks}
-          onSeek={(seconds) => player?.seek(seconds)}
-        />
-      </div>
+      {file.engine === "notation" ? (
+        <ScoreArea status={snapshot.status} attach={attachScore} />
+      ) : (
+        <>
+          <div className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-3 md:hidden">
+            <div className="space-y-3 text-center">
+              <Music className="mx-auto size-16 text-muted-foreground/40" aria-hidden />
+              <p className="font-medium break-words">{file.displayName}</p>
+              <NoScoreNote status={snapshot.status} engine={file.engine} />
+            </div>
+          </div>
+          <div className="hidden min-h-0 flex-1 overflow-y-auto bg-muted/30 md:block">
+            <NoScoreStrip
+              name={file.displayName}
+              engine={file.engine}
+              snapshot={snapshot}
+              peaks={peaks}
+              onSeek={(seconds) => player?.seek(seconds)}
+            />
+          </div>
+        </>
+      )}
 
       <footer className="border-t bg-background px-4 pt-2 pb-[max(env(safe-area-inset-bottom),12px)] md:hidden">
         <SeekBar
           position={snapshot.position}
           duration={snapshot.duration}
           bars={snapshot.bars}
+          barNumbers={snapshot.barNumbers}
           loop={snapshot.loop}
           onSeek={(seconds) => player?.seek(seconds)}
         />
@@ -277,6 +331,7 @@ export function PlayerScreen({
       </footer>
       <DesktopTransport
         snapshot={snapshot}
+        hasScore={hasScore}
         player={player}
         panel={panel}
         onPanel={setPanel}
@@ -304,6 +359,7 @@ export function PlayerScreen({
             {sheet === "repeat" ? (
               <RepeatControls
                 loop={snapshot.loop}
+                score={hasScore ? snapshot : null}
                 onMark={() => player?.setLoop(markLoop(snapshot.loop, snapshot.position))}
                 onStop={() => player?.setLoop(null)}
               />

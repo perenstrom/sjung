@@ -72,7 +72,7 @@ export async function getPlayerData(
   return {
     pieceName: piece.name,
     file: { id: file.id, displayName: file.displayName, format: file.format, src: await fileStore.signPlayback(file) },
-    soundfontSrc: file.format.engine === "midi" ? await fileStore.signSoundfont() : null,
+    soundfontSrc: file.format.engine === "audio" ? null : await fileStore.signSoundfont(),
     files: inCategoryOrder(playable).map(({ id, displayName, format }) => ({
       id,
       displayName,

@@ -1,11 +1,14 @@
 import { applyMix, type PartMix, presetMix } from "@/lib/player/mix";
 import {
   barAt,
+  barNumber,
+  barNumberAt,
   clampTempo,
   formatTime,
   isRepeating,
   type Loop,
   markLoop,
+  passageBarsLabel,
   type Player,
   type PlayerSnapshot,
 } from "@/lib/player/player";
@@ -76,7 +79,7 @@ export function listedShortcuts({
  */
 export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocused }: ShortcutContext): Shortcut | null {
   if (press.metaKey || press.ctrlKey || press.altKey) return null;
-  const { position, duration, loop, playing, tempo, bars, parts } = snapshot;
+  const { position, duration, loop, playing, tempo, bars, barNumbers, parts } = snapshot;
   const hasBars = bars.length > 0;
   const bar = barAt(bars, position) ?? 1;
   const navigating = !layerOpen && !sliderFocused;
@@ -92,7 +95,10 @@ export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocuse
       const direction = (press.key === "ArrowLeft" ? -1 : 1) * (press.shiftKey ? 4 : 1);
       if (hasBars) {
         const target = Math.min(bars.length, Math.max(1, bar + direction));
-        return { action: { type: "seek", seconds: barStart(bars, target) }, hud: `Takt ${target}` };
+        return {
+          action: { type: "seek", seconds: barStart(bars, target) },
+          hud: `Takt ${barNumber(barNumbers, target)}`,
+        };
       }
       const step = direction * STEP_SECONDS_WITHOUT_BARS;
       return {
@@ -109,13 +115,13 @@ export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocuse
     case "A":
     case "i":
     case "I":
-      if (hasBars) return barRepeatShortcut(markStart(loop, barStart(bars, bar)), bars);
+      if (hasBars) return barRepeatShortcut(markStart(loop, barStart(bars, bar)), bars, barNumbers);
       return repeatShortcut(markStart(loop, position));
     case "b":
     case "B":
     case "o":
     case "O": {
-      if (hasBars) return barRepeatShortcut(markEndBar(loop, bar, bars, duration), bars);
+      if (hasBars) return barRepeatShortcut(markEndBar(loop, bar, bars, duration), bars, barNumbers);
       const marked = markEnd(loop, position);
       return marked ? repeatShortcut(marked) : { action: null, hud: "Sätt slutet efter starten" };
     }
@@ -181,14 +187,12 @@ function repeatShortcut(loop: Loop): Shortcut {
   };
 }
 
-function barRepeatShortcut(loop: Loop, bars: readonly number[]): Shortcut {
-  const start = barAt(bars, loop.start);
-  const endSeconds = loop.end;
-  if (endSeconds === null)
+function barRepeatShortcut(loop: Loop, bars: readonly number[], barNumbers: readonly number[]): Shortcut {
+  if (!isRepeating(loop)) {
+    const start = barNumberAt(bars, barNumbers, loop.start);
     return { action: { type: "loop", loop }, hud: `Repetera från takt ${start} – tryck B vid slutet` };
-  // The bar the passage ends in, not the one starting where it ends.
-  const end = barAt(bars, bars.findLast((barStart) => barStart < endSeconds) ?? endSeconds);
-  return { action: { type: "loop", loop }, hud: `Repeterar takt ${start === end ? start : `${start}–${end}`}` };
+  }
+  return { action: { type: "loop", loop }, hud: `Repeterar takt ${passageBarsLabel(loop, bars, barNumbers)}` };
 }
 
 /**

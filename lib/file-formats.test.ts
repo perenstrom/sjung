@@ -25,6 +25,13 @@ describe("isAllowedFile", () => {
     ["Alla.MIDI", "audio/midi"],
     ["Alla.mid", "application/octet-stream"],
     ["stämma.1.mp3", "audio/mpeg"],
+    ["Alla.musicxml", "application/vnd.recordare.musicxml+xml"],
+    ["Alla.musicxml", "application/xml"],
+    ["Alla.xml", "application/xml"],
+    ["Alla.xml", "text/xml"],
+    ["Alla.mxl", "application/vnd.recordare.musicxml"],
+    ["Alla.mxl", "application/zip"],
+    ["Alla.MXL", "application/octet-stream"],
   ])("accepts %s as %s", (fileName, mimeType) => {
     expect(isAllowedFile({ fileName, mimeType })).toBe(true);
   });
@@ -56,6 +63,14 @@ describe("playableFormatOf", () => {
     expect(playableFormatOf({ fileName })).toEqual({ engine: "midi", label: "MIDI" });
   });
 
+  it.each([
+    ["Alla.musicxml", "MusicXML"],
+    ["Alla.xml", "MusicXML"],
+    ["Alla.mxl", "MXL"],
+  ])("draws and plays %s as notation, labelled %s", (fileName, label) => {
+    expect(playableFormatOf({ fileName })).toEqual({ engine: "notation", label });
+  });
+
   it.each(["Noter.pdf", "foto.jpg", "okänd.exe", "utan-filändelse"])("is null for %s", (fileName) => {
     expect(playableFormatOf({ fileName })).toBeNull();
   });
@@ -63,7 +78,9 @@ describe("playableFormatOf", () => {
 
 describe("FILE_INPUT_ACCEPT", () => {
   it("lists every accepted extension", () => {
-    expect(FILE_INPUT_ACCEPT).toBe(".pdf,.jpg,.jpeg,.png,.webp,.gif,.mp3,.m4a,.aac,.wav,.mid,.midi");
+    expect(FILE_INPUT_ACCEPT).toBe(
+      ".pdf,.jpg,.jpeg,.png,.webp,.gif,.mp3,.m4a,.aac,.wav,.mid,.midi,.musicxml,.xml,.mxl",
+    );
   });
 });
 

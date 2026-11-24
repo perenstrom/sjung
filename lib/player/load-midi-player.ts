@@ -1,6 +1,7 @@
 import { BasicMIDI } from "spessasynth_core";
 import { type BasicSynthesizer, Sequencer, WorkletSynthesizer } from "spessasynth_lib";
 
+import { fetchBuffer, playThroughSilentSwitch } from "@/lib/player/loading";
 import { barStartsOf } from "@/lib/player/midi-bars";
 import { midiPartsOf, PERCUSSION_CHANNEL } from "@/lib/player/midi-parts";
 import { createMidiPlayer } from "@/lib/player/midi-player";
@@ -96,12 +97,6 @@ export async function loadMidiPlayer({
   }
 }
 
-async function fetchBuffer(url: string, signal: AbortSignal): Promise<ArrayBuffer> {
-  const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`Could not fetch ${new URL(url).pathname}: ${response.status}`);
-  return response.arrayBuffer();
-}
-
 /**
  * Locks every melodic channel to `program`, so the file's own program
  * changes don't pick sounds the trimmed soundfont doesn't have. Percussion
@@ -114,13 +109,4 @@ function playWith(synth: BasicSynthesizer, program: number) {
     synth.programChange(number, program);
     channel.setSystemParameter("presetLock", true);
   });
-}
-
-/**
- * Web Audio is muted by an iPhone's silent switch unless the page says it
- * plays media, as an `<audio>` element does by itself (Safari 17+).
- */
-function playThroughSilentSwitch() {
-  const { audioSession } = navigator as Navigator & { audioSession?: { type: string } };
-  if (audioSession) audioSession.type = "playback";
 }

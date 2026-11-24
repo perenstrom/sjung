@@ -121,3 +121,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* alphaTab's cursor and the shaded repeat passage in a drawn score (lib/player/load-notation-player.ts). */
+.at-cursor-bar {
+  background: rgb(255 200 0 / 0.18);
+}
+.at-cursor-beat {
+  width: 3px;
+  background: rgb(37 99 235 / 0.85);
+}
+.at-selection div {
+  background: rgb(252 211 77 / 0.45);
+}
+.at-highlight * {
+  fill: rgb(37 99 235);
+  stroke: rgb(37 99 235);
+}

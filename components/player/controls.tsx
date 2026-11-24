@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import type { PlayerEngine } from "@/lib/file-formats";
 import { applyMix, audibleGain, MIX_PRESETS, presetMix, presetOf, presetOnChoosing } from "@/lib/player/mix";
 import {
-  barAt,
+  type BarTimeline,
+  barNumberAt,
   formatTime,
+  isRepeating,
   type Loop,
+  passageBarsLabel,
   type Player,
   type PlayerPart,
   type PlayerSnapshot,
@@ -38,13 +41,16 @@ export function PlayButton({ playing, player }: { playing: boolean; player: Play
   );
 }
 
-const NO_SCORE: Record<PlayerEngine, string> = {
+/** The engines that play a file without a score to draw. */
+export type NoScoreEngine = Exclude<PlayerEngine, "notation">;
+
+const NO_SCORE: Record<NoScoreEngine, string> = {
   audio: "Ljudfil – inga noter att visa.",
   midi: "MIDI-fil – inga noter att visa.",
 };
 
 /** What shows in place of a score for a file without one, or that it can't be played. */
-export function NoScoreNote({ status, engine }: { status: PlayerSnapshot["status"]; engine: PlayerEngine }) {
+export function NoScoreNote({ status, engine }: { status: PlayerSnapshot["status"]; engine: NoScoreEngine }) {
   return status === "error" ? (
     <p className="text-sm text-destructive">Filen kunde inte spelas upp.</p>
   ) : (
@@ -52,10 +58,17 @@ export function NoScoreNote({ status, engine }: { status: PlayerSnapshot["status
   );
 }
 
-/** The playhead's time, and its bar in a file with bars. */
-export function playheadLabel(position: number, bars: readonly number[]): string {
-  const bar = barAt(bars, position);
+/** The playhead's time, and its bar, as the score numbers it, in a file with bars. */
+export function playheadLabel(position: number, bars: readonly number[], barNumbers: readonly number[]): string {
+  const bar = barNumberAt(bars, barNumbers, position);
   return bar === null ? formatTime(position) : `${formatTime(position)} · takt ${bar}`;
+}
+
+/** A passage that repeats, by bar in a score and by time otherwise. */
+export function passageLabel(loop: Loop & { end: number }, score: BarTimeline | null): string {
+  return score
+    ? `takt ${passageBarsLabel(loop, score.bars, score.barNumbers)}`
+    : `${formatTime(loop.start)}–${formatTime(loop.end)}`;
 }
 
 /** A dock button that opens its own bottom sheet; highlighted while its setting is changed from the default. */
@@ -93,12 +106,14 @@ export function SeekBar({
   position,
   duration,
   bars,
+  barNumbers,
   loop,
   onSeek,
 }: {
   position: number;
   duration: number;
   bars: readonly number[];
+  barNumbers: readonly number[];
   loop: Loop | null;
   onSeek: (seconds: number) => void;
 }) {
@@ -106,7 +121,7 @@ export function SeekBar({
     <div className="space-y-1">
       <SeekTrack position={position} duration={duration} loop={loop} onSeek={onSeek} />
       <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-        <span>{playheadLabel(position, bars)}</span>
+        <span>{playheadLabel(position, bars, barNumbers)}</span>
         <span>{formatTime(duration)}</span>
       </div>
     </div>
@@ -194,33 +209,32 @@ export function TempoControls({ tempo, onTempo }: { tempo: number; onTempo: (per
 }
 
 /**
- * The Repetera sheet for a file without a score: "Start här" and "Slut här"
- * mark the passage at the playhead, which then repeats until stopped.
+ * The Repetera sheet. In a `score`, a tap on a bar starts the passage and a
+ * tap on another ends it. Without one, "Start här" and "Slut här" mark it at
+ * the playhead. Either way it then repeats until stopped.
  */
 export function RepeatControls({
   loop,
+  score = null,
   onMark,
   onStop,
 }: {
   loop: Loop | null;
+  score?: BarTimeline | null;
   onMark: () => void;
   onStop: () => void;
 }) {
   const marking = loop !== null && loop.end === null;
-  const status =
-    loop === null
-      ? "Sätt start och slut för att repetera ett avsnitt."
-      : loop.end === null
-        ? `Start ${formatTime(loop.start)}. Sätt slutet där avsnittet slutar.`
-        : `Repeterar ${formatTime(loop.start)}–${formatTime(loop.end)}`;
 
   return (
     <div className="space-y-3">
-      <p className="text-sm">{status}</p>
+      <p className="text-sm">{repeatStatus(loop, score)}</p>
       <div className="flex gap-2">
-        <Button type="button" onClick={onMark} className="flex-1">
-          {marking ? "Slut här" : "Start här"}
-        </Button>
+        {score ? null : (
+          <Button type="button" onClick={onMark} className="flex-1">
+            {marking ? "Slut här" : "Start här"}
+          </Button>
+        )}
         {loop === null ? null : (
           <Button type="button" variant="outline" onClick={onStop} className="flex-1">
             Sluta repetera
@@ -229,6 +243,19 @@ export function RepeatControls({
       </div>
     </div>
   );
+}
+
+/** What the Repetera sheet says about the passage, by bar in a score. */
+function repeatStatus(loop: Loop | null, score: BarTimeline | null): string {
+  if (isRepeating(loop)) return `Repeterar ${passageLabel(loop, score)}`;
+  if (score === null) {
+    return loop === null
+      ? "Sätt start och slut för att repetera ett avsnitt."
+      : `Start ${formatTime(loop.start)}. Sätt slutet där avsnittet slutar.`;
+  }
+  return loop === null
+    ? "Tryck på en takt i noterna där avsnittet börjar."
+    : `Start: takt ${barNumberAt(score.bars, score.barNumbers, loop.start)}. Tryck på takten där avsnittet slutar.`;
 }
 
 const SOUNDS: readonly { sound: PlayerSound; label: string }[] = [
