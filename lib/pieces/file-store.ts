@@ -179,7 +179,10 @@ export async function retryConversion(file: Pick<StoreFile, "id">): Promise<Save
  * to it: ready if the worker converts it, failed otherwise. Never throws; a
  * failure is logged. If the File was replaced or deleted meanwhile, the copy
  * is of content it no longer has, so it is removed again and the File left
- * as it is.
+ * as it is. A retry while this runs converts the same content again; the
+ * first to finish decides the state, and a copy already recorded on the File
+ * is kept. So a failure that finishes first leaves the File failed even if
+ * the retry then succeeds, until it is retried once more.
  */
 export async function convertFile(fileId: string) {
   const file = await prisma.file.findUnique({

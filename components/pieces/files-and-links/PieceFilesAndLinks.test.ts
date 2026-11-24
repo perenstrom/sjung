@@ -42,12 +42,12 @@ function render(
   links: PieceLink[],
   {
     editing = false,
-    manager = editing,
+    canManageContent = editing,
     setListPieceId,
-  }: { editing?: boolean; manager?: boolean; setListPieceId?: string } = {},
+  }: { editing?: boolean; canManageContent?: boolean; setListPieceId?: string } = {},
 ): string {
   isEditing = editing;
-  canEdit = manager;
+  canEdit = canManageContent;
   return renderMarkup(
     createElement(PieceFilesAndLinks, {
       layout,
@@ -170,7 +170,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
   it.each([false, true])(
     "tells someone with Manage content a MuseScore File couldn't be prepared, offering a retry or MusicXML (Edit mode: %s)",
     (editing) => {
-      const html = render(layout, [file("Partitur.mscz", null, "failed")], [], { editing, manager: true });
+      const html = render(layout, [file("Partitur.mscz", null, "failed")], [], { editing, canManageContent: true });
 
       expect(textOf(html)).toContain("Kunde inte förberedas");
       expect(html).toMatch(/<button[^>]*>Försök igen<\/button>/);
@@ -185,7 +185,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
   ])(
     "offers someone with Manage content to retry a File still being prepared only in Edit mode ($editing)",
     ({ editing, retry }) => {
-      const html = render(layout, [file("Partitur.mscz", null, "preparing")], [], { editing, manager: true });
+      const html = render(layout, [file("Partitur.mscz", null, "preparing")], [], { editing, canManageContent: true });
 
       expect(textOf(html).includes("Försök igen")).toBe(retry);
     },

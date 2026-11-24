@@ -258,8 +258,9 @@ function FilePlaybackNote({ file }: { file: PieceFileListItem }) {
 function FileConversionRetry({ ctx, file }: { ctx: RowContext; file: PieceFileListItem }) {
   const [retrying, startRetrying] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const failed = file.playback === "failed" && ctx.canManage;
-  if (!failed && !(file.playback === "preparing" && ctx.isEditing)) return null;
+  // Edit mode is only ever on for someone with Manage content.
+  const showFailure = file.playback === "failed" && ctx.canManage;
+  if (!showFailure && !(file.playback === "preparing" && ctx.isEditing)) return null;
 
   function retry() {
     setError(null);
@@ -288,7 +289,7 @@ function FileConversionRetry({ ctx, file }: { ctx: RowContext; file: PieceFileLi
   );
   return (
     <span className={cn("text-xs text-muted-foreground", ctx.layout === "inline" ? "block" : "basis-full")}>
-      {failed ? <>Kunde inte förberedas. {button} eller ladda upp den som MusicXML i stället.</> : button}
+      {showFailure ? <>Kunde inte förberedas. {button} eller ladda upp den som MusicXML i stället.</> : button}
       {error ? <span className="block text-destructive">{error}</span> : null}
     </span>
   );
