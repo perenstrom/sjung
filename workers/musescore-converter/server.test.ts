@@ -14,7 +14,13 @@ afterEach(async () => {
 });
 
 async function startWorker(options: Partial<ConverterOptions> = {}): Promise<string> {
-  server = createConverterServer({ command: fakeMuseScore, timeoutMs: 5000, maxBytes: 1024, ...options });
+  server = createConverterServer({
+    command: fakeMuseScore,
+    timeoutMs: 5000,
+    maxBytes: 1024,
+    maxWaiting: 4,
+    ...options,
+  });
   await new Promise<void>((listening) => server!.listen(0, "127.0.0.1", listening));
   return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 }
@@ -59,6 +65,14 @@ describe("MuseScore converter worker", () => {
     const responses = await Promise.all([convert(url, "slow one"), convert(url, "slow two")]);
 
     expect(responses.map((response) => response.status)).toEqual([200, 200]);
+  });
+
+  it("answers 503 when too many scores are already waiting", async () => {
+    const url = await startWorker({ maxWaiting: 1 });
+
+    const responses = await Promise.all(["slow one", "slow two", "slow three"].map((score) => convert(url, score)));
+
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 200, 503]);
   });
 
   it.each([
