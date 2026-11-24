@@ -9,7 +9,7 @@ import {
   finalizePieceFileUpload,
 } from "@/app/actions/files";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import { isAllowedFile } from "@/lib/file-formats";
+import { isAllowedFile, uploadMimeType } from "@/lib/file-formats";
 import { MAX_FILE_SIZE_BYTES, UNSUPPORTED_FILE_TYPE_MESSAGE } from "@/lib/schemas/files";
 
 type PieceFileTransferTarget =
@@ -92,7 +92,7 @@ export function usePieceFileTransfer({
       uploadMeta.set("groupSlug", target.groupSlug);
       uploadMeta.set(adapter.idField, adapter.idValue);
       uploadMeta.set("fileName", selectedFile.name);
-      uploadMeta.set("mimeType", selectedFile.type);
+      uploadMeta.set("mimeType", uploadMimeType(selectedFile));
       uploadMeta.set("size", String(selectedFile.size));
 
       const uploadData = await adapter.createUploadUrl(uploadMeta);
@@ -133,7 +133,7 @@ export function usePieceFileTransfer({
       return;
     }
 
-    if (!isAllowedFile({ fileName: selectedFile.name, mimeType: selectedFile.type })) {
+    if (!isAllowedFile({ fileName: selectedFile.name, mimeType: uploadMimeType(selectedFile) })) {
       onError(UNSUPPORTED_FILE_TYPE_MESSAGE);
       return;
     }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
-import { LISTED_SHORTCUTS, type KeyPress, shortcutFor, type ShortcutContext } from "@/lib/player/shortcuts";
+import { type KeyPress, listedShortcuts, shortcutFor, type ShortcutContext } from "@/lib/player/shortcuts";
 
 function context(snapshot: Partial<PlayerSnapshot> = {}, rest: Partial<Omit<ShortcutContext, "snapshot">> = {}) {
   return {
@@ -117,9 +117,44 @@ describe("shortcutFor", () => {
   });
 });
 
-describe("LISTED_SHORTCUTS", () => {
-  it("never mentions the unlisted K, I and O", () => {
-    const listed = LISTED_SHORTCUTS.flatMap(({ keys, what }) => [...keys, what]).join(" ");
+describe("shortcutFor in a file with bars", () => {
+  /** 60 bars of two seconds each: bar 16 starts at 30 s. */
+  const bars = Array.from({ length: 60 }, (_, index) => index * 2);
+  const inBars = (snapshot: Partial<PlayerSnapshot> = {}) => context({ bars, position: 31, ...snapshot });
+
+  it.each([
+    { key: "ArrowLeft", shiftKey: false, position: 31, seconds: 28, hud: "Takt 15" },
+    { key: "ArrowRight", shiftKey: false, position: 31, seconds: 32, hud: "Takt 17" },
+    { key: "ArrowLeft", shiftKey: true, position: 31, seconds: 22, hud: "Takt 12" },
+    { key: "ArrowRight", shiftKey: true, position: 31, seconds: 38, hud: "Takt 20" },
+    { key: "ArrowLeft", shiftKey: false, position: 1, seconds: 0, hud: "Takt 1" },
+    { key: "ArrowRight", shiftKey: false, position: 119, seconds: 118, hud: "Takt 60" },
+  ])("$key (Shift: $shiftKey) at $position s moves to bar $hud", ({ key, shiftKey, position, seconds, hud }) => {
+    expect(shortcutFor(press(key, { shiftKey }), inBars({ position }))).toEqual({ action: { type: "seek", seconds }, hud });
+  });
+
+  it.each<{ key: string; loop: Loop | null; position: number; expected: Loop; hud: string }>([
+    { key: "a", loop: null, position: 31, expected: { start: 30, end: null }, hud: "Repetera från takt 16 – tryck B vid slutet" },
+    { key: "A", loop: { start: 20, end: 50 }, position: 31, expected: { start: 30, end: 50 }, hud: "Repeterar takt 16–25" },
+    { key: "b", loop: { start: 30, end: null }, position: 37, expected: { start: 30, end: 38 }, hud: "Repeterar takt 16–19" },
+    { key: "b", loop: { start: 30, end: null }, position: 31, expected: { start: 30, end: 32 }, hud: "Repeterar takt 16" },
+    { key: "B", loop: { start: 30, end: null }, position: 25, expected: { start: 24, end: 32 }, hud: "Repeterar takt 13–16" },
+    { key: "b", loop: null, position: 119, expected: { start: 0, end: 120 }, hud: "Repeterar takt 1–60" },
+  ])("$key with passage $loop at $position s marks whole bars: $hud", ({ key, loop, position, expected, hud }) => {
+    expect(shortcutFor(press(key), inBars({ loop, position }))).toEqual({ action: { type: "loop", loop: expected }, hud });
+  });
+});
+
+describe("listedShortcuts", () => {
+  it.each([false, true])("never mentions the unlisted K, I and O (bars: %s)", (hasBars) => {
+    const listed = listedShortcuts({ hasBars }).flatMap(({ keys, what }) => [...keys, what]).join(" ");
     expect(listed).not.toMatch(/\b[KIO]\b/);
+  });
+
+  it("moves by seconds in a file without bars, and by bars in one with them", () => {
+    const arrows = (hasBars: boolean) => listedShortcuts({ hasBars }).find(({ keys }) => keys.includes("←"))?.what;
+
+    expect(arrows(false)).toBe("5 sekunder bakåt / framåt");
+    expect(arrows(true)).toBe("En takt bakåt / framåt");
   });
 });

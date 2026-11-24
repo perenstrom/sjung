@@ -38,6 +38,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# player assets copied from node_modules (scripts/copy-player-assets.mjs)
+/public/vendor
+
 # prisma generated client
 /app/generated/prisma
 

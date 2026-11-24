@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatTime, markLoop } from "@/lib/player/player";
+import { barAt, formatTime, markLoop } from "@/lib/player/player";
 
 describe("markLoop", () => {
   it.each([
@@ -26,5 +26,23 @@ describe("formatTime", () => {
     [Number.NaN, "0:00"],
   ])("shows %s seconds as %s", (seconds, expected) => {
     expect(formatTime(seconds)).toBe(expected);
+  });
+});
+
+describe("barAt", () => {
+  const bars = [0, 2, 4, 5.5];
+
+  it.each([
+    { seconds: 0, bar: 1 },
+    { seconds: 1.99, bar: 1 },
+    { seconds: 2, bar: 2 },
+    { seconds: 5, bar: 3 },
+    { seconds: 90, bar: 4 },
+  ])("puts $seconds s in bar $bar", ({ seconds, bar }) => {
+    expect(barAt(bars, seconds)).toBe(bar);
+  });
+
+  it("is null for a file without bars", () => {
+    expect(barAt([], 12)).toBeNull();
   });
 });

@@ -37,7 +37,9 @@ Required variables (from `.env.example`):
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 - `APP_COMMIT` (optional; leave empty locally — set on staging only, see "Deploying" below)
 
-Each R2 bucket needs a CORS rule for the app's origin (`http://localhost:3000` locally) that allows `PUT`, because the browser uploads Files straight to the bucket, and `GET`, because the player on desktop downloads an audio File to draw its waveform. Without `GET` the waveform strip stays flat; playback still works.
+Each R2 bucket needs a CORS rule for the app's origin (`http://localhost:3000` locally) that allows `PUT`, because the browser uploads Files straight to the bucket, and `GET`, because the player downloads a MIDI File and its soundfont to play them, and on desktop an audio File to draw its waveform. Without `GET` a MIDI File can't be played and the waveform strip stays flat; audio still plays.
+
+The player plays MIDI with a soundfont stored in the bucket. Build it and upload it to each bucket once, and again whenever `PLAYER_SOUNDFONT_KEY` in `lib/player/soundfont.ts` changes: download `GeneralUser-GS.sf2`, then run `npx tsx scripts/build-soundfont.ts GeneralUser-GS.sf2 player.sf3 --upload` (it needs `ffmpeg` with libvorbis). `npm install` copies SpessaSynth's audio worklet to `public/vendor` (`scripts/copy-player-assets.mjs`).
 
 Not in `.env.example`: `EMAIL_OUTBOX_DIR` makes the app write emails to files in that folder instead of sending them. Only the Playwright server sets it (see `docs/testing-access-rights.md`); it is refused alongside `RESEND_API_KEY`, so it never applies in staging or production.
 

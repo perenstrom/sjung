@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { createAudioPlayer, type MediaElement } from "@/lib/player/audio-player";
 import type { Player } from "@/lib/player/player";
+import { manualFrames } from "@/lib/testing/player";
 
 /**
  * Stands in for the browser's `<audio>` element, the boundary the audio
@@ -29,25 +30,6 @@ class FakeAudio extends EventTarget implements MediaElement {
     this.duration = duration;
     this.dispatchEvent(new Event("loadedmetadata"));
   }
-}
-
-/** Animation frames that run only when the test says so. */
-function manualFrames() {
-  let pending: (() => void) | null = null;
-  return {
-    requestFrame: (callback: () => void) => {
-      pending = callback;
-      return 1;
-    },
-    cancelFrame: () => {
-      pending = null;
-    },
-    run() {
-      const callback = pending;
-      pending = null;
-      callback?.();
-    },
-  };
 }
 
 let audio: FakeAudio;

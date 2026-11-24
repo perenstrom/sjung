@@ -34,6 +34,11 @@ export type PlayerSnapshot = {
   /** In percent of the file's own tempo. */
   tempo: number;
   loop: Loop | null;
+  /**
+   * When each bar starts, in seconds, in order. Empty for a file without
+   * bars, such as audio.
+   */
+  bars: readonly number[];
   /** Empty for a file that has no parts to mix, such as audio. */
   parts: readonly PlayerPart[];
   sound: PlayerSound;
@@ -67,12 +72,23 @@ export const IDLE_SNAPSHOT: PlayerSnapshot = {
   duration: 0,
   tempo: DEFAULT_TEMPO,
   loop: null,
+  bars: [],
   parts: [],
   sound: "piano",
 };
 
 export function clampTempo(percent: number): number {
   return Math.min(TEMPO_MAX, Math.max(TEMPO_MIN, Math.round(percent)));
+}
+
+/** Where playback jumps back to once it reaches the end of a repeating passage; `null` while it plays on. */
+export function repeatJump(loop: Loop | null, position: number): number | null {
+  return isRepeating(loop) && position >= loop.end ? loop.start : null;
+}
+
+/** Where Play starts outside a repeating passage: at its beginning; `null` to play from the playhead. */
+export function playStart(loop: Loop | null, position: number): number | null {
+  return isRepeating(loop) && (position < loop.start || position >= loop.end) ? loop.start : null;
 }
 
 /**
@@ -84,6 +100,13 @@ export function markLoop(loop: Loop | null, position: number): Loop {
   if (loop === null || loop.end !== null) return { start: position, end: null };
   if (position === loop.start) return loop;
   return position > loop.start ? { start: loop.start, end: position } : { start: position, end: loop.start };
+}
+
+/** The bar `seconds` falls in, counted from 1; `null` for a file without bars. */
+export function barAt(bars: readonly number[], seconds: number): number | null {
+  if (bars.length === 0) return null;
+  const next = bars.findIndex((start) => start > seconds);
+  return next === -1 ? bars.length : Math.max(1, next);
 }
 
 /** Seconds as m:ss. */

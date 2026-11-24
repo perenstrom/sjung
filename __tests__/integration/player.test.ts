@@ -6,6 +6,7 @@ import type { Group, Piece } from "@/app/generated/prisma/client";
 import { groupSetListPath } from "@/lib/groups/routes";
 import { pieceHref, playerHref } from "@/lib/pieces/href";
 import { getPlayerData } from "@/lib/pieces/player";
+import { PLAYER_SOUNDFONT_KEY } from "@/lib/player/soundfont";
 import {
   createFile,
   createGroup,
@@ -41,6 +42,22 @@ describe("opening the player", () => {
       file: { id: file.id, displayName: "Sopran", format: { engine: "audio", label: "MP3" } },
     });
     expect(player?.file.src).toContain(file.storagePath);
+  });
+
+  it("opens a MIDI File with the soundfont to play it with, and an audio File without", async () => {
+    const midi = await createFile(piece, null, {
+      displayName: "Alla stämmor",
+      fileName: "alla.mid",
+      mimeType: "application/octet-stream",
+    });
+    const audio = await audioFile(piece, "Sopran");
+
+    const midiPlayer = await getPlayerData(group.slug, piece.id, midi.id);
+    const audioPlayer = await getPlayerData(group.slug, piece.id, audio.id);
+
+    expect(midiPlayer?.file.format).toEqual({ engine: "midi", label: "MIDI" });
+    expect(midiPlayer?.soundfontSrc).toContain(PLAYER_SOUNDFONT_KEY);
+    expect(audioPlayer?.soundfontSrc).toBeNull();
   });
 
   it("offers the Piece's other Playable Files in the order the Piece lists them, and no other Files", async () => {
