@@ -1,0 +1,5 @@
+# Commits that only reformatted code. `git blame` skips them once you run
+# `git config blame.ignoreRevsFile .git-blame-ignore-revs` (see README).
+
+# PER-480: add Prettier and format the repo
+506fd6df5cf2ebad1f2beee782c28b6650c7ab93
