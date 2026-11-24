@@ -19,10 +19,7 @@ export default async function GroupMembersPage({ params }: PageProps) {
     notFound();
   }
 
-  const [members, invitations] = await Promise.all([
-    listGroupMembers(groupSlug),
-    listGroupInvitations(groupSlug),
-  ]);
+  const [members, invitations] = await Promise.all([listGroupMembers(groupSlug), listGroupInvitations(groupSlug)]);
 
   return (
     <div className="space-y-4 md:space-y-6">

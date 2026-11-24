@@ -36,12 +36,7 @@ describe("SetListSequence", () => {
     await SetListSequence.append(setList.id, { kind: "piece", pieceId: gloria.id }, userId);
     await SetListSequence.append(setList.id, { kind: "piece", pieceId: kyrie.id }, userId);
 
-    expect(stepLabels(await SetListSequence.steps(setList.id))).toEqual([
-      "Kyrie",
-      "Paus",
-      "Gloria",
-      "Kyrie",
-    ]);
+    expect(stepLabels(await SetListSequence.steps(setList.id))).toEqual(["Kyrie", "Paus", "Gloria", "Kyrie"]);
   });
 
   it("gives steps appended at the same time their own places", async () => {
@@ -49,8 +44,8 @@ describe("SetListSequence", () => {
       Array.from({ length: 6 }, (_, i) =>
         i % 2 === 0
           ? SetListSequence.append(setList.id, { kind: "piece", pieceId: kyrie.id }, userId)
-          : SetListSequence.append(setList.id, { kind: "note", content: `Paus ${i}` }, userId)
-      )
+          : SetListSequence.append(setList.id, { kind: "note", content: `Paus ${i}` }, userId),
+      ),
     );
 
     const steps = await SetListSequence.steps(setList.id);
@@ -79,9 +74,7 @@ describe("SetListSequence", () => {
     const b = await SetListSequence.append(setList.id, { kind: "piece", pieceId: gloria.id }, userId);
     await SetListSequence.append(setList.id, { kind: "note", content: "Paus" }, userId);
 
-    await expect(SetListSequence.reorder(setList.id, [b.id, a.id], userId)).rejects.toThrow(
-      "Ogiltig ordning"
-    );
+    await expect(SetListSequence.reorder(setList.id, [b.id, a.id], userId)).rejects.toThrow("Ogiltig ordning");
     expect(stepLabels(await SetListSequence.steps(setList.id))).toEqual(["Kyrie", "Gloria", "Paus"]);
   });
 

@@ -5,7 +5,7 @@
 export function pieceHref(
   groupSlug: string,
   pieceId: string,
-  { fromSetListId }: { fromSetListId?: string } = {}
+  { fromSetListId }: { fromSetListId?: string } = {},
 ): string {
   const href = `/app/${groupSlug}/pieces/${pieceId}`;
   if (!fromSetListId) return href;
@@ -30,7 +30,7 @@ export function playerHref(
   groupSlug: string,
   pieceId: string,
   fileId: string,
-  { fromSetListPieceId }: { fromSetListPieceId?: string } = {}
+  { fromSetListPieceId }: { fromSetListPieceId?: string } = {},
 ): string {
   const href = `${pieceHref(groupSlug, pieceId)}/play/${fileId}`;
   if (!fromSetListPieceId) return href;

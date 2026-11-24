@@ -47,7 +47,7 @@ export function createMidiPlayer(
     bars,
     frames = browserFrames,
     timer = browserTimer,
-  }: { bars: readonly number[]; frames?: FrameScheduler; timer?: Timer }
+  }: { bars: readonly number[]; frames?: FrameScheduler; timer?: Timer },
 ): Player {
   const store = createSnapshotStore({ ...IDLE_SNAPSHOT, status: "ready", duration: sequencer.duration, bars });
   const { update } = store;

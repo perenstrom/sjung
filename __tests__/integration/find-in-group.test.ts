@@ -40,8 +40,7 @@ const KINDS: Record<ContentKind, { create: (group: Group) => Promise<{ id: strin
     notFound: "Alternativt namn hittades inte",
   },
   pieceNote: {
-    create: async (group) =>
-      createPieceNote({ piece: await pieceIn(group), createdById: group.createdById }),
+    create: async (group) => createPieceNote({ piece: await pieceIn(group), createdById: group.createdById }),
     notFound: "Anteckning hittades inte",
   },
   person: { create: (group) => createPerson(group), notFound: "Upphovsperson hittades inte" },
@@ -69,7 +68,7 @@ describe.each(Object.entries(KINDS) as [ContentKind, (typeof KINDS)[ContentKind]
 
       await expect(findInGroup(group.id, kind, MISSING_ID)).rejects.toThrow(notFound);
     });
-  }
+  },
 );
 
 describe("findInGroup with a select", () => {

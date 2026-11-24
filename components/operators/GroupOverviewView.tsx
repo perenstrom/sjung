@@ -2,14 +2,7 @@ import { Boxes } from "lucide-react";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { MobileList, MobileListRow } from "@/components/ui/mobile-list";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format-date";
 import { formatFileSize } from "@/lib/formatFileSize";
 import type { GroupOverview, GroupOverviewRow } from "@/lib/operators/group-overview";
@@ -31,7 +24,7 @@ export function GroupOverviewView({ overview }: { overview: GroupOverview }) {
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Grupper</h1>
         {groups.length > 0 ? (
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {groupCount(groups.length)} · {formatFileSize(totalStorageBytes)} totalt
           </p>
         ) : null}
@@ -68,12 +61,12 @@ export function GroupOverviewView({ overview }: { overview: GroupOverview }) {
                   <TableRow key={group.id}>
                     <TableCell>
                       <span className="block font-medium">{group.name}</span>
-                      <span className="text-muted-foreground block text-xs">{group.slug}</span>
+                      <span className="block text-xs text-muted-foreground">{group.slug}</span>
                     </TableCell>
                     <TableCell>{formatDate(group.createdAt)}</TableCell>
                     <TableCell>
                       <span className="block">{group.creator.name}</span>
-                      <span className="text-muted-foreground block text-xs">{group.creator.email}</span>
+                      <span className="block text-xs text-muted-foreground">{group.creator.email}</span>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{group.memberCount}</TableCell>
                     <TableCell className="text-right tabular-nums">{group.pieceCount}</TableCell>
@@ -95,7 +88,7 @@ export function GroupOverviewView({ overview }: { overview: GroupOverview }) {
 function GroupOverviewMobileRow({ group }: { group: GroupOverviewRow }) {
   return (
     <MobileListRow primary={group.name} secondary={group.slug}>
-      <div className="text-muted-foreground mt-1 space-y-0.5 text-sm">
+      <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
         <p className="truncate">
           {group.creator.name} · {group.creator.email}
         </p>

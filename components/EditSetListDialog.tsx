@@ -5,14 +5,7 @@ import { Pencil } from "lucide-react";
 import { updateSetList } from "@/app/actions/setlists";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,13 +77,7 @@ export function EditSetListDialog({
           <input type="hidden" name="setListId" value={setList.id} />
           <div className="space-y-2">
             <Label htmlFor={`setlist-name-${setList.id}`}>Namn</Label>
-            <Input
-              id={`setlist-name-${setList.id}`}
-              name="name"
-              required
-              autoFocus
-              defaultValue={setList.name}
-            />
+            <Input id={`setlist-name-${setList.id}`} name="name" required autoFocus defaultValue={setList.name} />
           </div>
           <div className="space-y-2">
             <Label htmlFor={`setlist-date-${setList.id}`}>Datum</Label>
@@ -102,11 +89,7 @@ export function EditSetListDialog({
             />
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox
-              id={`setlist-current-${setList.id}`}
-              name="current"
-              defaultChecked={setList.current}
-            />
+            <Checkbox id={`setlist-current-${setList.id}`} name="current" defaultChecked={setList.current} />
             <Label htmlFor={`setlist-current-${setList.id}`}>Aktuell</Label>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}

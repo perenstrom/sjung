@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { useIsMobile } from "@/hooks/use-mobile"
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Dialog,
   DialogContent,
@@ -11,14 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-const FormPopoverAsDialogContext = React.createContext(false)
+const FormPopoverAsDialogContext = React.createContext(false);
 
 /**
  * A small form that opens from a trigger: a popover from `md` up, and the
@@ -42,12 +38,12 @@ function FormPopover({
   onOpenChange,
   children,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  children: React.ReactNode
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
 }) {
-  const asDialog = useIsMobile()
-  const Root = asDialog ? Dialog : Popover
+  const asDialog = useIsMobile();
+  const Root = asDialog ? Dialog : Popover;
 
   return (
     <FormPopoverAsDialogContext.Provider value={asDialog}>
@@ -55,14 +51,12 @@ function FormPopover({
         {children}
       </Root>
     </FormPopoverAsDialogContext.Provider>
-  )
+  );
 }
 
-function FormPopoverTrigger(
-  props: React.ComponentProps<typeof PopoverTrigger>
-) {
-  const asDialog = React.useContext(FormPopoverAsDialogContext)
-  return asDialog ? <DialogTrigger {...props} /> : <PopoverTrigger {...props} />
+function FormPopoverTrigger(props: React.ComponentProps<typeof PopoverTrigger>) {
+  const asDialog = React.useContext(FormPopoverAsDialogContext);
+  return asDialog ? <DialogTrigger {...props} /> : <PopoverTrigger {...props} />;
 }
 
 function FormPopoverContent({
@@ -70,12 +64,12 @@ function FormPopoverContent({
   description,
   children,
 }: {
-  title: string
+  title: string;
   /** One muted line under the title, e.g. the piece the form acts on. */
-  description: React.ReactNode
-  children: React.ReactNode
+  description: React.ReactNode;
+  children: React.ReactNode;
 }) {
-  const asDialog = React.useContext(FormPopoverAsDialogContext)
+  const asDialog = React.useContext(FormPopoverAsDialogContext);
 
   if (asDialog) {
     return (
@@ -86,7 +80,7 @@ function FormPopoverContent({
         </DialogHeader>
         {children}
       </DialogContent>
-    )
+    );
   }
 
   return (
@@ -97,7 +91,7 @@ function FormPopoverContent({
       </div>
       {children}
     </PopoverContent>
-  )
+  );
 }
 
 /**
@@ -105,17 +99,8 @@ function FormPopoverContent({
  * body scrolls, which only holds while it is the last thing in the content.
  */
 function FormPopoverFooter({ children }: { children: React.ReactNode }) {
-  const asDialog = React.useContext(FormPopoverAsDialogContext)
-  return asDialog ? (
-    <DialogFooter>{children}</DialogFooter>
-  ) : (
-    <div className="flex justify-end gap-2">{children}</div>
-  )
+  const asDialog = React.useContext(FormPopoverAsDialogContext);
+  return asDialog ? <DialogFooter>{children}</DialogFooter> : <div className="flex justify-end gap-2">{children}</div>;
 }
 
-export {
-  FormPopover,
-  FormPopoverContent,
-  FormPopoverFooter,
-  FormPopoverTrigger,
-}
+export { FormPopover, FormPopoverContent, FormPopoverFooter, FormPopoverTrigger };

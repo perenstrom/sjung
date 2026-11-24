@@ -120,7 +120,7 @@ function Body({
           <FileRow key={`file:${entry.file.id}`} item={entry.file} {...rowProps("file", entry.file.id)} />
         ) : (
           <LinkRow key={`link:${entry.link.id}`} item={entry.link} {...rowProps("link", entry.link.id)} />
-        )
+        ),
       )}
     </ul>
   );

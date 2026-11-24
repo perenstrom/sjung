@@ -16,10 +16,7 @@ export function parsePieceNameFromFormData(formData: FormData): string {
   return result.data;
 }
 
-const pieceIdFieldSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Stycke saknas" });
+const pieceIdFieldSchema = z.string().trim().min(1, { error: "Stycke saknas" });
 
 export function parsePieceIdParam(pieceId: string): string {
   const result = pieceIdFieldSchema.safeParse(pieceId);
@@ -29,10 +26,7 @@ export function parsePieceIdParam(pieceId: string): string {
   return result.data;
 }
 
-const pieceNoteIdFieldSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Anteckning saknas" });
+const pieceNoteIdFieldSchema = z.string().trim().min(1, { error: "Anteckning saknas" });
 
 const pieceNoteContentSchema = z
   .string()
@@ -40,25 +34,17 @@ const pieceNoteContentSchema = z
   .min(1, { error: "Anteckning krävs" })
   .max(50_000, { error: "Anteckningen är för lång" });
 
-const linkIdFieldSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Länk saknas" });
+const linkIdFieldSchema = z.string().trim().min(1, { error: "Länk saknas" });
 
 export function parsePieceIdFromFormData(formData: FormData): string {
-  const result = pieceIdFieldSchema.safeParse(
-    formDataString(formData, "pieceId")
-  );
+  const result = pieceIdFieldSchema.safeParse(formDataString(formData, "pieceId"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Stycke saknas");
   }
   return result.data;
 }
 
-const pieceAliasIdFieldSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Alternativt namn saknas" });
+const pieceAliasIdFieldSchema = z.string().trim().min(1, { error: "Alternativt namn saknas" });
 
 export function parsePieceAliasIdFromFormData(formData: FormData): string {
   const result = pieceAliasIdFieldSchema.safeParse(formDataString(formData, "pieceAliasId"));
@@ -69,9 +55,7 @@ export function parsePieceAliasIdFromFormData(formData: FormData): string {
 }
 
 export function parseLinkIdFromFormData(formData: FormData): string {
-  const result = linkIdFieldSchema.safeParse(
-    formDataString(formData, "linkId")
-  );
+  const result = linkIdFieldSchema.safeParse(formDataString(formData, "linkId"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Länk saknas");
   }
@@ -79,9 +63,7 @@ export function parseLinkIdFromFormData(formData: FormData): string {
 }
 
 export function parsePieceNoteIdFromFormData(formData: FormData): string {
-  const result = pieceNoteIdFieldSchema.safeParse(
-    formDataString(formData, "pieceNoteId")
-  );
+  const result = pieceNoteIdFieldSchema.safeParse(formDataString(formData, "pieceNoteId"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Anteckning saknas");
   }
@@ -89,9 +71,7 @@ export function parsePieceNoteIdFromFormData(formData: FormData): string {
 }
 
 export function parsePieceNoteContentFromFormData(formData: FormData): string {
-  const result = pieceNoteContentSchema.safeParse(
-    formDataString(formData, "content")
-  );
+  const result = pieceNoteContentSchema.safeParse(formDataString(formData, "content"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Anteckning krävs");
   }
@@ -103,9 +83,7 @@ const optionalLabelSchema = z
   .transform((s) => s.trim())
   .transform((s) => (s === "" ? null : s));
 
-export function parseOptionalLinkLabelFromFormData(
-  formData: FormData
-): string | null {
+export function parseOptionalLinkLabelFromFormData(formData: FormData): string | null {
   const result = optionalLabelSchema.safeParse(formDataString(formData, "label"));
   if (!result.success) {
     return null;
@@ -170,9 +148,7 @@ export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[]
     throw new Error(INVALID_CREDITS_ERROR);
   }
 
-  const arrayResult = z
-    .array(pieceCreditItemSchema, { error: INVALID_CREDITS_ERROR })
-    .safeParse(parsed);
+  const arrayResult = z.array(pieceCreditItemSchema, { error: INVALID_CREDITS_ERROR }).safeParse(parsed);
   if (!arrayResult.success) {
     throw new Error(arrayResult.error.issues[0]?.message ?? INVALID_CREDITS_ERROR);
   }
@@ -181,9 +157,7 @@ export function parsePieceCreditsFromFormData(formData: FormData): PieceCredit[]
 }
 
 export function parseCreditPersonIdFromFormData(formData: FormData): string {
-  const result = pieceCreditItemSchema.shape.personId.safeParse(
-    formDataString(formData, "personId")
-  );
+  const result = pieceCreditItemSchema.shape.personId.safeParse(formDataString(formData, "personId"));
   if (!result.success) {
     throw new Error(INVALID_CREDITS_ERROR);
   }

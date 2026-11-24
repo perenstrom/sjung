@@ -6,10 +6,7 @@ import { announcementsTrail } from "@/lib/announcements/breadcrumbs";
 
 export default async function AnnouncementPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [selected, { announcements, canManage }] = await Promise.all([
-    getAnnouncement(id),
-    getAnnouncementsInbox(),
-  ]);
+  const [selected, { announcements, canManage }] = await Promise.all([getAnnouncement(id), getAnnouncementsInbox()]);
   if (!selected) {
     notFound();
   }

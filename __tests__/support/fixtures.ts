@@ -31,9 +31,7 @@ type CreateUserOptions = Partial<{
   updatedById: string | null;
 }>;
 
-export async function createUser(
-  overrides: CreateUserOptions = {},
-): Promise<User> {
+export async function createUser(overrides: CreateUserOptions = {}): Promise<User> {
   userCounter += 1;
   const n = userCounter;
 
@@ -43,8 +41,7 @@ export async function createUser(
       name: overrides.name ?? `Test User ${n}`,
       email: overrides.email ?? `user-${n}@test.local`,
       passwordHash: overrides.passwordHash ?? "test-hash",
-      emailVerifiedAt:
-        overrides.emailVerifiedAt !== undefined ? overrides.emailVerifiedAt : new Date(),
+      emailVerifiedAt: overrides.emailVerifiedAt !== undefined ? overrides.emailVerifiedAt : new Date(),
       createdById: overrides.createdById ?? null,
       updatedById: overrides.updatedById ?? null,
     },
@@ -59,9 +56,7 @@ type CreateGroupOptions = Partial<{
   updatedById: string;
 }>;
 
-export async function createGroup(
-  overrides: CreateGroupOptions = {},
-): Promise<Group> {
+export async function createGroup(overrides: CreateGroupOptions = {}): Promise<Group> {
   groupCounter += 1;
   const n = groupCounter;
 
@@ -86,16 +81,8 @@ export async function createGroup(
 }
 
 /** Grants Claims to an existing Member (the `UsersToGroups` row must already exist). */
-export async function grantClaims(
-  userId: string,
-  groupId: string,
-  claims: GroupClaim[],
-): Promise<GroupMemberClaim[]> {
-  return Promise.all(
-    claims.map((claim) =>
-      testPrisma.groupMemberClaim.create({ data: { userId, groupId, claim } }),
-    ),
-  );
+export async function grantClaims(userId: string, groupId: string, claims: GroupClaim[]): Promise<GroupMemberClaim[]> {
+  return Promise.all(claims.map((claim) => testPrisma.groupMemberClaim.create({ data: { userId, groupId, claim } })));
 }
 
 /** A new User who is a Member of the Group, holding `claims`. */
@@ -114,16 +101,12 @@ type CreatePieceOptions = Partial<{
   updatedById: string;
 }>;
 
-export async function createPiece(
-  overrides: CreatePieceOptions = {},
-): Promise<Piece> {
+export async function createPiece(overrides: CreatePieceOptions = {}): Promise<Piece> {
   let groupId = overrides.groupId;
   let creatorId = overrides.createdById;
 
   if (!groupId) {
-    const group = await createGroup(
-      creatorId ? { createdById: creatorId, updatedById: creatorId } : {},
-    );
+    const group = await createGroup(creatorId ? { createdById: creatorId, updatedById: creatorId } : {});
     groupId = group.id;
     creatorId = creatorId ?? group.createdById;
   }
@@ -189,11 +172,7 @@ export async function createSetList(group: Group, name = "Test Set List"): Promi
 }
 
 /** Adds the Piece to the Set list at `position`, by the Set list's creator. */
-export async function createSetListPiece(
-  setList: SetList,
-  piece: Piece,
-  position = 1000,
-): Promise<SetListPiece> {
+export async function createSetListPiece(setList: SetList, piece: Piece, position = 1000): Promise<SetListPiece> {
   return testPrisma.setListPiece.create({
     data: {
       setListId: setList.id,
@@ -229,7 +208,7 @@ export async function createSetListNote(
 export async function createFile(
   piece: Piece,
   category: string | null = null,
-  { displayName = "Score", fileName = "score.pdf", mimeType = "application/pdf" } = {}
+  { displayName = "Score", fileName = "score.pdf", mimeType = "application/pdf" } = {},
 ): Promise<File> {
   fileCounter += 1;
   return testPrisma.file.create({
@@ -256,7 +235,7 @@ export async function createPieceAlias(piece: Piece, name = "Test Alias"): Promi
 export async function createLink(
   piece: Piece,
   url = "https://example.com",
-  category: string | null = null
+  category: string | null = null,
 ): Promise<Link> {
   return testPrisma.link.create({
     data: { pieceId: piece.id, url, category, createdById: piece.createdById, updatedById: piece.createdById },
@@ -293,9 +272,7 @@ type CreateAnnouncementOptions = Partial<{
 }>;
 
 /** A published Announcement; without an author unless `createdById` is given. */
-export async function createAnnouncement(
-  overrides: CreateAnnouncementOptions = {},
-): Promise<Announcement> {
+export async function createAnnouncement(overrides: CreateAnnouncementOptions = {}): Promise<Announcement> {
   const createdById = overrides.createdById ?? null;
   return testPrisma.announcement.create({
     data: {

@@ -27,11 +27,7 @@ export function changeMember(targetUserId: string): ChangeMember {
 
 /** Why a capability was refused. */
 export type GroupAccessDenial =
-  | "lacksManageMembers"
-  | "lacksManageGroup"
-  | "lacksManageContent"
-  | "targetIsSelf"
-  | "targetIsCreator";
+  "lacksManageMembers" | "lacksManageGroup" | "lacksManageContent" | "targetIsSelf" | "targetIsCreator";
 
 /** What one Member's access is derived from. Never stored. */
 export type GroupAccessFacts = {
@@ -41,10 +37,7 @@ export type GroupAccessFacts = {
 };
 
 /** `null` when the Member has the capability, otherwise why not. */
-export function groupAccessDenial(
-  facts: GroupAccessFacts,
-  capability: GroupCapability
-): GroupAccessDenial | null {
+export function groupAccessDenial(facts: GroupAccessFacts, capability: GroupCapability): GroupAccessDenial | null {
   const isCreator = facts.userId === facts.creatorId;
   const managesMembers = isCreator || facts.claims.includes(GroupClaim.MANAGE_MEMBERS);
 

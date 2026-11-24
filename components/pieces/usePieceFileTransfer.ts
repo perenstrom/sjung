@@ -13,8 +13,7 @@ import { isAllowedFile, uploadMimeType } from "@/lib/file-formats";
 import { MAX_FILE_SIZE_BYTES, UNSUPPORTED_FILE_TYPE_MESSAGE } from "@/lib/schemas/files";
 
 type PieceFileTransferTarget =
-  | { kind: "upload"; groupSlug: string; pieceId: string }
-  | { kind: "replace"; groupSlug: string; fileId: string };
+  { kind: "upload"; groupSlug: string; pieceId: string } | { kind: "replace"; groupSlug: string; fileId: string };
 
 type PieceFileUploadUrlResult = {
   uploadUrl: string;

@@ -70,16 +70,11 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
 
     const members = await listGroupMembers(group.slug);
 
-    expect(members.map((m) => m.id).sort()).toEqual(
-      [creator.id, manager.id, other.id].sort()
-    );
+    expect(members.map((m) => m.id).sort()).toEqual([creator.id, manager.id, other.id].sort());
   });
 
   it("lists each member's Claims and marks only the Creator", async () => {
-    const { group, creator, manager, other } = await createManagerScenario([
-      "MANAGE_CONTENT",
-      "MANAGE_MEMBERS",
-    ]);
+    const { group, creator, manager, other } = await createManagerScenario(["MANAGE_CONTENT", "MANAGE_MEMBERS"]);
     actAs(manager.id);
 
     const members = await listGroupMembers(group.slug);
@@ -98,7 +93,7 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     actAs(manager.id);
 
     await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email }))
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email })),
     ).resolves.toEqual({ status: "sent", email: nonMember.email });
 
     expect(sentEmails().map((email) => email.to)).toEqual([nonMember.email]);
@@ -110,13 +105,10 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     await createUser({ email: "har-konto@example.com" });
     actAs(manager.id);
 
-    const known = await inviteMemberToGroup(
-      null,
-      formData({ groupSlug: group.slug, email: "har-konto@example.com" })
-    );
+    const known = await inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "har-konto@example.com" }));
     const unknown = await inviteMemberToGroup(
       null,
-      formData({ groupSlug: group.slug, email: "saknar-konto@example.com" })
+      formData({ groupSlug: group.slug, email: "saknar-konto@example.com" }),
     );
 
     expect(known).toEqual({ status: "sent", email: "har-konto@example.com" });
@@ -127,9 +119,7 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     const { group, manager, other } = await createManagerScenario();
     actAs(manager.id);
 
-    await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: other.email }))
-    ).resolves.toEqual({
+    await expect(inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: other.email }))).resolves.toEqual({
       status: "error",
       error: "Användaren är redan medlem i gruppen",
       values: { email: other.email },
@@ -140,8 +130,7 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
   it("refuses a second invitation to the same address within a minute", async () => {
     const { group, manager } = await createManagerScenario();
     actAs(manager.id);
-    const invite = () =>
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" }));
+    const invite = () => inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" }));
 
     await invite();
 
@@ -158,7 +147,7 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     actAs(manager.id);
 
     await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" }))
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" })),
     ).resolves.toEqual({
       status: "error",
       error: "Kunde inte skicka inbjudan, försök igen",
@@ -171,7 +160,7 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     actAs(manager.id);
 
     await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "inte en adress" }))
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "inte en adress" })),
     ).resolves.toEqual({
       status: "error",
       error: "Ange en giltig e-postadress",
@@ -201,11 +190,11 @@ describe("membership management by a member without MANAGE_MEMBERS", () => {
 
     await expect(listGroupMembers(group.slug)).rejects.toThrow(FORBIDDEN);
     await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email }))
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email })),
     ).rejects.toThrow(FORBIDDEN);
-    await expect(
-      removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))
-    ).rejects.toThrow(FORBIDDEN);
+    await expect(removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))).rejects.toThrow(
+      FORBIDDEN,
+    );
 
     expect(await isMember(nonMember.id, group.id)).toBe(false);
     expect(sentEmails()).toHaveLength(0);
@@ -217,9 +206,9 @@ describe("removing the Creator", () => {
     const { group, creator, manager } = await createManagerScenario();
     actAs(manager.id);
 
-    await expect(
-      removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))
-    ).rejects.toThrow("Gruppens administratör kan inte tas bort från gruppen");
+    await expect(removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))).rejects.toThrow(
+      "Gruppens administratör kan inte tas bort från gruppen",
+    );
     expect(await isMember(creator.id, group.id)).toBe(true);
   });
 
@@ -227,19 +216,16 @@ describe("removing the Creator", () => {
     const { group, creator } = await createManagerScenario();
     actAs(creator.id);
 
-    await expect(
-      removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))
-    ).rejects.toThrow("Du kan inte ta bort dig själv från gruppen");
+    await expect(removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: creator.id }))).rejects.toThrow(
+      "Du kan inte ta bort dig själv från gruppen",
+    );
     expect(await isMember(creator.id, group.id)).toBe(true);
   });
 });
 
 describe("removing a member who holds Claims", () => {
   it("drops their Claims along with the membership", async () => {
-    const { group, creator, manager } = await createManagerScenario([
-      "MANAGE_MEMBERS",
-      "MANAGE_CONTENT",
-    ]);
+    const { group, creator, manager } = await createManagerScenario(["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
     actAs(creator.id);
 
     await removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: manager.id }));
@@ -299,10 +285,10 @@ describe("renaming and deleting the Group", () => {
     actAs(manager.id);
 
     await expect(updateGroup(formData({ groupSlug: group.slug, name: "Nytt namn" }))).rejects.toThrow(
-      "Du har inte behörighet att redigera den här gruppen"
+      "Du har inte behörighet att redigera den här gruppen",
     );
     await expect(deleteGroup(formData({ groupSlug: group.slug }))).rejects.toThrow(
-      "Du har inte behörighet att ta bort den här gruppen"
+      "Du har inte behörighet att ta bort den här gruppen",
     );
 
     const stored = await testPrisma.group.findUnique({ where: { id: group.id } });
@@ -315,9 +301,7 @@ describe("setMemberClaims", () => {
     const { group, creator, other } = await createManagerScenario();
     actAs(creator.id);
 
-    await setMemberClaims(
-      claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT"])
-    );
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT"]));
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
 
     await setMemberClaims(claimsFormData(group.slug, other.id, []));
@@ -375,9 +359,7 @@ describe("setMemberClaims", () => {
         setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"])),
       ]);
 
-      expect([["MANAGE_MEMBERS"], ["MANAGE_CONTENT"]]).toContainEqual(
-        await claimsOf(other.id, group.id)
-      );
+      expect([["MANAGE_MEMBERS"], ["MANAGE_CONTENT"]]).toContainEqual(await claimsOf(other.id, group.id));
     }
   });
 
@@ -385,9 +367,7 @@ describe("setMemberClaims", () => {
     const { group, manager, other } = await createManagerScenario(["MANAGE_CONTENT"]);
     actAs(manager.id);
 
-    await expect(
-      setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]))
-    ).rejects.toThrow(FORBIDDEN);
+    await expect(setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]))).rejects.toThrow(FORBIDDEN);
     expect(await claimsOf(other.id, group.id)).toEqual([]);
   });
 
@@ -395,9 +375,9 @@ describe("setMemberClaims", () => {
     const { group, creator, manager } = await createManagerScenario();
     actAs(manager.id);
 
-    await expect(
-      setMemberClaims(claimsFormData(group.slug, creator.id, ["MANAGE_MEMBERS"]))
-    ).rejects.toThrow("Gruppens administratör har alltid alla behörigheter");
+    await expect(setMemberClaims(claimsFormData(group.slug, creator.id, ["MANAGE_MEMBERS"]))).rejects.toThrow(
+      "Gruppens administratör har alltid alla behörigheter",
+    );
     expect(await claimsOf(creator.id, group.id)).toEqual([]);
   });
 
@@ -406,7 +386,7 @@ describe("setMemberClaims", () => {
     actAs(manager.id);
 
     await expect(setMemberClaims(claimsFormData(group.slug, manager.id, []))).rejects.toThrow(
-      "Du kan inte ändra dina egna behörigheter"
+      "Du kan inte ändra dina egna behörigheter",
     );
     expect(await claimsOf(manager.id, group.id)).toEqual(["MANAGE_MEMBERS"]);
   });
@@ -415,9 +395,9 @@ describe("setMemberClaims", () => {
     const { group, creator, nonMember } = await createManagerScenario();
     actAs(creator.id);
 
-    await expect(
-      setMemberClaims(claimsFormData(group.slug, nonMember.id, ["MANAGE_CONTENT"]))
-    ).rejects.toThrow("Medlemmen finns inte i gruppen");
+    await expect(setMemberClaims(claimsFormData(group.slug, nonMember.id, ["MANAGE_CONTENT"]))).rejects.toThrow(
+      "Medlemmen finns inte i gruppen",
+    );
   });
 
   it("rejects an unknown Claim without changing the member's Claims", async () => {
@@ -439,7 +419,7 @@ describe("the Group's Invitations", () => {
     const scenario = await createManagerScenario(managerClaims);
     await inviteToGroup(
       { groupId: scenario.group.id, email: "anna@example.com", invitedById: scenario.creator.id },
-      new Date(Date.now() - 2 * 60 * 1000)
+      new Date(Date.now() - 2 * 60 * 1000),
     );
     const token = emailedLinkToken(sentEmails().at(-1)!, INVITATION_PATH);
     const invitation = await testPrisma.invitation.findFirstOrThrow({ select: { id: true } });
@@ -481,7 +461,7 @@ describe("the Group's Invitations", () => {
     actAs(manager.id);
 
     await expect(
-      revokeGroupInvitation(formData({ groupSlug: group.slug, invitationId: "00000000-0000-0000-0000-000000000000" }))
+      revokeGroupInvitation(formData({ groupSlug: group.slug, invitationId: "00000000-0000-0000-0000-000000000000" })),
     ).rejects.toThrow("Inbjudan hittades inte");
     expect(await testPrisma.invitation.count()).toBe(1);
   });

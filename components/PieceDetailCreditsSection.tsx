@@ -23,13 +23,7 @@ type PieceDetailCreditsSectionProps = {
 export function PieceDetailCreditsSection(props: PieceDetailCreditsSectionProps) {
   const { isEditing } = useEditMode();
   // Remount on every toggle so leaving edit mode discards a half-filled add row.
-  return (
-    <PieceDetailCreditsBody
-      key={isEditing ? "edit" : "read"}
-      readOnly={!isEditing}
-      {...props}
-    />
-  );
+  return <PieceDetailCreditsBody key={isEditing ? "edit" : "read"} readOnly={!isEditing} {...props} />;
 }
 
 function PieceDetailCreditsBody({
@@ -51,12 +45,7 @@ function PieceDetailCreditsBody({
           personHref={(personId) => groupPersonPath(groupSlug, personId)}
         />
       ) : (
-        <RemovableCreditsList
-          groupSlug={groupSlug}
-          pieceId={pieceId}
-          credits={credits}
-          className="space-y-2"
-        />
+        <RemovableCreditsList groupSlug={groupSlug} pieceId={pieceId} credits={credits} className="space-y-2" />
       )}
 
       {readOnly ? null : (

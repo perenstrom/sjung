@@ -40,7 +40,10 @@ export function ShortcutsButton({ onClick, className }: { onClick: () => void; c
       onClick={onClick}
       aria-label="Kortkommandon"
       title="Kortkommandon (?)"
-      className={cn("items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted", className)}
+      className={cn(
+        "items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted",
+        className,
+      )}
     >
       <Keyboard className="size-4" aria-hidden />
       <Kbd>?</Kbd>
@@ -138,7 +141,9 @@ function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
       className="relative h-4 w-full max-w-5xl cursor-pointer overflow-hidden rounded-full bg-primary/25"
       onClick={seekOnClick(duration, onSeek)}
     >
-      {loop ? <div data-passage className="absolute inset-y-0 bg-amber-300/70" style={passageStyle(loop, duration)} /> : null}
+      {loop ? (
+        <div data-passage className="absolute inset-y-0 bg-amber-300/70" style={passageStyle(loop, duration)} />
+      ) : null}
       <div data-played className="absolute inset-y-0 left-0 bg-primary" style={{ width: `${played}%` }} />
     </div>
   );
@@ -239,7 +244,7 @@ function PanelButton({
           title={`${title} (${shortcut})`}
           className={cn(
             "flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm hover:bg-muted data-[state=open]:bg-muted",
-            active && "border-primary text-primary"
+            active && "border-primary text-primary",
           )}
         >
           {icon}

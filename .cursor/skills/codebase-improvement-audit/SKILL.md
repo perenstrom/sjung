@@ -10,6 +10,7 @@ description: Audits a selected codebase layer for duplication, code quality issu
 Before any analysis, ask the user which layer to focus on.
 
 Use `AskQuestion` with these options:
+
 - `components`
 - `hooks`
 - `lib`
@@ -28,6 +29,7 @@ If the user picks `other / custom layer`, ask a follow-up question to get the ex
 ## Step 3: Run the audit
 
 Review the selected scope and identify:
+
 - Duplication (repeated logic, repeated UI patterns, copy-pasted utilities)
 - Quality issues (weak typing, unclear boundaries, missing error handling)
 - Performance opportunities (expensive rerenders, over-fetching, unnecessary work)
@@ -42,21 +44,26 @@ Use this structure:
 
 ```markdown
 ## Focus Layer
+
 [Selected layer and exact scope]
 
 ## Top Findings
+
 1. [Issue title] — [severity: high/medium/low]
    - Evidence: [file/symbol]
    - Why it matters: [impact]
    - Suggested fix: [specific change]
 
 ## Quick Wins
+
 - [Small improvement with high value]
 
 ## Refactor Candidates
+
 - [Larger, staged improvement]
 
 ## Suggested Next Step
+
 - [Single best next action]
 ```
 

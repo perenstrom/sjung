@@ -24,10 +24,7 @@ import {
   parsePieceNoteIdFromFormData,
   parseRequiredHttpUrlFromFormData,
 } from "@/lib/schemas/pieces";
-import {
-  parseWritableGroupSlugFromFormData,
-  parseWritableGroupSlugParam,
-} from "@/lib/schemas/people";
+import { parseWritableGroupSlugFromFormData, parseWritableGroupSlugParam } from "@/lib/schemas/people";
 import {
   getCategoriesUsedInGroup,
   getCreditRolesUsedInGroup,
@@ -39,11 +36,7 @@ import {
   toPieceNoteListItem,
 } from "@/lib/pieces/queries";
 import { deletePieceFiles, STORE_PIECE_SELECT } from "@/lib/pieces/file-store";
-import {
-  pieceNoteListItemSelect,
-  type PieceDetail,
-  type PieceNoteListItem,
-} from "@/lib/pieces/types";
+import { pieceNoteListItemSelect, type PieceDetail, type PieceNoteListItem } from "@/lib/pieces/types";
 import {
   buildImportPlan,
   importOutcome,
@@ -60,10 +53,7 @@ export async function getPieces(groupSlug: string) {
   return getPiecesForGroup(groupId);
 }
 
-export async function getPieceDetail(
-  groupSlug: string,
-  pieceId: string
-): Promise<PieceDetail | null> {
+export async function getPieceDetail(groupSlug: string, pieceId: string): Promise<PieceDetail | null> {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   return getPieceDetailForGroup(groupId, pieceId);
 }
@@ -117,7 +107,7 @@ export async function importPieces(formData: FormData): Promise<PieceImportResul
           return { kind: "imported", summary: plan.counts };
         },
         // Serializable, so a Person or Piece someone adds meanwhile fails the save rather than being duplicated.
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30_000 }
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30_000 },
       );
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
@@ -138,12 +128,11 @@ const NOTHING_TO_IMPORT = "Det finns inga noter att importera";
 async function saveImport(
   tx: Prisma.TransactionClient,
   plan: ImportPreview,
-  { groupId, userId }: { groupId: string; userId: string }
+  { groupId, userId }: { groupId: string; userId: string },
 ) {
   const pieces = plan.rows.filter((row) => row.add).map((row) => ({ row, id: randomUUID() }));
   const newPersonIds = new Map(plan.newPeople.map((name) => [name, randomUUID()]));
-  const personId = (person: ImportPerson) =>
-    person.kind === "existing" ? person.id : newPersonIds.get(person.name)!;
+  const personId = (person: ImportPerson) => (person.kind === "existing" ? person.id : newPersonIds.get(person.name)!);
   const audit = { createdById: userId, updatedById: userId };
 
   await tx.person.createMany({
@@ -155,8 +144,8 @@ async function saveImport(
   await tx.personToPiece.createMany({
     data: pieces.flatMap(({ row, id }) =>
       row.credits.flatMap((credit) =>
-        credit.roles.map((role) => ({ pieceId: id, personId: personId(credit.person), role }))
-      )
+        credit.roles.map((role) => ({ pieceId: id, personId: personId(credit.person), role })),
+      ),
     ),
   });
 }
@@ -367,10 +356,7 @@ export async function removePersonCredits(formData: FormData) {
   });
 }
 
-export async function listPieceNotes(
-  groupSlug: string,
-  pieceId: string
-): Promise<PieceNoteListItem[]> {
+export async function listPieceNotes(groupSlug: string, pieceId: string): Promise<PieceNoteListItem[]> {
   const slug = parseWritableGroupSlugParam(groupSlug);
   const { groupId } = await getWritableGroupIdForSlug(slug);
   const piece = await findInGroup(groupId, "piece", parsePieceIdParam(pieceId));

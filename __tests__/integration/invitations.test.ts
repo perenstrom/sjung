@@ -33,7 +33,7 @@ describe("inviteToGroup", () => {
     const { group, creator, nonMember } = await createAccessScenario();
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: nonMember.email, invitedById: creator.id })
+      inviteToGroup({ groupId: group.id, email: nonMember.email, invitedById: creator.id }),
     ).resolves.toEqual({ status: "sent" });
 
     expect(sentEmails()).toHaveLength(1);
@@ -51,7 +51,7 @@ describe("inviteToGroup", () => {
     const { group, creator } = await createAccessScenario();
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: "ny@example.com", invitedById: creator.id })
+      inviteToGroup({ groupId: group.id, email: "ny@example.com", invitedById: creator.id }),
     ).resolves.toEqual({ status: "sent" });
 
     expect(sentEmails().map((email) => email.to)).toEqual(["ny@example.com"]);
@@ -60,9 +60,9 @@ describe("inviteToGroup", () => {
   it("refuses an address that already belongs to a Member", async () => {
     const { group, creator, member } = await createAccessScenario();
 
-    await expect(
-      inviteToGroup({ groupId: group.id, email: member.email, invitedById: creator.id })
-    ).resolves.toEqual({ status: "already-member" });
+    await expect(inviteToGroup({ groupId: group.id, email: member.email, invitedById: creator.id })).resolves.toEqual({
+      status: "already-member",
+    });
     expect(sentEmails()).toHaveLength(0);
   });
 
@@ -72,7 +72,7 @@ describe("inviteToGroup", () => {
     await testPrisma.usersToGroups.create({ data: { userId: anna.id, groupId: group.id } });
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: " Anna@Example.com ", invitedById: creator.id })
+      inviteToGroup({ groupId: group.id, email: " Anna@Example.com ", invitedById: creator.id }),
     ).resolves.toEqual({ status: "already-member" });
   });
 });
@@ -139,12 +139,12 @@ describe("opening the accept link", () => {
     const sentAt = new Date("2026-11-01T12:00:00Z");
     const { token } = await inviteToNewGroup("anna@example.com", sentAt);
 
-    await expect(
-      getInvitationView(token, null, new Date("2026-11-15T11:59:59Z"))
-    ).resolves.toMatchObject({ state: "sign-in" });
-    await expect(
-      getInvitationView(token, null, new Date("2026-11-15T12:00:00Z"))
-    ).resolves.toEqual({ state: "invalid" });
+    await expect(getInvitationView(token, null, new Date("2026-11-15T11:59:59Z"))).resolves.toMatchObject({
+      state: "sign-in",
+    });
+    await expect(getInvitationView(token, null, new Date("2026-11-15T12:00:00Z"))).resolves.toEqual({
+      state: "invalid",
+    });
   });
 });
 
@@ -164,9 +164,7 @@ describe("acceptInvitation", () => {
     });
 
     expect(await isMember(anna.id, group.id)).toBe(true);
-    expect(
-      await testPrisma.groupMemberClaim.count({ where: { userId: anna.id, groupId: group.id } })
-    ).toBe(0);
+    expect(await testPrisma.groupMemberClaim.count({ where: { userId: anna.id, groupId: group.id } })).toBe(0);
     await expect(acceptInvitation(token, viewer(anna))).resolves.toEqual({ ok: false });
   });
 
@@ -219,9 +217,9 @@ describe("acceptInvitation", () => {
     const anna = await createUser({ email: "anna@example.com" });
     const { group, token } = await inviteToNewGroup("anna@example.com", sentAt);
 
-    await expect(
-      acceptInvitation(token, viewer(anna), new Date("2026-11-15T12:00:00Z"))
-    ).resolves.toEqual({ ok: false });
+    await expect(acceptInvitation(token, viewer(anna), new Date("2026-11-15T12:00:00Z"))).resolves.toEqual({
+      ok: false,
+    });
     expect(await isMember(anna.id, group.id)).toBe(false);
   });
 
@@ -337,7 +335,7 @@ describe("inviting the same address again", () => {
     const resentAt = after(60);
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, resentAt)
+      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, resentAt),
     ).resolves.toEqual({ status: "sent" });
     const newToken = linkTokenIn(sentEmails().at(-1)!);
 
@@ -357,7 +355,7 @@ describe("inviting the same address again", () => {
     const { group, creator } = await inviteToNewGroup("anna@example.com", sentAt);
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, after(45))
+      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, after(45)),
     ).resolves.toEqual({ status: "cooldown", retryAfterSeconds: 15 });
     expect(sentEmails()).toHaveLength(1);
   });
@@ -367,7 +365,7 @@ describe("inviting the same address again", () => {
     failEmailsTo("anna@example.com");
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, after(60))
+      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, after(60)),
     ).resolves.toEqual({ status: "send-failed" });
 
     expect(await testPrisma.invitation.count()).toBe(1);
@@ -396,7 +394,7 @@ describe("inviting the same address again", () => {
     failEmailsTo("ny@example.com");
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: "ny@example.com", invitedById: creator.id })
+      inviteToGroup({ groupId: group.id, email: "ny@example.com", invitedById: creator.id }),
     ).resolves.toEqual({ status: "send-failed" });
 
     expect(await testPrisma.invitation.count({ where: { groupId: group.id } })).toBe(1);
@@ -407,7 +405,7 @@ describe("inviting the same address again", () => {
     const { group, creator } = await createAccessScenario();
 
     await expect(
-      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, after(1))
+      inviteToGroup({ groupId: group.id, email: "anna@example.com", invitedById: creator.id }, after(1)),
     ).resolves.toEqual({ status: "sent" });
   });
 });
@@ -545,7 +543,10 @@ describe("resendInvitation", () => {
     const scenario = await inviteToNewGroup("anna@example.com", sentAt);
     const [invitation] = await findGroupInvitations(scenario.group.id, sentAt);
     const resend = (at: Date) =>
-      resendInvitation({ groupId: scenario.group.id, invitationId: invitation.id, invitedById: scenario.creator.id }, at);
+      resendInvitation(
+        { groupId: scenario.group.id, invitationId: invitation.id, invitedById: scenario.creator.id },
+        at,
+      );
     return { ...scenario, invitation, resend };
   }
 
@@ -593,7 +594,7 @@ describe("resendInvitation", () => {
     resetFakeEmail();
 
     await expect(
-      resendInvitation({ groupId: otherGroup.id, invitationId: invitation.id, invitedById: creator.id }, days(1))
+      resendInvitation({ groupId: otherGroup.id, invitationId: invitation.id, invitedById: creator.id }, days(1)),
     ).resolves.toEqual({ status: "not-found" });
     expect(sentEmails()).toHaveLength(0);
   });

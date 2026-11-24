@@ -76,9 +76,11 @@ describe("groupNavItems", () => {
   });
 
   it("leaves out Medlemmar for those who can't manage members", () => {
-    expect(
-      groupNavItems({ groupSlug: "kor", canManageMembers: false }).map((item) => item.label)
-    ).toEqual(["Repertoarer", "Alla noter", "Upphovspersoner"]);
+    expect(groupNavItems({ groupSlug: "kor", canManageMembers: false }).map((item) => item.label)).toEqual([
+      "Repertoarer",
+      "Alla noter",
+      "Upphovspersoner",
+    ]);
   });
 
   it("disables the items when there is no active group", () => {

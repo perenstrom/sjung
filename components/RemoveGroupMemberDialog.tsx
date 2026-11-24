@@ -22,13 +22,7 @@ type GroupMember = {
   email: string;
 };
 
-export function RemoveGroupMemberDialog({
-  groupSlug,
-  member,
-}: {
-  groupSlug: string;
-  member: GroupMember;
-}) {
+export function RemoveGroupMemberDialog({ groupSlug, member }: { groupSlug: string; member: GroupMember }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

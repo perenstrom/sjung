@@ -9,9 +9,7 @@ export function ResendVerificationForm() {
 
   return (
     <form action={formAction} className="space-y-3">
-      {state?.status === "sent" && (
-        <p className="rounded-md bg-muted px-3 py-2 text-sm">Vi har skickat en ny länk.</p>
-      )}
+      {state?.status === "sent" && <p className="rounded-md bg-muted px-3 py-2 text-sm">Vi har skickat en ny länk.</p>}
       {state?.status === "cooldown" && (
         <p className="rounded-md bg-muted px-3 py-2 text-sm">
           Vänta {state.retryAfterSeconds} sekunder innan du skickar igen.

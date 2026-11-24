@@ -28,7 +28,7 @@ const DELETE_CONCURRENCY = 5;
 /** A presigned PUT that only accepts an object of this type and size. */
 export async function signPut(
   key: string,
-  { contentType, size, expiresInSeconds }: { contentType: string; size: number; expiresInSeconds: number }
+  { contentType, size, expiresInSeconds }: { contentType: string; size: number; expiresInSeconds: number },
 ): Promise<string> {
   const command = new PutObjectCommand({
     Bucket: getBucket(),
@@ -46,7 +46,7 @@ export async function signGet(
     contentType,
     contentDisposition,
     expiresInSeconds,
-  }: { contentType: string; contentDisposition: string; expiresInSeconds: number }
+  }: { contentType: string; contentDisposition: string; expiresInSeconds: number },
 ): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: getBucket(),
@@ -61,7 +61,7 @@ export async function signGet(
 export async function putObject(
   key: string,
   body: Uint8Array,
-  { contentType }: { contentType: string }
+  { contentType }: { contentType: string },
 ): Promise<void> {
   const command = new PutObjectCommand({
     Bucket: getBucket(),
@@ -105,7 +105,7 @@ export async function deletePrefix(prefix: string): Promise<DeleteObjectsResult>
         Bucket: getBucket(),
         Prefix: prefix,
         ContinuationToken: continuationToken,
-      })
+      }),
     );
     for (const object of page.Contents ?? []) {
       if (object.Key) {
@@ -125,7 +125,7 @@ export async function deletePrefix(prefix: string): Promise<DeleteObjectsResult>
 export async function deleteKeysWithConcurrency(
   keys: string[],
   deleteOne: (key: string) => Promise<void>,
-  concurrency = DELETE_CONCURRENCY
+  concurrency = DELETE_CONCURRENCY,
 ): Promise<DeleteObjectsResult> {
   const batchSize = Math.max(1, Math.floor(concurrency));
   const failedKeys: string[] = [];
@@ -143,11 +143,7 @@ export async function deleteKeysWithConcurrency(
   return { totalCount: keys.length, failedCount: failedKeys.length, failedKeys };
 }
 
-type RequiredR2EnvVar =
-  | "R2_ACCESS_KEY_ID"
-  | "R2_SECRET_ACCESS_KEY"
-  | "R2_BUCKET"
-  | "R2_ENDPOINT";
+type RequiredR2EnvVar = "R2_ACCESS_KEY_ID" | "R2_SECRET_ACCESS_KEY" | "R2_BUCKET" | "R2_ENDPOINT";
 
 let cachedClient: S3Client | null = null;
 

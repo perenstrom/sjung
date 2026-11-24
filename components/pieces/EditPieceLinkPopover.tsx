@@ -11,12 +11,7 @@ import type { PieceLink } from "@/components/pieces/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  FormPopover,
-  FormPopoverContent,
-  FormPopoverFooter,
-  FormPopoverTrigger,
-} from "@/components/ui/form-popover";
+import { FormPopover, FormPopoverContent, FormPopoverFooter, FormPopoverTrigger } from "@/components/ui/form-popover";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 export function EditPieceLinkPopover({
@@ -70,10 +65,7 @@ export function EditPieceLinkPopover({
           <Pencil className="size-3.5" aria-hidden="true" />
         </Button>
       </FormPopoverTrigger>
-      <FormPopoverContent
-        title="Redigera länk"
-        description={pieceName ?? labelForLink(link)}
-      >
+      <FormPopoverContent title="Redigera länk" description={pieceName ?? labelForLink(link)}>
         <form action={handleUpdate} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="linkId" value={link.id} />
@@ -81,21 +73,11 @@ export function EditPieceLinkPopover({
           <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor={`edit-url-${link.id}`}>Länk</Label>
-              <Input
-                id={`edit-url-${link.id}`}
-                name="url"
-                type="url"
-                defaultValue={link.url}
-                required
-              />
+              <Input id={`edit-url-${link.id}`} name="url" type="url" defaultValue={link.url} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor={`edit-label-${link.id}`}>Etikett (valfritt)</Label>
-              <Input
-                id={`edit-label-${link.id}`}
-                name="label"
-                defaultValue={link.label ?? ""}
-              />
+              <Input id={`edit-label-${link.id}`} name="label" defaultValue={link.label ?? ""} />
             </div>
             <CategoryField defaultValue={link.category} />
           </div>
@@ -103,11 +85,7 @@ export function EditPieceLinkPopover({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <FormPopoverFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Avbryt
             </Button>
             <Button type="submit">Spara</Button>

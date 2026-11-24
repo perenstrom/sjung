@@ -10,13 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
  * child truncates only part of its text, mark that part with
  * `data-truncates` and it is measured instead.
  */
-export function TruncatedTooltip({
-  content,
-  children,
-}: {
-  content: string;
-  children: ReactElement;
-}) {
+export function TruncatedTooltip({ content, children }: { content: string; children: ReactElement }) {
   // A callback ref, since the child may be any element (button, link, …).
   const [element, setElement] = useState<HTMLElement | null>(null);
   const [isTruncated, setIsTruncated] = useState(false);
@@ -28,8 +22,7 @@ export function TruncatedTooltip({
     }
 
     const measure = () => {
-      const target =
-        element.querySelector<HTMLElement>("[data-truncates]") ?? element;
+      const target = element.querySelector<HTMLElement>("[data-truncates]") ?? element;
       setIsTruncated(target.scrollWidth > target.clientWidth);
     };
     measure();

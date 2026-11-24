@@ -50,12 +50,7 @@ export function PiecesPageContent({
       {importing ? (
         <PieceImportPanel groupSlug={groupSlug} group={importGroup} onClose={() => setIsImportOpen(false)} />
       ) : (
-        <SearchablePiecesTable
-          pieces={pieces}
-          people={people}
-          creditRoles={creditRoles}
-          groupSlug={groupSlug}
-        />
+        <SearchablePiecesTable pieces={pieces} people={people} creditRoles={creditRoles} groupSlug={groupSlug} />
       )}
     </>
   );

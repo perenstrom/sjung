@@ -40,7 +40,7 @@ const optionalDisplayNameSchema = z.preprocess(
       const t = s.trim();
       return t === "" ? null : t;
     }),
-  ])
+  ]),
 );
 
 const requiredDisplayNameSchema = z.preprocess(
@@ -48,7 +48,7 @@ const requiredDisplayNameSchema = z.preprocess(
   z
     .string()
     .transform((s) => s.trim())
-    .pipe(z.string().min(1, { error: "Visningsnamn saknas" }))
+    .pipe(z.string().min(1, { error: "Visningsnamn saknas" })),
 );
 
 const updatePieceFileDisplayNameFormSchema = z.object({
@@ -122,9 +122,7 @@ export function parseFinalizePieceFileUploadFromFormData(formData: FormData): {
   return result.data;
 }
 
-export function parseCreatePieceFileReplaceUploadFromFormData(
-  formData: FormData
-): {
+export function parseCreatePieceFileReplaceUploadFromFormData(formData: FormData): {
   fileId: string;
   fileName: string;
   mimeType: string;
@@ -181,10 +179,7 @@ export function assertAllowedStoredFile({
   contentType: string;
   size: number;
 }) {
-  for (const result of [
-    mimeTypeFieldSchema.safeParse(contentType),
-    sizeFieldSchema.safeParse(String(size)),
-  ]) {
+  for (const result of [mimeTypeFieldSchema.safeParse(contentType), sizeFieldSchema.safeParse(String(size))]) {
     if (!result.success) {
       throw new Error(result.error.issues[0]?.message ?? "Validering misslyckades");
     }

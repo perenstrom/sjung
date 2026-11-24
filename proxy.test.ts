@@ -25,9 +25,7 @@ describe("proxy", () => {
   });
 
   it("lets an authenticated request through over plain http", async () => {
-    const res = await proxy(
-      request("/app", { cookie: await sessionCookie("authjs.session-token") })
-    );
+    const res = await proxy(request("/app", { cookie: await sessionCookie("authjs.session-token") }));
 
     expect(res.headers.get("location")).toBeNull();
   });
@@ -37,7 +35,7 @@ describe("proxy", () => {
       request("/app", {
         cookie: await sessionCookie("__Secure-authjs.session-token"),
         forwardedProto: "https",
-      })
+      }),
     );
 
     expect(res.headers.get("location")).toBeNull();
@@ -46,8 +44,6 @@ describe("proxy", () => {
   it("redirects to login when no session cookie is present", async () => {
     const res = await proxy(request("/app", { cookie: "", forwardedProto: "https" }));
 
-    expect(res.headers.get("location")).toBe(
-      "http://localhost:3000/auth/login?next=%2Fapp"
-    );
+    expect(res.headers.get("location")).toBe("http://localhost:3000/auth/login?next=%2Fapp");
   });
 });

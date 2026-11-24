@@ -22,8 +22,8 @@ export function AccountDeletionSection({ soloGroups, sharedGroups }: CreatorGrou
     <section className="max-w-xl space-y-4">
       <h2 className="text-lg font-semibold">Ta bort konto</h2>
       <p className="text-sm text-muted-foreground">
-        Ditt konto och dina personuppgifter tas bort permanent. Det går inte att ångra. Det du har
-        lagt till ligger kvar i grupperna, men visas inte längre som ditt.
+        Ditt konto och dina personuppgifter tas bort permanent. Det går inte att ångra. Det du har lagt till ligger kvar
+        i grupperna, men visas inte längre som ditt.
       </p>
 
       {soloGroups.length > 0 ? (
@@ -45,9 +45,7 @@ export function AccountDeletionSection({ soloGroups, sharedGroups }: CreatorGrou
 
       <form action={formAction} className="space-y-4">
         {state?.error ? (
-          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {state.error}
-          </p>
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.error}</p>
         ) : null}
 
         <div className="space-y-2">
@@ -70,15 +68,7 @@ export function AccountDeletionSection({ soloGroups, sharedGroups }: CreatorGrou
   );
 }
 
-function GroupList({
-  intro,
-  groups,
-  linkTo,
-}: {
-  intro: string;
-  groups: CreatorGroup[];
-  linkTo?: string;
-}) {
+function GroupList({ intro, groups, linkTo }: { intro: string; groups: CreatorGroup[]; linkTo?: string }) {
   return (
     <div className="space-y-2 text-sm">
       <p>{intro}</p>

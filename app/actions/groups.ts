@@ -53,9 +53,7 @@ export async function createGroup(formData: FormData) {
   const trimmed = parseGroupNameFromFormData(formData);
   const base = slugifyGroupName(trimmed);
   if (isReservedGroupSlug(base)) {
-    throw new Error(
-      "Det namnet ger en förbjuden adress. Välj ett annat gruppnamn."
-    );
+    throw new Error("Det namnet ger en förbjuden adress. Välj ett annat gruppnamn.");
   }
 
   let assignedSlug: string | null = null;
@@ -122,7 +120,7 @@ export async function updateGroup(formData: FormData) {
         },
       });
       revalidateAppAndMyGroupsWithGroupRoute(groupSlug);
-    }
+    },
   );
 }
 
@@ -141,7 +139,7 @@ export async function deleteGroup(formData: FormData) {
       });
       await deleteGroupFiles(groupId);
       revalidateAppAndMyGroupsWithGroupRoute(groupSlug);
-    }
+    },
   );
 }
 
@@ -184,9 +182,7 @@ export async function listGroupMembers(groupSlug: string) {
 
 /** `useActionState` state for the members page's "Bjud in" form. */
 export type InviteMemberState =
-  | { status: "sent"; email: string }
-  | { status: "error"; error: string; values: { email: string } }
-  | null;
+  { status: "sent"; email: string } | { status: "error"; error: string; values: { email: string } } | null;
 
 /**
  * "Bjud in": creates an Invitation for the address, or re-sends the pending
@@ -195,7 +191,7 @@ export type InviteMemberState =
  */
 export async function inviteMemberToGroup(
   _prevState: InviteMemberState,
-  formData: FormData
+  formData: FormData,
 ): Promise<InviteMemberState> {
   const groupSlug = parseGroupSlugFromFormData(formData);
 
@@ -219,7 +215,7 @@ export async function inviteMemberToGroup(
         return { status: "sent", email };
       }
       return { status: "error", error: inviteFailureMessage(result), values: { email } };
-    }
+    },
   );
 }
 
@@ -257,7 +253,7 @@ export async function revokeGroupInvitation(formData: FormData) {
         throw new Error(INVITATION_NOT_FOUND);
       }
       revalidateGroupMembersRoutes(groupSlug);
-    }
+    },
   );
 }
 
@@ -282,7 +278,7 @@ export async function resendGroupInvitation(formData: FormData): Promise<ResendG
 
       revalidateGroupMembersRoutes(groupSlug);
       return { ok: true, email: result.email };
-    }
+    },
   );
 }
 
@@ -317,7 +313,7 @@ export async function removeMemberFromGroup(formData: FormData) {
       });
 
       revalidateGroupMembersRoutes(groupSlug);
-    }
+    },
   );
 }
 
@@ -360,7 +356,7 @@ export async function setMemberClaims(formData: FormData) {
       });
 
       revalidateGroupMembersRoutes(groupSlug);
-    }
+    },
   );
 }
 

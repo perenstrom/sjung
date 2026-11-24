@@ -13,8 +13,6 @@ describe("metadataForFile", () => {
   });
 
   it("shows only the size when the upload date is unknown", () => {
-    expect(
-      metadataForFile({ size: 500 }),
-    ).toBe("500 B");
+    expect(metadataForFile({ size: 500 })).toBe("500 B");
   });
 });

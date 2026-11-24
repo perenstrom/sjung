@@ -1,11 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { testPrisma } from "../support/db";
-import {
-  createUser,
-  createGroup,
-  createPiece,
-  createAccessScenario,
-} from "../support/fixtures";
+import { createUser, createGroup, createPiece, createAccessScenario } from "../support/fixtures";
 
 describe("createUser", () => {
   test("persists a user with a deterministic unique email", async () => {

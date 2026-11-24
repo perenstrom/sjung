@@ -7,10 +7,7 @@ import { after } from "next/server";
 import prisma from "@/lib/prisma";
 import { normalizeEmail } from "@/lib/normalize-email";
 import { signIn, signOut } from "@/auth";
-import {
-  confirmEmailVerification,
-  sendVerificationEmail,
-} from "@/lib/auth/email-verification";
+import { confirmEmailVerification, sendVerificationEmail } from "@/lib/auth/email-verification";
 import { completePasswordReset, requestPasswordReset } from "@/lib/auth/password-reset";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { getSessionUser } from "@/lib/auth/require-user";
@@ -43,17 +40,11 @@ export type LoginFormState = {
 
 /** `useActionState` state for the signup form: `null` until a submit fails. */
 export type SignupFormState = {
-  error:
-    | NewPasswordParseError
-    | "E-postadressen används redan"
-    | "Det finns redan ett konto med den e-postadressen";
+  error: NewPasswordParseError | "E-postadressen används redan" | "Det finns redan ett konto med den e-postadressen";
   values: SignupFormValues;
 } | null;
 
-export async function logIn(
-  _prevState: LoginFormState,
-  formData: FormData
-): Promise<LoginFormState> {
+export async function logIn(_prevState: LoginFormState, formData: FormData): Promise<LoginFormState> {
   const parsed = parseLoginFormData(formData);
   if (!parsed.ok) {
     return { error: "Ogiltiga inloggningsuppgifter", values: parsed.values };
@@ -80,10 +71,7 @@ export async function logOut() {
   await signOut({ redirectTo: "/" });
 }
 
-export async function signUp(
-  _prevState: SignupFormState,
-  formData: FormData
-): Promise<SignupFormState> {
+export async function signUp(_prevState: SignupFormState, formData: FormData): Promise<SignupFormState> {
   const parsed = parseSignupFormData(formData);
   if (!parsed.ok) {
     return { error: parsed.error, values: parsed.values };
@@ -137,7 +125,7 @@ export async function signUp(
  */
 export async function signUpFromInvitationForm(
   _prevState: SignupFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<SignupFormState> {
   const tokenRaw = formData.get("invitation");
   const token = typeof tokenRaw === "string" ? tokenRaw : "";
@@ -169,14 +157,9 @@ export async function signUpFromInvitationForm(
 
 /** `useActionState` state for "Skicka igen" on the verify-email page. */
 export type ResendVerificationState =
-  | { status: "sent" }
-  | { status: "cooldown"; retryAfterSeconds: number }
-  | { status: "failed" }
-  | null;
+  { status: "sent" } | { status: "cooldown"; retryAfterSeconds: number } | { status: "failed" } | null;
 
-export async function resendVerification(
-  _prevState: ResendVerificationState
-): Promise<ResendVerificationState> {
+export async function resendVerification(_prevState: ResendVerificationState): Promise<ResendVerificationState> {
   const user = await getSessionUser();
   if (!user) {
     redirect(loginPath(VERIFY_EMAIL_PATH));
@@ -225,7 +208,7 @@ export type RequestPasswordResetState =
  */
 export async function requestPasswordResetForm(
   _prevState: RequestPasswordResetState,
-  formData: FormData
+  formData: FormData,
 ): Promise<RequestPasswordResetState> {
   const emailRaw = formData.get("email");
   const email = typeof emailRaw === "string" ? emailRaw.trim() : "";
@@ -249,7 +232,7 @@ export type NewPasswordFormState = { error: NewPasswordParseError } | null;
  */
 export async function setNewPassword(
   _prevState: NewPasswordFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<NewPasswordFormState> {
   const parsed = parseNewPasswordFormData(formData);
   if (!parsed.ok) {

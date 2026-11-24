@@ -76,7 +76,7 @@ export function PieceAliasesEditor({
       {aliases.length > 0 ? (
         <ul className="space-y-1">
           {aliases.map((alias) => (
-            <li key={alias.id} className="text-muted-foreground flex items-center gap-1 text-sm">
+            <li key={alias.id} className="flex items-center gap-1 text-sm text-muted-foreground">
               <span className="min-w-0 break-words">{alias.name}</span>
               <Button
                 type="button"
@@ -115,7 +115,7 @@ export function PieceAliasesEditor({
           {isAdding ? <Spinner /> : <Plus className="size-4" aria-hidden="true" />}
         </Button>
       </form>
-      {error ? <p className="text-destructive text-xs">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }

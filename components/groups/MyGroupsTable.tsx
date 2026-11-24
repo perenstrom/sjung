@@ -14,14 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MobileList, MobileListRow } from "@/components/ui/mobile-list";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export type MyGroupsTableRow = {
   id: string;
@@ -50,11 +43,7 @@ export function MyGroupsTable({ groups }: { groups: MyGroupsTableRow[] }) {
     <>
       <MobileList>
         {groups.map((group) => (
-          <MobileListRow
-            key={group.id}
-            primary={group.name}
-            trailing={<MyGroupActionsMenu group={group} />}
-          />
+          <MobileListRow key={group.id} primary={group.name} trailing={<MyGroupActionsMenu group={group} />} />
         ))}
       </MobileList>
 
@@ -154,11 +143,7 @@ function MyGroupActionsMenu({ group }: { group: MyGroupsTableRow }) {
                 );
               case "delete":
                 return (
-                  <DropdownMenuItem
-                    key={action}
-                    variant="destructive"
-                    onSelect={() => setOpenDialog("delete")}
-                  >
+                  <DropdownMenuItem key={action} variant="destructive" onSelect={() => setOpenDialog("delete")}>
                     <Trash2 aria-hidden="true" />
                     Ta bort
                   </DropdownMenuItem>
@@ -168,18 +153,10 @@ function MyGroupActionsMenu({ group }: { group: MyGroupsTableRow }) {
         </DropdownMenuContent>
       </DropdownMenu>
       {actions.includes("edit") ? (
-        <EditGroupDialog
-          group={group}
-          open={openDialog === "edit"}
-          onOpenChange={dialogOpenChange("edit")}
-        />
+        <EditGroupDialog group={group} open={openDialog === "edit"} onOpenChange={dialogOpenChange("edit")} />
       ) : null}
       {actions.includes("delete") ? (
-        <DeleteGroupDialog
-          group={group}
-          open={openDialog === "delete"}
-          onOpenChange={dialogOpenChange("delete")}
-        />
+        <DeleteGroupDialog group={group} open={openDialog === "delete"} onOpenChange={dialogOpenChange("delete")} />
       ) : null}
     </>
   );

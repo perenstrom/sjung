@@ -50,7 +50,7 @@ export function FeedbackDialog({ pagePath, groupSlug, appVersion }: FeedbackDial
       }
       return result;
     },
-    null
+    null,
   );
 
   const error = state?.status === "error" ? state.error : null;
@@ -65,24 +65,18 @@ export function FeedbackDialog({ pagePath, groupSlug, appVersion }: FeedbackDial
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Feedback</DialogTitle>
-            <DialogDescription>
-              Berätta vad som krånglar eller vad du saknar i Sjung.
-            </DialogDescription>
+            <DialogDescription>Berätta vad som krånglar eller vad du saknar i Sjung.</DialogDescription>
           </DialogHeader>
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="pagePath" value={pagePath} />
             <input type="hidden" name="groupSlug" value={groupSlug ?? ""} />
             <input type="hidden" name="browserAppVersion" value={appVersion} />
-            <input
-              type="hidden"
-              name="userAgent"
-              value={typeof navigator === "undefined" ? "" : navigator.userAgent}
-            />
+            <input type="hidden" name="userAgent" value={typeof navigator === "undefined" ? "" : navigator.userAgent} />
             <div className="space-y-2">
               <Label htmlFor="feedback-message">Din feedback</Label>
               {/* Keyed so a sent message clears the field, while a failed one keeps what was typed. */}
               <Textarea
-                key={state?.status === "error" ? `error-${state.values.message}` : state?.status ?? "new"}
+                key={state?.status === "error" ? `error-${state.values.message}` : (state?.status ?? "new")}
                 id="feedback-message"
                 name="message"
                 defaultValue={state?.status === "error" ? state.values.message : undefined}

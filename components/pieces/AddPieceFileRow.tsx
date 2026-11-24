@@ -18,13 +18,7 @@ import { cn } from "@/lib/utils";
  * starts as soon as a File is dropped or picked, with the Category picked
  * above it, which stays picked for the next upload.
  */
-export function AddPieceFileRow({
-  groupSlug,
-  pieceId,
-}: {
-  groupSlug: string;
-  pieceId: string;
-}) {
+export function AddPieceFileRow({ groupSlug, pieceId }: { groupSlug: string; pieceId: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -122,12 +116,7 @@ export function AddPieceFileRow({
           <>
             <Upload className="size-4" aria-hidden="true" />
             <span>Släpp en fil här eller</span>
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto p-0"
-              onClick={() => inputRef.current?.click()}
-            >
+            <Button type="button" variant="link" className="h-auto p-0" onClick={() => inputRef.current?.click()}>
               välj fil
             </Button>
           </>

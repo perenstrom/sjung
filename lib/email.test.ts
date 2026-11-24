@@ -68,9 +68,9 @@ describe("sendEmail", () => {
     });
     const sendEmail = await loadSendEmail();
 
-    await expect(
-      sendEmail({ to: "not-an-email", subject: "Välkommen", react: createElement("p") })
-    ).rejects.toThrow("Invalid `to` field");
+    await expect(sendEmail({ to: "not-an-email", subject: "Välkommen", react: createElement("p") })).rejects.toThrow(
+      "Invalid `to` field",
+    );
   });
 
   describe("when running locally", () => {
@@ -83,7 +83,7 @@ describe("sendEmail", () => {
       "p",
       null,
       "Bekräfta din adress: ",
-      createElement("a", { href: "http://localhost:3000/auth/verify?token=abc" }, "bekräfta")
+      createElement("a", { href: "http://localhost:3000/auth/verify?token=abc" }, "bekräfta"),
     );
 
     it("prints the email to the console instead of sending when RESEND_API_KEY is missing", async () => {
@@ -143,9 +143,9 @@ describe("sendEmail", () => {
       vi.stubEnv("EMAIL_FROM", "");
       const sendEmail = await loadSendEmail();
 
-      await expect(
-        sendEmail({ to: "anna@example.com", subject: "Välkommen", react: verifyEmail })
-      ).rejects.toThrow("Saknar miljövariabel: EMAIL_FROM");
+      await expect(sendEmail({ to: "anna@example.com", subject: "Välkommen", react: verifyEmail })).rejects.toThrow(
+        "Saknar miljövariabel: EMAIL_FROM",
+      );
       expect(send).not.toHaveBeenCalled();
     });
 
@@ -158,7 +158,7 @@ describe("sendEmail", () => {
       const sendEmail = await loadSendEmail();
 
       await expect(
-        sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement(Broken) })
+        sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement(Broken) }),
       ).rejects.toThrow("Trasig mall");
       expect(info).not.toHaveBeenCalled();
     });
@@ -185,7 +185,7 @@ describe("sendEmail", () => {
         names.map(async (name) => ({
           name,
           email: JSON.parse(await readFile(join(outboxDir, name), "utf8")),
-        }))
+        })),
       );
     }
 
@@ -196,7 +196,7 @@ describe("sendEmail", () => {
         "p",
         null,
         "Välj ett nytt lösenord: ",
-        createElement("a", { href: "http://localhost:3100/auth/reset-password/new?token=abc" }, "här")
+        createElement("a", { href: "http://localhost:3100/auth/reset-password/new?token=abc" }, "här"),
       );
 
       await sendEmail({ to: "anna@example.com", subject: "Återställ lösenord", react });
@@ -238,37 +238,31 @@ describe("sendEmail", () => {
       const sendEmail = await loadSendEmail();
 
       await expect(
-        sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement("p") })
+        sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement("p") }),
       ).rejects.toThrow("EMAIL_OUTBOX_DIR");
       expect(send).not.toHaveBeenCalled();
       await expect(readdir(outboxDir)).rejects.toThrow();
     });
   });
 
-  describe.each(["staging", "production", undefined])(
-    "when deployed with APP_ENV=%s",
-    (appEnv) => {
-      beforeEach(() => {
-        vi.stubEnv("NODE_ENV", "production");
-        vi.stubEnv("APP_ENV", appEnv);
-      });
+  describe.each(["staging", "production", undefined])("when deployed with APP_ENV=%s", (appEnv) => {
+    beforeEach(() => {
+      vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("APP_ENV", appEnv);
+    });
 
-      it.each(["RESEND_API_KEY", "EMAIL_FROM"])(
-        "throws without sending or printing when %s is missing",
-        async (name) => {
-          vi.stubEnv(name, "");
-          const info = captureConsole();
-          const sendEmail = await loadSendEmail();
+    it.each(["RESEND_API_KEY", "EMAIL_FROM"])("throws without sending or printing when %s is missing", async (name) => {
+      vi.stubEnv(name, "");
+      const info = captureConsole();
+      const sendEmail = await loadSendEmail();
 
-          await expect(
-            sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement("p") })
-          ).rejects.toThrow(`Saknar miljövariabel: ${name}`);
-          expect(send).not.toHaveBeenCalled();
-          expect(info).not.toHaveBeenCalled();
-        }
-      );
-    }
-  );
+      await expect(
+        sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement("p") }),
+      ).rejects.toThrow(`Saknar miljövariabel: ${name}`);
+      expect(send).not.toHaveBeenCalled();
+      expect(info).not.toHaveBeenCalled();
+    });
+  });
 });
 
 async function loadEmailRecipientFromEnv() {
@@ -314,9 +308,7 @@ describe("emailRecipientFromEnv", () => {
     vi.stubEnv("FEEDBACK_EMAIL_TO", "");
     const emailRecipientFromEnv = await loadEmailRecipientFromEnv();
 
-    expect(() => emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toThrow(
-      "Saknar miljövariabel: FEEDBACK_EMAIL_TO"
-    );
+    expect(() => emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toThrow("Saknar miljövariabel: FEEDBACK_EMAIL_TO");
   });
 
   it.each(["staging", "production"])("throws on %s when the variable is missing", async (appEnv) => {
@@ -326,8 +318,6 @@ describe("emailRecipientFromEnv", () => {
     vi.stubEnv("FEEDBACK_EMAIL_TO", "");
     const emailRecipientFromEnv = await loadEmailRecipientFromEnv();
 
-    expect(() => emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toThrow(
-      "Saknar miljövariabel: FEEDBACK_EMAIL_TO"
-    );
+    expect(() => emailRecipientFromEnv("FEEDBACK_EMAIL_TO")).toThrow("Saknar miljövariabel: FEEDBACK_EMAIL_TO");
   });
 });

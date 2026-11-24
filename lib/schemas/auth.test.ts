@@ -36,12 +36,8 @@ describe("parseRedirectPathFromValue", () => {
 describe("parseRedirectPathFromFormData", () => {
   it("reads next from FormData with same rules as parseRedirectPathFromValue", () => {
     expect(parseRedirectPathFromFormData(createFormData({}))).toBe("/app");
-    expect(
-      parseRedirectPathFromFormData(createFormData({ next: "/noter" }))
-    ).toBe("/noter");
-    expect(
-      parseRedirectPathFromFormData(createFormData({ next: "bad" }))
-    ).toBe("/app");
+    expect(parseRedirectPathFromFormData(createFormData({ next: "/noter" }))).toBe("/noter");
+    expect(parseRedirectPathFromFormData(createFormData({ next: "bad" }))).toBe("/app");
   });
 });
 
@@ -51,7 +47,7 @@ describe("loginCredentialsSchema", () => {
       loginCredentialsSchema.parse({
         email: "  User@Example.com  ",
         password: "secret",
-      })
+      }),
     ).toEqual({
       email: "User@Example.com",
       password: "secret",
@@ -144,7 +140,7 @@ describe("signupCredentialsSchema", () => {
         email: " Ada@Example.com ",
         password: "123456789012",
         passwordConfirmation: "123456789012",
-      })
+      }),
     ).toEqual({
       name: "Ada",
       email: "Ada@Example.com",
@@ -199,10 +195,9 @@ describe("signupCredentialsSchema", () => {
 describe("parseSignupFormData", () => {
   it("takes the invited address instead of the submitted email when given one", () => {
     const passwords = { password: "123456789012", passwordConfirmation: "123456789012" };
-    const tampered = parseSignupFormData(
-      createFormData({ name: "Anna", email: "inte en adress", ...passwords }),
-      { invitedEmail: "anna@example.com" }
-    );
+    const tampered = parseSignupFormData(createFormData({ name: "Anna", email: "inte en adress", ...passwords }), {
+      invitedEmail: "anna@example.com",
+    });
     const missing = parseSignupFormData(createFormData({ name: "Anna", ...passwords }), {
       invitedEmail: "anna@example.com",
     });
@@ -215,7 +210,7 @@ describe("parseSignupFormData", () => {
   it("echoes the invited address back after a failed submit", () => {
     const result = parseSignupFormData(
       createFormData({ name: "Anna", email: "bertil@example.com", password: "kort", passwordConfirmation: "kort" }),
-      { invitedEmail: "anna@example.com" }
+      { invitedEmail: "anna@example.com" },
     );
 
     expect(result).toMatchObject({ ok: false, values: { name: "Anna", email: "anna@example.com" } });
@@ -345,7 +340,7 @@ describe("parseNewPasswordFormData", () => {
         token: "abc",
         password: "ett långt lösenord",
         passwordConfirmation: "ett långt lösenord",
-      })
+      }),
     );
 
     expect(result).toEqual({ ok: true, data: { token: "abc", password: "ett långt lösenord" } });
@@ -353,9 +348,7 @@ describe("parseNewPasswordFormData", () => {
 
   it("applies the signup password rules", () => {
     expect(
-      parseNewPasswordFormData(
-        createFormData({ token: "abc", password: "kort", passwordConfirmation: "kort" })
-      )
+      parseNewPasswordFormData(createFormData({ token: "abc", password: "kort", passwordConfirmation: "kort" })),
     ).toEqual({ ok: false, error: "Lösenordet måste vara minst 12 tecken" });
     expect(
       parseNewPasswordFormData(
@@ -363,19 +356,20 @@ describe("parseNewPasswordFormData", () => {
           token: "abc",
           password: "ett långt lösenord",
           passwordConfirmation: "ett annat lösenord",
-        })
-      )
+        }),
+      ),
     ).toEqual({ ok: false, error: "Lösenorden matchar inte" });
   });
 
   it("fails when the token or a password field is missing", () => {
     expect(
       parseNewPasswordFormData(
-        createFormData({ password: "ett långt lösenord", passwordConfirmation: "ett långt lösenord" })
-      )
+        createFormData({ password: "ett långt lösenord", passwordConfirmation: "ett långt lösenord" }),
+      ),
     ).toEqual({ ok: false, error: "Ogiltiga formulärdata" });
-    expect(
-      parseNewPasswordFormData(createFormData({ token: "abc", password: "ett långt lösenord" }))
-    ).toEqual({ ok: false, error: "Ogiltiga formulärdata" });
+    expect(parseNewPasswordFormData(createFormData({ token: "abc", password: "ett långt lösenord" }))).toEqual({
+      ok: false,
+      error: "Ogiltiga formulärdata",
+    });
   });
 });

@@ -47,7 +47,7 @@ async function uploadReplacementFor(file: File): Promise<string> {
       fileName: "ny.pdf",
       mimeType: "application/pdf",
       size: "2048",
-    })
+    }),
   );
   putStoredObject(storagePath, { size: 2048, contentType: "application/pdf" });
   return storagePath;
@@ -60,7 +60,7 @@ function replace(file: File, storagePath: string) {
       fileId: file.id,
       fileName: "ny.pdf",
       storagePath,
-    })
+    }),
   );
 }
 
@@ -68,18 +68,16 @@ const UPLOADED_FILE_NAME = "Stämma 1.pdf";
 
 /** Signs an upload to the Piece as the browser would ask for it; nothing is put in storage yet. */
 async function signUploadToPiece(
-  declared = { fileName: UPLOADED_FILE_NAME, mimeType: "application/pdf", size: "1024" }
+  declared = { fileName: UPLOADED_FILE_NAME, mimeType: "application/pdf", size: "1024" },
 ) {
   const { storagePath } = await createPieceFileUploadUrl(
-    formData({ groupSlug: group.slug, pieceId: piece.id, ...declared })
+    formData({ groupSlug: group.slug, pieceId: piece.id, ...declared }),
   );
   return storagePath;
 }
 
 function finalizeUpload(storagePath: string, fileName = UPLOADED_FILE_NAME) {
-  return finalizePieceFileUpload(
-    formData({ groupSlug: group.slug, pieceId: piece.id, fileName, storagePath })
-  );
+  return finalizePieceFileUpload(formData({ groupSlug: group.slug, pieceId: piece.id, fileName, storagePath }));
 }
 
 describe("adding a File", () => {
@@ -105,9 +103,9 @@ describe("adding a File", () => {
   });
 
   it("is refused before upload when the extension isn't allowed", async () => {
-    await expect(
-      signUploadToPiece({ fileName: "Sopran.exe", mimeType: "audio/mpeg", size: "1024" })
-    ).rejects.toThrow("Filtypen stöds inte");
+    await expect(signUploadToPiece({ fileName: "Sopran.exe", mimeType: "audio/mpeg", size: "1024" })).rejects.toThrow(
+      "Filtypen stöds inte",
+    );
   });
 
   it("is rejected when nothing was uploaded", async () => {
@@ -177,7 +175,7 @@ describe("replacing a File", () => {
         fileName: "ny.pdf",
         mimeType: "application/pdf",
         size: "2048",
-      })
+      }),
     );
 
     await expect(replace(file, storagePath)).rejects.toThrow("Filen hittades inte i lagringen");
@@ -237,7 +235,7 @@ describe("deleting a Piece", () => {
         fileName: "halv.pdf",
         mimeType: "application/pdf",
         size: "1024",
-      })
+      }),
     );
     putStoredObject(unfinalized);
     const otherPiece = await createPiece({ groupId: group.id, createdById: group.createdById });
@@ -314,7 +312,7 @@ describe("downloading a File", () => {
   it("finds nothing for another Group's File", async () => {
     const otherGroup = await createGroup();
     const otherFile = await storedFile(
-      await createPiece({ groupId: otherGroup.id, createdById: otherGroup.createdById })
+      await createPiece({ groupId: otherGroup.id, createdById: otherGroup.createdById }),
     );
 
     const response = await followDownloadLink(group.slug, otherFile.id);

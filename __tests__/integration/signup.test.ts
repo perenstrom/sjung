@@ -36,7 +36,7 @@ describe("signUp", () => {
     expect(sentEmails()[0].text).toContain("/auth/verify-email/confirm?token=");
     expect(mockSignIn).toHaveBeenCalledWith(
       "credentials",
-      expect.objectContaining({ email: "anna@example.com", redirectTo: "/auth/verify-email" })
+      expect.objectContaining({ email: "anna@example.com", redirectTo: "/auth/verify-email" }),
     );
   });
 
@@ -45,12 +45,10 @@ describe("signUp", () => {
 
     await signUp(null, signupForm("anna@example.com"));
 
-    await expect(
-      testPrisma.user.findUnique({ where: { email: "anna@example.com" } })
-    ).resolves.not.toBeNull();
+    await expect(testPrisma.user.findUnique({ where: { email: "anna@example.com" } })).resolves.not.toBeNull();
     expect(mockSignIn).toHaveBeenCalledWith(
       "credentials",
-      expect.objectContaining({ redirectTo: "/auth/verify-email?skickat=nej" })
+      expect.objectContaining({ redirectTo: "/auth/verify-email?skickat=nej" }),
     );
   });
 });

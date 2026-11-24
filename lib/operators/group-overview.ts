@@ -56,7 +56,9 @@ export async function listGroupOverview(): Promise<GroupOverview> {
   // Each Group's latest change, starting from its own creation.
   const lastChangeByGroup = new Map(groups.map(({ id, createdAt }) => [id, createdAt]));
   const updates = [
-    ...[...pieceUpdates, ...setListUpdates, ...personUpdates].map(({ groupId, _max }) => [groupId, _max.updatedAt] as const),
+    ...[...pieceUpdates, ...setListUpdates, ...personUpdates].map(
+      ({ groupId, _max }) => [groupId, _max.updatedAt] as const,
+    ),
     ...fileTotals.map(({ group_id, last_updated }) => [group_id, last_updated] as const),
   ];
   for (const [groupId, updatedAt] of updates) {
@@ -68,20 +70,18 @@ export async function listGroupOverview(): Promise<GroupOverview> {
   const storageByGroup = new Map(fileTotals.map(({ group_id, storage_bytes }) => [group_id, Number(storage_bytes)]));
 
   const rows = groups
-    .map(
-      (group): GroupOverviewRow => ({
-        id: group.id,
-        name: group.name,
-        slug: group.slug,
-        createdAt: group.createdAt,
-        creator: group.createdBy,
-        memberCount: group._count.users,
-        pieceCount: group._count.pieces,
-        setListCount: group._count.setLists,
-        storageBytes: storageByGroup.get(group.id) ?? 0,
-        lastChangedAt: lastChangeByGroup.get(group.id) ?? group.createdAt,
-      }),
-    )
+    .map((group): GroupOverviewRow => ({
+      id: group.id,
+      name: group.name,
+      slug: group.slug,
+      createdAt: group.createdAt,
+      creator: group.createdBy,
+      memberCount: group._count.users,
+      pieceCount: group._count.pieces,
+      setListCount: group._count.setLists,
+      storageBytes: storageByGroup.get(group.id) ?? 0,
+      lastChangedAt: lastChangeByGroup.get(group.id) ?? group.createdAt,
+    }))
     .sort((a, b) => swedishCollator.compare(a.name, b.name));
 
   return {

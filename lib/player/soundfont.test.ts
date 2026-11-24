@@ -9,7 +9,7 @@ function bankWith(
     program: number;
     bankMSB?: number;
     isGMGSDrum?: boolean;
-  }[]
+  }[],
 ) {
   const bank = new BasicSoundBank("sf2");
   for (const { name, program, bankMSB = 0, isGMGSDrum = false } of presets) {

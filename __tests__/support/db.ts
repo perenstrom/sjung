@@ -42,7 +42,5 @@ const TABLES = [
 
 export async function resetDatabase() {
   const tableList = TABLES.map((table) => `"${table}"`).join(", ");
-  await testPrisma.$executeRawUnsafe(
-    `TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE;`,
-  );
+  await testPrisma.$executeRawUnsafe(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE;`);
 }

@@ -24,17 +24,13 @@ describe("personNameSchema", () => {
   it("rejects empty and whitespace-only values with Namn krävs", () => {
     expect(() => personNameSchema.parse("")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Namn krävs" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Namn krävs" })]),
+      }),
     );
     expect(() => personNameSchema.parse("   ")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Namn krävs" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Namn krävs" })]),
+      }),
     );
   });
 });
@@ -47,17 +43,13 @@ describe("writableGroupSlugSchema", () => {
   it("rejects empty and whitespace-only values with Saknar grupp", () => {
     expect(() => writableGroupSlugSchema.parse("")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Saknar grupp" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Saknar grupp" })]),
+      }),
     );
     expect(() => writableGroupSlugSchema.parse("   ")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Saknar grupp" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Saknar grupp" })]),
+      }),
     );
   });
 });
@@ -69,12 +61,8 @@ describe("parsePersonNameFromFormData", () => {
   });
 
   it("throws Namn krävs when name is missing or empty", () => {
-    expect(() => parsePersonNameFromFormData(createFormData({}))).toThrow(
-      "Namn krävs"
-    );
-    expect(() =>
-      parsePersonNameFromFormData(createFormData({ name: "  " }))
-    ).toThrow("Namn krävs");
+    expect(() => parsePersonNameFromFormData(createFormData({}))).toThrow("Namn krävs");
+    expect(() => parsePersonNameFromFormData(createFormData({ name: "  " }))).toThrow("Namn krävs");
   });
 });
 
@@ -85,12 +73,8 @@ describe("parseWritableGroupSlugFromFormData", () => {
   });
 
   it("throws Saknar grupp when groupSlug is missing or empty", () => {
-    expect(() =>
-      parseWritableGroupSlugFromFormData(createFormData({}))
-    ).toThrow("Saknar grupp");
-    expect(() =>
-      parseWritableGroupSlugFromFormData(createFormData({ groupSlug: "  " }))
-    ).toThrow("Saknar grupp");
+    expect(() => parseWritableGroupSlugFromFormData(createFormData({}))).toThrow("Saknar grupp");
+    expect(() => parseWritableGroupSlugFromFormData(createFormData({ groupSlug: "  " }))).toThrow("Saknar grupp");
   });
 });
 

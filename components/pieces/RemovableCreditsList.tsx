@@ -4,10 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { removePersonCredits } from "@/app/actions/pieces";
-import {
-  PieceCreditsList,
-  RemoveCreditedPersonButton,
-} from "@/components/pieces/PieceCreditsList";
+import { PieceCreditsList, RemoveCreditedPersonButton } from "@/components/pieces/PieceCreditsList";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import type { CreditedPerson, CreditForDisplay } from "@/lib/pieces/credits";
 

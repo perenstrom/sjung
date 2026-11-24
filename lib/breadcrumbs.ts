@@ -1,10 +1,4 @@
-import {
-  groupPath,
-  groupPeoplePath,
-  groupPiecesPath,
-  groupSetListPath,
-  groupSetListsPath,
-} from "@/lib/groups/routes";
+import { groupPath, groupPeoplePath, groupPiecesPath, groupSetListPath, groupSetListsPath } from "@/lib/groups/routes";
 
 export type AppBreadcrumbAncestor = {
   label: string;
@@ -19,10 +13,7 @@ export type AppBreadcrumbStaticTrail =
       tail: { kind: "static"; label: string };
     };
 
-export function createGroupAncestor(
-  groupSlug: string,
-  groupName: string
-): AppBreadcrumbAncestor {
+export function createGroupAncestor(groupSlug: string, groupName: string): AppBreadcrumbAncestor {
   return {
     label: groupName,
     href: groupPath(groupSlug),
@@ -56,9 +47,7 @@ export type ClosestBreadcrumb =
  * (nested below a top-level page) get a back link; top-level pages show the
  * group they belong to.
  */
-export function closestBreadcrumb(
-  trail: AppBreadcrumbStaticTrail
-): ClosestBreadcrumb | null {
+export function closestBreadcrumb(trail: AppBreadcrumbStaticTrail): ClosestBreadcrumb | null {
   if (trail.visibility === "hidden") return null;
 
   const parent = trail.ancestors.at(-1);

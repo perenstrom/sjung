@@ -11,9 +11,7 @@ import {
 const envVar = process.argv[2];
 
 if (!isDisposableDatabaseEnvVar(envVar)) {
-  console.error(
-    `Usage: tsx scripts/migrate-db.ts <${DISPOSABLE_DATABASE_ENV_VARS.join(" | ")}>`,
-  );
+  console.error(`Usage: tsx scripts/migrate-db.ts <${DISPOSABLE_DATABASE_ENV_VARS.join(" | ")}>`);
   process.exit(1);
 }
 

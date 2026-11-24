@@ -46,9 +46,7 @@ describe("createPerson", () => {
     const group = await createGroup();
     mockAuth.mockResolvedValue({ user: { id: group.createdById } } as never);
 
-    const person = await createPerson(
-      personFormData({ groupSlug: group.slug, name: "  Hugo Alfvén " })
-    );
+    const person = await createPerson(personFormData({ groupSlug: group.slug, name: "  Hugo Alfvén " }));
 
     expect(person).toEqual({ id: expect.any(String), name: "Hugo Alfvén" });
   });
@@ -57,9 +55,9 @@ describe("createPerson", () => {
     const { group, nonMember } = await createAccessScenario();
     mockAuth.mockResolvedValue({ user: { id: nonMember.id } } as never);
 
-    await expect(
-      createPerson(personFormData({ groupSlug: group.slug, name: "Hugo Alfvén" }))
-    ).rejects.toThrow("Ogiltig grupp eller saknad behörighet");
+    await expect(createPerson(personFormData({ groupSlug: group.slug, name: "Hugo Alfvén" }))).rejects.toThrow(
+      "Ogiltig grupp eller saknad behörighet",
+    );
   });
 });
 
@@ -108,9 +106,7 @@ describe("getPeopleWithPieceCounts", () => {
     await createCredit(await pieceIn(group, "Kyrie"), hugo, "Kompositör");
     actAs((await createMember(group, [])).id);
 
-    expect(
-      (await getPeopleWithPieceCounts(group.slug)).map(({ name, pieceCount }) => ({ name, pieceCount }))
-    ).toEqual([
+    expect((await getPeopleWithPieceCounts(group.slug)).map(({ name, pieceCount }) => ({ name, pieceCount }))).toEqual([
       { name: "Anna Utan", pieceCount: 0 },
       { name: "Hugo Alfvén", pieceCount: 2 },
     ]);
@@ -133,7 +129,10 @@ describe("renamePerson", () => {
       updatedById: editor.id,
     });
     expect(
-      await testPrisma.personToPiece.findMany({ where: { pieceId: ave.id }, select: { person: { select: { name: true } } } })
+      await testPrisma.personToPiece.findMany({
+        where: { pieceId: ave.id },
+        select: { person: { select: { name: true } } },
+      }),
     ).toEqual([{ person: { name: "Hugo Alfvén" } }]);
   });
 
@@ -142,9 +141,9 @@ describe("renamePerson", () => {
     const person = await createPersonRow(group, "Hugo Alfvén");
     actAs(group.createdById);
 
-    await expect(
-      renamePerson(formData({ groupSlug: group.slug, personId: person.id, name: "   " }))
-    ).rejects.toThrow("Namn krävs");
+    await expect(renamePerson(formData({ groupSlug: group.slug, personId: person.id, name: "   " }))).rejects.toThrow(
+      "Namn krävs",
+    );
   });
 });
 
@@ -160,24 +159,25 @@ describe("deletePerson", () => {
     actAs(group.createdById);
 
     await expect(deletePerson(formData({ groupSlug: group.slug, personId: hugo.id }))).rejects.toThrow(
-      `redirect:/app/${group.slug}/people`
+      `redirect:/app/${group.slug}/people`,
     );
 
     expect(await testPrisma.person.findMany({ where: { groupId: group.id }, select: { id: true } })).toEqual([
       { id: anna.id },
     ]);
-    expect(
-      await testPrisma.personToPiece.findMany({ where: { pieceId: ave.id }, select: { personId: true } })
-    ).toEqual([{ personId: anna.id }]);
+    expect(await testPrisma.personToPiece.findMany({ where: { pieceId: ave.id }, select: { personId: true } })).toEqual(
+      [{ personId: anna.id }],
+    );
   });
 });
 
 describe("renamePerson and deletePerson", () => {
   it.each([
-    ["renamePerson", (groupSlug: string, personId: string) =>
-      renamePerson(formData({ groupSlug, personId, name: "Någon annan" }))],
-    ["deletePerson", (groupSlug: string, personId: string) =>
-      deletePerson(formData({ groupSlug, personId }))],
+    [
+      "renamePerson",
+      (groupSlug: string, personId: string) => renamePerson(formData({ groupSlug, personId, name: "Någon annan" })),
+    ],
+    ["deletePerson", (groupSlug: string, personId: string) => deletePerson(formData({ groupSlug, personId }))],
   ])("%s refuses a Person in another Group and changes nothing", async (_name, act) => {
     const group = await createGroup();
     const other = await createGroup();

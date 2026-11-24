@@ -1,14 +1,7 @@
 import { GroupInvitationActions } from "@/components/members/GroupInvitationActions";
 import { Badge } from "@/components/ui/badge";
 import { MobileList, MobileListRow } from "@/components/ui/mobile-list";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format-date";
 import type { GroupInvitation } from "@/lib/invitations/invitations";
 
@@ -80,15 +73,13 @@ export function GroupInvitationsTable({
             {invitations.map((invitation) => (
               <TableRow key={invitation.id}>
                 {/* Wraps so a long address doesn't push the actions out of view. */}
-                <TableCell className="whitespace-normal break-all">{invitation.email}</TableCell>
+                <TableCell className="break-all whitespace-normal">{invitation.email}</TableCell>
                 <TableCell>
                   {invitation.senderName ?? <span className="text-muted-foreground">{MISSING}</span>}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    {formatDate(invitation.expiresAt) ?? (
-                      <span className="text-muted-foreground">{MISSING}</span>
-                    )}
+                    {formatDate(invitation.expiresAt) ?? <span className="text-muted-foreground">{MISSING}</span>}
                     {invitation.expired ? <ExpiredBadge /> : null}
                   </div>
                 </TableCell>

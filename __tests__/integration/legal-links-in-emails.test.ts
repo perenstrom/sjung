@@ -14,10 +14,7 @@ const TERMS_OF_USE_URL = "http://sjung.test/terms";
 
 describe("emails sent to Users and invited addresses", () => {
   it.each([
-    [
-      "email verification",
-      async () => sendVerificationEmail((await createUser({ emailVerifiedAt: null })).id),
-    ],
+    ["email verification", async () => sendVerificationEmail((await createUser({ emailVerifiedAt: null })).id)],
     [
       "password reset",
       async () => {
@@ -54,7 +51,7 @@ describe("the Feedback email", () => {
   it("links to neither, since it goes to the people running Sjung", async () => {
     await sendFeedbackEmail(
       { name: "Anna", email: "anna@example.com" },
-      { message: "Hej", pagePath: "/app", groupSlug: null, userAgent: "UA", browserAppVersion: "" }
+      { message: "Hej", pagePath: "/app", groupSlug: null, userAgent: "UA", browserAppVersion: "" },
     );
 
     const [email] = sentEmails();

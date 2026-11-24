@@ -14,11 +14,7 @@ import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPiec
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
-import {
-  MobileList,
-  MobileListEmpty,
-  MobileListExpandableRow,
-} from "@/components/ui/mobile-list";
+import { MobileList, MobileListEmpty, MobileListExpandableRow } from "@/components/ui/mobile-list";
 import { CREDITS_HEADING, formatCreditsLine } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
@@ -82,8 +78,9 @@ export function PiecesMobileList({
     });
   }
 
-  const rows: (SetListStep | { kind: "piece"; id: string; piece: PieceWithRelations })[] =
-    setList ? setList.steps : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece }));
+  const rows: (SetListStep | { kind: "piece"; id: string; piece: PieceWithRelations })[] = setList
+    ? setList.steps
+    : pieces.map((piece) => ({ kind: "piece", id: piece.id, piece }));
   const orderedStepIds = setList ? setList.steps.map((step) => step.id) : [];
 
   return (
@@ -111,7 +108,7 @@ export function PiecesMobileList({
               <li key={row.id} className="flex items-baseline gap-2 px-4 py-3">
                 {number}
                 <div className="min-w-0 flex-1 space-y-2">
-                  <p className="text-muted-foreground border-l-2 pl-3 text-sm whitespace-pre-wrap italic">
+                  <p className="border-l-2 pl-3 text-sm whitespace-pre-wrap text-muted-foreground italic">
                     {row.content}
                   </p>
                   {stepActions}
@@ -230,7 +227,7 @@ function PieceMaterial({
   if (piece.files.length === 0 && piece.links.length === 0) {
     return (
       <>
-        <p className="text-muted-foreground text-sm">Inga filer eller länkar.</p>
+        <p className="text-sm text-muted-foreground">Inga filer eller länkar.</p>
         {notes}
       </>
     );
@@ -315,13 +312,7 @@ function PieceEditSections({
 }
 
 /** The Piece notes under their heading, then (in edit mode) the dialog trigger. */
-function PieceNotesSection({
-  notes,
-  children,
-}: {
-  notes: PieceWithRelations["notes"];
-  children?: ReactNode;
-}) {
+function PieceNotesSection({ notes, children }: { notes: PieceWithRelations["notes"]; children?: ReactNode }) {
   return (
     <section className="space-y-1">
       <SectionHeading>Anteckningar</SectionHeading>
@@ -332,7 +323,5 @@ function PieceNotesSection({
 }
 
 function SectionHeading({ children }: { children: ReactNode }) {
-  return (
-    <h3 className="text-muted-foreground text-xs font-medium uppercase">{children}</h3>
-  );
+  return <h3 className="text-xs font-medium text-muted-foreground uppercase">{children}</h3>;
 }

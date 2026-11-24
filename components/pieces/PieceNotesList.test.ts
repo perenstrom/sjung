@@ -25,9 +25,7 @@ describe("PieceNotesList", () => {
   });
 
   it("cuts each note off after 3 lines until it's expanded", () => {
-    const html = renderMarkup(
-      createElement(PieceNotesList, { notes: [{ id: "note-1", content: "Lång anteckning" }] }),
-    );
+    const html = renderMarkup(createElement(PieceNotesList, { notes: [{ id: "note-1", content: "Lång anteckning" }] }));
 
     expect(html).toContain("line-clamp-3");
     expect(textOf(html)).toBe("Lång anteckning");

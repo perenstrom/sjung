@@ -56,8 +56,8 @@ export function DeletePieceDialog({
         <DialogHeader>
           <DialogTitle>Ta bort not?</DialogTitle>
           <DialogDescription>
-            <strong>{piece.name}</strong> tas bort permanent tillsammans med tillhörande
-            filer och länkar. Upphovspersonerna finns kvar i gruppen. Detta går inte att ångra.
+            <strong>{piece.name}</strong> tas bort permanent tillsammans med tillhörande filer och länkar.
+            Upphovspersonerna finns kvar i gruppen. Detta går inte att ångra.
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit}>

@@ -12,6 +12,7 @@ Audits every Backlog and Todo ticket in the Sjung project and updates any that h
 Read MCP tool descriptors under `mcps/plugin-linear-linear/tools/` before calling any Linear tool.
 
 Use the `plugin-linear-linear` MCP server to look up:
+
 - The team: `list_teams` (expect **Per Enström** for Sjung)
 - The Backlog, Todo, and Done status IDs: `list_issue_statuses` (requires `team`)
 - Confirm the project "Sjung" exists: `list_projects`
@@ -43,6 +44,7 @@ Look at the pending ticket's `blockedBy` relations. If any blocker appears in th
 
 **Assumption check**
 Read both descriptions side by side. Determine whether the done ticket's implementation overlaps with, changes, or invalidates anything the pending ticket assumes. Examples:
+
 - A pending ticket plans to add a data model that the done ticket already added
 - A pending ticket references a UI pattern that was changed by the done ticket
 - A pending ticket duplicates acceptance criteria already satisfied
@@ -51,6 +53,7 @@ Read both descriptions side by side. Determine whether the done ticket's impleme
 Compare acceptance criteria for partial or full duplication. Note anything that has already been delivered.
 
 Produce a structured internal finding per pending ticket:
+
 - Which done tickets are relevant and why
 - Met `blockedBy` relations to remove
 - Description amendments needed (with proposed text)
@@ -71,12 +74,14 @@ If a ticket appears fully obsolete, append a note to that effect but do **not** 
 ```markdown
 ## Freshness Note
 
-*Updated by backlog freshness checker on [date].*
+_Updated by backlog freshness checker on [date]._
 
 ### Relevant completed tickets
+
 - [SJ-XX] [Title] — [one sentence: why it is relevant]
 
 ### Changes to this ticket
+
 - [Met dependency / Stale assumption / Overlapping scope]: [description of the impact]
 ```
 
@@ -103,16 +108,17 @@ SJ-17 Roles refactor — UPDATED
 
 Server: `plugin-linear-linear`
 
-| Task | Tool |
-|------|------|
-| List teams | `list_teams` |
-| List issue statuses | `list_issue_statuses` (requires `team`) |
-| List projects | `list_projects` |
-| List issues by state | `list_issues` |
+| Task                       | Tool                                       |
+| -------------------------- | ------------------------------------------ |
+| List teams                 | `list_teams`                               |
+| List issue statuses        | `list_issue_statuses` (requires `team`)    |
+| List projects              | `list_projects`                            |
+| List issues by state       | `list_issues`                              |
 | Get full issue + relations | `get_issue` (set `includeRelations: true`) |
-| Update issue | `save_issue` |
+| Update issue               | `save_issue`                               |
 
 Key `save_issue` fields for this skill:
+
 - `id` — ticket identifier to update
 - `description` — full updated description (literal newlines)
 - `removeBlockedBy` — array of blocker IDs to remove

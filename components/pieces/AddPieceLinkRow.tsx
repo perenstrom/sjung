@@ -11,13 +11,7 @@ import { Input } from "@/components/ui/input";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 /** Always-visible row for adding one Link to a Piece. */
-export function AddPieceLinkRow({
-  groupSlug,
-  pieceId,
-}: {
-  groupSlug: string;
-  pieceId: string;
-}) {
+export function AddPieceLinkRow({ groupSlug, pieceId }: { groupSlug: string; pieceId: string }) {
   const router = useRouter();
   const urlInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");

@@ -6,15 +6,10 @@ import { FEEDBACK_SEND_FAILED, parseFeedbackForm } from "@/lib/schemas/feedback"
 
 /** `useActionState` state for the Feedback dialog. */
 export type SendFeedbackState =
-  | { status: "sent" }
-  | { status: "error"; error: string; values: { message: string } }
-  | null;
+  { status: "sent" } | { status: "error"; error: string; values: { message: string } } | null;
 
 /** "Skicka feedback": emails the signed-in Verified user's Feedback to the people running Sjung. */
-export async function sendFeedback(
-  _prevState: SendFeedbackState,
-  formData: FormData
-): Promise<SendFeedbackState> {
+export async function sendFeedback(_prevState: SendFeedbackState, formData: FormData): Promise<SendFeedbackState> {
   const user = await requireUser();
 
   const parsed = parseFeedbackForm(formData);

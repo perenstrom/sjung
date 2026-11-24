@@ -26,13 +26,7 @@ type PieceSetListsSectionProps = {
 export function PieceSetListsSection(props: PieceSetListsSectionProps) {
   const { isEditing } = useEditMode();
   // Remount on every toggle so leaving edit mode discards a half-picked Set list.
-  return (
-    <PieceSetListsBody
-      key={isEditing ? "edit" : "read"}
-      readOnly={!isEditing}
-      {...props}
-    />
-  );
+  return <PieceSetListsBody key={isEditing ? "edit" : "read"} readOnly={!isEditing} {...props} />;
 }
 
 function PieceSetListsBody({
@@ -47,19 +41,11 @@ function PieceSetListsBody({
   const [isPending, startTransition] = useTransition();
   const [pickedSetListId, setPickedSetListId] = useState("");
 
-  const memberSetIds = useMemo(
-    () => new Set(setLists.map((sl) => sl.setListId)),
-    [setLists]
-  );
-  const available = useMemo(
-    () => allSetLists.filter((sl) => !memberSetIds.has(sl.id)),
-    [allSetLists, memberSetIds]
-  );
+  const memberSetIds = useMemo(() => new Set(setLists.map((sl) => sl.setListId)), [setLists]);
+  const available = useMemo(() => allSetLists.filter((sl) => !memberSetIds.has(sl.id)), [allSetLists, memberSetIds]);
 
   // A pick that has since become unavailable (e.g. added elsewhere) counts as no pick.
-  const selectedSetListId = available.some((sl) => sl.id === pickedSetListId)
-    ? pickedSetListId
-    : "";
+  const selectedSetListId = available.some((sl) => sl.id === pickedSetListId) ? pickedSetListId : "";
 
   function submitAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,9 +88,7 @@ function PieceSetListsBody({
   return (
     <PieceDetailSectionLayout title="Repertoarer">
       {setLists.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Stycket finns inte i någon repertoar ännu.
-        </p>
+        <p className="text-sm text-muted-foreground">Stycket finns inte i någon repertoar ännu.</p>
       ) : (
         <ul className="space-y-2 text-sm">
           {setLists.map((setList) => (
@@ -143,9 +127,7 @@ function PieceSetListsBody({
                 .
               </p>
             ) : available.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Stycket ingår redan i alla repertoarer i gruppen.
-              </p>
+              <p className="text-sm text-muted-foreground">Stycket ingår redan i alla repertoarer i gruppen.</p>
             ) : (
               <select
                 id={`add-setlist-${pieceId}`}
@@ -153,7 +135,7 @@ function PieceSetListsBody({
                 className={cn(
                   "flex h-9 w-full max-w-md rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none pointer-coarse:h-11 md:pointer-fine:text-sm",
                   "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                  "disabled:cursor-not-allowed disabled:opacity-50"
+                  "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
                 value={selectedSetListId}
                 onChange={(event) => setPickedSetListId(event.target.value)}

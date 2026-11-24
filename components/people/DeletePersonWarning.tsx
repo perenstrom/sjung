@@ -22,8 +22,7 @@ export function DeletePersonWarning({
   return (
     <div className="space-y-2 text-sm text-muted-foreground">
       <DialogDescription>
-        <strong>{personName}</strong> tas bort permanent, och tas då också bort som upphovsperson på de
-        här styckena:
+        <strong>{personName}</strong> tas bort permanent, och tas då också bort som upphovsperson på de här styckena:
       </DialogDescription>
       <ul className="list-disc space-y-1 pl-5">
         {pieces.map((piece) => (

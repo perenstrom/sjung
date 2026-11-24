@@ -23,8 +23,8 @@ export function AnnouncementBody({ body, className }: { body: string; className?
   return (
     <div
       className={cn(
-        "prose prose-neutral dark:prose-invert max-w-none prose-headings:font-semibold prose-h2:text-lg prose-table:text-sm",
-        className
+        "prose max-w-none prose-neutral dark:prose-invert prose-headings:font-semibold prose-h2:text-lg prose-table:text-sm",
+        className,
       )}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} skipHtml disallowedElements={["img"]}>

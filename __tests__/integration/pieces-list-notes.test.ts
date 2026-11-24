@@ -58,9 +58,7 @@ describe("the pieces list includes each piece's Piece notes", () => {
     const steps = await SetListSequence.steps(setList.id);
 
     expect(
-      steps.map((step) =>
-        step.kind === "piece" ? step.piece.notes.map((note) => note.content) : step.content
-      )
+      steps.map((step) => (step.kind === "piece" ? step.piece.notes.map((note) => note.content) : step.content)),
     ).toEqual([["Nyast\nmed radbrytning", "Mitten", "Äldst"], "Paus", []]);
   });
 });

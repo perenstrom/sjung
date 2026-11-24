@@ -34,13 +34,7 @@ describe("letterGroupKey", () => {
     expect(letterGroupKey(name)).toBe(key);
   });
 
-  it.each([
-    ["1700-tal"],
-    ['"Hallelujah"'],
-    ["(Kanon)"],
-    [""],
-    ["   "],
-  ])("puts %j under #", (name) => {
+  it.each([["1700-tal"], ['"Hallelujah"'], ["(Kanon)"], [""], ["   "]])("puts %j under #", (name) => {
     expect(letterGroupKey(name)).toBe("#");
   });
 
@@ -48,19 +42,16 @@ describe("letterGroupKey", () => {
     expect(letterGroupKey("  Ave verum")).toBe("A");
   });
 
-  it.each([
-    ["Ægir"],
-    ["ßtraße"],
-    ["Þingvellir"],
-    ["Ωmega"],
-    ["Ŋoro"],
-  ])("puts %s, whose first letter is outside A–Ö, in the group it sorts into", (name) => {
-    const names = ["1700-tal", "Abendlied", "Strax", "Zion", "Över", name].sort(compareCaseInsensitive);
-    const keys = names.map(letterGroupKey);
+  it.each([["Ægir"], ["ßtraße"], ["Þingvellir"], ["Ωmega"], ["Ŋoro"]])(
+    "puts %s, whose first letter is outside A–Ö, in the group it sorts into",
+    (name) => {
+      const names = ["1700-tal", "Abendlied", "Strax", "Zion", "Över", name].sort(compareCaseInsensitive);
+      const keys = names.map(letterGroupKey);
 
-    // Each group is one run in the sorted list: no key comes back after another.
-    expect(keys.filter((key, index) => key !== keys[index - 1])).toEqual([...new Set(keys)]);
-  });
+      // Each group is one run in the sorted list: no key comes back after another.
+      expect(keys.filter((key, index) => key !== keys[index - 1])).toEqual([...new Set(keys)]);
+    },
+  );
 
   it("keeps leading articles", () => {
     expect(letterGroupKey("The Rose")).toBe("T");

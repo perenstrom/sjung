@@ -26,9 +26,7 @@ describe("parsePieceNameFromFormData", () => {
   });
 
   it("throws Namn krävs when empty", () => {
-    expect(() =>
-      parsePieceNameFromFormData(createFormData({ name: "  " }))
-    ).toThrow("Namn krävs");
+    expect(() => parsePieceNameFromFormData(createFormData({ name: "  " }))).toThrow("Namn krävs");
   });
 });
 
@@ -39,9 +37,7 @@ describe("parsePieceIdFromFormData", () => {
   });
 
   it("throws Stycke saknas when empty", () => {
-    expect(() =>
-      parsePieceIdFromFormData(createFormData({ pieceId: "" }))
-    ).toThrow("Stycke saknas");
+    expect(() => parsePieceIdFromFormData(createFormData({ pieceId: "" }))).toThrow("Stycke saknas");
   });
 });
 
@@ -52,9 +48,7 @@ describe("parseLinkIdFromFormData", () => {
   });
 
   it("throws Länk saknas when empty", () => {
-    expect(() =>
-      parseLinkIdFromFormData(createFormData({ linkId: "" }))
-    ).toThrow("Länk saknas");
+    expect(() => parseLinkIdFromFormData(createFormData({ linkId: "" }))).toThrow("Länk saknas");
   });
 });
 
@@ -66,9 +60,7 @@ describe("updateLink input parsing", () => {
       label: "  Partitur  ",
     });
     expect(parseLinkIdFromFormData(fd)).toBe("link-1");
-    expect(parseRequiredHttpUrlFromFormData(fd).href).toBe(
-      "https://example.com/sheet"
-    );
+    expect(parseRequiredHttpUrlFromFormData(fd).href).toBe("https://example.com/sheet");
     expect(parseOptionalLinkLabelFromFormData(fd)).toBe("Partitur");
   });
 
@@ -84,52 +76,36 @@ describe("updateLink input parsing", () => {
 
 describe("parseRequiredHttpUrlFromFormData", () => {
   it("accepts http and https URLs", () => {
-    const http = parseRequiredHttpUrlFromFormData(
-      createFormData({ url: "http://example.com/path" })
-    );
+    const http = parseRequiredHttpUrlFromFormData(createFormData({ url: "http://example.com/path" }));
     expect(http.protocol).toBe("http:");
-    const https = parseRequiredHttpUrlFromFormData(
-      createFormData({ url: "  https://example.com  " })
-    );
+    const https = parseRequiredHttpUrlFromFormData(createFormData({ url: "  https://example.com  " }));
     expect(https.href.startsWith("https://")).toBe(true);
   });
 
   it("throws Länk krävs when url missing or whitespace", () => {
-    expect(() =>
-      parseRequiredHttpUrlFromFormData(createFormData({}))
-    ).toThrow("Länk krävs");
-    expect(() =>
-      parseRequiredHttpUrlFromFormData(createFormData({ url: "   " }))
-    ).toThrow("Länk krävs");
+    expect(() => parseRequiredHttpUrlFromFormData(createFormData({}))).toThrow("Länk krävs");
+    expect(() => parseRequiredHttpUrlFromFormData(createFormData({ url: "   " }))).toThrow("Länk krävs");
   });
 
   it("throws Ogiltig länk for non-URL strings", () => {
-    expect(() =>
-      parseRequiredHttpUrlFromFormData(createFormData({ url: "not a url" }))
-    ).toThrow("Ogiltig länk");
+    expect(() => parseRequiredHttpUrlFromFormData(createFormData({ url: "not a url" }))).toThrow("Ogiltig länk");
   });
 
   it("throws Länk måste börja med http eller https for non-http(s) schemes", () => {
-    expect(() =>
-      parseRequiredHttpUrlFromFormData(createFormData({ url: "ftp://x.com" }))
-    ).toThrow("Länk måste börja med http eller https");
+    expect(() => parseRequiredHttpUrlFromFormData(createFormData({ url: "ftp://x.com" }))).toThrow(
+      "Länk måste börja med http eller https",
+    );
   });
 });
 
 describe("parseOptionalLinkLabelFromFormData", () => {
   it("returns null for empty or missing label", () => {
     expect(parseOptionalLinkLabelFromFormData(createFormData({}))).toBe(null);
-    expect(
-      parseOptionalLinkLabelFromFormData(createFormData({ label: "  " }))
-    ).toBe(null);
+    expect(parseOptionalLinkLabelFromFormData(createFormData({ label: "  " }))).toBe(null);
   });
 
   it("returns trimmed label", () => {
-    expect(
-      parseOptionalLinkLabelFromFormData(
-        createFormData({ label: "  Partitur  " })
-      )
-    ).toBe("Partitur");
+    expect(parseOptionalLinkLabelFromFormData(createFormData({ label: "  Partitur  " }))).toBe("Partitur");
   });
 });
 
@@ -142,9 +118,7 @@ describe("parsePieceCreditsFromFormData", () => {
   });
 
   it("returns empty array when credits is whitespace-only", () => {
-    expect(
-      parsePieceCreditsFromFormData(createFormData({ credits: "   " }))
-    ).toEqual([]);
+    expect(parsePieceCreditsFromFormData(createFormData({ credits: "   " }))).toEqual([]);
   });
 
   it("parses valid JSON array", () => {
@@ -162,34 +136,24 @@ describe("parsePieceCreditsFromFormData", () => {
 
   it("throws Ogiltigt format för upphovspersoner for invalid JSON", () => {
     const fd = createFormData({ credits: "not-json" });
-    expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
-      "Ogiltigt format för upphovspersoner"
-    );
+    expect(() => parsePieceCreditsFromFormData(fd)).toThrow("Ogiltigt format för upphovspersoner");
   });
 
   it("throws Ogiltigt format för upphovspersoner for non-array JSON", () => {
     const fd = createFormData({ credits: "{}" });
-    expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
-      "Ogiltigt format för upphovspersoner"
-    );
+    expect(() => parsePieceCreditsFromFormData(fd)).toThrow("Ogiltigt format för upphovspersoner");
   });
 
   it("throws Ogiltigt format för upphovspersoner when personId is not a UUID", () => {
     const fd = createFormData({
-      credits: JSON.stringify([
-        { personId: "not-a-uuid", role: "Kompositör" },
-      ]),
+      credits: JSON.stringify([{ personId: "not-a-uuid", role: "Kompositör" }]),
     });
-    expect(() => parsePieceCreditsFromFormData(fd)).toThrow(
-      "Ogiltigt format för upphovspersoner"
-    );
+    expect(() => parsePieceCreditsFromFormData(fd)).toThrow("Ogiltigt format för upphovspersoner");
   });
 
   it("throws Roll krävs when a role is empty once trimmed", () => {
     const fd = createFormData({
-      credits: JSON.stringify([
-        { personId: validPersonIdA, role: "  " },
-      ]),
+      credits: JSON.stringify([{ personId: validPersonIdA, role: "  " }]),
     });
     expect(() => parsePieceCreditsFromFormData(fd)).toThrow("Roll krävs");
   });
@@ -204,21 +168,18 @@ describe("parseCreditPersonIdFromFormData", () => {
   });
 
   it("throws Ogiltigt format för upphovspersoner when missing", () => {
-    expect(() =>
-      parseCreditPersonIdFromFormData(createFormData({}))
-    ).toThrow("Ogiltigt format för upphovspersoner");
+    expect(() => parseCreditPersonIdFromFormData(createFormData({}))).toThrow("Ogiltigt format för upphovspersoner");
   });
 
   it("throws Ogiltigt format för upphovspersoner when not a UUID", () => {
-    expect(() =>
-      parseCreditPersonIdFromFormData(createFormData({ personId: "not-a-uuid" }))
-    ).toThrow("Ogiltigt format för upphovspersoner");
+    expect(() => parseCreditPersonIdFromFormData(createFormData({ personId: "not-a-uuid" }))).toThrow(
+      "Ogiltigt format för upphovspersoner",
+    );
   });
 });
 
 describe("parseCreditRolesFromFormData", () => {
-  const parse = (roles: unknown) =>
-    parseCreditRolesFromFormData(createFormData({ roles: JSON.stringify(roles) }));
+  const parse = (roles: unknown) => parseCreditRolesFromFormData(createFormData({ roles: JSON.stringify(roles) }));
 
   it("returns every role, trimmed", () => {
     expect(parse([" Producent ", "Kompositör"])).toEqual(["Producent", "Kompositör"]);
@@ -233,9 +194,7 @@ describe("parseCreditRolesFromFormData", () => {
   });
 
   it("throws when the field is missing or not a list", () => {
-    expect(() => parseCreditRolesFromFormData(createFormData({}))).toThrow(
-      "Ogiltigt format för upphovspersoner"
-    );
+    expect(() => parseCreditRolesFromFormData(createFormData({}))).toThrow("Ogiltigt format för upphovspersoner");
     expect(() => parse("Kompositör")).toThrow("Ogiltigt format för upphovspersoner");
   });
 });

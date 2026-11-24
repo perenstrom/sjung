@@ -13,9 +13,7 @@ export default async function AppHubPage() {
   }
 
   const activeGroupSlug = await getActiveGroupSlugCookie();
-  const cookieGroup = activeGroupSlug
-    ? groups.find((group) => group.slug === activeGroupSlug)
-    : null;
+  const cookieGroup = activeGroupSlug ? groups.find((group) => group.slug === activeGroupSlug) : null;
   const fallbackGroup = groups[0];
   const selectedGroup = cookieGroup ?? fallbackGroup;
   redirect(groupPath(selectedGroup.slug));

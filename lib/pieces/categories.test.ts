@@ -52,7 +52,7 @@ describe("groupByCategory", () => {
     groupByCategory(files, links).map((group) => ({
       heading: group.heading,
       entries: group.entries.map((entry) =>
-        entry.kind === "file" ? `file:${entry.file.displayName}` : `link:${entry.link.label}`
+        entry.kind === "file" ? `file:${entry.file.displayName}` : `link:${entry.link.label}`,
       ),
     }));
 
@@ -70,8 +70,8 @@ describe("groupByCategory", () => {
     expect(
       shown(
         [file("Tenor", "Noter"), file("sopran", null), file("Alt", "Noter"), file("Text", "Texter")],
-        [link("Bas", "noter"), link("Inspelning", "Inspelningar"), link("Annat", null)]
-      )
+        [link("Bas", "noter"), link("Inspelning", "Inspelningar"), link("Annat", null)],
+      ),
     ).toEqual([
       { heading: "Noter", entries: ["file:Alt", "link:Bas", "file:Tenor"] },
       { heading: "Inspelningar", entries: ["link:Inspelning"] },
@@ -109,8 +109,8 @@ describe("groupByCategory", () => {
     expect(
       shown(
         names.map((name) => file(name)),
-        []
-      )[0].entries
+        [],
+      )[0].entries,
     ).toEqual(expected.map((name) => `file:${name}`));
   });
 });

@@ -48,15 +48,12 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
 /** One entry per Set list the Piece is in, however many times it appears there, by name. */
 function toPieceSetLists(setListPieces: PieceDetailQueryResult["setListEntries"]): PieceSetList[] {
   const bySetList = new Map(
-    setListPieces.map((entry) => [entry.setListId, { setListId: entry.setListId, setListName: entry.setList.name }])
+    setListPieces.map((entry) => [entry.setListId, { setListId: entry.setListId, setListName: entry.setList.name }]),
   );
   return [...bySetList.values()].sort((a, b) => a.setListName.localeCompare(b.setListName, "sv-SE"));
 }
 
-export function toPieceNoteListItem({
-  createdBy,
-  ...note
-}: PieceNoteListItemQueryResult): PieceNoteListItem {
+export function toPieceNoteListItem({ createdBy, ...note }: PieceNoteListItemQueryResult): PieceNoteListItem {
   return { ...note, createdByName: createdBy?.name ?? null };
 }
 
@@ -73,7 +70,7 @@ export async function getSetListIdsContainingPiece(pieceId: string): Promise<str
 /** The distinct Credit roles on the Group's credits, as stored. */
 export async function getCreditRolesUsedInGroup(
   groupId: string,
-  db: Pick<typeof prisma, "personToPiece"> = prisma
+  db: Pick<typeof prisma, "personToPiece"> = prisma,
 ): Promise<string[]> {
   const credits = await db.personToPiece.findMany({
     where: { piece: { groupId } },
@@ -101,7 +98,7 @@ export async function resolveCategoryInGroup(groupId: string, typed: string): Pr
 /** What a Piece import matches against: the Group's People, Credit roles in use and Piece titles. */
 export async function getPieceImportGroupFor(
   groupId: string,
-  db: Pick<typeof prisma, "person" | "personToPiece" | "piece"> = prisma
+  db: Pick<typeof prisma, "person" | "personToPiece" | "piece"> = prisma,
 ): Promise<ImportGroup> {
   const [people, creditRoles, pieces] = await Promise.all([
     db.person.findMany({

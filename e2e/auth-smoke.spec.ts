@@ -10,8 +10,7 @@ test("an anonymous visitor to a Group is sent to login and lands back in the Gro
   await page.goto(groupPath(groupSlug));
 
   await expect(page).toHaveURL(
-    (url) =>
-      url.pathname === "/auth/login" && url.searchParams.get("next") === groupPath(groupSlug),
+    (url) => url.pathname === "/auth/login" && url.searchParams.get("next") === groupPath(groupSlug),
   );
 
   await page.getByLabel("E-post").fill(email);

@@ -27,7 +27,7 @@ async function confirm(group: Group, text: string, choices: ImportChoices = NO_I
       text,
       choices: JSON.stringify(choices),
       outcome: outcome ?? (await previewedOutcome(group, text, choices)),
-    })
+    }),
   );
 }
 
@@ -40,7 +40,8 @@ async function piecesInGroup(group: Group): Promise<string[]> {
   });
   return pieces.map((piece) => {
     const people = new Map<string, string[]>();
-    for (const credit of piece.credits) people.set(credit.person.name, [...(people.get(credit.person.name) ?? []), credit.role]);
+    for (const credit of piece.credits)
+      people.set(credit.person.name, [...(people.get(credit.person.name) ?? []), credit.role]);
     const credits = [...people].map(([name, roles]) => `${name} (${roles.join(", ")})`).join(" · ");
     return credits ? `${piece.name}: ${credits}` : piece.name;
   });
@@ -73,7 +74,11 @@ describe("importPieces", () => {
 
   it("reuses the Group's People and Credit roles, and skips duplicate titles unless chosen", async () => {
     const benny = await createPerson(group, "Benny Andersson");
-    await createCredit(await createPiece({ groupId: group.id, createdById: group.createdById, name: "Mamma Mia" }), benny, "Låtskrivare");
+    await createCredit(
+      await createPiece({ groupId: group.id, createdById: group.createdById, name: "Mamma Mia" }),
+      benny,
+      "Låtskrivare",
+    );
     const text = [
       "Titel\tlåtskrivare\tTextförfattare\tÅr",
       "Thank you for the music\tbenny andersson\tBjörn Ulvaeus\t1977",

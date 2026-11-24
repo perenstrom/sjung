@@ -4,19 +4,8 @@ import { Check, Plus, Tag } from "lucide-react";
 import { useState } from "react";
 
 import { SearchCombobox } from "@/components/SearchCombobox";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  creditRoleSuggestions,
-  MAX_CREDIT_ROLE_LENGTH,
-  shouldOfferNewCreditRole,
-} from "@/lib/pieces/credit-roles";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { creditRoleSuggestions, MAX_CREDIT_ROLE_LENGTH, shouldOfferNewCreditRole } from "@/lib/pieces/credit-roles";
 import { normalizeSpacing } from "@/lib/text/match-key";
 import { toggleCreditRole } from "@/lib/pieces/credits";
 import { cn } from "@/lib/utils";
@@ -108,7 +97,7 @@ function CreditRolesSearch({
                   <span
                     className={cn(
                       "grid size-4 shrink-0 place-content-center rounded-[4px] border border-input",
-                      checked && "border-primary bg-primary text-primary-foreground"
+                      checked && "border-primary bg-primary text-primary-foreground",
                     )}
                     aria-hidden="true"
                   >

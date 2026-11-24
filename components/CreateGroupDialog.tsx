@@ -9,11 +9,7 @@ import { Label } from "@/components/ui/label";
 const CREATE_GROUP_LABEL = "Skapa ny grupp";
 
 /** A "Skapa ny grupp" button that opens a dialog for naming and creating a Group. */
-export function CreateGroupDialog({
-  triggerVariant = "default",
-}: {
-  triggerVariant?: "default" | "outline";
-}) {
+export function CreateGroupDialog({ triggerVariant = "default" }: { triggerVariant?: "default" | "outline" }) {
   return (
     <EntityFormDialog.Root fallbackSv="Kunde inte skapa grupp">
       <EntityFormDialog.Trigger asChild>

@@ -16,8 +16,7 @@ describe("Aliases on a Piece", () => {
   let group: Group;
   let piece: Piece;
 
-  const add = (name: string, pieceId = piece.id) =>
-    addPieceAlias(formData({ groupSlug: group.slug, pieceId, name }));
+  const add = (name: string, pieceId = piece.id) => addPieceAlias(formData({ groupSlug: group.slug, pieceId, name }));
   const aliasNames = async (pieceId = piece.id) =>
     (await getPieceDetail(group.slug, pieceId))?.aliases.map((alias) => alias.name);
 

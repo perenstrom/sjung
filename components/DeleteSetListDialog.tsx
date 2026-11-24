@@ -73,8 +73,7 @@ export function DeleteSetListDialog({
         <DialogHeader>
           <DialogTitle>Ta bort repertoar?</DialogTitle>
           <DialogDescription>
-            <strong>{setList.name}</strong> tas bort permanent. Detta går inte att
-            ångra.
+            <strong>{setList.name}</strong> tas bort permanent. Detta går inte att ångra.
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit}>

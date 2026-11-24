@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  filterPeople,
-  mergePeople,
-  shouldOfferCreatePerson,
-} from "@/lib/people/person-options";
+import { filterPeople, mergePeople, shouldOfferCreatePerson } from "@/lib/people/person-options";
 
 const people = [
   { id: "1", name: "Anna Andersson" },
@@ -19,9 +15,7 @@ describe("filterPeople", () => {
   });
 
   it("keeps people whose name contains the trimmed query, ignoring case", () => {
-    expect(filterPeople(people, "  BERG ")).toEqual([
-      { id: "2", name: "Björn Berg" },
-    ]);
+    expect(filterPeople(people, "  BERG ")).toEqual([{ id: "2", name: "Björn Berg" }]);
     expect(filterPeople(people, "åsa")).toEqual([{ id: "3", name: "Åsa Ek" }]);
   });
 
@@ -59,7 +53,7 @@ describe("mergePeople", () => {
       mergePeople(people, [
         { id: "4", name: "Cecilia Dahl" },
         { id: "5", name: "Örjan Ö" },
-      ]).map((person) => person.name)
+      ]).map((person) => person.name),
     ).toEqual(["Anna Andersson", "Björn Berg", "Cecilia Dahl", "Åsa Ek", "Örjan Ö"]);
   });
 

@@ -17,18 +17,12 @@ type SignupFormProps =
   | { nextPath?: never; invitation: { token: string; email: string; groupName: string } };
 
 export function SignupForm({ nextPath, invitation }: SignupFormProps) {
-  const [state, formAction, isPending] = useActionState(
-    invitation ? signUpFromInvitationForm : signUp,
-    null
-  );
+  const [state, formAction, isPending] = useActionState(invitation ? signUpFromInvitationForm : signUp, null);
   // Logging in instead returns to where signing up would have led.
   const loginHref = loginPath(invitation ? invitationPagePath(invitation.token) : nextPath);
 
   return (
-    <form
-      action={formAction}
-      className="w-full space-y-6 rounded-xl border p-6"
-    >
+    <form action={formAction} className="w-full space-y-6 rounded-xl border p-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Skapa konto</h1>
         <p className="text-sm text-muted-foreground">
@@ -61,57 +55,28 @@ export function SignupForm({ nextPath, invitation }: SignupFormProps) {
       {/* React resets the form after each submit, to defaultValue: name and email survive, the passwords don't. */}
       <div className="space-y-2">
         <Label htmlFor="name">Namn</Label>
-        <Input
-          id="name"
-          name="name"
-          type="text"
-          defaultValue={state?.values.name}
-          required
-        />
+        <Input id="name" name="name" type="text" defaultValue={state?.values.name} required />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="email">E-post</Label>
         {invitation ? (
           // Shown only: the server takes the address from the Invitation.
-          <Input
-            id="email"
-            type="email"
-            value={invitation.email}
-            readOnly
-            className="bg-muted text-muted-foreground"
-          />
+          <Input id="email" type="email" value={invitation.email} readOnly className="bg-muted text-muted-foreground" />
         ) : (
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            defaultValue={state?.values.email}
-            required
-          />
+          <Input id="email" name="email" type="email" defaultValue={state?.values.email} required />
         )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="password">Lösenord</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          minLength={PASSWORD_MIN_LENGTH}
-          required
-        />
+        <Input id="password" name="password" type="password" minLength={PASSWORD_MIN_LENGTH} required />
         <p className="text-sm text-muted-foreground">Minst {PASSWORD_MIN_LENGTH} tecken.</p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="passwordConfirmation">Upprepa lösenord</Label>
-        <Input
-          id="passwordConfirmation"
-          name="passwordConfirmation"
-          type="password"
-          required
-        />
+        <Input id="passwordConfirmation" name="passwordConfirmation" type="password" required />
       </div>
 
       <div className="space-y-2">
@@ -122,10 +87,7 @@ export function SignupForm({ nextPath, invitation }: SignupFormProps) {
       </div>
 
       <p className="text-center text-sm text-muted-foreground">
-        Har du redan konto?{" "}
-        <Link href={loginHref}>
-          Logga in
-        </Link>
+        Har du redan konto? <Link href={loginHref}>Logga in</Link>
       </p>
     </form>
   );

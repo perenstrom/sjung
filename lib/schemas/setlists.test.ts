@@ -20,108 +20,80 @@ function createFormData(values: Record<string, string>): FormData {
 
 describe("parseSetListNameFromFormData", () => {
   it("returns trimmed name", () => {
-    expect(parseSetListNameFromFormData(createFormData({ name: "  Vårkonsert  " }))).toBe(
-      "Vårkonsert"
-    );
+    expect(parseSetListNameFromFormData(createFormData({ name: "  Vårkonsert  " }))).toBe("Vårkonsert");
   });
 
   it("throws Namn krävs when empty", () => {
-    expect(() => parseSetListNameFromFormData(createFormData({ name: "  " }))).toThrow(
-      "Namn krävs"
-    );
+    expect(() => parseSetListNameFromFormData(createFormData({ name: "  " }))).toThrow("Namn krävs");
   });
 });
 
 describe("id field parsers", () => {
   it("returns trimmed setListId and throws Repertoar saknas when empty", () => {
-    expect(
-      parseSetListIdFromFormData(createFormData({ setListId: "  id-1  " }))
-    ).toBe("id-1");
-    expect(() => parseSetListIdFromFormData(createFormData({}))).toThrow(
-      "Repertoar saknas"
-    );
+    expect(parseSetListIdFromFormData(createFormData({ setListId: "  id-1  " }))).toBe("id-1");
+    expect(() => parseSetListIdFromFormData(createFormData({}))).toThrow("Repertoar saknas");
   });
 
   it("returns trimmed setListPieceId and throws Repertoarpost saknas when empty", () => {
-    expect(
-      parseSetListPieceIdFromFormData(createFormData({ setListPieceId: "  id-2  " }))
-    ).toBe("id-2");
-    expect(() => parseSetListPieceIdFromFormData(createFormData({}))).toThrow(
-      "Repertoarpost saknas"
-    );
+    expect(parseSetListPieceIdFromFormData(createFormData({ setListPieceId: "  id-2  " }))).toBe("id-2");
+    expect(() => parseSetListPieceIdFromFormData(createFormData({}))).toThrow("Repertoarpost saknas");
   });
 
   it("returns trimmed setListNoteId and throws Anteckning saknas when empty", () => {
-    expect(
-      parseSetListNoteIdFromFormData(createFormData({ setListNoteId: "  id-4  " }))
-    ).toBe("id-4");
-    expect(() => parseSetListNoteIdFromFormData(createFormData({}))).toThrow(
-      "Anteckning saknas"
-    );
+    expect(parseSetListNoteIdFromFormData(createFormData({ setListNoteId: "  id-4  " }))).toBe("id-4");
+    expect(() => parseSetListNoteIdFromFormData(createFormData({}))).toThrow("Anteckning saknas");
   });
 });
 
 describe("parseSetListNoteContentFromFormData", () => {
   it("returns trimmed content, shared by piece notes and set list notes", () => {
-    expect(
-      parseSetListNoteContentFromFormData(createFormData({ content: "  Kom ihåg tempot  " }))
-    ).toBe("Kom ihåg tempot");
+    expect(parseSetListNoteContentFromFormData(createFormData({ content: "  Kom ihåg tempot  " }))).toBe(
+      "Kom ihåg tempot",
+    );
   });
 
   it("throws Anteckning krävs when empty", () => {
-    expect(() =>
-      parseSetListNoteContentFromFormData(createFormData({ content: "  " }))
-    ).toThrow("Anteckning krävs");
+    expect(() => parseSetListNoteContentFromFormData(createFormData({ content: "  " }))).toThrow("Anteckning krävs");
   });
 });
 
 describe("parseOptionalSetListDateFromFormData", () => {
   it("returns null when the date field is missing or empty", () => {
     expect(parseOptionalSetListDateFromFormData(createFormData({}))).toBeNull();
-    expect(
-      parseOptionalSetListDateFromFormData(createFormData({ date: "   " }))
-    ).toBeNull();
+    expect(parseOptionalSetListDateFromFormData(createFormData({ date: "   " }))).toBeNull();
   });
 
   it("parses a valid date", () => {
-    const parsed = parseOptionalSetListDateFromFormData(
-      createFormData({ date: "2026-04-28" })
-    );
+    const parsed = parseOptionalSetListDateFromFormData(createFormData({ date: "2026-04-28" }));
     expect(parsed).toBeInstanceOf(Date);
     expect(parsed?.toISOString()).toContain("2026-04-28");
   });
 
   it("throws Ogiltigt datum for an invalid date", () => {
-    expect(() =>
-      parseOptionalSetListDateFromFormData(createFormData({ date: "inte-ett-datum" }))
-    ).toThrow("Ogiltigt datum");
+    expect(() => parseOptionalSetListDateFromFormData(createFormData({ date: "inte-ett-datum" }))).toThrow(
+      "Ogiltigt datum",
+    );
   });
 });
 
 describe("parseOrderedSetListStepIdsFromFormData", () => {
   it("throws Ny ordning saknas when missing or empty", () => {
-    expect(() => parseOrderedSetListStepIdsFromFormData(createFormData({}))).toThrow(
-      "Ny ordning saknas"
+    expect(() => parseOrderedSetListStepIdsFromFormData(createFormData({}))).toThrow("Ny ordning saknas");
+    expect(() => parseOrderedSetListStepIdsFromFormData(createFormData({ orderedSetListStepIds: "   " }))).toThrow(
+      "Ny ordning saknas",
     );
-    expect(() =>
-      parseOrderedSetListStepIdsFromFormData(
-        createFormData({ orderedSetListStepIds: "   " })
-      )
-    ).toThrow("Ny ordning saknas");
   });
 
   it("throws Ogiltig ordning for invalid JSON", () => {
-    expect(() =>
-      parseOrderedSetListStepIdsFromFormData(
-        createFormData({ orderedSetListStepIds: "not-json" })
-      )
-    ).toThrow("Ogiltig ordning");
+    expect(() => parseOrderedSetListStepIdsFromFormData(createFormData({ orderedSetListStepIds: "not-json" }))).toThrow(
+      "Ogiltig ordning",
+    );
   });
 
   it("throws Ogiltig ordning for non-array JSON", () => {
-    expect(() =>
-      parseOrderedSetListStepIdsFromFormData(createFormData({ orderedSetListStepIds: "{}" }))
-    ).toThrow("Ogiltig ordning");
+    expect(() => parseOrderedSetListStepIdsFromFormData(createFormData({ orderedSetListStepIds: "{}" }))).toThrow(
+      "Ogiltig ordning",
+    );
   });
 
   it("parses a valid JSON array of ids", () => {

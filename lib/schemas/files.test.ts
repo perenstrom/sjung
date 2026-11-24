@@ -45,66 +45,48 @@ describe("parseCreatePieceFileUploadFromFormData", () => {
   });
 
   it("throws Stycke saknas when pieceId is empty", () => {
+    expect(() => parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, pieceId: "" }))).toThrow(
+      "Stycke saknas",
+    );
     expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, pieceId: "" })
-      )
-    ).toThrow("Stycke saknas");
-    expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, pieceId: "   " })
-      )
+      parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, pieceId: "   " })),
     ).toThrow("Stycke saknas");
   });
 
   it("throws Filnamn saknas when fileName is empty", () => {
-    expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, fileName: "" })
-      )
-    ).toThrow("Filnamn saknas");
+    expect(() => parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, fileName: "" }))).toThrow(
+      "Filnamn saknas",
+    );
   });
 
   it("throws Filtyp saknas when mimeType is empty", () => {
-    expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, mimeType: "" })
-      )
-    ).toThrow("Filtyp saknas");
+    expect(() => parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, mimeType: "" }))).toThrow(
+      "Filtyp saknas",
+    );
   });
 
   it("throws Filtypen stöds inte for disallowed mime", () => {
     expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, mimeType: "text/plain" })
-      )
+      parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, mimeType: "text/plain" })),
     ).toThrow("Filtypen stöds inte");
   });
 
   it("throws Filstorlek saknas when size is empty", () => {
-    expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, size: "" })
-      )
-    ).toThrow("Filstorlek saknas");
+    expect(() => parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, size: "" }))).toThrow(
+      "Filstorlek saknas",
+    );
   });
 
   it("throws Ogiltig filstorlek for non-integer or non-positive size", () => {
-    expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, size: "abc" })
-      )
-    ).toThrow("Ogiltig filstorlek");
-    expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, size: "12.5" })
-      )
-    ).toThrow("Ogiltig filstorlek");
-    expect(() =>
-      parseCreatePieceFileUploadFromFormData(
-        createFormData({ ...validUploadBase, size: "0" })
-      )
-    ).toThrow("Ogiltig filstorlek");
+    expect(() => parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, size: "abc" }))).toThrow(
+      "Ogiltig filstorlek",
+    );
+    expect(() => parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, size: "12.5" }))).toThrow(
+      "Ogiltig filstorlek",
+    );
+    expect(() => parseCreatePieceFileUploadFromFormData(createFormData({ ...validUploadBase, size: "0" }))).toThrow(
+      "Ogiltig filstorlek",
+    );
   });
 
   it("throws Filen är för stor (max 50 MB) when size exceeds cap", () => {
@@ -113,8 +95,8 @@ describe("parseCreatePieceFileUploadFromFormData", () => {
         createFormData({
           ...validUploadBase,
           size: String(MAX_FILE_SIZE_BYTES + 1),
-        })
-      )
+        }),
+      ),
     ).toThrow("Filen är för stor (max 50 MB)");
   });
 });
@@ -149,22 +131,16 @@ describe("parseFinalizePieceFileUploadFromFormData", () => {
 
   it("returns null displayName for empty or whitespace displayName", () => {
     expect(
-      parseFinalizePieceFileUploadFromFormData(
-        createFormData({ ...validFinalize, displayName: "" })
-      ).displayName
+      parseFinalizePieceFileUploadFromFormData(createFormData({ ...validFinalize, displayName: "" })).displayName,
     ).toBeNull();
     expect(
-      parseFinalizePieceFileUploadFromFormData(
-        createFormData({ ...validFinalize, displayName: "  " })
-      ).displayName
+      parseFinalizePieceFileUploadFromFormData(createFormData({ ...validFinalize, displayName: "  " })).displayName,
     ).toBeNull();
   });
 
   it("throws Sökväg saknas when storagePath is empty", () => {
     expect(() =>
-      parseFinalizePieceFileUploadFromFormData(
-        createFormData({ ...validFinalize, storagePath: "" })
-      )
+      parseFinalizePieceFileUploadFromFormData(createFormData({ ...validFinalize, storagePath: "" })),
     ).toThrow("Sökväg saknas");
   });
 });
@@ -194,17 +170,13 @@ describe("parseCreatePieceFileReplaceUploadFromFormData", () => {
 
   it("throws Fil saknas when fileId is empty", () => {
     expect(() =>
-      parseCreatePieceFileReplaceUploadFromFormData(
-        createFormData({ ...validReplaceBase, fileId: "" })
-      )
+      parseCreatePieceFileReplaceUploadFromFormData(createFormData({ ...validReplaceBase, fileId: "" })),
     ).toThrow("Fil saknas");
   });
 
   it("throws Filtypen stöds inte for a disallowed extension", () => {
     expect(() =>
-      parseCreatePieceFileReplaceUploadFromFormData(
-        createFormData({ ...validReplaceBase, fileName: "not.exe" })
-      )
+      parseCreatePieceFileReplaceUploadFromFormData(createFormData({ ...validReplaceBase, fileName: "not.exe" })),
     ).toThrow("Filtypen stöds inte");
   });
 
@@ -214,8 +186,8 @@ describe("parseCreatePieceFileReplaceUploadFromFormData", () => {
         createFormData({
           ...validReplaceBase,
           size: String(MAX_FILE_SIZE_BYTES + 1),
-        })
-      )
+        }),
+      ),
     ).toThrow("Filen är för stor (max 50 MB)");
   });
 });
@@ -234,17 +206,13 @@ describe("parseFinalizePieceFileReplaceFromFormData", () => {
 
   it("throws Fil saknas when fileId is empty", () => {
     expect(() =>
-      parseFinalizePieceFileReplaceFromFormData(
-        createFormData({ ...validFinalizeReplace, fileId: "" })
-      )
+      parseFinalizePieceFileReplaceFromFormData(createFormData({ ...validFinalizeReplace, fileId: "" })),
     ).toThrow("Fil saknas");
   });
 
   it("throws Sökväg saknas when storagePath is empty", () => {
     expect(() =>
-      parseFinalizePieceFileReplaceFromFormData(
-        createFormData({ ...validFinalizeReplace, storagePath: "" })
-      )
+      parseFinalizePieceFileReplaceFromFormData(createFormData({ ...validFinalizeReplace, storagePath: "" })),
     ).toThrow("Sökväg saknas");
   });
 });
@@ -275,25 +243,19 @@ describe("parseUpdatePieceFileDisplayNameFromFormData", () => {
 
   it("throws Fil saknas when fileId is empty", () => {
     expect(() =>
-      parseUpdatePieceFileDisplayNameFromFormData(
-        createFormData({ fileId: "", displayName: "Namn" })
-      )
+      parseUpdatePieceFileDisplayNameFromFormData(createFormData({ fileId: "", displayName: "Namn" })),
     ).toThrow("Fil saknas");
   });
 
   it("throws Visningsnamn saknas when displayName is empty or whitespace", () => {
     expect(() =>
-      parseUpdatePieceFileDisplayNameFromFormData(
-        createFormData({ fileId: "file-1", displayName: "" })
-      )
+      parseUpdatePieceFileDisplayNameFromFormData(createFormData({ fileId: "file-1", displayName: "" })),
     ).toThrow("Visningsnamn saknas");
     expect(() =>
-      parseUpdatePieceFileDisplayNameFromFormData(
-        createFormData({ fileId: "file-1", displayName: "   " })
-      )
+      parseUpdatePieceFileDisplayNameFromFormData(createFormData({ fileId: "file-1", displayName: "   " })),
     ).toThrow("Visningsnamn saknas");
-    expect(() =>
-      parseUpdatePieceFileDisplayNameFromFormData(createFormData({ fileId: "file-1" }))
-    ).toThrow("Visningsnamn saknas");
+    expect(() => parseUpdatePieceFileDisplayNameFromFormData(createFormData({ fileId: "file-1" }))).toThrow(
+      "Visningsnamn saknas",
+    );
   });
 });

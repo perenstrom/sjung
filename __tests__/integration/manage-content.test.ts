@@ -90,11 +90,9 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
       personId: c.person.id,
       roles: JSON.stringify(["Arrangör", "Dirigent"]),
     }),
-  removePersonCredits: (g, c) =>
-    formData({ groupSlug: g.slug, pieceId: c.piece.id, personId: c.person.id }),
+  removePersonCredits: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, personId: c.person.id }),
   createPieceNote: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, content: "Andas" }),
-  updatePieceNote: (g, c) =>
-    formData({ groupSlug: g.slug, pieceNoteId: c.pieceNote.id, content: "Andas" }),
+  updatePieceNote: (g, c) => formData({ groupSlug: g.slug, pieceNoteId: c.pieceNote.id, content: "Andas" }),
   deletePieceNote: (g, c) => formData({ groupSlug: g.slug, pieceNoteId: c.pieceNote.id }),
   createPieceFileUploadUrl: (g, c) =>
     formData({
@@ -130,18 +128,14 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
       mimeType: "application/pdf",
       size: "1024",
     }),
-  updatePieceFileDisplayName: (g, c) =>
-    formData({ groupSlug: g.slug, fileId: c.file.id, displayName: "Partitur" }),
+  updatePieceFileDisplayName: (g, c) => formData({ groupSlug: g.slug, fileId: c.file.id, displayName: "Partitur" }),
   deletePieceFile: (g, c) => formData({ groupSlug: g.slug, fileId: c.file.id }),
   createSetList: (g) => formData({ groupSlug: g.slug, name: "Julkonsert" }),
   updateSetList: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, name: "Vårkonsert" }),
   deleteSetList: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id }),
-  addPieceToSetList: (g, c) =>
-    formData({ groupSlug: g.slug, setListId: c.setList.id, pieceId: c.piece.id }),
-  removePieceFromSetList: (g, c) =>
-    formData({ groupSlug: g.slug, setListPieceId: c.setListPiece.id }),
-  removePieceFromWholeSetList: (g, c) =>
-    formData({ groupSlug: g.slug, setListId: c.setList.id, pieceId: c.piece.id }),
+  addPieceToSetList: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, pieceId: c.piece.id }),
+  removePieceFromSetList: (g, c) => formData({ groupSlug: g.slug, setListPieceId: c.setListPiece.id }),
+  removePieceFromWholeSetList: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, pieceId: c.piece.id }),
   reorderSetListSteps: (g, c) =>
     formData({
       groupSlug: g.slug,
@@ -180,14 +174,11 @@ describe("content actions require manageContent", () => {
     expect(writes.sort()).toEqual(Object.keys(CONTENT_ACTIONS).sort());
   });
 
-  it.each(Object.keys(CONTENT_ACTIONS))(
-    "%s refuses a Member without MANAGE_CONTENT",
-    async (name) => {
-      actAs((await createMember(group, [GroupClaim.MANAGE_MEMBERS])).id);
+  it.each(Object.keys(CONTENT_ACTIONS))("%s refuses a Member without MANAGE_CONTENT", async (name) => {
+    actAs((await createMember(group, [GroupClaim.MANAGE_MEMBERS])).id);
 
-      await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(REFUSED);
-    }
-  );
+    await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(REFUSED);
+  });
 
   it.each(Object.keys(CONTENT_ACTIONS))("%s refuses a Member with no Claims", async (name) => {
     actAs((await createMember(group, [])).id);
@@ -231,15 +222,13 @@ describe("content actions require manageContent", () => {
 
     it("creates a Set list, marked Current when Aktuell is checked", async () => {
       await setListActions.createSetList(CONTENT_ACTIONS.createSetList(group, content));
-      await setListActions.createSetList(
-        formData({ groupSlug: group.slug, name: "Lucia", current: "on" })
-      );
+      await setListActions.createSetList(formData({ groupSlug: group.slug, name: "Lucia", current: "on" }));
       expect(
         await testPrisma.setList.findMany({
           where: { groupId: group.id, name: { in: ["Julkonsert", "Lucia"] } },
           orderBy: { name: "asc" },
           select: { name: true, current: true },
-        })
+        }),
       ).toEqual([
         { name: "Julkonsert", current: false },
         { name: "Lucia", current: true },
@@ -253,12 +242,13 @@ describe("content actions require manageContent", () => {
       await testPrisma.setList.update({ where: { id: content.setList.id }, data: { current: !current } });
 
       await setListActions.updateSetList(
-        formData({ groupSlug: group.slug, setListId: content.setList.id, name: "Vårkonsert", ...fields })
+        formData({ groupSlug: group.slug, setListId: content.setList.id, name: "Vårkonsert", ...fields }),
       );
 
-      expect(
-        await testPrisma.setList.findUniqueOrThrow({ where: { id: content.setList.id } })
-      ).toMatchObject({ name: "Vårkonsert", current });
+      expect(await testPrisma.setList.findUniqueOrThrow({ where: { id: content.setList.id } })).toMatchObject({
+        name: "Vårkonsert",
+        current,
+      });
     });
 
     it("adds a Set list step", async () => {

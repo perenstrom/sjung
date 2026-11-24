@@ -10,10 +10,7 @@ import * as fileStore from "@/lib/pieces/file-store";
  * content right. Someone signed out never gets here: proxy.ts sends them to
  * the login page.
  */
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ groupSlug: string; fileId: string }> }
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ groupSlug: string; fileId: string }> }) {
   const { groupSlug, fileId } = await params;
 
   const access = await findGroupAccess(groupSlug);

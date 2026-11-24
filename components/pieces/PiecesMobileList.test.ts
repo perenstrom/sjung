@@ -40,7 +40,14 @@ const notes = [
 function renderPieces(isEditing: boolean): string {
   editMode = isEditing;
   return renderMarkup(
-    createElement(PiecesMobileList, { people: [], creditRoles: [], groupSlug: "koren", isEditing, emptyMessage: "", pieces: [piece] }),
+    createElement(PiecesMobileList, {
+      people: [],
+      creditRoles: [],
+      groupSlug: "koren",
+      isEditing,
+      emptyMessage: "",
+      pieces: [piece],
+    }),
   );
 }
 
@@ -49,7 +56,8 @@ function renderSetList(isEditing: boolean): string {
   const steps = [{ kind: "piece", id: "step-1", position: 0, piece }] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesMobileList, {
-      people: [], creditRoles: [],
+      people: [],
+      creditRoles: [],
       groupSlug: "koren",
       isEditing,
       emptyMessage: "",
@@ -98,7 +106,8 @@ describe("PiecesMobileList letter dividers", () => {
     it("shows Alla noter as given, with a heading before the first piece of each letter group", () => {
       const html = renderMarkup(
         createElement(PiecesMobileList, {
-          people: [], creditRoles: [],
+          people: [],
+          creditRoles: [],
           groupSlug: "koren",
           isEditing,
           emptyMessage: "",
@@ -132,7 +141,8 @@ describe("PiecesMobileList letter dividers", () => {
       })) as unknown as SetListStep[];
       const html = renderMarkup(
         createElement(PiecesMobileList, {
-          people: [], creditRoles: [],
+          people: [],
+          creditRoles: [],
           groupSlug: "koren",
           isEditing,
           emptyMessage: "",
@@ -156,7 +166,8 @@ describe("PieceRowDetails, an open piece row", () => {
     return renderMarkup(
       createElement(PieceRowDetails, {
         piece: { ...piece, ...overrides } as PieceWithRelations,
-        people: [], creditRoles: [],
+        people: [],
+        creditRoles: [],
         groupSlug: "koren",
         isEditing,
         setListId,
@@ -198,9 +209,7 @@ describe("PieceRowDetails, an open piece row", () => {
     });
 
     it("keeps saying there are no files or links, also when there are notes", () => {
-      const text = textOf(
-        renderDetails(false, { files: [], links: [], notes }),
-      );
+      const text = textOf(renderDetails(false, { files: [], links: [], notes }));
 
       expect(text).toMatch(/Inga filer eller länkar\..*Anteckningar.*Nyast/);
     });
@@ -217,7 +226,9 @@ describe("PieceRowDetails, an open piece row", () => {
     it("lists the notes after the Files and Links with a trigger to edit them", () => {
       const text = textOf(renderDetails(true, { notes }));
 
-      expect(text).toMatch(/Filer och länkar.*Inspelning.*Anteckningar.*Nyast med radbrytning.*Äldst.*Redigera anteckningar/);
+      expect(text).toMatch(
+        /Filer och länkar.*Inspelning.*Anteckningar.*Nyast med radbrytning.*Äldst.*Redigera anteckningar/,
+      );
     });
 
     it("shows the Anteckningar section with an add trigger for a piece without notes", () => {
@@ -239,9 +250,7 @@ describe("PieceRowDetails, an open piece row", () => {
 
     it("lets a Person's Credits be removed", () => {
       const html = renderDetails(true, {
-        credits: [
-          { personId: "person-1", role: "Kompositör", person: { name: "Anna Andersson" } },
-        ],
+        credits: [{ personId: "person-1", role: "Kompositör", person: { name: "Anna Andersson" } }],
       } as unknown as Partial<PieceWithRelations>);
 
       expect(html).toContain('aria-label="Ta bort Anna Andersson"');

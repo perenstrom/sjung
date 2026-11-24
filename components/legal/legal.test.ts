@@ -20,7 +20,7 @@ describe("SignupTermsNotice", () => {
 
   it("tells the visitor that creating an account accepts the Terms of use, with links to both pages", () => {
     expect(textOf(html)).toBe(
-      "Genom att skapa ett konto godkänner du användarvillkoren. Läs om hur vi hanterar personuppgifter i vår integritetspolicy."
+      "Genom att skapa ett konto godkänner du användarvillkoren. Läs om hur vi hanterar personuppgifter i vår integritetspolicy.",
     );
     expect(hasLink(html, "/terms", "användarvillkoren")).toBe(true);
     expect(hasLink(html, "/privacy", "integritetspolicy")).toBe(true);

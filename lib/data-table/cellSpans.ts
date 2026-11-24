@@ -8,10 +8,7 @@ export type SpannedCell<TCell> = {
  * span n covers itself and the n - 1 cells after it, which are dropped. Spans
  * are clamped to at least 1 and to the cells left in the row.
  */
-export function spanCells<TCell>(
-  cells: TCell[],
-  getColSpan: (cell: TCell) => number
-): SpannedCell<TCell>[] {
+export function spanCells<TCell>(cells: TCell[], getColSpan: (cell: TCell) => number): SpannedCell<TCell>[] {
   const spanned: SpannedCell<TCell>[] = [];
   let index = 0;
   while (index < cells.length) {

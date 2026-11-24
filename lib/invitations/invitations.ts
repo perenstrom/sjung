@@ -30,7 +30,7 @@ export type InviteToGroupResult =
  */
 export async function inviteToGroup(
   { groupId, email: rawEmail, invitedById }: { groupId: string; email: string; invitedById: string },
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<InviteToGroupResult> {
   const email = normalizeEmail(rawEmail);
 
@@ -50,9 +50,8 @@ export async function inviteToGroup(
     select: { id: true, group: { select: { name: true } } },
   });
 
-  const inviterName = (
-    await prisma.user.findUnique({ where: { id: invitedById }, select: { name: true } })
-  )?.name ?? null;
+  const inviterName =
+    (await prisma.user.findUnique({ where: { id: invitedById }, select: { name: true } }))?.name ?? null;
 
   // Only a failed email is "send-failed"; any other error propagates.
   let sendFailed = false;
@@ -74,7 +73,7 @@ export async function inviteToGroup(
           sendFailed = true;
           throw sendError;
         }),
-      now
+      now,
     );
   } catch (error) {
     if (!sendFailed) {
@@ -105,7 +104,7 @@ export type ResendInvitationResult = (InviteToGroupResult & { email: string }) |
  */
 export async function resendInvitation(
   { groupId, invitationId, invitedById }: { groupId: string; invitationId: string; invitedById: string },
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<ResendInvitationResult> {
   const invitation = await prisma.invitation.findFirst({
     where: { id: invitationId, groupId },
@@ -217,7 +216,7 @@ export type InvitationView =
 export async function getInvitationView(
   token: string,
   viewer: InvitationViewer | null,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<InvitationView> {
   const lookup = await lookUpInvitationToken(token, now);
   if (lookup.status === "invalid") {
@@ -255,7 +254,7 @@ export async function getInvitationView(
 export async function acceptInvitation(
   token: string,
   viewer: InvitationViewer,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<{ ok: true; groupSlug: string } | { ok: false }> {
   const lookup = await lookUpInvitationToken(token, now);
   if (lookup.status !== "usable" || normalizeEmail(viewer.email) !== lookup.invitation.email) {
@@ -292,9 +291,7 @@ export async function getInvitationSignup(token: string, now: Date = new Date())
 }
 
 export type SignUpFromInvitationResult =
-  | { status: "created"; email: string; groupSlug: string }
-  | { status: "invalid" }
-  | { status: "email-taken" };
+  { status: "created"; email: string; groupSlug: string } | { status: "invalid" } | { status: "email-taken" };
 
 /**
  * Signup from an Invitation: in one transaction, uses up the token and
@@ -306,7 +303,7 @@ export type SignUpFromInvitationResult =
 export async function signUpFromInvitation(
   token: string,
   { name, passwordHash }: { name: string; passwordHash: string },
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<SignUpFromInvitationResult> {
   try {
     return await prisma.$transaction(async (tx) => {

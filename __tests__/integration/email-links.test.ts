@@ -42,7 +42,7 @@ describe.each<{ kind: string; links: EmailLinks; newSubject: () => Promise<strin
       async (token) => {
         delivered = token;
       },
-      now
+      now,
     );
     return { result, token: delivered as string | null };
   }
@@ -169,7 +169,7 @@ describe.each<{ kind: string; links: EmailLinks; newSubject: () => Promise<strin
         testPrisma.$transaction(async (tx) => {
           await links.redeem(tx, token!, after(1));
           throw new Error("rollback");
-        })
+        }),
       ).rejects.toThrow("rollback");
 
       await expect(links.lookUp(token!, after(2))).resolves.toEqual({ status: "usable", subjectId });
@@ -183,9 +183,13 @@ describe("UserToken links of another purpose", () => {
     const reset = userLinks(UserTokenPurpose.PASSWORD_RESET, { validForHours: 1 });
     const userId = await newUserId();
     let verificationToken = "";
-    await verification.issue(userId, async (token) => {
-      verificationToken = token;
-    }, sentAt);
+    await verification.issue(
+      userId,
+      async (token) => {
+        verificationToken = token;
+      },
+      sentAt,
+    );
 
     // A reset link for the same User, sent at once: no shared cooldown, no invalidation.
     await expect(reset.issue(userId, async () => {}, after(1))).resolves.toEqual({ status: "sent" });

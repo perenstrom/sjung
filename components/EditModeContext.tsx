@@ -18,17 +18,11 @@ const EditModeContext = createContext<EditModeContextValue | null>(null);
  * Member's Group access: without it edit mode never turns on. The server still
  * enforces the permission on every change; this only hides what would fail.
  */
-export function EditModeProvider({
-  canEdit,
-  children,
-}: Readonly<{ canEdit: boolean; children: React.ReactNode }>) {
+export function EditModeProvider({ canEdit, children }: Readonly<{ canEdit: boolean; children: React.ReactNode }>) {
   const [isEditingState, setIsEditing] = useState(false);
   const isEditing = canEdit && isEditingState;
 
-  const value = useMemo<EditModeContextValue>(
-    () => ({ canEdit, isEditing, setIsEditing }),
-    [canEdit, isEditing]
-  );
+  const value = useMemo<EditModeContextValue>(() => ({ canEdit, isEditing, setIsEditing }), [canEdit, isEditing]);
 
   return <EditModeContext.Provider value={value}>{children}</EditModeContext.Provider>;
 }

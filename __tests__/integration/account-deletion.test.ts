@@ -205,13 +205,13 @@ describe("deleteOwnAccount", () => {
     expect(
       await testPrisma.invitation.findUnique({
         where: { groupId_email: { groupId: otherGroup.id, email: "anna@example.com" } },
-      })
+      }),
     ).not.toBeNull();
     expect(
       await testPrisma.invitation.findUnique({
         where: { groupId_email: { groupId: sharedGroup.id, email: "bertil@example.com" } },
         select: { invitedById: true },
-      })
+      }),
     ).toEqual({ invitedById: null });
   });
 
@@ -228,7 +228,7 @@ describe("deleteOwnAccount", () => {
       await testPrisma.announcement.findUnique({
         where: { id: written.id },
         select: { createdById: true, updatedById: true },
-      })
+      }),
     ).toEqual({ createdById: null, updatedById: null });
   });
 

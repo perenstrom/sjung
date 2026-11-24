@@ -2,14 +2,7 @@ import { GroupMemberClaimBadges } from "@/components/GroupMemberClaimBadges";
 import { GroupMemberClaimsDialog } from "@/components/GroupMemberClaimsDialog";
 import { RemoveGroupMemberDialog } from "@/components/RemoveGroupMemberDialog";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { GroupClaim } from "@/app/generated/prisma/enums";
 
 export type GroupMembersTableRow = {
@@ -25,13 +18,7 @@ export type GroupMembersTableRow = {
 const EMPTY_LABEL = "Inga medlemmar hittades.";
 
 /** A Group's Members as a table from `md` up and as the shared mobile list below it. */
-export function GroupMembersTable({
-  groupSlug,
-  members,
-}: {
-  groupSlug: string;
-  members: GroupMembersTableRow[];
-}) {
+export function GroupMembersTable({ groupSlug, members }: { groupSlug: string; members: GroupMembersTableRow[] }) {
   return (
     <>
       <MobileList>
@@ -43,11 +30,7 @@ export function GroupMembersTable({
               key={member.id}
               primary={member.name}
               secondary={member.email}
-              trailing={
-                member.canChange ? (
-                  <MemberActions groupSlug={groupSlug} member={member} />
-                ) : null
-              }
+              trailing={member.canChange ? <MemberActions groupSlug={groupSlug} member={member} /> : null}
             >
               <GroupMemberClaimBadges member={member} empty={null} className="mt-1.5" />
             </MobileListRow>
@@ -97,13 +80,7 @@ export function GroupMembersTable({
   );
 }
 
-function MemberActions({
-  groupSlug,
-  member,
-}: {
-  groupSlug: string;
-  member: GroupMembersTableRow;
-}) {
+function MemberActions({ groupSlug, member }: { groupSlug: string; member: GroupMembersTableRow }) {
   return (
     <div className="flex gap-1">
       <GroupMemberClaimsDialog groupSlug={groupSlug} member={member} />

@@ -1,8 +1,4 @@
-import {
-  BUILT_IN_CREDIT_ROLES,
-  MAX_CREDIT_ROLE_LENGTH,
-  resolveCreditRole,
-} from "@/lib/pieces/credit-roles";
+import { BUILT_IN_CREDIT_ROLES, MAX_CREDIT_ROLE_LENGTH, resolveCreditRole } from "@/lib/pieces/credit-roles";
 import { matchKey, normalizeSpacing } from "@/lib/text/match-key";
 
 /**
@@ -178,11 +174,7 @@ function readRecords(text: string, delimiter: ImportDelimiter): RawRecord[] {
 }
 
 /** The quoted cell's text from just after its opening `"`, or null when it never closes. */
-function readQuoted(
-  text: string,
-  from: number,
-  delimiter: ImportDelimiter
-): { value: string; end: number } | null {
+function readQuoted(text: string, from: number, delimiter: ImportDelimiter): { value: string; end: number } | null {
   let value = "";
   for (let i = from; i < text.length; i++) {
     if (text[i] !== '"') {
@@ -202,7 +194,10 @@ function readQuoted(
 const isBlank = (record: RawRecord) => record.error === null && record.cells.every((c) => c.trim() === "");
 
 function splitNames(cell: string): string[] {
-  return cell.split(";").map(normalizeSpacing).filter((name) => name !== "");
+  return cell
+    .split(";")
+    .map(normalizeSpacing)
+    .filter((name) => name !== "");
 }
 
 function readColumns(header: string[], group: ImportGroup, choices: ImportChoices): ImportColumn[] {

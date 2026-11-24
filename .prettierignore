@@ -1,0 +1,13 @@
+# Prettier also skips everything in .gitignore.
+
+# Written by release-please.
+CHANGELOG.md
+
+# Player assets copied from node_modules (scripts/copy-player-assets.mjs).
+public/vendor/
+
+# Local agent worktrees.
+.claude/worktrees/
+
+# Lockfiles.
+package-lock.json

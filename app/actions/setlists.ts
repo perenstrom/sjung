@@ -3,10 +3,7 @@
 import { findInGroup } from "@/lib/find-in-group";
 import prisma from "@/lib/prisma";
 import { parsePieceIdFromFormData } from "@/lib/schemas/pieces";
-import {
-  parseWritableGroupSlugFromFormData,
-  parseWritableGroupSlugParam,
-} from "@/lib/schemas/people";
+import { parseWritableGroupSlugFromFormData, parseWritableGroupSlugParam } from "@/lib/schemas/people";
 import {
   parseOptionalSetListDateFromFormData,
   parseOrderedSetListStepIdsFromFormData,
@@ -51,10 +48,7 @@ export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
   });
 }
 
-export async function getSetListDetail(
-  groupSlug: string,
-  setListId: string
-): Promise<SetListDetail | null> {
+export async function getSetListDetail(groupSlug: string, setListId: string): Promise<SetListDetail | null> {
   const { groupId } = await getWritableGroupIdForSlug(groupSlug);
   const setList = await prisma.setList.findFirst({
     where: { id: setListId, groupId },

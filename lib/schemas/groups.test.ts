@@ -27,17 +27,13 @@ describe("groupNameSchema", () => {
   it("rejects empty and whitespace-only values with Gruppnamn krävs", () => {
     expect(() => groupNameSchema.parse("")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Gruppnamn krävs" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Gruppnamn krävs" })]),
+      }),
     );
     expect(() => groupNameSchema.parse("   ")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Gruppnamn krävs" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Gruppnamn krävs" })]),
+      }),
     );
   });
 });
@@ -49,12 +45,8 @@ describe("parseGroupNameFromFormData", () => {
   });
 
   it("throws Gruppnamn krävs when name is missing or empty", () => {
-    expect(() => parseGroupNameFromFormData(createFormData({}))).toThrow(
-      "Gruppnamn krävs"
-    );
-    expect(() =>
-      parseGroupNameFromFormData(createFormData({ name: "  " }))
-    ).toThrow("Gruppnamn krävs");
+    expect(() => parseGroupNameFromFormData(createFormData({}))).toThrow("Gruppnamn krävs");
+    expect(() => parseGroupNameFromFormData(createFormData({ name: "  " }))).toThrow("Gruppnamn krävs");
   });
 });
 
@@ -66,49 +58,37 @@ describe("groupSlugSchema", () => {
   it("rejects empty with Ogiltig grupp", () => {
     expect(() => groupSlugSchema.parse("")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Ogiltig grupp" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Ogiltig grupp" })]),
+      }),
     );
     expect(() => groupSlugSchema.parse("   ")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Ogiltig grupp" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Ogiltig grupp" })]),
+      }),
     );
   });
 });
 
 describe("inviteEmailSchema", () => {
   it("trims and lowercases", () => {
-    expect(inviteEmailSchema.parse("  User@EXAMPLE.com  ")).toBe(
-      "user@example.com"
-    );
+    expect(inviteEmailSchema.parse("  User@EXAMPLE.com  ")).toBe("user@example.com");
   });
 
   it("rejects empty with E-post krävs", () => {
     expect(() => inviteEmailSchema.parse("")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "E-post krävs" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "E-post krävs" })]),
+      }),
     );
     expect(() => inviteEmailSchema.parse("   ")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "E-post krävs" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "E-post krävs" })]),
+      }),
     );
   });
 
   it("rejects something that isn't an email address", () => {
-    expect(inviteEmailSchema.safeParse("inte en adress").error?.issues[0]?.message).toBe(
-      "Ange en giltig e-postadress"
-    );
+    expect(inviteEmailSchema.safeParse("inte en adress").error?.issues[0]?.message).toBe("Ange en giltig e-postadress");
   });
 });
 
@@ -120,10 +100,8 @@ describe("memberUserIdSchema", () => {
   it("rejects empty with Ogiltig medlem", () => {
     expect(() => memberUserIdSchema.parse("")).toThrowError(
       expect.objectContaining({
-        issues: expect.arrayContaining([
-          expect.objectContaining({ message: "Ogiltig medlem" }),
-        ]),
-      })
+        issues: expect.arrayContaining([expect.objectContaining({ message: "Ogiltig medlem" })]),
+      }),
     );
   });
 });
@@ -135,14 +113,8 @@ describe("parseGroupSlugFromFormData", () => {
   });
 
   it("throws Ogiltig grupp when missing or blank", () => {
-    expect(() => parseGroupSlugFromFormData(createFormData({}))).toThrow(
-      "Ogiltig grupp"
-    );
-    expect(() =>
-      parseGroupSlugFromFormData(
-        createFormData({ groupSlug: "   " })
-      )
-    ).toThrow("Ogiltig grupp");
+    expect(() => parseGroupSlugFromFormData(createFormData({}))).toThrow("Ogiltig grupp");
+    expect(() => parseGroupSlugFromFormData(createFormData({ groupSlug: "   " }))).toThrow("Ogiltig grupp");
   });
 });
 
@@ -151,18 +123,12 @@ describe("parseMemberUserIdFromFormData", () => {
     const fd = createFormData({
       memberUserId: "  550e8400-e29b-41d4-a716-446655440000  ",
     });
-    expect(parseMemberUserIdFromFormData(fd)).toBe(
-      "550e8400-e29b-41d4-a716-446655440000"
-    );
+    expect(parseMemberUserIdFromFormData(fd)).toBe("550e8400-e29b-41d4-a716-446655440000");
   });
 
   it("throws Ogiltig medlem when missing or blank", () => {
-    expect(() => parseMemberUserIdFromFormData(createFormData({}))).toThrow(
-      "Ogiltig medlem"
-    );
-    expect(() =>
-      parseMemberUserIdFromFormData(createFormData({ memberUserId: "  " }))
-    ).toThrow("Ogiltig medlem");
+    expect(() => parseMemberUserIdFromFormData(createFormData({}))).toThrow("Ogiltig medlem");
+    expect(() => parseMemberUserIdFromFormData(createFormData({ memberUserId: "  " }))).toThrow("Ogiltig medlem");
   });
 });
 
@@ -181,15 +147,13 @@ describe("parseGroupClaimsFromFormData", () => {
 
   it("parses every submitted Claim, dropping duplicates", () => {
     expect(
-      parseGroupClaimsFromFormData(
-        claimsFormData(["MANAGE_CONTENT", "MANAGE_MEMBERS", "MANAGE_CONTENT"])
-      )
+      parseGroupClaimsFromFormData(claimsFormData(["MANAGE_CONTENT", "MANAGE_MEMBERS", "MANAGE_CONTENT"])),
     ).toEqual(["MANAGE_CONTENT", "MANAGE_MEMBERS"]);
   });
 
   it("throws Ogiltig behörighet when any value is not a known Claim", () => {
-    expect(() =>
-      parseGroupClaimsFromFormData(claimsFormData(["MANAGE_MEMBERS", "ADMIN"]))
-    ).toThrow("Ogiltig behörighet");
+    expect(() => parseGroupClaimsFromFormData(claimsFormData(["MANAGE_MEMBERS", "ADMIN"]))).toThrow(
+      "Ogiltig behörighet",
+    );
   });
 });

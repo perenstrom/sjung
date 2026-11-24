@@ -7,18 +7,14 @@ import { PieceImportPreview } from "./PieceImportPreview";
 
 describe("PieceImportPreview", () => {
   const plan = buildImportPlan(
-    [
-      "Titel\tKompositör\tÅr",
-      "Kyrie\tHugo Alfvén; Ny Person\t1791",
-      "\tOkänd\t",
-      "Gloria\t\t",
-      "kyrie\t\t",
-    ].join("\n"),
+    ["Titel\tKompositör\tÅr", "Kyrie\tHugo Alfvén; Ny Person\t1791", "\tOkänd\t", "Gloria\t\t", "kyrie\t\t"].join("\n"),
     { people: [{ id: "hugo", name: "Hugo Alfvén" }], creditRoles: ["Kompositör"], pieceTitles: ["Gloria"] },
-    NO_IMPORT_CHOICES
+    NO_IMPORT_CHOICES,
   ) as ImportPreview;
   const text = textOf(
-    renderMarkup(createElement(PieceImportPreview, { preview: plan, onColumnChange: () => {}, onDuplicateChange: () => {} }))
+    renderMarkup(
+      createElement(PieceImportPreview, { preview: plan, onColumnChange: () => {}, onDuplicateChange: () => {} }),
+    ),
   );
 
   it("shows each row in pasted order with its People, its status or why it is skipped", () => {
@@ -26,7 +22,7 @@ describe("PieceImportPreview", () => {
       "2KyrieHugo AlfvénNy Person1791Läggs till" +
         "3 Okänd Hoppas över: Titel saknas" +
         "4GloriaTiteln finns redanLägg till ändå" +
-        "5kyrieDubblett av tidigare radLägg till ändå"
+        "5kyrieDubblett av tidigare radLägg till ändå",
     );
   });
 

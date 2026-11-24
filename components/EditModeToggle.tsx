@@ -26,20 +26,11 @@ export function EditModeToggle() {
     >
       {/* Both labels share one grid cell so the button keeps the wider one's width. */}
       <span className="grid">
-        <span
-          className={cn(
-            "col-start-1 row-start-1 inline-flex items-center gap-2",
-            isEditing && "invisible"
-          )}
-        >
+        <span className={cn("col-start-1 row-start-1 inline-flex items-center gap-2", isEditing && "invisible")}>
           <Pencil aria-hidden="true" />
           Redigera
         </span>
-        <span
-          className={cn("col-start-1 row-start-1 text-center", !isEditing && "invisible")}
-        >
-          Klar
-        </span>
+        <span className={cn("col-start-1 row-start-1 text-center", !isEditing && "invisible")}>Klar</span>
       </span>
     </Button>
   );

@@ -15,9 +15,7 @@ type NewPasswordPageProps = {
 // (`setNewPassword`). Same reasoning as the verify-email confirm page.
 export default async function NewPasswordPage({ searchParams }: NewPasswordPageProps) {
   const { token } = await searchParams;
-  const tokenState = token
-    ? await getPasswordResetTokenState(token)
-    : { state: "invalid" as const };
+  const tokenState = token ? await getPasswordResetTokenState(token) : { state: "invalid" as const };
 
   return (
     <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">

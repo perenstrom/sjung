@@ -19,8 +19,7 @@ import { runContentMutation } from "@/lib/tenant-group";
 
 export async function createPieceFileUploadUrl(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
-  const { pieceId, fileName, mimeType, size } =
-    parseCreatePieceFileUploadFromFormData(formData);
+  const { pieceId, fileName, mimeType, size } = parseCreatePieceFileUploadFromFormData(formData);
 
   return runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId, { select: fileStore.STORE_PIECE_SELECT });
@@ -30,8 +29,7 @@ export async function createPieceFileUploadUrl(formData: FormData) {
 
 export async function finalizePieceFileUpload(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
-  const { pieceId, fileName, storagePath, displayName } =
-    parseFinalizePieceFileUploadFromFormData(formData);
+  const { pieceId, fileName, storagePath, displayName } = parseFinalizePieceFileUploadFromFormData(formData);
   const typedCategory = parseCategoryFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
@@ -43,7 +41,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
         displayName: displayName ?? fileName,
         category: await resolveCategoryInGroup(groupId, typedCategory),
         userId,
-      }
+      },
     );
 
     await revalidatePieceRoutes(groupSlug, piece.id);
@@ -52,8 +50,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
 
 export async function createPieceFileReplaceUploadUrl(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
-  const { fileId, fileName, mimeType, size } =
-    parseCreatePieceFileReplaceUploadFromFormData(formData);
+  const { fileId, fileName, mimeType, size } = parseCreatePieceFileReplaceUploadFromFormData(formData);
 
   return runContentMutation(groupSlug, async ({ groupId }) => {
     const file = await findInGroup(groupId, "file", fileId, { select: fileStore.STORE_FILE_SELECT });

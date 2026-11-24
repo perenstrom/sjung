@@ -2,11 +2,7 @@
 
 import { useEditMode } from "@/components/EditModeContext";
 import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
-import {
-  PieceNotesPanel,
-  usePieceNotes,
-  type PieceNotesState,
-} from "@/components/pieces/PieceNotesPanel";
+import { PieceNotesPanel, usePieceNotes, type PieceNotesState } from "@/components/pieces/PieceNotesPanel";
 import type { PieceNoteListItem } from "@/lib/pieces/types";
 
 type PieceDetailNotesSectionProps = {
@@ -15,11 +11,7 @@ type PieceDetailNotesSectionProps = {
   notes: PieceNoteListItem[];
 };
 
-export function PieceDetailNotesSection({
-  groupSlug,
-  pieceId,
-  notes,
-}: PieceDetailNotesSectionProps) {
+export function PieceDetailNotesSection({ groupSlug, pieceId, notes }: PieceDetailNotesSectionProps) {
   const { isEditing } = useEditMode();
   // Note mutations don't revalidate the page, so the list is held here, above the
   // remount, to keep client-side changes when edit mode is toggled.
@@ -50,12 +42,7 @@ function PieceDetailNotesBody({
 }) {
   return (
     <PieceDetailSectionLayout title="Anteckningar">
-      <PieceNotesPanel
-        readOnly={readOnly}
-        groupSlug={groupSlug}
-        pieceId={pieceId}
-        list={list}
-      />
+      <PieceNotesPanel readOnly={readOnly} groupSlug={groupSlug} pieceId={pieceId} list={list} />
     </PieceDetailSectionLayout>
   );
 }

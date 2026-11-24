@@ -7,13 +7,7 @@ import type { Group, Piece, SetList } from "@/app/generated/prisma/client";
 import { getPieceDetail } from "@/app/actions/pieces";
 import { removePieceFromWholeSetList } from "@/app/actions/setlists";
 import { testPrisma } from "../support/db";
-import {
-  createGroup,
-  createPiece,
-  createSetList,
-  createSetListNote,
-  createSetListPiece,
-} from "../support/fixtures";
+import { createGroup, createPiece, createSetList, createSetListNote, createSetListPiece } from "../support/fixtures";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 
@@ -48,16 +42,14 @@ describe("a Piece in the same Set list more than once", () => {
     const otherStep = await createSetListPiece(setListA, otherPiece, 2000);
     const note = await createSetListNote(setListA, "Paus", 4000);
 
-    await removePieceFromWholeSetList(
-      formData({ groupSlug: group.slug, setListId: setListA.id, pieceId: piece.id })
-    );
+    await removePieceFromWholeSetList(formData({ groupSlug: group.slug, setListId: setListA.id, pieceId: piece.id }));
 
     const remaining = await testPrisma.setListPiece.findMany({ select: { id: true, setListId: true } });
     expect(remaining).toEqual(
       expect.arrayContaining([
         { id: otherStep.id, setListId: setListA.id },
         { id: expect.any(String), setListId: setListB.id },
-      ])
+      ]),
     );
     expect(remaining).toHaveLength(2);
     expect(await testPrisma.setListNote.count({ where: { id: note.id } })).toBe(1);
@@ -80,8 +72,8 @@ describe("a Piece in the same Set list more than once", () => {
           setListId: setListA.id,
           pieceId: piece.id,
           [field]: foreign[field],
-        })
-      )
+        }),
+      ),
     ).rejects.toThrow(message);
     expect(await testPrisma.setListPiece.count()).toBe(3);
   });

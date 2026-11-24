@@ -30,8 +30,17 @@ function midiFile(events: Event[]): BasicMIDI {
   }
   body.push(0, 0xff, 0x2f, 0x00);
   const bytes = [
-    ...ascii("MThd"), ...uint32(6), 0, 0, 0, 1, TICKS_PER_QUARTER >> 8, TICKS_PER_QUARTER & 0xff,
-    ...ascii("MTrk"), ...uint32(body.length), ...body,
+    ...ascii("MThd"),
+    ...uint32(6),
+    0,
+    0,
+    0,
+    1,
+    TICKS_PER_QUARTER >> 8,
+    TICKS_PER_QUARTER & 0xff,
+    ...ascii("MTrk"),
+    ...uint32(body.length),
+    ...body,
   ];
   return BasicMIDI.fromArrayBuffer(new Uint8Array(bytes).buffer);
 }

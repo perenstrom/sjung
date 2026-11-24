@@ -25,10 +25,7 @@ export type SetListsTableRow = {
 };
 
 /** Desktop columns: Namn and Datum sort on click; Åtgärder only in edit mode. */
-export function setListsColumns(
-  groupSlug: string,
-  isEditing: boolean
-): ColumnDef<SetListsTableRow>[] {
+export function setListsColumns(groupSlug: string, isEditing: boolean): ColumnDef<SetListsTableRow>[] {
   return [
     {
       accessorKey: "name",
@@ -36,10 +33,7 @@ export function setListsColumns(
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namn" />,
       cell: ({ row }) => (
         <SetListName current={row.original.current}>
-          <Link
-            href={`/app/${groupSlug}/setlists/${row.original.id}`}
-            className="underline-offset-4 hover:underline"
-          >
+          <Link href={`/app/${groupSlug}/setlists/${row.original.id}`} className="underline-offset-4 hover:underline">
             {row.original.name}
           </Link>
         </SetListName>
@@ -85,20 +79,11 @@ function getRowId(row: SetListsTableRow): string {
  * headings re-sort every Set list by that column alone. The mobile list keeps
  * the default order.
  */
-export function SetListsTable({
-  setLists,
-  groupSlug,
-}: {
-  setLists: SetListsTableRow[];
-  groupSlug: string;
-}) {
+export function SetListsTable({ setLists, groupSlug }: { setLists: SetListsTableRow[]; groupSlug: string }) {
   const { isEditing } = useEditMode();
   // In the default order, so the mobile list matches the table and, once a
   // heading is clicked, Set lists that tie keep it.
-  const sortedSetLists = useMemo(
-    () => [...setLists].sort(compareSetListsByDefault),
-    [setLists]
-  );
+  const sortedSetLists = useMemo(() => [...setLists].sort(compareSetListsByDefault), [setLists]);
   const columns = useMemo(() => setListsColumns(groupSlug, isEditing), [groupSlug, isEditing]);
 
   return (
@@ -144,7 +129,7 @@ function SetListsMobileList({
               isEditing ? (
                 <SetListRowActions groupSlug={groupSlug} setList={setList} trigger="icon" />
               ) : (
-                <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
               )
             }
           />

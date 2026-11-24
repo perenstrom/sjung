@@ -10,14 +10,14 @@ let failingDeletes = new Set<string>();
 
 export async function signPut(
   key: string,
-  { contentType, size }: { contentType: string; size: number; expiresInSeconds: number }
+  { contentType, size }: { contentType: string; size: number; expiresInSeconds: number },
 ): Promise<string> {
   return `fake-storage://put/${key}?type=${encodeURIComponent(contentType)}&size=${size}`;
 }
 
 export async function signGet(
   key: string,
-  { contentDisposition }: { contentType: string; contentDisposition: string; expiresInSeconds: number }
+  { contentDisposition }: { contentType: string; contentDisposition: string; expiresInSeconds: number },
 ): Promise<string> {
   return `fake-storage://get/${key}?disposition=${encodeURIComponent(contentDisposition)}`;
 }
@@ -25,7 +25,7 @@ export async function signGet(
 export async function putObject(
   key: string,
   body: Uint8Array,
-  { contentType }: { contentType: string }
+  { contentType }: { contentType: string },
 ): Promise<void> {
   objects.set(key, { size: body.byteLength, contentType });
 }
@@ -51,10 +51,7 @@ export async function deletePrefix(prefix: string): Promise<DeleteObjectsResult>
 }
 
 /** Stands in for the browser's PUT to a signed upload URL. */
-export function putStoredObject(
-  key: string,
-  object: StoredObject = { size: 1024, contentType: "application/pdf" }
-) {
+export function putStoredObject(key: string, object: StoredObject = { size: 1024, contentType: "application/pdf" }) {
   objects.set(key, object);
 }
 

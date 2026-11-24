@@ -52,14 +52,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { spanCells } from "@/lib/data-table/cellSpans";
 import { type DataTableFeatures, dataTableFeatures } from "@/lib/data-table/features";
 import { cn } from "@/lib/utils";
@@ -140,10 +133,7 @@ export function DataTable<TData extends RowData>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className={header.column.columnDef.meta?.headerClassName}
-                >
+                <TableHead key={header.id} className={header.column.columnDef.meta?.headerClassName}>
                   {header.isPlaceholder ? null : <FlexRender header={header} />}
                 </TableHead>
               ))}
@@ -158,7 +148,7 @@ export function DataTable<TData extends RowData>({
                 <TableRow>
                   {spanCells(
                     row.getAllCells(),
-                    (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1
+                    (cell) => cell.column.columnDef.meta?.getColSpan?.(row.original) ?? 1,
                   ).map(({ cell, colSpan }) => (
                     <TableCell
                       key={cell.id}
@@ -173,10 +163,7 @@ export function DataTable<TData extends RowData>({
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="text-muted-foreground"
-              >
+              <TableCell colSpan={columns.length} className="text-muted-foreground">
                 {emptyMessage}
               </TableCell>
             </TableRow>
@@ -214,13 +201,7 @@ export function DataTableColumnHeader<TData extends RowData, TValue extends Cell
       onClick={() => column.toggleSorting(sorted === "asc")}
     >
       {title}
-      {sorted === "asc" ? (
-        <ArrowUp />
-      ) : sorted === "desc" ? (
-        <ArrowDown />
-      ) : (
-        <ArrowUpDown />
-      )}
+      {sorted === "asc" ? <ArrowUp /> : sorted === "desc" ? <ArrowDown /> : <ArrowUpDown />}
     </Button>
   );
 }

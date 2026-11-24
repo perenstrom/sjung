@@ -14,8 +14,8 @@ function emailText(versions: Pick<FeedbackEmailProps, "browserAppVersion" | "ser
         environment: "staging",
         userAgent: "Firefox",
         ...versions,
-      })
-    )
+      }),
+    ),
   );
 }
 

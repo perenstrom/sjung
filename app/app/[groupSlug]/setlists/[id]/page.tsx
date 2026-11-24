@@ -1,9 +1,5 @@
 import { getCategories, getCreditRoles } from "@/app/actions/pieces";
-import {
-  appendSetListNote,
-  getSetListDetail,
-  getSetListPieceOptions,
-} from "@/app/actions/setlists";
+import { appendSetListNote, getSetListDetail, getSetListPieceOptions } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
 import { getPeople } from "@/app/actions/people";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
@@ -14,11 +10,7 @@ import { SetListName } from "@/components/setlists/SetListName";
 import { PieceCategoriesProvider } from "@/components/pieces/CategoryPicker";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
 import { AddPieceToSetListForm } from "@/components/AddPieceToSetListForm";
-import {
-  createGroupAncestor,
-  createSetListsAncestor,
-  setListCrumbLabel,
-} from "@/lib/breadcrumbs";
+import { createGroupAncestor, createSetListsAncestor, setListCrumbLabel } from "@/lib/breadcrumbs";
 import { formatDate } from "@/lib/format-date";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,17 +44,12 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
           <BreadcrumbRegistrar
             trail={{
               visibility: "visible",
-              ancestors: [
-                createGroupAncestor(groupSlug, groupName),
-                createSetListsAncestor(groupSlug),
-              ],
+              ancestors: [createGroupAncestor(groupSlug, groupName), createSetListsAncestor(groupSlug)],
               tail: { kind: "static", label: setListCrumbLabel(setList.name) },
             }}
           />
           <div className="space-y-2">
-            <PageHeader
-              title={<SetListName current={setList.current}>{setList.name}</SetListName>}
-            />
+            <PageHeader title={<SetListName current={setList.current}>{setList.name}</SetListName>} />
             <p className="text-sm text-muted-foreground">Datum: {formatDate(setList.date) ?? "–"}</p>
           </div>
 

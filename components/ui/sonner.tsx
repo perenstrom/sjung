@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 /** The app's one toast outlet, styled with the theme tokens. The app has no dark mode yet. */
 function Toaster(props: ToasterProps) {
@@ -17,7 +17,7 @@ function Toaster(props: ToasterProps) {
       }
       {...props}
     />
-  )
+  );
 }
 
-export { Toaster }
+export { Toaster };

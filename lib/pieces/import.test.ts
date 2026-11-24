@@ -102,7 +102,9 @@ describe("reading the pasted rows", () => {
   });
 
   it("skips a row whose stray quote would otherwise swallow the rows up to the next quote", () => {
-    const plan = preview(['Titel\tKompositör', '"Sanctus\tOkänd', "Benedictus\tOkänd", '"Agnus Dei"\tOkänd'].join("\n"));
+    const plan = preview(
+      ["Titel\tKompositör", '"Sanctus\tOkänd', "Benedictus\tOkänd", '"Agnus Dei"\tOkänd'].join("\n"),
+    );
 
     expect(plan.skipped.map(({ line, reason }) => [line, reason])).toEqual([[2, "Ett citattecken stängs aldrig"]]);
     expect(plan.rows.map((row) => row.title)).toEqual(["Benedictus", "Agnus Dei"]);
@@ -178,7 +180,10 @@ describe("matching People and Credits", () => {
   });
 
   it("gives a Person named in several cells of a row one Credit per role, and counts a repeated name once", () => {
-    const text = tsv(["Titel", "Kompositör", "Textförfattare"], ["Kom i min famn", "Benny Andersson; benny andersson", "BENNY ANDERSSON"]);
+    const text = tsv(
+      ["Titel", "Kompositör", "Textförfattare"],
+      ["Kom i min famn", "Benny Andersson; benny andersson", "BENNY ANDERSSON"],
+    );
 
     expect(added(preview(text, group))).toEqual(["Kom i min famn: Benny Andersson (Kompositör, Textförfattare)"]);
   });
@@ -250,7 +255,7 @@ describe("the summary counts", () => {
       ["Titel", "Kompositör", "Dirigent", "Arrangör"],
       ["Kyrie", "Mozart", "Eric Ericson", ""],
       ["Gloria", "Vivaldi", "", "Okänd"],
-      ["", "Okänd", "", ""]
+      ["", "Okänd", "", ""],
     );
 
     expect(preview(text, group).counts).toEqual({

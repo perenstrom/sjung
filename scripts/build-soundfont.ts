@@ -81,7 +81,7 @@ function encodeVorbis(audioData: Float32Array, sampleRate: number): Promise<Uint
         "ogg",
         "pipe:1",
       ],
-      { stdio: ["pipe", "pipe", "inherit"] }
+      { stdio: ["pipe", "pipe", "inherit"] },
     );
     const chunks: Buffer[] = [];
     ffmpeg.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));

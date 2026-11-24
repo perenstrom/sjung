@@ -73,7 +73,7 @@ export function DockButton({
       onClick={onClick}
       className={cn(
         "flex min-w-14 flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[11px]",
-        active ? "text-primary" : "text-muted-foreground"
+        active ? "text-primary" : "text-muted-foreground",
       )}
     >
       {icon}

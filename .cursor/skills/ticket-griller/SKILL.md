@@ -22,12 +22,12 @@ Run these lookups upfront; reuse the results for the rest of the session.
 
 Use the mode that matches what the user asked for:
 
-| Mode | When | What to do |
-|------|------|------------|
-| **Default** | User wants to grill "a" backlog ticket | `list_issues` with `project: "Sjung"`, `state: "Backlog"`, `orderBy: "createdAt"`. Pick highest priority first; oldest `createdAt` as tiebreaker. |
-| **Specific ticket** | User names an id (e.g. `SJ-42`, `PER-42`) | `get_issue` for that id only — skip backlog listing. |
-| **Re-grill** | User wants to refine a ticket already in Todo | `get_issue` for that ticket; stay in or return to Todo after update (do not move to Backlog). |
-| **Not in Linear yet** | User describes work with no issue | Grill from their description; after Step 5, offer to create a Backlog ticket via `linear-ticket-creator` instead of `save_issue` on a missing id. |
+| Mode                  | When                                          | What to do                                                                                                                                        |
+| --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Default**           | User wants to grill "a" backlog ticket        | `list_issues` with `project: "Sjung"`, `state: "Backlog"`, `orderBy: "createdAt"`. Pick highest priority first; oldest `createdAt` as tiebreaker. |
+| **Specific ticket**   | User names an id (e.g. `SJ-42`, `PER-42`)     | `get_issue` for that id only — skip backlog listing.                                                                                              |
+| **Re-grill**          | User wants to refine a ticket already in Todo | `get_issue` for that ticket; stay in or return to Todo after update (do not move to Backlog).                                                     |
+| **Not in Linear yet** | User describes work with no issue             | Grill from their description; after Step 5, offer to create a Backlog ticket via `linear-ticket-creator` instead of `save_issue` on a missing id. |
 
 For every selected ticket:
 
@@ -149,24 +149,24 @@ Read `.cursor/skills/_shared/codebase-reference.md` for routes, actions, convent
 
 Same as **linear-ticket-creator**: exactly one of `XS`, `S`, `M`, `L`, `XL` per ticket on the **Per Enström** team.
 
-| Label | Meaning |
-|-------|--------|
-| `XS` | Trivial: few lines or one obvious file. |
-| `S` | Small: few files, follows existing patterns. |
-| `M` | Medium: several files or some edge-case judgment. |
-| `L` | Large: broad touch surface, schema/auth, or major UI flows. |
-| `XL` | Extra large: should usually be split; do not move to Todo as XL without slicing. |
+| Label | Meaning                                                                          |
+| ----- | -------------------------------------------------------------------------------- |
+| `XS`  | Trivial: few lines or one obvious file.                                          |
+| `S`   | Small: few files, follows existing patterns.                                     |
+| `M`   | Medium: several files or some edge-case judgment.                                |
+| `L`   | Large: broad touch surface, schema/auth, or major UI flows.                      |
+| `XL`  | Extra large: should usually be split; do not move to Todo as XL without slicing. |
 
 ## MCP Tools Reference
 
 Server: `plugin-linear-linear` — read tool descriptors before calling.
 
-| Task | Tool |
-|------|------|
-| List teams | `list_teams` |
-| List issue statuses | `list_issue_statuses` (requires `team`) |
-| List projects | `list_projects` |
-| List issue labels (size) | `list_issue_labels` (pass `team`) |
-| List backlog issues | `list_issues` |
-| Get full issue + relations | `get_issue` (`includeRelations: true`) |
-| Update issue | `save_issue` |
+| Task                       | Tool                                    |
+| -------------------------- | --------------------------------------- |
+| List teams                 | `list_teams`                            |
+| List issue statuses        | `list_issue_statuses` (requires `team`) |
+| List projects              | `list_projects`                         |
+| List issue labels (size)   | `list_issue_labels` (pass `team`)       |
+| List backlog issues        | `list_issues`                           |
+| Get full issue + relations | `get_issue` (`includeRelations: true`)  |
+| Update issue               | `save_issue`                            |

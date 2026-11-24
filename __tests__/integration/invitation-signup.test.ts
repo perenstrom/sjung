@@ -80,7 +80,7 @@ describe("signUpFromInvitationForm", () => {
     const { token } = await inviteToNewGroup("anna@example.com");
 
     await expect(
-      signUpFromInvitationForm(null, signupForm(token, { passwordConfirmation: "något helt annat" }))
+      signUpFromInvitationForm(null, signupForm(token, { passwordConfirmation: "något helt annat" })),
     ).resolves.toEqual({
       error: "Lösenorden matchar inte",
       values: { name: "Anna", email: "anna@example.com" },
@@ -93,11 +93,11 @@ describe("signUpFromInvitationForm", () => {
     // Superseded by a re-send a minute later.
     await inviteToGroup(
       { groupId: group.id, email: "anna@example.com", invitedById: creator.id },
-      new Date(Date.now() + 61_000)
+      new Date(Date.now() + 61_000),
     );
 
     await expect(signUpFromInvitationForm(null, signupForm(token))).rejects.toThrow(
-      `redirect:/auth/signup?invitation=${token}`
+      `redirect:/auth/signup?invitation=${token}`,
     );
     expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(0);
     expect(mockSignIn).not.toHaveBeenCalled();

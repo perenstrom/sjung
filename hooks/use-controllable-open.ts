@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from "react";
 
 /**
  * Open state for a dialog or popover that its caller may control. Without an
@@ -11,26 +11,26 @@ export function useControllableOpen({
   onOpenChange,
   onClose,
 }: {
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  onClose?: () => void
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
 }) {
-  const [openInternal, setOpenInternal] = React.useState(false)
-  const isControlled = openControlled !== undefined
-  const open = isControlled ? openControlled : openInternal
+  const [openInternal, setOpenInternal] = React.useState(false);
+  const isControlled = openControlled !== undefined;
+  const open = isControlled ? openControlled : openInternal;
 
   const setOpen = React.useCallback(
     (nextOpen: boolean) => {
       if (!isControlled) {
-        setOpenInternal(nextOpen)
+        setOpenInternal(nextOpen);
       }
-      onOpenChange?.(nextOpen)
+      onOpenChange?.(nextOpen);
       if (!nextOpen) {
-        onClose?.()
+        onClose?.();
       }
     },
-    [isControlled, onOpenChange, onClose]
-  )
+    [isControlled, onOpenChange, onClose],
+  );
 
-  return { open, setOpen, isControlled }
+  return { open, setOpen, isControlled };
 }

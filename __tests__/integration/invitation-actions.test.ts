@@ -37,9 +37,7 @@ describe("acceptGroupInvitation", () => {
     const { group, token } = await inviteToNewGroup("anna@example.com");
     actAs(anna.id);
 
-    await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(
-      `redirect:/app/${group.slug}`
-    );
+    await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(`redirect:/app/${group.slug}`);
 
     expect(await isMember(anna.id, group.id)).toBe(true);
     expect(cookieJar.get(ACTIVE_GROUP_COOKIE_NAME)).toBe(group.slug);
@@ -50,9 +48,7 @@ describe("acceptGroupInvitation", () => {
     const { group, token } = await inviteToNewGroup("anna@example.com");
     actAs(anna.id);
 
-    await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(
-      `redirect:/app/${group.slug}`
-    );
+    await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(`redirect:/app/${group.slug}`);
 
     const updated = await testPrisma.user.findUniqueOrThrow({ where: { id: anna.id } });
     expect(updated.emailVerifiedAt).not.toBeNull();
@@ -63,9 +59,7 @@ describe("acceptGroupInvitation", () => {
     const { group, token } = await inviteToNewGroup("anna@example.com");
     actAs(bertil.id);
 
-    await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(
-      `redirect:/invitation?token=${token}`
-    );
+    await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(`redirect:/invitation?token=${token}`);
 
     expect(await isMember(bertil.id, group.id)).toBe(false);
     expect(cookieJar.has(ACTIVE_GROUP_COOKIE_NAME)).toBe(false);
@@ -76,7 +70,7 @@ describe("acceptGroupInvitation", () => {
     actAsAnonymous();
 
     await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(
-      `redirect:/auth/login?next=${encodeURIComponent(`/invitation?token=${token}`)}`
+      `redirect:/auth/login?next=${encodeURIComponent(`/invitation?token=${token}`)}`,
     );
   });
 });

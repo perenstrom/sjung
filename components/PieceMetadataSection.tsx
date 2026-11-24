@@ -15,9 +15,7 @@ type PieceMetadataSectionProps = {
   aliases: readonly PieceAliasItem[];
 };
 
-const renderHeading = (name: string) => (
-  <h1 className="min-w-0 text-2xl font-semibold break-words">{name}</h1>
-);
+const renderHeading = (name: string) => <h1 className="min-w-0 text-2xl font-semibold break-words">{name}</h1>;
 
 export function PieceMetadataSection({ groupSlug, pieceId, initialName, aliases }: PieceMetadataSectionProps) {
   const { isEditing } = useEditMode();

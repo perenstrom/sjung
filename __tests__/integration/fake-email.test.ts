@@ -14,9 +14,7 @@ describe("fake email", () => {
 
     await sendEmail({ to: "anna@example.com", subject: "Välkommen", react });
 
-    expect(sentEmails()).toEqual([
-      { to: "anna@example.com", subject: "Välkommen", react, text: "Hej Anna!" },
-    ]);
+    expect(sentEmails()).toEqual([{ to: "anna@example.com", subject: "Välkommen", react, text: "Hej Anna!" }]);
   });
 
   it("throws for a recipient marked to fail, without blocking other recipients", async () => {
@@ -27,7 +25,7 @@ describe("fake email", () => {
         to: "bertil@example.com",
         subject: "Välkommen",
         react: createElement(Greeting, { name: "Bertil" }),
-      })
+      }),
     ).rejects.toThrow();
     await sendEmail({
       to: "anna@example.com",
@@ -44,7 +42,7 @@ describe("fake email", () => {
     }
 
     await expect(
-      sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement(BrokenTemplate) })
+      sendEmail({ to: "anna@example.com", subject: "Välkommen", react: createElement(BrokenTemplate) }),
     ).rejects.toThrow("template exploded");
     expect(sentEmails()).toEqual([]);
   });

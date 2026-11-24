@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  DIALOG_STICKY_CLEARANCE_PX,
-  dialogFrame,
-  revealScrollDelta,
-} from "./dialogFrame";
+import { DIALOG_STICKY_CLEARANCE_PX, dialogFrame, revealScrollDelta } from "./dialogFrame";
 
 describe("dialogFrame", () => {
   it("pins the dialog 16px from the top of the visible area", () => {
@@ -34,27 +30,19 @@ describe("revealScrollDelta", () => {
   });
 
   it("scrolls down so a field hidden under the action row clears it", () => {
-    expect(revealScrollDelta({ top: 320, bottom: 364 }, body)).toBe(
-      364 - (364 - DIALOG_STICKY_CLEARANCE_PX),
-    );
+    expect(revealScrollDelta({ top: 320, bottom: 364 }, body)).toBe(364 - (364 - DIALOG_STICKY_CLEARANCE_PX));
   });
 
   it("scrolls up so a field hidden under the title row clears it", () => {
-    expect(revealScrollDelta({ top: 20, bottom: 64 }, body)).toBe(
-      20 - (16 + DIALOG_STICKY_CLEARANCE_PX),
-    );
+    expect(revealScrollDelta({ top: 20, bottom: 64 }, body)).toBe(20 - (16 + DIALOG_STICKY_CLEARANCE_PX));
   });
 
   it("puts the top of a block taller than the clear area just under the title row", () => {
     // e.g. the inline person picker: its search field first, then its results.
-    expect(revealScrollDelta({ top: 300, bottom: 600 }, body)).toBe(
-      300 - (16 + DIALOG_STICKY_CLEARANCE_PX),
-    );
+    expect(revealScrollDelta({ top: 300, bottom: 600 }, body)).toBe(300 - (16 + DIALOG_STICKY_CLEARANCE_PX));
   });
 
   it("leaves a tall block alone when its top already sits under the title row", () => {
-    expect(
-      revealScrollDelta({ top: 16 + DIALOG_STICKY_CLEARANCE_PX, bottom: 600 }, body),
-    ).toBe(0);
+    expect(revealScrollDelta({ top: 16 + DIALOG_STICKY_CLEARANCE_PX, bottom: 600 }, body)).toBe(0);
   });
 });

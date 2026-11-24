@@ -24,7 +24,7 @@ const BLOCKED_BY_SHARED_GROUP_ERROR = "Du är administratör för en grupp med a
  */
 export async function deleteOwnAccount(
   _prevState: DeleteAccountState,
-  formData: FormData
+  formData: FormData,
 ): Promise<DeleteAccountState> {
   const user = await requireUser();
 

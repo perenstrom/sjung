@@ -30,7 +30,7 @@ describe("assertNoDuplicateCredits", () => {
         { personId: "person-1", role: "Kompositör" },
         { personId: "person-1", role: "Textförfattare" },
         { personId: "person-2", role: "Kompositör" },
-      ])
+      ]),
     ).not.toThrow();
   });
 
@@ -39,7 +39,7 @@ describe("assertNoDuplicateCredits", () => {
       assertNoDuplicateCredits([
         { personId: "person-1", role: "Kompositör" },
         { personId: "person-1", role: "Kompositör" },
-      ])
+      ]),
     ).toThrow(DUPLICATE_CREDITS_ERROR);
   });
 });
@@ -132,11 +132,7 @@ describe("groupCreditsByPerson", () => {
       credit("p1", "Anna", "Annan roll"),
     ];
 
-    expect(groupCreditsByPerson(credits)[0].roles).toEqual([
-      "Textförfattare",
-      "Annan roll",
-      "Ösats",
-    ]);
+    expect(groupCreditsByPerson(credits)[0].roles).toEqual(["Textförfattare", "Annan roll", "Ösats"]);
   });
 
   it("orders people by their highest-ranked role, regardless of input order", () => {
@@ -148,12 +144,7 @@ describe("groupCreditsByPerson", () => {
       credit("p4", "David", "Kompositör"),
     ];
 
-    expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual([
-      "Cecilia",
-      "David",
-      "Anna",
-      "Bertil",
-    ]);
+    expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual(["Cecilia", "David", "Anna", "Bertil"]);
   });
 
   it("orders people with the same highest role by name using Swedish collation", () => {
@@ -164,27 +155,17 @@ describe("groupCreditsByPerson", () => {
       credit("p3", "Bertil", "Textförfattare"),
     ];
 
-    expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual([
-      "anna",
-      "Bertil",
-      "Östen",
-    ]);
+    expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual(["anna", "Bertil", "Östen"]);
   });
 
   it("ranks people holding only unknown roles alphabetically by that role", () => {
-    const credits = [
-      credit("p1", "Anna", "Ösats"),
-      credit("p2", "Bertil", "Annan roll"),
-    ];
+    const credits = [credit("p1", "Anna", "Ösats"), credit("p2", "Bertil", "Annan roll")];
 
     expect(groupCreditsByPerson(credits).map((p) => p.name)).toEqual(["Bertil", "Anna"]);
   });
 
   it("keeps two Persons with the same name apart", () => {
-    const credits = [
-      credit("p1", "Anna", "Kompositör"),
-      credit("p2", "Anna", "Textförfattare"),
-    ];
+    const credits = [credit("p1", "Anna", "Kompositör"), credit("p2", "Anna", "Textförfattare")];
 
     expect(groupCreditsByPerson(credits)).toEqual([
       { personId: "p1", name: "Anna", roles: ["Kompositör"] },
@@ -231,7 +212,11 @@ describe("groupCreditsByPiece", () => {
   it("keeps two Pieces with the same name apart", () => {
     const credits = [credit("p1", "Kyrie", "Kompositör"), credit("p2", "Kyrie", "Arrangör")];
 
-    expect(groupCreditsByPiece(credits).map((piece) => piece.pieceId).sort()).toEqual(["p1", "p2"]);
+    expect(
+      groupCreditsByPiece(credits)
+        .map((piece) => piece.pieceId)
+        .sort(),
+    ).toEqual(["p1", "p2"]);
   });
 });
 
@@ -243,9 +228,7 @@ describe("creditRolesHeldBy", () => {
   ];
 
   it("returns every Credit role the Person holds", () => {
-    expect(creditRolesHeldBy(credits, "person-1")).toEqual(
-      new Set(["Kompositör", "Textförfattare"])
-    );
+    expect(creditRolesHeldBy(credits, "person-1")).toEqual(new Set(["Kompositör", "Textförfattare"]));
   });
 
   it("returns an empty set for a Person without Credits", () => {
@@ -272,9 +255,7 @@ describe("resolveCreditsToSubmit", () => {
   });
 
   it("includes one Credit per role for a picked Person and roles not added yet", () => {
-    expect(
-      resolveCreditsToSubmit(staged, { personId: "person-3", roles: ["Textförfattare", "Arrangör"] })
-    ).toEqual({
+    expect(resolveCreditsToSubmit(staged, { personId: "person-3", roles: ["Textförfattare", "Arrangör"] })).toEqual({
       credits: [
         ...staged,
         { personId: "person-3", role: "Textförfattare" },
@@ -316,7 +297,7 @@ describe("withCreditDraftPerson", () => {
 
   it("drops picked roles the newly picked Person already holds, keeping the rest", () => {
     expect(
-      withCreditDraftPerson({ personId: "person-1", roles: ["Kompositör", "Dirigent"] }, credits, "person-2")
+      withCreditDraftPerson({ personId: "person-1", roles: ["Kompositör", "Dirigent"] }, credits, "person-2"),
     ).toEqual({ personId: "person-2", roles: ["Dirigent"] });
   });
 });
@@ -345,7 +326,7 @@ describe("formatCreditsLine", () => {
         credit("p2", "Bo", "Arrangör"),
         credit("p1", "Ann", "Textförfattare"),
         credit("p1", "Ann", "Kompositör"),
-      ])
+      ]),
     ).toBe("Bo (Arrangör) · Ann (Kompositör, Textförfattare)");
   });
 });

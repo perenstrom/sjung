@@ -27,12 +27,8 @@ export function diffCredits(current: PieceCredit[], next: PieceCredit[]) {
   const nextKeys = new Set(next.map(creditKey));
   const currentKeys = new Set(current.map(creditKey));
 
-  const creditsToCreate = next.filter(
-    (credit) => !currentKeys.has(creditKey(credit))
-  );
-  const creditsToDelete = current.filter(
-    (credit) => !nextKeys.has(creditKey(credit))
-  );
+  const creditsToCreate = next.filter((credit) => !currentKeys.has(creditKey(credit)));
+  const creditsToDelete = current.filter((credit) => !nextKeys.has(creditKey(credit)));
 
   return {
     creditsToCreate,
@@ -42,9 +38,7 @@ export function diffCredits(current: PieceCredit[], next: PieceCredit[]) {
 
 /** The Credit roles a Person already holds, so they can't be picked again. */
 export function creditRolesHeldBy(credits: PieceCredit[], personId: string): Set<string> {
-  return new Set(
-    credits.filter((credit) => credit.personId === personId).map((credit) => credit.role)
-  );
+  return new Set(credits.filter((credit) => credit.personId === personId).map((credit) => credit.role));
 }
 
 /** The Person and Credit roles picked in an add-credit row; either may still be empty. */
@@ -78,11 +72,7 @@ export function creditsFromDraft(draft: CreditDraft): PieceCredit[] {
 }
 
 /** The draft with another Person picked, dropping picked roles that Person already holds. */
-export function withCreditDraftPerson(
-  draft: CreditDraft,
-  credits: PieceCredit[],
-  personId: string
-): CreditDraft {
+export function withCreditDraftPerson(draft: CreditDraft, credits: PieceCredit[], personId: string): CreditDraft {
   const held = creditRolesHeldBy(credits, personId);
   return { personId, roles: draft.roles.filter((role) => !held.has(role)) };
 }
@@ -99,7 +89,7 @@ export function toggleCreditRole(roles: string[], role: string): string[] {
  */
 export function resolveCreditsToSubmit(
   staged: PieceCredit[],
-  draft: CreditDraft
+  draft: CreditDraft,
 ): { credits: PieceCredit[] } | { error: string } {
   if (!draft.personId && draft.roles.length === 0) return { credits: staged };
   const error = creditDraftError(draft);
@@ -123,7 +113,7 @@ export type CreditedPerson = {
 function mergeRolesBy<T extends { role: string }>(
   credits: T[],
   key: (credit: T) => string,
-  name: (credit: T) => string
+  name: (credit: T) => string,
 ): { key: string; name: string; roles: string[] }[] {
   const merged = new Map<string, { key: string; name: string; roles: string[] }>();
 
@@ -143,7 +133,11 @@ function mergeRolesBy<T extends { role: string }>(
  * People are ordered by their highest-ranked role, then by name.
  */
 export function groupCreditsByPerson(credits: CreditForDisplay[]): CreditedPerson[] {
-  return mergeRolesBy(credits, (credit) => credit.personId, (credit) => credit.person.name)
+  return mergeRolesBy(
+    credits,
+    (credit) => credit.personId,
+    (credit) => credit.person.name,
+  )
     .map(({ key, name, roles }) => ({ personId: key, name, roles }))
     .sort((a, b) => compareCreditRoles(a.roles[0], b.roles[0]) || compareCaseInsensitive(a.name, b.name));
 }
@@ -166,7 +160,11 @@ export type CreditedPiece = {
  * Credit roles on it, ordered by Piece name as Alla noter orders them.
  */
 export function groupCreditsByPiece(credits: PersonCreditForDisplay[]): CreditedPiece[] {
-  return mergeRolesBy(credits, (credit) => credit.pieceId, (credit) => credit.piece.name)
+  return mergeRolesBy(
+    credits,
+    (credit) => credit.pieceId,
+    (credit) => credit.piece.name,
+  )
     .map(({ key, name, roles }) => ({ pieceId: key, name, roles }))
     .sort((a, b) => compareCaseInsensitive(a.name, b.name));
 }

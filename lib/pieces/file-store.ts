@@ -61,7 +61,7 @@ const PATH_IN_USE = "Filen finns redan";
 /** A presigned PUT for a new object under the Piece's prefix. */
 export async function signUpload(
   piece: StorePiece,
-  { fileName, mimeType, size }: { fileName: string; mimeType: string; size: number }
+  { fileName, mimeType, size }: { fileName: string; mimeType: string; size: number },
 ) {
   const storagePath = `${pieceStoragePrefix(piece)}${randomUUID()}-${sanitizeFileName(fileName) || "fil"}`;
   const uploadUrl = await signPut(storagePath, {
@@ -82,7 +82,7 @@ export async function signUpload(
 export async function addFile(
   piece: StorePiece,
   upload: FinishedUpload,
-  { displayName, category, userId }: { displayName: string; category: string | null; userId: string }
+  { displayName, category, userId }: { displayName: string; category: string | null; userId: string },
 ) {
   const stored = await verifyUpload(piece, upload);
 
@@ -99,7 +99,7 @@ export async function addFile(
         createdById: userId,
         updatedById: userId,
       },
-    })
+    }),
   );
 }
 
@@ -117,7 +117,7 @@ export async function replaceFile(file: StoreFile, upload: FinishedUpload, userI
         storagePath: upload.storagePath,
         updatedById: userId,
       },
-    })
+    }),
   );
 
   await cleanUp("replaceFile", { fileId: file.id }, () => deleteObjects([file.storagePath]));
@@ -134,9 +134,7 @@ export async function deleteFile(file: Pick<StoreFile, "id" | "storagePath">) {
  * including uploads that were never finalized.
  */
 export async function deletePieceFiles(piece: StorePiece) {
-  await cleanUp("deletePieceFiles", { pieceId: piece.id }, () =>
-    deletePrefix(pieceStoragePrefix(piece))
-  );
+  await cleanUp("deletePieceFiles", { pieceId: piece.id }, () => deletePrefix(pieceStoragePrefix(piece)));
 }
 
 /**
@@ -192,10 +190,7 @@ function pieceStoragePrefix(piece: StorePiece): string {
  * The stored object a finalize points at, once it is known to be a new,
  * allowed upload under the Piece. Throws a Swedish refusal otherwise.
  */
-async function verifyUpload(
-  piece: StorePiece,
-  { storagePath, fileName }: FinishedUpload
-): Promise<StoredObject> {
+async function verifyUpload(piece: StorePiece, { storagePath, fileName }: FinishedUpload): Promise<StoredObject> {
   if (!storagePath.startsWith(pieceStoragePrefix(piece))) {
     throw new Error("Ogiltig filsökväg");
   }
@@ -224,11 +219,7 @@ async function rejectingReusedPath<T>(write: () => Promise<T>): Promise<T> {
 }
 
 /** Runs a best-effort storage delete, logging what it couldn't remove instead of throwing. */
-async function cleanUp(
-  operation: string,
-  context: Record<string, string>,
-  run: () => Promise<DeleteObjectsResult>
-) {
+async function cleanUp(operation: string, context: Record<string, string>, run: () => Promise<DeleteObjectsResult>) {
   try {
     const result = await run();
     if (result.failedCount > 0) {

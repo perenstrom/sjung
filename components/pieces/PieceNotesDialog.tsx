@@ -3,17 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import {
-  PieceNotesPanel,
-  usePieceNotes,
-} from "@/components/pieces/PieceNotesPanel";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { PieceNotesPanel, usePieceNotes } from "@/components/pieces/PieceNotesPanel";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,8 +46,8 @@ export function PieceNotesDialog({
         <button
           type="button"
           className={cn(
-            "text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 rounded-sm text-sm underline underline-offset-4 outline-none focus-visible:ring-[3px]",
-            triggerClassName
+            "rounded-sm text-sm text-muted-foreground underline underline-offset-4 outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            triggerClassName,
           )}
         >
           {hasNotes ? "Redigera anteckningar" : "Lägg till anteckning"}

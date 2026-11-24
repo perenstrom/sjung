@@ -6,12 +6,7 @@ import type { GroupClaim } from "@/app/generated/prisma/client";
 import { testPrisma } from "../support/db";
 import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createMember, grantClaims } from "../support/fixtures";
-import {
-  changeMember,
-  findGroupAccess,
-  listGroupAccess,
-  requireGroupAccess,
-} from "@/lib/group-access";
+import { changeMember, findGroupAccess, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
 
 type MemberKind = "non-Member" | "plain Member" | "MANAGE_MEMBERS" | "MANAGE_CONTENT" | "Creator";
 
@@ -54,10 +49,7 @@ describe("Group access by Member kind", () => {
     ["non-Member", NOTHING],
     ["plain Member", NOTHING],
     ["MANAGE_CONTENT", { ...NOTHING, manageContent: true }],
-    [
-      "MANAGE_MEMBERS",
-      { ...NOTHING, manageMembers: true, changeOtherMember: true },
-    ],
+    ["MANAGE_MEMBERS", { ...NOTHING, manageMembers: true, changeOtherMember: true }],
     [
       "Creator",
       {
@@ -120,9 +112,7 @@ describe("requireGroupAccess", () => {
     const { group, nonMember } = await createAccessScenario();
     actAs(nonMember.id);
 
-    await expect(requireGroupAccess(group.slug)).rejects.toThrow(
-      "Ogiltig grupp eller saknad behörighet"
-    );
+    await expect(requireGroupAccess(group.slug)).rejects.toThrow("Ogiltig grupp eller saknad behörighet");
   });
 });
 
@@ -143,15 +133,9 @@ describe("GroupAccess.require", () => {
 
     const access = await requireGroupAccess(group.slug);
 
-    expect(() => access.require("manageGroup")).toThrow(
-      "Du har inte behörighet att hantera gruppen"
-    );
-    expect(() => access.require(changeMember(creator.id))).toThrow(
-      "Gruppens administratör kan inte ändras"
-    );
-    expect(() => access.require(changeMember(member.id))).toThrow(
-      "Du kan inte ändra ditt eget medlemskap"
-    );
+    expect(() => access.require("manageGroup")).toThrow("Du har inte behörighet att hantera gruppen");
+    expect(() => access.require(changeMember(creator.id))).toThrow("Gruppens administratör kan inte ändras");
+    expect(() => access.require(changeMember(member.id))).toThrow("Du kan inte ändra ditt eget medlemskap");
   });
 
   it("refuses a Member without MANAGE_MEMBERS with the members message", async () => {
@@ -161,9 +145,7 @@ describe("GroupAccess.require", () => {
     const access = await requireGroupAccess(group.slug);
 
     for (const capability of ["manageMembers", changeMember(creator.id)] as const) {
-      expect(() => access.require(capability)).toThrow(
-        "Du har inte behörighet att hantera medlemmar i gruppen"
-      );
+      expect(() => access.require(capability)).toThrow("Du har inte behörighet att hantera medlemmar i gruppen");
     }
   });
 
@@ -173,8 +155,8 @@ describe("GroupAccess.require", () => {
 
     const access = await requireGroupAccess(group.slug);
 
-    expect(() =>
-      access.require("manageGroup", { lacksManageGroup: "Du får inte byta namn" })
-    ).toThrow("Du får inte byta namn");
+    expect(() => access.require("manageGroup", { lacksManageGroup: "Du får inte byta namn" })).toThrow(
+      "Du får inte byta namn",
+    );
   });
 });

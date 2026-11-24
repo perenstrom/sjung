@@ -34,7 +34,7 @@ export default async function ManageAnnouncementsPage() {
             <li key={announcement.id} className="flex items-center gap-2 py-2">
               <Link href={announcementPath(announcement.id)} className="min-w-0 flex-1 px-2 py-1 hover:underline">
                 <span className="block truncate font-medium">{announcement.title}</span>
-                <span className="text-muted-foreground block text-xs">
+                <span className="block text-xs text-muted-foreground">
                   Publicerad {formatDate(announcement.publishedAt)}
                 </span>
               </Link>

@@ -25,8 +25,5 @@ function asciiFallback(fileName: string): string {
 
 /** Percent-encodes everything outside RFC 5987's `attr-char`. */
 function encodeRfc5987(value: string): string {
-  return encodeURIComponent(value).replace(
-    /['()*]/g,
-    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`
-  );
+  return encodeURIComponent(value).replace(/['()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
 }

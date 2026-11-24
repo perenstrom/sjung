@@ -17,12 +17,12 @@ Read `.cursor/skills/_shared/codebase-reference.md` in full. Note each section a
 
 Verify against the repo:
 
-| Claim | Where to check |
-|-------|----------------|
-| Stack (Next.js, Prisma, NextAuth, R2, Vitest) | `package.json` dependencies and scripts |
-| Multi-tenant groups | `prisma/schema.prisma` (`Group`, `UsersToGroups`); `lib/tenant-group.ts` |
-| Auth / route protection | `proxy.ts` matcher and redirect logic; `app/api/auth/[...nextauth]/route.ts` |
-| Swedish UI / errors | Sample server actions and dialogs (throw/display patterns) |
+| Claim                                         | Where to check                                                               |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| Stack (Next.js, Prisma, NextAuth, R2, Vitest) | `package.json` dependencies and scripts                                      |
+| Multi-tenant groups                           | `prisma/schema.prisma` (`Group`, `UsersToGroups`); `lib/tenant-group.ts`     |
+| Auth / route protection                       | `proxy.ts` matcher and redirect logic; `app/api/auth/[...nextauth]/route.ts` |
+| Swedish UI / errors                           | Sample server actions and dialogs (throw/display patterns)                   |
 
 Update the **Architecture** section if any stack or cross-cutting behavior changed.
 

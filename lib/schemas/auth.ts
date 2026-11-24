@@ -8,10 +8,7 @@ export function parseRedirectPathFromValue(value: unknown): string {
   return "/app";
 }
 
-export function parseRedirectPathFromFormData(
-  formData: FormData,
-  field = "next"
-): string {
+export function parseRedirectPathFromFormData(formData: FormData, field = "next"): string {
   return parseRedirectPathFromValue(formData.get(field));
 }
 
@@ -29,8 +26,7 @@ export type LoginCredentials = z.infer<typeof loginCredentialsSchema>;
 export type LoginFormValues = { email: string };
 
 export type LoginFormParseResult =
-  | { ok: true; data: LoginCredentials & { redirectTo: string } }
-  | { ok: false; values: LoginFormValues };
+  { ok: true; data: LoginCredentials & { redirectTo: string } } | { ok: false; values: LoginFormValues };
 
 export function parseLoginFormData(formData: FormData): LoginFormParseResult {
   const redirectTo = parseRedirectPathFromFormData(formData);
@@ -79,9 +75,7 @@ export const signupCredentialsSchema = z
 export type SignupCredentials = z.output<typeof signupCredentialsSchema>;
 
 export type NewPasswordParseError =
-  | "Ogiltiga formulärdata"
-  | "Lösenordet måste vara minst 12 tecken"
-  | "Lösenorden matchar inte";
+  "Ogiltiga formulärdata" | "Lösenordet måste vara minst 12 tecken" | "Lösenorden matchar inte";
 
 function mapNewPasswordSchemaFailure(error: z.ZodError): NewPasswordParseError {
   for (const issue of error.issues) {
@@ -111,7 +105,7 @@ export type SignupFormParseResult =
  */
 export function parseSignupFormData(
   formData: FormData,
-  { invitedEmail }: { invitedEmail?: string } = {}
+  { invitedEmail }: { invitedEmail?: string } = {},
 ): SignupFormParseResult {
   const redirectTo = parseRedirectPathFromFormData(formData);
   const nameRaw = formData.get("name");
@@ -148,19 +142,14 @@ const newPasswordSchema = z
   .transform(({ token, password }) => ({ token, password }));
 
 export type NewPasswordFormParseResult =
-  | { ok: true; data: { token: string; password: string } }
-  | { ok: false; error: NewPasswordParseError };
+  { ok: true; data: { token: string; password: string } } | { ok: false; error: NewPasswordParseError };
 
 /** The Password reset's "new password" form: the emailed token plus the password twice. */
 export function parseNewPasswordFormData(formData: FormData): NewPasswordFormParseResult {
   const tokenRaw = formData.get("token");
   const passwordRaw = formData.get("password");
   const passwordConfirmationRaw = formData.get("passwordConfirmation");
-  if (
-    typeof tokenRaw !== "string" ||
-    typeof passwordRaw !== "string" ||
-    typeof passwordConfirmationRaw !== "string"
-  ) {
+  if (typeof tokenRaw !== "string" || typeof passwordRaw !== "string" || typeof passwordConfirmationRaw !== "string") {
     return { ok: false, error: "Ogiltiga formulärdata" };
   }
   const parsed = newPasswordSchema.safeParse({
