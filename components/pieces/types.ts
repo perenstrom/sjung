@@ -10,6 +10,8 @@ export type PieceLink = {
 
 export type PieceFileListItem = {
   id: string;
+  /** For the links to its download and the player. */
+  slug: string;
   displayName: string;
   size: number;
   /** See Category in CONTEXT.md; `null` is uncategorized. */

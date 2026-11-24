@@ -1,5 +1,6 @@
 "use server";
 
+import { saveWithFreeSlug } from "@/lib/content-slug";
 import { findInGroup } from "@/lib/find-in-group";
 import prisma from "@/lib/prisma";
 import { parsePieceIdFromFormData } from "@/lib/schemas/pieces";
@@ -26,6 +27,7 @@ import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
 
 type SetListRow = {
   id: string;
+  slug: string;
   name: string;
   date: Date | null;
   current: boolean;
@@ -40,6 +42,7 @@ export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,
+      slug: true,
       name: true,
       date: true,
       current: true,
@@ -95,16 +98,11 @@ export async function createSetList(formData: FormData) {
   const current = parseSetListCurrentFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    await prisma.setList.create({
-      data: {
-        name,
-        date,
-        current,
-        groupId,
-        createdById: userId,
-        updatedById: userId,
-      },
-    });
+    await saveWithFreeSlug("setList", groupId, name, (tx, slug) =>
+      tx.setList.create({
+        data: { name, slug, date, current, groupId, createdById: userId, updatedById: userId },
+      }),
+    );
 
     revalidateGroupSetListsRoutes(groupSlug);
   });
@@ -119,15 +117,17 @@ export async function updateSetList(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const existing = await findInGroup(groupId, "setList", setListId);
-    await prisma.setList.update({
-      where: { id: existing.id },
-      data: {
-        name,
-        date,
-        current,
-        updatedById: userId,
-      },
-    });
+    await saveWithFreeSlug(
+      "setList",
+      groupId,
+      name,
+      (tx, slug) =>
+        tx.setList.update({
+          where: { id: existing.id },
+          data: { name, slug, date, current, updatedById: userId },
+        }),
+      { exceptId: existing.id },
+    );
 
     revalidateGroupSetListsRoutes(groupSlug);
   });
@@ -154,13 +154,13 @@ export async function addPieceToSetList(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const [setList, piece] = await Promise.all([
-      findInGroup(groupId, "setList", setListId),
-      findInGroup(groupId, "piece", pieceId),
+      findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } }),
+      findInGroup(groupId, "piece", pieceId, { select: { id: true, slug: true } }),
     ]);
     await SetListSequence.append(setList.id, { kind: "piece", pieceId: piece.id }, userId);
 
-    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
-    revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
+    revalidateGroupPieceDetailRoutes(groupSlug, piece.slug);
   });
 }
 
@@ -170,14 +170,14 @@ export async function removePieceFromSetList(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const setListPiece = await findInGroup(groupId, "setListPiece", setListPieceId, {
-      select: { id: true, setListId: true, pieceId: true },
+      select: { id: true, setList: { select: { slug: true } }, piece: { select: { slug: true } } },
     });
     await prisma.setListPiece.delete({
       where: { id: setListPiece.id },
     });
 
-    revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setListId);
-    revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.pieceId);
+    revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setList.slug);
+    revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.piece.slug);
   });
 }
 
@@ -189,15 +189,15 @@ export async function removePieceFromWholeSetList(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const [setList, piece] = await Promise.all([
-      findInGroup(groupId, "setList", setListId),
-      findInGroup(groupId, "piece", pieceId),
+      findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } }),
+      findInGroup(groupId, "piece", pieceId, { select: { id: true, slug: true } }),
     ]);
     await prisma.setListPiece.deleteMany({
       where: { setListId: setList.id, pieceId: piece.id },
     });
 
-    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
-    revalidateGroupPieceDetailRoutes(groupSlug, piece.id);
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
+    revalidateGroupPieceDetailRoutes(groupSlug, piece.slug);
   });
 }
 
@@ -207,10 +207,10 @@ export async function reorderSetListSteps(formData: FormData) {
   const orderedSetListStepIds = parseOrderedSetListStepIdsFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const setList = await findInGroup(groupId, "setList", setListId);
+    const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
     await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
 
-    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
   });
 }
 
@@ -220,10 +220,10 @@ export async function appendSetListNote(formData: FormData) {
   const content = parseSetListNoteContentFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const setList = await findInGroup(groupId, "setList", setListId);
+    const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
     await SetListSequence.append(setList.id, { kind: "note", content }, userId);
 
-    revalidateGroupSetListDetailRoutes(groupSlug, setList.id);
+    revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
   });
 }
 
@@ -233,12 +233,12 @@ export async function deleteSetListNote(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const note = await findInGroup(groupId, "setListNote", setListNoteId, {
-      select: { id: true, setListId: true },
+      select: { id: true, setList: { select: { slug: true } } },
     });
     await prisma.setListNote.delete({
       where: { id: note.id },
     });
 
-    revalidateGroupSetListDetailRoutes(groupSlug, note.setListId);
+    revalidateGroupSetListDetailRoutes(groupSlug, note.setList.slug);
   });
 }

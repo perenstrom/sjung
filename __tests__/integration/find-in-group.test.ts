@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { Group } from "@/app/generated/prisma/client";
-import { findInGroup, type ContentKind } from "@/lib/find-in-group";
+import type { SluggedKind } from "@/lib/content-slug";
+import { findAnnouncementBySegment, findBySegmentInGroup, findInGroup, type ContentKind } from "@/lib/find-in-group";
 import {
+  createAnnouncement,
   createFile,
   createGroup,
   createLink,
@@ -82,5 +84,59 @@ describe("findInGroup with a select", () => {
     });
 
     expect(found).toEqual({ pieceId: piece.id, storagePath: file.storagePath });
+  });
+});
+
+describe.each(["piece", "setList", "person", "file"] as const satisfies readonly SluggedKind[])(
+  "findBySegmentInGroup(%s)",
+  (kind) => {
+    const create = KINDS[kind].create as (group: Group) => Promise<{ id: string; slug: string }>;
+
+    it("finds the row by its Slug", async () => {
+      const group = await createGroup();
+      const row = await create(group);
+
+      await expect(findBySegmentInGroup(group.id, kind, row.slug)).resolves.toEqual({ id: row.id, slug: row.slug });
+    });
+
+    it("finds the row by its id, with the Slug its URL now has", async () => {
+      const group = await createGroup();
+      const row = await create(group);
+
+      await expect(findBySegmentInGroup(group.id, kind, row.id)).resolves.toEqual({ id: row.id, slug: row.slug });
+    });
+
+    it("misses a Slug no row has, such as one from before a rename", async () => {
+      const group = await createGroup();
+      const row = await create(group);
+
+      await expect(findBySegmentInGroup(group.id, kind, `${row.slug}-forr`)).resolves.toBeNull();
+      await expect(findBySegmentInGroup(group.id, kind, MISSING_ID)).resolves.toBeNull();
+    });
+
+    it("misses another Group's row by Slug or by id", async () => {
+      const group = await createGroup();
+      const row = await create(await createGroup());
+
+      await expect(findBySegmentInGroup(group.id, kind, row.slug)).resolves.toBeNull();
+      await expect(findBySegmentInGroup(group.id, kind, row.id)).resolves.toBeNull();
+    });
+  },
+);
+
+describe("findAnnouncementBySegment", () => {
+  it("finds an Announcement by its Slug, or by its id with the Slug its URL now has", async () => {
+    const announcement = await createAnnouncement({ title: "Ny spelare" });
+    const found = { id: announcement.id, slug: announcement.slug };
+
+    await expect(findAnnouncementBySegment(announcement.slug)).resolves.toEqual(found);
+    await expect(findAnnouncementBySegment(announcement.id)).resolves.toEqual(found);
+  });
+
+  it("misses a Slug or id no Announcement has", async () => {
+    await createAnnouncement({ title: "Ny spelare" });
+
+    await expect(findAnnouncementBySegment("2026-11-24-gammal")).resolves.toBeNull();
+    await expect(findAnnouncementBySegment(MISSING_ID)).resolves.toBeNull();
   });
 });

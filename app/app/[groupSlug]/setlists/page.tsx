@@ -38,6 +38,7 @@ export default async function TenantSetListsPage({ params }: PageProps) {
           groupSlug={groupSlug}
           setLists={setLists.map((setList) => ({
             id: setList.id,
+            slug: setList.slug,
             name: setList.name,
             date: setList.date,
             current: setList.current,

@@ -25,7 +25,7 @@ export function PersonPiecesList({
     <ul className="divide-y border-y text-sm">
       {pieces.map((piece) => (
         <li key={piece.pieceId} className="flex min-h-11 flex-wrap items-center gap-x-2 gap-y-1 py-2.5">
-          <Link className="min-w-0 font-medium break-words underline" href={pieceHref(groupSlug, piece.pieceId)}>
+          <Link className="min-w-0 font-medium break-words underline" href={pieceHref(groupSlug, piece)}>
             {piece.name}
           </Link>
           {piece.roles.map((role) => (

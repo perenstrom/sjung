@@ -8,32 +8,16 @@ vi.mock("next/cache", () => ({
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import type { Group, Piece } from "@/app/generated/prisma/client";
-import { testPrisma } from "../support/db";
-import { createGroup, createPiece } from "../support/fixtures";
+import { createGroup, createPiece, createSetList, createSetListPiece } from "../support/fixtures";
 import { deletePiece, updatePiece } from "@/app/actions/pieces";
 
 const mockAuth = vi.mocked(auth);
 const mockRevalidatePath = vi.mocked(revalidatePath);
 
 async function createSetListWithPieces(group: Group, pieces: Piece[]) {
-  const setList = await testPrisma.setList.create({
-    data: {
-      name: "Konsert",
-      groupId: group.id,
-      createdById: group.createdById,
-      updatedById: group.createdById,
-    },
-  });
+  const setList = await createSetList(group, "Konsert");
   for (const [position, piece] of pieces.entries()) {
-    await testPrisma.setListPiece.create({
-      data: {
-        setListId: setList.id,
-        pieceId: piece.id,
-        position,
-        createdById: group.createdById,
-        updatedById: group.createdById,
-      },
-    });
+    await createSetListPiece(setList, piece, position);
   }
   return setList;
 }
@@ -70,12 +54,12 @@ describe("piece mutations revalidate every page that shows the piece", () => {
     expect(new Set(paths)).toEqual(
       new Set([
         `/app/${group.slug}/pieces`,
-        `/app/${group.slug}/pieces/${piece.id}`,
-        `/app/${group.slug}/setlists/${twice.id}`,
-        `/app/${group.slug}/setlists/${once.id}`,
+        `/app/${group.slug}/pieces/nytt-namn`,
+        `/app/${group.slug}/setlists/${twice.slug}`,
+        `/app/${group.slug}/setlists/${once.slug}`,
       ]),
     );
-    expect(paths).not.toContain(`/app/${group.slug}/setlists/${without.id}`);
+    expect(paths).not.toContain(`/app/${group.slug}/setlists/${without.slug}`);
     expect(paths).not.toContain(`/app/${group.slug}/setlists`);
   });
 
@@ -90,8 +74,8 @@ describe("piece mutations revalidate every page that shows the piece", () => {
 
     const paths = revalidatedPaths();
     expect(paths).toContain(`/app/${group.slug}/pieces`);
-    expect(paths).toContain(`/app/${group.slug}/setlists/${containing.id}`);
-    expect(paths).not.toContain(`/app/${group.slug}/setlists/${without.id}`);
+    expect(paths).toContain(`/app/${group.slug}/setlists/${containing.slug}`);
+    expect(paths).not.toContain(`/app/${group.slug}/setlists/${without.slug}`);
     expect(paths).not.toContain(`/app/${group.slug}/setlists`);
   });
 });

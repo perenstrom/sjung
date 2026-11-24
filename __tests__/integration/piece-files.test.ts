@@ -15,7 +15,7 @@ import {
   finalizePieceFileUpload,
 } from "@/app/actions/files";
 import { deletePiece } from "@/app/actions/pieces";
-import { GET as downloadFile } from "@/app/app/[groupSlug]/files/[fileId]/route";
+import { GET as downloadFile } from "@/app/app/[groupSlug]/files/[fileSlug]/route";
 import { testPrisma } from "../support/db";
 import { failDeletesOf, putStoredObject, storedKeys } from "../support/fake-object-storage";
 import { createFile, createGroup, createMember, createPiece, createUser } from "../support/fixtures";
@@ -262,16 +262,25 @@ describe("deleting a Piece", () => {
 
 describe("downloading a File", () => {
   /** Follows the File's download link as the browser would. */
-  function followDownloadLink(groupSlug: string, fileId: string) {
-    return downloadFile(new Request(`http://localhost/app/${groupSlug}/files/${fileId}`), {
-      params: Promise.resolve({ groupSlug, fileId }),
+  function followDownloadLink(groupSlug: string, fileSlug: string) {
+    return downloadFile(new Request(`http://localhost/app/${groupSlug}/files/${fileSlug}`), {
+      params: Promise.resolve({ groupSlug, fileSlug }),
     });
   }
+
+  it("moves a link by the File's id permanently to its Slug URL", async () => {
+    const file = await storedFile();
+
+    const response = await followDownloadLink(group.slug, file.id);
+
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe(`http://localhost/app/${group.slug}/files/${file.slug}`);
+  });
 
   it("redirects to a short-lived signed URL, so a plain link opens it", async () => {
     const file = await storedFile();
 
-    const response = await followDownloadLink(group.slug, file.id);
+    const response = await followDownloadLink(group.slug, file.slug);
 
     expect(response.status).toBe(302);
     expect(response.headers.get("cache-control")).toBe("no-store");
@@ -284,7 +293,7 @@ describe("downloading a File", () => {
       data: { fileName: `Så "ända".pdf` },
     });
 
-    const response = await followDownloadLink(group.slug, file.id);
+    const response = await followDownloadLink(group.slug, file.slug);
 
     const disposition = new URL(response.headers.get("location")!).searchParams.get("disposition");
     expect(disposition).toContain(`filename*=UTF-8''S%C3%A5%20%22%C3%A4nda%22.pdf`);
@@ -294,7 +303,7 @@ describe("downloading a File", () => {
     const file = await storedFile();
     actAs((await createMember(group)).id);
 
-    const response = await followDownloadLink(group.slug, file.id);
+    const response = await followDownloadLink(group.slug, file.slug);
 
     expect(response.status).toBe(302);
   });
@@ -303,7 +312,7 @@ describe("downloading a File", () => {
     const file = await storedFile();
     actAs((await createUser()).id);
 
-    const response = await followDownloadLink(group.slug, file.id);
+    const response = await followDownloadLink(group.slug, file.slug);
 
     expect(response.status).toBe(404);
     expect(response.headers.get("location")).toBeNull();

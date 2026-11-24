@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Group, Piece, SetList } from "@/app/generated/prisma/client";
 import { getPiecesForGroup } from "@/lib/pieces/queries";
 import { SetListSequence } from "@/lib/setlists/sequence";
-import { testPrisma } from "../support/db";
-import { createGroup, createPiece, createPieceNote } from "../support/fixtures";
+import { createGroup, createPiece, createPieceNote, createSetList } from "../support/fixtures";
 
 describe("the pieces list includes each piece's Piece notes", () => {
   let group: Group;
@@ -48,9 +47,7 @@ describe("the pieces list includes each piece's Piece notes", () => {
   });
 
   it("returns each piece step's notes newest-updated first for a Set list", async () => {
-    const setList: SetList = await testPrisma.setList.create({
-      data: { name: "Konsert", groupId: group.id, createdById: userId, updatedById: userId },
-    });
+    const setList: SetList = await createSetList(group, "Konsert");
     await SetListSequence.append(setList.id, { kind: "piece", pieceId: kyrie.id }, userId);
     await SetListSequence.append(setList.id, { kind: "note", content: "Paus" }, userId);
     await SetListSequence.append(setList.id, { kind: "piece", pieceId: gloria.id }, userId);

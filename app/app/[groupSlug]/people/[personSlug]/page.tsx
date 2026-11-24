@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { getGroups } from "@/app/actions/groups";
 import { getPeople, getPersonDetail } from "@/app/actions/people";
@@ -9,17 +9,24 @@ import { DeletePersonDialog } from "@/components/people/DeletePersonDialog";
 import { PersonPiecesList } from "@/components/people/PersonPiecesList";
 import { RenamePersonDialog } from "@/components/people/RenamePersonDialog";
 import { createGroupAncestor, createPeopleAncestor } from "@/lib/breadcrumbs";
+import { findPageContent } from "@/lib/content-page";
 import { findGroupAccess } from "@/lib/group-access";
+import { groupPersonPath } from "@/lib/groups/routes";
 
 type PageProps = {
-  params: Promise<{ groupSlug: string; id: string }>;
+  params: Promise<{ groupSlug: string; personSlug: string }>;
 };
 
 /** One Person: the Pieces they are credited on, open to every Member. Content managers rename or delete them here. */
 export default async function TenantPersonPage({ params }: PageProps) {
-  const { groupSlug, id } = await params;
+  const { groupSlug, personSlug } = await params;
+  const match = await findPageContent(groupSlug, "person", personSlug);
+  // A link by id always works and moves to the Slug URL (ADR-0011).
+  if (match.slug !== personSlug) {
+    permanentRedirect(groupPersonPath(groupSlug, match));
+  }
   const [person, people, groups, access] = await Promise.all([
-    getPersonDetail(groupSlug, id),
+    getPersonDetail(groupSlug, match.id),
     getPeople(groupSlug),
     getGroups(),
     findGroupAccess(groupSlug),

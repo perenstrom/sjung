@@ -196,6 +196,8 @@ model Piece {
   updatedById String?  @map("updated_by_id")
 
   name    String
+  /// Made from the name and unique in the Group among its kind (CONTEXT.md, "Slug"; ADR-0011).
+  slug    String
   groupId String @map("group_id")
 
   createdBy      User?           @relation("PieceCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
@@ -208,6 +210,7 @@ model Piece {
   notes          PieceNote[]
   aliases        PieceAlias[]
 
+  @@unique([groupId, slug])
   @@map("pieces")
 }
 
@@ -261,6 +264,8 @@ model File {
   updatedById String?  @map("updated_by_id")
 
   displayName String @map("display_name")
+  /// Made from the display name and unique among the Group's Files, which the database can't check through the Piece (ADR-0011).
+  slug        String
   fileName    String @map("file_name")
   storagePath String @unique @map("storage_path")
   mimeType    String @map("mime_type")
@@ -277,6 +282,7 @@ model File {
   updatedBy User?  @relation("FileUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   piece     Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
+  @@index([pieceId, slug])
   @@map("files")
 }
 
@@ -288,6 +294,8 @@ model Person {
   updatedById String?  @map("updated_by_id")
 
   name    String
+  /// Made from the name and unique in the Group among its kind (CONTEXT.md, "Slug"; ADR-0011).
+  slug    String
   groupId String @map("group_id")
 
   createdBy User?           @relation("PersonCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
@@ -295,6 +303,7 @@ model Person {
   group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
   credits   PersonToPiece[]
 
+  @@unique([groupId, slug])
   @@map("people")
 }
 
@@ -318,6 +327,8 @@ model SetList {
   updatedById String?  @map("updated_by_id")
 
   name    String
+  /// Made from the name and unique in the Group among its kind (CONTEXT.md, "Slug"; ADR-0011).
+  slug    String
   date    DateTime?
   // Marked by hand as being worked on now (CONTEXT.md, "Current"); never ends on its own.
   current Boolean   @default(false)
@@ -329,6 +340,7 @@ model SetList {
   pieces    SetListPiece[]
   notes     SetListNote[]
 
+  @@unique([groupId, slug])
   @@map("set_lists")
 }
 
@@ -421,6 +433,8 @@ model Announcement {
   updatedById String?  @map("updated_by_id")
 
   title       String
+  /// The publishing date in Stockholm, then the title's Slug (ADR-0011).
+  slug        String   @unique
   body        String   @db.Text
   // Saving a new Announcement publishes it at once; there are no drafts.
   publishedAt DateTime @default(now()) @map("published_at")

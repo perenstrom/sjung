@@ -8,7 +8,7 @@ vi.mock("next/cache", () => ({
 import { auth } from "@/auth";
 import { testPrisma } from "../support/db";
 import { failDeletesOf, putStoredObject, storedKeys } from "../support/fake-object-storage";
-import { createFile, createGroup, createPiece } from "../support/fixtures";
+import { createFile, createGroup, createPerson, createPiece } from "../support/fixtures";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 import { deleteGroup } from "@/app/actions/groups";
@@ -22,14 +22,7 @@ describe("deleteGroup", () => {
     // this is what actually exercises PersonToPiece.person's onDelete
     // behavior (PER-280) rather than relying on cascade ordering luck.
     const group = await createGroup();
-    const person = await testPrisma.person.create({
-      data: {
-        name: "Test Composer",
-        groupId: group.id,
-        createdById: group.createdById,
-        updatedById: group.createdById,
-      },
-    });
+    const person = await createPerson(group, "Test Composer");
     const piece = await createPiece();
     await testPrisma.personToPiece.create({
       data: {

@@ -50,7 +50,7 @@ export default async function TenantPeoplePage({ params }: PageProps) {
                 key={person.id}
                 primary={person.name}
                 secondary={formatPieceCount(person.pieceCount)}
-                href={groupPersonPath(groupSlug, person.id)}
+                href={groupPersonPath(groupSlug, person)}
               />
             ))
           )}
@@ -75,7 +75,7 @@ export default async function TenantPeoplePage({ params }: PageProps) {
                 people.map((person) => (
                   <TableRow key={person.id}>
                     <TableCell>
-                      <Link className="underline" href={groupPersonPath(groupSlug, person.id)}>
+                      <Link className="underline" href={groupPersonPath(groupSlug, person)}>
                         {person.name}
                       </Link>
                     </TableCell>

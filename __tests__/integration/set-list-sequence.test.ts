@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Group, Piece, SetList } from "@/app/generated/prisma/client";
 import { SetListSequence } from "@/lib/setlists/sequence";
 import { testPrisma } from "../support/db";
-import { createGroup, createPiece } from "../support/fixtures";
+import { createGroup, createPiece, createSetList } from "../support/fixtures";
 
 function stepLabels(steps: Awaited<ReturnType<typeof SetListSequence.steps>>): string[] {
   return steps.map((step) => (step.kind === "piece" ? step.piece.name : step.content));
@@ -19,9 +19,7 @@ describe("SetListSequence", () => {
   beforeEach(async () => {
     group = await createGroup();
     userId = group.createdById;
-    setList = await testPrisma.setList.create({
-      data: { name: "Konsert", groupId: group.id, createdById: userId, updatedById: userId },
-    });
+    setList = await createSetList(group, "Konsert");
     kyrie = await createPiece({ name: "Kyrie", groupId: group.id, createdById: userId });
     gloria = await createPiece({ name: "Gloria", groupId: group.id, createdById: userId });
   });

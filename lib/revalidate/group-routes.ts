@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 
-import { getSetListIdsContainingPiece } from "@/lib/pieces/queries";
+import { getPiecePages, type PiecePages } from "@/lib/pieces/queries";
 import {
   MY_GROUPS_PATH,
   groupMembersPath,
@@ -22,10 +22,10 @@ export function revalidateGroupPeopleRoutes(groupSlug: string) {
   revalidatePath(groupPeoplePath(groupSlug));
 }
 
-/** Also refreshes the Person's own page, after it is renamed or deleted. */
-export function revalidateGroupPersonRoutes(groupSlug: string, personId: string) {
+/** Also refreshes the Person's own page, at its Slug, after it is renamed or deleted. */
+export function revalidateGroupPersonRoutes(groupSlug: string, personSlug: string) {
   revalidateGroupPeopleRoutes(groupSlug);
-  revalidatePath(groupPersonPath(groupSlug, personId));
+  revalidatePath(groupPersonPath(groupSlug, { slug: personSlug }));
 }
 
 export function revalidateGroupSetListsRoutes(groupSlug: string) {
@@ -33,9 +33,9 @@ export function revalidateGroupSetListsRoutes(groupSlug: string) {
   revalidatePath(groupSetListsPath(groupSlug));
 }
 
-export function revalidateGroupSetListDetailRoutes(groupSlug: string, setListId: string) {
+export function revalidateGroupSetListDetailRoutes(groupSlug: string, setListSlug: string) {
   revalidateGroupSetListsRoutes(groupSlug);
-  revalidatePath(groupSetListPath(groupSlug, setListId));
+  revalidatePath(groupSetListPath(groupSlug, { slug: setListSlug }));
 }
 
 export function revalidateGroupMembersRoutes(groupSlug: string) {
@@ -44,22 +44,29 @@ export function revalidateGroupMembersRoutes(groupSlug: string) {
   revalidatePath(groupMembersPath(groupSlug));
 }
 
-export function revalidateGroupPieceDetailRoutes(groupSlug: string, pieceId: string) {
+export function revalidateGroupPieceDetailRoutes(groupSlug: string, pieceSlug: string) {
   revalidateGroupPiecesRoute(groupSlug);
-  revalidatePath(pieceHref(groupSlug, pieceId));
+  revalidatePath(pieceHref(groupSlug, { slug: pieceSlug }));
 }
 
 /**
  * Revalidates every page that shows the piece: the pieces page, the piece's
- * detail page and the detail page of each set list containing it. A delete
- * cascades to the piece's set list entries, so `deletePiece` passes the set
- * list ids it looked up before deleting.
+ * detail page and the detail page of each set list containing it, at their
+ * Slugs as they are now.
  */
-export async function revalidatePieceRoutes(groupSlug: string, pieceId: string, setListIds?: string[]) {
-  const containingSetListIds = setListIds ?? (await getSetListIdsContainingPiece(pieceId));
-  revalidateGroupPieceDetailRoutes(groupSlug, pieceId);
-  for (const setListId of containingSetListIds) {
-    revalidatePath(groupSetListPath(groupSlug, setListId));
+export async function revalidatePieceRoutes(groupSlug: string, pieceId: string) {
+  revalidatePiecePages(groupSlug, await getPiecePages(pieceId));
+}
+
+/**
+ * {@link revalidatePieceRoutes} for pages looked up beforehand: a delete
+ * cascades to the piece's set list entries, so `deletePiece` looks them up
+ * before deleting.
+ */
+export function revalidatePiecePages(groupSlug: string, { pieceSlug, setListSlugs }: PiecePages) {
+  revalidateGroupPieceDetailRoutes(groupSlug, pieceSlug);
+  for (const setListSlug of setListSlugs) {
+    revalidatePath(groupSetListPath(groupSlug, { slug: setListSlug }));
   }
 }
 

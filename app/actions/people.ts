@@ -9,6 +9,7 @@ import {
   type PersonDetail,
   type PersonWithPieceCount,
 } from "@/lib/people/queries";
+import { saveWithFreeSlug } from "@/lib/content-slug";
 import { findInGroup } from "@/lib/find-in-group";
 import { groupPeoplePath } from "@/lib/groups/routes";
 import prisma from "@/lib/prisma";
@@ -44,35 +45,44 @@ export async function createPerson(formData: FormData) {
   const name = parsePersonNameFromFormData(formData);
 
   return runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const person = await prisma.person.create({
-      data: {
-        name,
-        groupId,
-        createdById: userId,
-        updatedById: userId,
-      },
-      select: { id: true, name: true },
-    });
+    const person = await saveWithFreeSlug("person", groupId, name, (tx, slug) =>
+      tx.person.create({
+        data: { name, slug, groupId, createdById: userId, updatedById: userId },
+        select: { id: true, name: true },
+      }),
+    );
 
     revalidateGroupPeopleRoutes(groupSlug);
     return person;
   });
 }
 
-/** Renames a Person everywhere at once: every Credit shows the new name. Another Person may share it. */
+/**
+ * Renames a Person everywhere at once: every Credit shows the new name. Another
+ * Person may share it. Answers with the Person's new Slug, since their page moves.
+ */
 export async function renamePerson(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const personId = parsePersonIdFromFormData(formData);
   const name = parsePersonNameFromFormData(formData);
 
-  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+  return runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const person = await findInGroup(groupId, "person", personId);
-    await prisma.person.update({
-      where: { id: person.id },
-      data: { name, updatedById: userId },
-    });
+    const renamed = await saveWithFreeSlug(
+      "person",
+      groupId,
+      name,
+      (tx, slug) =>
+        tx.person.update({
+          where: { id: person.id },
+          data: { name, slug, updatedById: userId },
+          select: { slug: true },
+        }),
+      { exceptId: person.id },
+    );
 
-    revalidateGroupPersonRoutes(groupSlug, person.id);
+    revalidateGroupPersonRoutes(groupSlug, renamed.slug);
+    return renamed;
   });
 }
 
@@ -85,10 +95,10 @@ export async function deletePerson(formData: FormData) {
   const personId = parsePersonIdFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
-    const person = await findInGroup(groupId, "person", personId);
+    const person = await findInGroup(groupId, "person", personId, { select: { id: true, slug: true } });
     await prisma.person.delete({ where: { id: person.id } });
 
-    revalidateGroupPersonRoutes(groupSlug, person.id);
+    revalidateGroupPersonRoutes(groupSlug, person.slug);
   });
   redirect(groupPeoplePath(groupSlug));
 }

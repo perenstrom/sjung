@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
+import { freeContentSlugs, lockSlugs, saveWithFreeSlug } from "@/lib/content-slug";
 import { findInGroup } from "@/lib/find-in-group";
 import { rankCategories } from "@/lib/pieces/categories";
 import { rankCreditRoles, resolveCreditRole } from "@/lib/pieces/credit-roles";
@@ -31,7 +32,7 @@ import {
   getPieceDetailForGroup,
   getPieceImportGroupFor,
   getPiecesForGroup,
-  getSetListIdsContainingPiece,
+  getPiecePages,
   resolveCategoryInGroup,
   toPieceNoteListItem,
 } from "@/lib/pieces/queries";
@@ -45,7 +46,11 @@ import {
   type ImportPerson,
   type ImportPreview,
 } from "@/lib/pieces/import";
-import { revalidateGroupPeopleRoutes, revalidatePieceRoutes } from "@/lib/revalidate/group-routes";
+import {
+  revalidateGroupPeopleRoutes,
+  revalidatePiecePages,
+  revalidatePieceRoutes,
+} from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 
 export async function getPieces(groupSlug: string) {
@@ -134,12 +139,21 @@ async function saveImport(
   const newPersonIds = new Map(plan.newPeople.map((name) => [name, randomUUID()]));
   const personId = (person: ImportPerson) => (person.kind === "existing" ? person.id : newPersonIds.get(person.name)!);
   const audit = { createdById: userId, updatedById: userId };
+  await lockSlugs(tx, "person", groupId);
+  await lockSlugs(tx, "piece", groupId);
+  const personSlugs = await freeContentSlugs(tx, "person", groupId, plan.newPeople);
+  const pieceSlugs = await freeContentSlugs(
+    tx,
+    "piece",
+    groupId,
+    pieces.map(({ row }) => row.title),
+  );
 
   await tx.person.createMany({
-    data: [...newPersonIds].map(([name, id]) => ({ id, name, groupId, ...audit })),
+    data: [...newPersonIds].map(([name, id], i) => ({ id, name, slug: personSlugs[i], groupId, ...audit })),
   });
   await tx.piece.createMany({
-    data: pieces.map(({ row, id }) => ({ id, name: row.title, groupId, ...audit })),
+    data: pieces.map(({ row, id }, i) => ({ id, name: row.title, slug: pieceSlugs[i], groupId, ...audit })),
   });
   await tx.personToPiece.createMany({
     data: pieces.flatMap(({ row, id }) =>
@@ -163,43 +177,53 @@ export async function createPiece(formData: FormData) {
     }));
     assertNoDuplicateCredits(credits);
     await Promise.all(credits.map((c) => findInGroup(groupId, "person", c.personId)));
-    const created = await prisma.piece.create({
-      data: {
-        name: name.trim(),
-        groupId,
-        createdById: userId,
-        updatedById: userId,
-        credits: {
-          create: credits.map((c) => ({
-            personId: c.personId,
-            role: c.role,
-          })),
+    const created = await saveWithFreeSlug("piece", groupId, name, (tx, slug) =>
+      tx.piece.create({
+        data: {
+          name: name.trim(),
+          slug,
+          groupId,
+          createdById: userId,
+          updatedById: userId,
+          credits: {
+            create: credits.map((c) => ({
+              personId: c.personId,
+              role: c.role,
+            })),
+          },
         },
-      },
-      select: { id: true },
-    });
+        select: { slug: true },
+      }),
+    );
 
     // A new piece is in no set list yet.
-    await revalidatePieceRoutes(groupSlug, created.id, []);
+    revalidatePiecePages(groupSlug, { pieceSlug: created.slug, setListSlugs: [] });
   });
 }
 
-export async function updatePiece(formData: FormData) {
+/** Renames a Piece. Answers with its new Slug, since its page moves (ADR-0011). */
+export async function updatePiece(formData: FormData): Promise<{ slug: string }> {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const name = parsePieceNameFromFormData(formData);
 
-  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+  return runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
-    await prisma.piece.update({
-      where: { id: piece.id },
-      data: {
-        name: name.trim(),
-        updatedById: userId,
-      },
-    });
+    const renamed = await saveWithFreeSlug(
+      "piece",
+      groupId,
+      name,
+      (tx, slug) =>
+        tx.piece.update({
+          where: { id: piece.id },
+          data: { name: name.trim(), slug, updatedById: userId },
+          select: { slug: true },
+        }),
+      { exceptId: piece.id },
+    );
 
     await revalidatePieceRoutes(groupSlug, piece.id);
+    return renamed;
   });
 }
 
@@ -431,13 +455,13 @@ export async function deletePiece(formData: FormData) {
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId, { select: STORE_PIECE_SELECT });
     // Look up before deleting: the delete cascades to the piece's set list entries.
-    const setListIds = await getSetListIdsContainingPiece(piece.id);
+    const pages = await getPiecePages(piece.id);
 
     await prisma.piece.delete({
       where: { id: piece.id },
     });
     await deletePieceFiles(piece);
 
-    await revalidatePieceRoutes(groupSlug, piece.id, setListIds);
+    revalidatePiecePages(groupSlug, pages);
   });
 }

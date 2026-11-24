@@ -35,6 +35,7 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
 
   return {
     id: piece.id,
+    slug: piece.slug,
     name: piece.name,
     aliases: piece.aliases,
     credits: piece.credits,
@@ -48,7 +49,10 @@ export async function getPieceDetailForGroup(groupId: string, pieceId: string): 
 /** One entry per Set list the Piece is in, however many times it appears there, by name. */
 function toPieceSetLists(setListPieces: PieceDetailQueryResult["setListEntries"]): PieceSetList[] {
   const bySetList = new Map(
-    setListPieces.map((entry) => [entry.setListId, { setListId: entry.setListId, setListName: entry.setList.name }]),
+    setListPieces.map((entry) => [
+      entry.setListId,
+      { setListId: entry.setListId, setListSlug: entry.setList.slug, setListName: entry.setList.name },
+    ]),
   );
   return [...bySetList.values()].sort((a, b) => a.setListName.localeCompare(b.setListName, "sv-SE"));
 }
@@ -57,14 +61,19 @@ export function toPieceNoteListItem({ createdBy, ...note }: PieceNoteListItemQue
   return { ...note, createdByName: createdBy?.name ?? null };
 }
 
-/** Distinct ids of the set lists that contain the piece at least once. */
-export async function getSetListIdsContainingPiece(pieceId: string): Promise<string[]> {
-  const entries = await prisma.setListPiece.findMany({
-    where: { pieceId },
-    distinct: ["setListId"],
-    select: { setListId: true },
+/** The pages that show a Piece, by Slug: its own and each Set list's it is in. */
+export type PiecePages = { pieceSlug: string; setListSlugs: string[] };
+
+/** The {@link PiecePages} of a Piece as it is now. */
+export async function getPiecePages(pieceId: string): Promise<PiecePages> {
+  const piece = await prisma.piece.findUniqueOrThrow({
+    where: { id: pieceId },
+    select: {
+      slug: true,
+      setListEntries: { distinct: ["setListId"], select: { setList: { select: { slug: true } } } },
+    },
   });
-  return entries.map((entry) => entry.setListId);
+  return { pieceSlug: piece.slug, setListSlugs: piece.setListEntries.map((entry) => entry.setList.slug) };
 }
 
 /** The distinct Credit roles on the Group's credits, as stored. */

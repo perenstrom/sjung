@@ -25,6 +25,7 @@ export function PieceNameEditor({
   renderName,
   className,
   inputClassName,
+  onRenamed,
 }: {
   groupSlug: string;
   pieceId: string;
@@ -33,6 +34,11 @@ export function PieceNameEditor({
   renderName: (name: string) => ReactNode;
   className?: string;
   inputClassName?: string;
+  /**
+   * Called with the Piece's new Slug after a rename, in place of refreshing
+   * the page: on the Piece's own page, which moves with it (ADR-0011).
+   */
+  onRenamed?: (slug: string) => void;
 }) {
   const router = useRouter();
   const [isRenaming, setIsRenaming] = useState(false);
@@ -88,8 +94,9 @@ export function PieceNameEditor({
       formData.set("groupSlug", groupSlug);
       formData.set("pieceId", pieceId);
       formData.set("name", draft);
+      let slug: string;
       try {
-        await updatePiece(formData);
+        ({ slug } = await updatePiece(formData));
       } catch (err) {
         setError(getThrownMessage(err, "Kunde inte spara namn"));
         return;
@@ -98,7 +105,8 @@ export function PieceNameEditor({
         setSavedName(nextName);
         close();
       });
-      router.refresh();
+      if (onRenamed) onRenamed(slug);
+      else router.refresh();
     });
   }
 

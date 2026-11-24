@@ -201,7 +201,7 @@ export function PieceRowDetails({
           <DeletePieceDialog groupSlug={groupSlug} piece={{ id: piece.id, name: piece.name }} />
         ) : null}
         <Link
-          href={pieceHref(groupSlug, piece.id, { fromSetListId: setListId })}
+          href={pieceHref(groupSlug, piece, { fromSetListId: setListId })}
           className="inline-flex min-h-11 items-center gap-1 px-1 text-sm underline underline-offset-4"
         >
           Detaljsida
@@ -239,7 +239,7 @@ function PieceMaterial({
         layout="inline"
         touch
         groupSlug={groupSlug}
-        piece={{ id: piece.id, name: piece.name }}
+        piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
         filesAndLinks={toPieceFilesAndLinks(piece)}
         setListPieceId={setListPieceId}
       />
@@ -293,7 +293,7 @@ function PieceEditSections({
           layout="inline"
           touch
           groupSlug={groupSlug}
-          piece={{ id: piece.id, name: piece.name }}
+          piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
           filesAndLinks={toPieceFilesAndLinks(piece)}
           setListPieceId={setListPieceId}
         />

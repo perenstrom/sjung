@@ -1,5 +1,6 @@
 "use client";
 
+import { groupSetListPath } from "@/lib/groups/routes";
 import { addPieceToSetList, removePieceFromWholeSetList } from "@/app/actions/setlists";
 import { useEditMode } from "@/components/EditModeContext";
 import { PieceDetailSectionLayout } from "@/components/pieces/PieceDetailSectionLayout";
@@ -93,7 +94,7 @@ function PieceSetListsBody({
         <ul className="space-y-2 text-sm">
           {setLists.map((setList) => (
             <li key={setList.setListId} className="flex flex-wrap items-center justify-between gap-2">
-              <Link className="underline" href={`/app/${groupSlug}/setlists/${setList.setListId}`}>
+              <Link className="underline" href={groupSetListPath(groupSlug, { slug: setList.setListSlug })}>
                 {setList.setListName}
               </Link>
               {readOnly ? null : (

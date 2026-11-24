@@ -32,8 +32,8 @@ describe("a Piece in the same Set list more than once", () => {
     const detail = await getPieceDetail(group.slug, piece.id);
 
     expect(detail?.setLists).toEqual([
-      { setListId: setListB.id, setListName: "Allsång" },
-      { setListId: setListA.id, setListName: "Julkonsert" },
+      { setListId: setListB.id, setListSlug: "allsang", setListName: "Allsång" },
+      { setListId: setListA.id, setListSlug: "julkonsert", setListName: "Julkonsert" },
     ]);
   });
 

@@ -80,7 +80,7 @@ describe("getPersonDetail", () => {
     expect(await getPersonDetail(group.slug, person.id)).toEqual({
       id: person.id,
       name: "Hugo Alfvén",
-      pieces: [{ pieceId: ave.id, name: "Ave Maria", roles: ["Arrangör", "Textförfattare"] }],
+      pieces: [{ pieceId: ave.id, slug: "ave-maria", name: "Ave Maria", roles: ["Arrangör", "Textförfattare"] }],
     });
   });
 

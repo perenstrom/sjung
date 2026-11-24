@@ -24,6 +24,7 @@ const file = (
   playback: Playback | null = null,
 ): PieceFileListItem => ({
   id: displayName,
+  slug: displayName,
   displayName,
   size: 1024,
   category,
@@ -35,6 +36,8 @@ const link = (label: string, category: string | null = null): PieceLink => ({
   label,
   category,
 });
+
+const PIECE = { id: "piece-1", slug: "vem-kan-segla", name: "Vem kan segla" };
 
 function render(
   layout: "detail" | "inline",
@@ -52,7 +55,7 @@ function render(
     createElement(PieceFilesAndLinks, {
       layout,
       groupSlug: "koren",
-      piece: { id: "piece-1", name: "Vem kan segla" },
+      piece: PIECE,
       filesAndLinks: { files, links },
       setListPieceId,
     }),
@@ -120,7 +123,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
 
   it.each([false, true])("opens a File through a plain link in a new tab (Edit mode: %s)", (editing) => {
     const html = render(layout, [file("Sopran.pdf")], [], { editing });
-    const tag = html.match(new RegExp(`<a[^>]*href="${fileDownloadHref("koren", "Sopran.pdf")}"[^>]*>`))?.[0];
+    const tag = html.match(new RegExp(`<a[^>]*href="${fileDownloadHref("koren", { slug: "Sopran.pdf" })}"[^>]*>`))?.[0];
 
     // iOS Safari blocks a new tab opened after an await on the tap, so a File
     // opens through a plain link to its download route, never through script.
@@ -133,8 +136,10 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
     (editing) => {
       const html = render(layout, [file("Sopran.mp3", null, "ready")], [], { editing });
       const anchors = [...html.matchAll(/<a[^>]*>/g)].map(([tag]) => tag);
-      const open = anchors.find((tag) => tag.includes(`href="${playerHref("koren", "piece-1", "Sopran.mp3")}"`));
-      const download = anchors.find((tag) => tag.includes(`href="${fileDownloadHref("koren", "Sopran.mp3")}"`));
+      const open = anchors.find((tag) => tag.includes(`href="${playerHref("koren", PIECE, { slug: "Sopran.mp3" })}"`));
+      const download = anchors.find((tag) =>
+        tag.includes(`href="${fileDownloadHref("koren", { slug: "Sopran.mp3" })}"`),
+      );
 
       expect(open).toBeDefined();
       expect(open).not.toContain('target="_blank"');
@@ -150,10 +155,10 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
       const anchors = [...html.matchAll(/<a[^>]*>/g)].map(([tag]) => tag);
 
       expect(textOf(html)).toContain("Förbereds…");
-      expect(html).not.toContain(playerHref("koren", "piece-1", "Partitur.mscz"));
-      expect(anchors.filter((tag) => tag.includes(`href="${fileDownloadHref("koren", "Partitur.mscz")}"`))).toEqual([
-        expect.not.stringContaining("aria-label"),
-      ]);
+      expect(html).not.toContain(playerHref("koren", PIECE, { slug: "Partitur.mscz" }));
+      expect(
+        anchors.filter((tag) => tag.includes(`href="${fileDownloadHref("koren", { slug: "Partitur.mscz" })}"`)),
+      ).toEqual([expect.not.stringContaining("aria-label")]);
     },
   );
 
@@ -163,8 +168,8 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
     expect(textOf(html)).not.toContain("Förbereds…");
     expect(textOf(html)).not.toContain("Kunde inte förberedas");
     expect(textOf(html)).not.toContain("Försök igen");
-    expect(html).not.toContain(playerHref("koren", "piece-1", "Partitur.mscz"));
-    expect(html).toContain(`href="${fileDownloadHref("koren", "Partitur.mscz")}"`);
+    expect(html).not.toContain(playerHref("koren", PIECE, { slug: "Partitur.mscz" }));
+    expect(html).toContain(`href="${fileDownloadHref("koren", { slug: "Partitur.mscz" })}"`);
   });
 
   it.each([false, true])(
@@ -175,7 +180,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
       expect(textOf(html)).toContain("Kunde inte förberedas");
       expect(html).toMatch(/<button[^>]*>Försök igen<\/button>/);
       expect(textOf(html)).toContain("MusicXML");
-      expect(html).not.toContain(playerHref("koren", "piece-1", "Partitur.mscz"));
+      expect(html).not.toContain(playerHref("koren", PIECE, { slug: "Partitur.mscz" }));
     },
   );
 
@@ -193,7 +198,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
 
   it("on a Set list piece, opens the player for that Set list piece", () => {
     const html = render(layout, [file("Sopran.mp3", null, "ready")], [], { setListPieceId: "slp-1" });
-    const href = playerHref("koren", "piece-1", "Sopran.mp3", { fromSetListPieceId: "slp-1" });
+    const href = playerHref("koren", PIECE, { slug: "Sopran.mp3" }, { fromSetListPieceId: "slp-1" });
 
     expect(html).toContain(`href="${href}"`);
   });

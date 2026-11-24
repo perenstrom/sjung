@@ -19,6 +19,7 @@ vi.mock("@/components/EditModeContext", () => ({
 function setList(name: string, isoDate: string | null, current = false): SetListsTableRow {
   return {
     id: name,
+    slug: name,
     name,
     date: isoDate ? new Date(isoDate) : null,
     current,

@@ -22,10 +22,10 @@ describe("group routes", () => {
   });
 
   it("addresses one Person", () => {
-    expect(groupPersonPath("kor", "person-1")).toBe("/app/kor/people/person-1");
+    expect(groupPersonPath("kor", { slug: "anna-berg" })).toBe("/app/kor/people/anna-berg");
   });
 
   it("addresses one Set list", () => {
-    expect(groupSetListPath("kor", "sl-1")).toBe("/app/kor/setlists/sl-1");
+    expect(groupSetListPath("kor", { slug: "julkonsert" })).toBe("/app/kor/setlists/julkonsert");
   });
 });

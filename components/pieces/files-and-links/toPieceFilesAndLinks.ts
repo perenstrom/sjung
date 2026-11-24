@@ -22,6 +22,7 @@ export function toPieceFilesAndLinks(piece: {
   return {
     files: piece.files.map((file) => ({
       id: file.id,
+      slug: file.slug,
       displayName: file.displayName,
       size: file.size,
       category: file.category,

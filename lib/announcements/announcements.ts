@@ -10,6 +10,7 @@ export type Reader = { id: string; createdAt: Date };
 
 export type AnnouncementListItem = {
   id: string;
+  slug: string;
   title: string;
   publishedAt: Date;
   read: boolean;
@@ -42,6 +43,7 @@ export async function listAnnouncements(reader: Reader): Promise<AnnouncementLis
     orderBy: NEWEST_FIRST,
     select: {
       id: true,
+      slug: true,
       title: true,
       publishedAt: true,
       reads: { where: { userId: reader.id }, select: { userId: true } },
@@ -53,13 +55,13 @@ export async function listAnnouncements(reader: Reader): Promise<AnnouncementLis
   }));
 }
 
-export type ManagedAnnouncement = { id: string; title: string; publishedAt: Date };
+export type ManagedAnnouncement = { id: string; slug: string; title: string; publishedAt: Date };
 
 /** Every Announcement, newest first, as Hantera nyheter lists them. */
 export async function listAnnouncementsToManage(): Promise<ManagedAnnouncement[]> {
   return prisma.announcement.findMany({
     orderBy: NEWEST_FIRST,
-    select: { id: true, title: true, publishedAt: true },
+    select: { id: true, slug: true, title: true, publishedAt: true },
   });
 }
 

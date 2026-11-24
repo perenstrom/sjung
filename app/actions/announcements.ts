@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import * as announcementStore from "@/lib/announcements/announcements";
 import type { AnnouncementDetail, AnnouncementListItem, ManagedAnnouncement } from "@/lib/announcements/announcements";
+import { saveWithFreeAnnouncementSlug } from "@/lib/content-slug";
 import { isOperator } from "@/lib/operators/operators";
 import { requireOperator, requireOperatorPage } from "@/lib/operators/require-operator";
 import { MANAGE_ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
@@ -105,18 +106,25 @@ export async function createAnnouncement(
   formData: FormData,
 ): Promise<AnnouncementFormState> {
   return saveAnnouncement(formData, async (operator, form) => {
-    await prisma.announcement.create({
-      // The author has read what they wrote, so it doesn't show as unread to them.
-      data: {
-        ...form,
-        createdById: operator.id,
-        updatedById: operator.id,
-        reads: { create: { userId: operator.id } },
-      },
-    });
+    const publishedAt = new Date();
+    await saveWithFreeAnnouncementSlug(form.title, publishedAt, (tx, slug) =>
+      tx.announcement.create({
+        // The author has read what they wrote, so it doesn't show as unread to them.
+        data: {
+          ...form,
+          publishedAt,
+          slug,
+          createdById: operator.id,
+          updatedById: operator.id,
+          reads: { create: { userId: operator.id } },
+        },
+      }),
+    );
     return null;
   });
 }
+
+const GONE = "Nyheten finns inte längre";
 
 /** Saves changes to an Announcement. Those who have read it keep it read. */
 export async function updateAnnouncement(
@@ -124,11 +132,23 @@ export async function updateAnnouncement(
   formData: FormData,
 ): Promise<AnnouncementFormState> {
   return saveAnnouncement(formData, async (operator, form) => {
-    const { count } = await prisma.announcement.updateMany({
+    const announcement = await prisma.announcement.findUnique({
       where: { id: formDataString(formData, "id") },
-      data: { ...form, updatedById: operator.id },
+      select: { id: true, publishedAt: true },
     });
-    return count === 0 ? "Nyheten finns inte längre" : null;
+    if (!announcement) return GONE;
+    // The Slug follows the title but keeps the date it was published on (ADR-0011).
+    const { count } = await saveWithFreeAnnouncementSlug(
+      form.title,
+      announcement.publishedAt,
+      (tx, slug) =>
+        tx.announcement.updateMany({
+          where: { id: announcement.id },
+          data: { ...form, slug, updatedById: operator.id },
+        }),
+      { exceptId: announcement.id },
+    );
+    return count === 0 ? GONE : null;
   });
 }
 

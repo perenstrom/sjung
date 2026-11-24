@@ -103,10 +103,10 @@ describe("deleteOwnAccount", () => {
     const link = await createLink(piece);
     const pieceNote = await createPieceNote({ piece, createdById: user.id });
     const person = await testPrisma.person.create({
-      data: { name: "Kompositör", groupId: group.id, createdById: user.id, updatedById: user.id },
+      data: { name: "Kompositör", slug: "kompositor", groupId: group.id, createdById: user.id, updatedById: user.id },
     });
     const setList = await testPrisma.setList.create({
-      data: { name: "Vårkonsert", groupId: group.id, createdById: user.id, updatedById: user.id },
+      data: { name: "Vårkonsert", slug: "varkonsert", groupId: group.id, createdById: user.id, updatedById: user.id },
     });
     const setListPiece = await createSetListPiece(setList, piece);
     const setListNote = await createSetListNote(setList);

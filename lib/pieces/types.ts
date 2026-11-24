@@ -57,6 +57,7 @@ export type PieceNoteListItem = Omit<PieceNoteListItemQueryResult, "createdBy"> 
 
 export const pieceDetailSelect = {
   id: true,
+  slug: true,
   name: true,
   aliases: pieceAliasesQuery,
   credits: {
@@ -66,6 +67,7 @@ export const pieceDetailSelect = {
       person: {
         select: {
           name: true,
+          slug: true,
         },
       },
     },
@@ -73,6 +75,7 @@ export const pieceDetailSelect = {
   files: {
     select: {
       id: true,
+      slug: true,
       createdAt: true,
       displayName: true,
       fileName: true,
@@ -99,6 +102,7 @@ export const pieceDetailSelect = {
       setList: {
         select: {
           name: true,
+          slug: true,
         },
       },
     },
@@ -112,6 +116,7 @@ export type PieceDetailQueryResult = Prisma.PieceGetPayload<{
 /** A Set list the Piece is in, however many times it appears there. */
 export type PieceSetList = {
   setListId: string;
+  setListSlug: string;
   setListName: string;
 };
 
