@@ -3,6 +3,7 @@ import type * as AlphaTab from "@coderline/alphatab";
 import { fetchBuffer, playThroughSilentSwitch } from "@/lib/player/loading";
 import { notationBarsOf } from "@/lib/player/notation-bars";
 import { createNotationPlayer, type NotationPart, type TickRange } from "@/lib/player/notation-player";
+import { isPercussion, playWith } from "@/lib/player/musicxml-score";
 import { IDLE_SNAPSHOT, partName, type Player } from "@/lib/player/player";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
@@ -250,35 +251,10 @@ function partsOf(score: Score): NotationPart[] {
   }));
 }
 
-/** Whether every staff of `track` is percussion, so it plays drums and keeps its own sounds. */
-function isPercussion(track: AlphaTab.model.Track): boolean {
-  return track.staves.every((staff) => staff.isPercussion);
-}
-
 /** The first beat of bar `first` and the last of bar `last` in the score's first staff, to shade them. */
 function beatsOf(score: Score, first: number, last: number) {
   const bars = score.tracks[0]?.staves[0]?.bars;
   const firstBeat = bars?.[first]?.voices[0]?.beats[0];
   const lastBeat = bars?.[last]?.voices[0]?.beats.at(-1);
   return firstBeat && lastBeat ? { first: firstBeat, last: lastBeat } : null;
-}
-
-/**
- * Plays every track but percussion with `program`, so the file's own
- * instruments don't pick sounds the trimmed soundfont doesn't have. The
- * MusicXML import also puts an instrument change on each track's first beat,
- * which would override the track's program, so those change too.
- */
-function playWith(at: AlphaTabModule, score: Score, program: number) {
-  for (const track of score.tracks) {
-    if (isPercussion(track)) continue;
-    track.playbackInfo.program = program;
-    for (const beat of track.staves.flatMap((staff) =>
-      staff.bars.flatMap((bar) => bar.voices.flatMap((voice) => voice.beats)),
-    )) {
-      for (const automation of beat.automations) {
-        if (automation.type === at.model.AutomationType.Instrument) automation.value = program;
-      }
-    }
-  }
 }
