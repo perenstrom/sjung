@@ -4,7 +4,7 @@ import { DEFAULT_GAIN } from "@/lib/player/mix";
 import type { NotationBar } from "@/lib/player/notation-bars";
 import { createNotationPlayer, type NotationPart, type ScoreEngine } from "@/lib/player/notation-player";
 import type { Player } from "@/lib/player/player";
-import { shortcutFor } from "@/lib/player/shortcuts";
+import { createPlayerControls } from "@/lib/player/player-controls";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
 /** A 4/4 bar in alphaTab's ticks. */
@@ -159,13 +159,8 @@ describe("createNotationPlayer", () => {
   });
 
   it("steps bar by bar from where the last step went, before alphaTab has caught up", () => {
-    const step = () => {
-      const shortcut = shortcutFor(
-        { key: "ArrowRight", shiftKey: false, metaKey: false, ctrlKey: false, altKey: false },
-        { snapshot: player.getSnapshot(), layerOpen: false, sliderFocused: false },
-      );
-      if (shortcut?.action?.type === "seek") player.seek(shortcut.action.seconds);
-    };
+    const controls = createPlayerControls(player, { scoreTakesTaps: true });
+    const step = () => controls.run({ type: "stepBars", by: 1 });
 
     step();
     score.report(0); // From before the step: the worker hasn't seen it yet.

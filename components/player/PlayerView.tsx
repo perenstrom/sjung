@@ -9,15 +9,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { PlayerEngine } from "@/lib/file-formats";
 import { createAudioPlayer } from "@/lib/player/audio-player";
+import type { Player } from "@/lib/player/player";
 import {
-  DEFAULT_TEMPO,
-  IDLE_SNAPSHOT,
-  isRepeating,
-  markLoop,
-  type Player,
-  type PlayerSnapshot,
-} from "@/lib/player/player";
-import { mixChanged } from "@/lib/player/mix";
+  createPlayerControls,
+  idleControlsView,
+  type PlayerCommand,
+  type PlayerControls,
+  type PlayerControlsView,
+} from "@/lib/player/player-controls";
 import { loadWaveform } from "@/lib/player/waveform";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
@@ -47,8 +46,6 @@ type PlayerViewProps = PlayerData;
 
 const noSubscription = () => () => {};
 
-const FAILED_SNAPSHOT: PlayerSnapshot = { ...IDLE_SNAPSHOT, status: "error" };
-
 /**
  * The player, full screen over the app, open on one of a Piece's Playable
  * Files. It talks to the File's engine only through `Player`. Switching File
@@ -72,11 +69,20 @@ export function PlayerView({ pieceName, file, soundfontSrc, files, closeHref }: 
   );
   const loaded = useLoadedPlayer(load);
   const player = engine === "audio" ? audioPlayer : loaded.player;
-
-  const playerSnapshot = useSyncExternalStore(
-    player?.subscribe ?? noSubscription,
-    () => player?.getSnapshot() ?? IDLE_SNAPSHOT,
-    () => IDLE_SNAPSHOT,
+  // The drawn score stands in for the buttons that mark a passage: the singer taps its bars.
+  const scoreTakesTaps = engine === "notation";
+  const controls = useMemo(
+    () => (player ? createPlayerControls(player, { scoreTakesTaps }) : null),
+    [player, scoreTakesTaps],
+  );
+  const idleView = useMemo(
+    () => idleControlsView({ failed: loaded.failed, scoreTakesTaps }),
+    [loaded.failed, scoreTakesTaps],
+  );
+  const view = useSyncExternalStore(
+    controls?.subscribe ?? noSubscription,
+    () => controls?.getView() ?? idleView,
+    () => idleView,
   );
   const peaks = useWaveform(engine === "audio" ? file.src : null);
 
@@ -87,8 +93,8 @@ export function PlayerView({ pieceName, file, soundfontSrc, files, closeHref }: 
         file={{ id: file.id, displayName: file.displayName, formatLabel: file.format.label, engine }}
         files={files}
         closeHref={closeHref}
-        snapshot={loaded.failed ? FAILED_SNAPSHOT : playerSnapshot}
-        player={player}
+        view={view}
+        controls={controls}
         peaks={peaks}
         attachScore={setScoreElement}
       />
@@ -197,8 +203,8 @@ function useWaveform(src: string | null): number[] | null {
 const SHEET_TITLES: Record<PlayerPanel, string> = { tempo: "Tempo", repeat: "Repetera", parts: "Stämmor" };
 
 /**
- * What the player shows for a snapshot; `player` is `null` until the engine
- * is ready to take commands. Phone layout below `md`, the wide layout with
+ * What the player shows for its controls' `view`; `controls` is `null` until
+ * the engine is ready to take commands. Phone layout below `md`, the wide layout with
  * its waveform `peaks` and keyboard shortcuts from `md` up. A notation File's
  * score is drawn in the element given to `attachScore`.
  */
@@ -207,8 +213,8 @@ export function PlayerScreen({
   file,
   files,
   closeHref,
-  snapshot,
-  player,
+  view,
+  controls,
   peaks,
   attachScore,
 }: {
@@ -216,18 +222,17 @@ export function PlayerScreen({
   file: Pick<PlayerFileOption, "id" | "displayName" | "formatLabel"> & { engine: PlayerEngine };
   files: readonly PlayerFileOption[];
   closeHref: string;
-  snapshot: PlayerSnapshot;
-  player: Player | null;
+  view: PlayerControlsView;
+  controls: PlayerControls | null;
   peaks: readonly number[] | null;
   attachScore?: (element: HTMLDivElement | null) => void;
 }) {
   const router = useRouter();
-  const hasScore = file.engine === "notation";
   const [sheet, setSheet] = useState<PlayerPanel | null>(null);
   const [panel, setPanel] = useState<PlayerPanel | null>(null);
-  // The singer's own part in Stämmor, for this visit only.
-  const [mine, setMine] = useState<string | null>(null);
-  const shortcuts = useShortcuts({ player, snapshot, layerOpen: sheet !== null || panel !== null });
+  const shortcuts = useShortcuts({ controls, view, layerOpen: sheet !== null || panel !== null });
+  const run = useCallback((command: PlayerCommand) => void controls?.run(command), [controls]);
+  const seek = (seconds: number) => run({ type: "seek", seconds });
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -274,77 +279,56 @@ export function PlayerScreen({
 
       {/* Not a <main>: the player opens inside the app's own. */}
       {file.engine === "notation" ? (
-        <ScoreArea status={snapshot.status} attach={attachScore} />
+        <ScoreArea status={view.status} attach={attachScore} />
       ) : (
         <>
           <div className="grid min-h-0 flex-1 place-items-center overflow-y-auto px-6 py-3 md:hidden">
             <div className="space-y-3 text-center">
               <Music className="mx-auto size-16 text-muted-foreground/40" aria-hidden />
               <p className="font-medium break-words">{file.displayName}</p>
-              <NoScoreNote status={snapshot.status} engine={file.engine} />
+              <NoScoreNote status={view.status} engine={file.engine} />
             </div>
           </div>
           <div className="hidden min-h-0 flex-1 overflow-y-auto bg-muted/30 md:block">
-            <NoScoreStrip
-              name={file.displayName}
-              engine={file.engine}
-              snapshot={snapshot}
-              peaks={peaks}
-              onSeek={(seconds) => player?.seek(seconds)}
-            />
+            <NoScoreStrip name={file.displayName} engine={file.engine} view={view} peaks={peaks} onSeek={seek} />
           </div>
         </>
       )}
 
       <footer className="border-t bg-background px-4 pt-2 pb-[max(env(safe-area-inset-bottom),12px)] md:hidden">
-        <SeekBar
-          position={snapshot.position}
-          duration={snapshot.duration}
-          bars={snapshot.bars}
-          barNumbers={snapshot.barNumbers}
-          loop={snapshot.loop}
-          onSeek={(seconds) => player?.seek(seconds)}
-        />
+        <SeekBar playhead={view.playhead} loop={view.passage.range} onSeek={seek} />
         <div className="mt-1 grid grid-cols-5 place-items-center">
           <DockButton
             icon={<Timer className="size-5" aria-hidden />}
-            label={`${snapshot.tempo} %`}
-            active={snapshot.tempo !== DEFAULT_TEMPO}
+            label={`${view.tempo.percent} %`}
+            active={view.tempo.changed}
             onClick={() => setSheet("tempo")}
           />
           <DockButton
             icon={<Repeat className="size-5" aria-hidden />}
             label="Repetera"
-            active={isRepeating(snapshot.loop)}
+            active={view.passage.repeating}
             onClick={() => setSheet("repeat")}
           />
-          <PlayButton playing={snapshot.playing} player={player} />
-          {snapshot.parts.length > 0 ? (
+          <PlayButton playing={view.playing} run={run} />
+          {view.parts.shown ? (
             <DockButton
               icon={<SlidersHorizontal className="size-5" aria-hidden />}
               label="Stämmor"
-              active={mixChanged(snapshot.parts, snapshot.sound)}
+              active={view.parts.changed}
               onClick={() => setSheet("parts")}
             />
           ) : null}
         </div>
       </footer>
-      <DesktopTransport
-        snapshot={snapshot}
-        hasScore={hasScore}
-        player={player}
-        panel={panel}
-        onPanel={setPanel}
-        mine={mine}
-        onMine={setMine}
-      />
+      <DesktopTransport view={view} run={run} panel={panel} onPanel={setPanel} />
 
       <ShortcutHud message={shortcuts.hud} />
       <ShortcutsDialog
         open={shortcuts.helpOpen}
         onOpenChange={shortcuts.setHelpOpen}
-        hasBars={snapshot.bars.length > 0}
-        hasParts={snapshot.parts.length > 0}
+        hasBars={view.hasBars}
+        hasParts={view.parts.shown}
       />
 
       <Sheet open={sheet !== null} onOpenChange={(open) => !open && setSheet(null)}>
@@ -354,26 +338,10 @@ export function PlayerScreen({
           </SheetHeader>
           <div className="overflow-y-auto px-4 pb-6">
             {sheet === "tempo" ? (
-              <TempoControls tempo={snapshot.tempo} onTempo={(percent) => player?.setTempo(percent)} />
+              <TempoControls tempo={view.tempo.percent} onTempo={(percent) => run({ type: "setTempo", percent })} />
             ) : null}
-            {sheet === "repeat" ? (
-              <RepeatControls
-                loop={snapshot.loop}
-                score={hasScore ? snapshot : null}
-                onMark={() => player?.setLoop(markLoop(snapshot.loop, snapshot.position))}
-                onStop={() => player?.setLoop(null)}
-              />
-            ) : null}
-            {sheet === "parts" ? (
-              <PartsControls
-                parts={snapshot.parts}
-                sound={snapshot.sound}
-                mine={mine}
-                onMine={setMine}
-                player={player}
-                numbered={false}
-              />
-            ) : null}
+            {sheet === "repeat" ? <RepeatControls passage={view.passage} run={run} /> : null}
+            {sheet === "parts" ? <PartsControls parts={view.parts} run={run} numbered={false} /> : null}
           </div>
         </SheetContent>
       </Sheet>

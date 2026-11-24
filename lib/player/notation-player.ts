@@ -1,14 +1,17 @@
 import { audibleGain, DEFAULT_GAIN, EQUAL_MIX } from "@/lib/player/mix";
 import { type NotationBar, secondsAtTick, tickAtSeconds } from "@/lib/player/notation-bars";
 import {
+  barAt,
   clampTempo,
   IDLE_SNAPSHOT,
   isRepeating,
   type Loop,
   type Player,
   type PlayerPart,
+  type PlayerSnapshot,
   playStart,
 } from "@/lib/player/player";
+import { endAtBar, startAtBar } from "@/lib/player/player-controls";
 import { createSnapshotStore } from "@/lib/player/snapshot-store";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
@@ -115,7 +118,7 @@ export function createNotationPlayer(
     update({ position: secondsAtTick(bars, tick) });
   });
   score.onPlaying((playing) => update({ playing }));
-  score.onBarTapped((tapped) => setLoop(tapBar(store.get().loop, tapped, bars, store.get().position)));
+  score.onBarTapped((tapped) => setLoop(tapBar(tapped, bars, store.get())));
 
   function setLoop(loop: Loop | null) {
     if (isRepeating(loop)) {
@@ -177,23 +180,15 @@ export function createNotationPlayer(
  * A bar played more than once counts where it is played nearest the playhead
  * when it starts a passage, and nearest the passage's start when it ends one.
  */
-function tapBar(loop: Loop | null, tapped: number, bars: readonly NotationBar[], position: number): Loop {
-  const played = bars.flatMap((bar, index) => (bar.number === tapped + 1 ? [index] : []));
+function tapBar(
+  tapped: number,
+  notationBars: readonly NotationBar[],
+  { loop, position, bars, duration }: PlayerSnapshot,
+): Loop {
+  const played = notationBars.flatMap(({ number }, index) => (number === tapped + 1 ? [index + 1] : []));
   if (played.length === 0) return loop ?? { start: position, end: null };
-  if (loop === null || loop.end !== null) {
-    return { start: bars[nearest(played, barIndexAt(bars, position))].start, end: null };
-  }
-  const first = barIndexAt(bars, loop.start);
-  const last = nearest(played, first);
-  return { start: bars[Math.min(first, last)].start, end: bars[Math.max(first, last)].end };
-}
-
-/** Where the bar `seconds` falls in comes in playing order, counted from 0. */
-function barIndexAt(bars: readonly NotationBar[], seconds: number): number {
-  return Math.max(
-    0,
-    bars.findLastIndex(({ start }) => start <= seconds),
-  );
+  if (loop === null || loop.end !== null) return startAtBar(null, nearest(played, barAt(bars, position) ?? 1), bars);
+  return endAtBar(loop, nearest(played, barAt(bars, loop.start) ?? 1), { bars, duration });
 }
 
 /** The one of `indexes` nearest `index`, the earlier of two as near. */
@@ -204,7 +199,8 @@ function nearest(indexes: readonly number[], index: number): number {
 /** The bars of the score to shade for `loop`: its start bar while it is being marked. */
 function shadedBars(loop: Loop | null, bars: readonly NotationBar[]): { first: number; last: number } | null {
   if (loop === null) return null;
-  const first = bars[barIndexAt(bars, loop.start)].number - 1;
+  const starts = bars.map(({ start }) => start);
+  const first = bars[(barAt(starts, loop.start) ?? 1) - 1].number - 1;
   if (loop.end === null) return { first, last: first };
   // The bar the passage ends in, not the one starting where it ends.
   const endsIn = bars.findLast(({ start }) => start < (loop.end ?? 0)) ?? bars[0];

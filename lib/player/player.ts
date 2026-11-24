@@ -137,9 +137,6 @@ export function barAt(bars: readonly number[], seconds: number): number | null {
   return next === -1 ? bars.length : Math.max(1, next);
 }
 
-/** When each bar starts and the number the score gives it: what labels and steps a file by bar. */
-export type BarTimeline = Pick<PlayerSnapshot, "bars" | "barNumbers">;
-
 /** The number the score gives `bar`, counted from 1 in playing order (see `PlayerSnapshot.barNumbers`). */
 export function barNumber(barNumbers: readonly number[], bar: number): number {
   return barNumbers[bar - 1] ?? bar;

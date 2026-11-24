@@ -5,17 +5,8 @@ import type { MouseEvent, ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  barNumberAt,
-  DEFAULT_TEMPO,
-  formatTime,
-  isRepeating,
-  type Loop,
-  markLoop,
-  type Player,
-  type PlayerSnapshot,
-} from "@/lib/player/player";
-import { mixChanged } from "@/lib/player/mix";
+import type { Loop } from "@/lib/player/player";
+import type { PlayerControlsView } from "@/lib/player/player-controls";
 import { listedShortcuts } from "@/lib/player/shortcuts";
 import { cn } from "@/lib/utils";
 
@@ -24,11 +15,11 @@ import {
   type NoScoreEngine,
   NoScoreNote,
   PartsControls,
-  passageLabel,
   passageStyle,
   PlayButton,
   type PlayerPanel,
   RepeatControls,
+  type RunCommand,
   SeekTrack,
   TempoControls,
 } from "./controls";
@@ -63,23 +54,24 @@ export function ShortcutsButton({ onClick, className }: { onClick: () => void; c
 export function NoScoreStrip({
   name,
   engine,
-  snapshot,
+  view,
   peaks,
   onSeek,
 }: {
   name: string;
   engine: NoScoreEngine;
-  snapshot: PlayerSnapshot;
+  view: PlayerControlsView;
   peaks: readonly number[] | null;
   onSeek: (seconds: number) => void;
 }) {
-  const strip = { position: snapshot.position, duration: snapshot.duration, loop: snapshot.loop, onSeek };
+  const { playhead, passage } = view;
+  const strip = { position: playhead.position, duration: playhead.duration, loop: passage.range, onSeek };
   return (
     <div className="flex size-full flex-col items-center justify-center gap-6 px-10">
       <div className="space-y-2 text-center">
         <Music className="mx-auto size-10 text-muted-foreground/50" aria-hidden />
         <p className="font-medium break-words">{name}</p>
-        <NoScoreNote status={snapshot.status} engine={engine} />
+        <NoScoreNote status={view.status} engine={engine} />
       </div>
       {engine === "audio" ? <WaveformStrip peaks={peaks} {...strip} /> : <PlainStrip {...strip} />}
       <p className="text-xs text-muted-foreground">
@@ -156,29 +148,20 @@ function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
 /**
  * The transport row at the bottom: Play, the time, the seek bar, the length,
  * then Tempo, Repetera and, for a file with parts, Stämmor, each opening a
- * popover above its button. `mine` is the singer's own part in Stämmor.
- * With a score (`hasScore`), a passage is set and shown by bar.
+ * popover above its button.
  */
 export function DesktopTransport({
-  snapshot,
-  hasScore,
-  player,
+  view,
+  run,
   panel,
   onPanel,
-  mine,
-  onMine,
 }: {
-  snapshot: PlayerSnapshot;
-  hasScore: boolean;
-  player: Player | null;
+  view: PlayerControlsView;
+  run: RunCommand;
   panel: PlayerPanel | null;
   onPanel: (panel: PlayerPanel | null) => void;
-  mine: string | null;
-  onMine: (partId: string | null) => void;
 }) {
-  const { loop } = snapshot;
-  const bar = barNumberAt(snapshot.bars, snapshot.barNumbers, snapshot.position);
-  const score = hasScore ? snapshot : null;
+  const { playhead, tempo, passage, parts } = view;
   const panelProps = (key: PlayerPanel) => ({
     open: panel === key,
     onOpenChange: (open: boolean) => onPanel(open ? key : null),
@@ -186,63 +169,51 @@ export function DesktopTransport({
 
   return (
     <footer data-layout="desktop" className="hidden items-center gap-4 border-t bg-background px-6 py-3 md:flex">
-      <PlayButton playing={snapshot.playing} player={player} />
+      <PlayButton playing={view.playing} run={run} />
       <span className="shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-        <span className="inline-block w-12">{formatTime(snapshot.position)}</span>
-        {bar === null ? null : <span className="ml-2 inline-block min-w-14 text-left">takt {bar}</span>}
+        <span className="inline-block w-12">{playhead.time}</span>
+        {playhead.bar === null ? null : <span className="ml-2 inline-block min-w-14 text-left">{playhead.bar}</span>}
       </span>
       <SeekTrack
-        position={snapshot.position}
-        duration={snapshot.duration}
-        loop={loop}
-        onSeek={(seconds) => player?.seek(seconds)}
+        position={playhead.position}
+        duration={playhead.duration}
+        loop={passage.range}
+        onSeek={(seconds) => run({ type: "seek", seconds })}
         className="min-w-0 flex-1"
       />
-      <span className="w-12 shrink-0 text-xs text-muted-foreground tabular-nums">{formatTime(snapshot.duration)}</span>
+      <span className="w-12 shrink-0 text-xs text-muted-foreground tabular-nums">{playhead.length}</span>
       <div className="flex shrink-0 items-center gap-1">
         <PanelButton
           {...panelProps("tempo")}
           icon={<Timer className="size-4" aria-hidden />}
-          label={`${snapshot.tempo} %`}
-          active={snapshot.tempo !== DEFAULT_TEMPO}
+          label={`${tempo.percent} %`}
+          active={tempo.changed}
           title="Tempo"
           shortcut="− / +"
         >
-          <TempoControls tempo={snapshot.tempo} onTempo={(percent) => player?.setTempo(percent)} />
+          <TempoControls tempo={tempo.percent} onTempo={(percent) => run({ type: "setTempo", percent })} />
         </PanelButton>
         <PanelButton
           {...panelProps("repeat")}
           icon={<Repeat className="size-4" aria-hidden />}
-          label={isRepeating(loop) ? passageLabel(loop, score) : "Repetera"}
-          active={isRepeating(loop)}
+          label={passage.label ?? "Repetera"}
+          active={passage.repeating}
           title="Repetera"
           shortcut="A / B / Esc"
         >
-          <RepeatControls
-            loop={loop}
-            score={score}
-            onMark={() => player?.setLoop(markLoop(loop, snapshot.position))}
-            onStop={() => player?.setLoop(null)}
-          />
+          <RepeatControls passage={passage} run={run} />
         </PanelButton>
-        {snapshot.parts.length > 0 ? (
+        {parts.shown ? (
           <PanelButton
             {...panelProps("parts")}
             icon={<SlidersHorizontal className="size-4" aria-hidden />}
             label="Stämmor"
-            active={mixChanged(snapshot.parts, snapshot.sound)}
+            active={parts.changed}
             title="Stämmor"
             shortcut="1–9 / 0"
             wide
           >
-            <PartsControls
-              parts={snapshot.parts}
-              sound={snapshot.sound}
-              mine={mine}
-              onMine={onMine}
-              player={player}
-              numbered
-            />
+            <PartsControls parts={parts} run={run} numbered />
           </PanelButton>
         ) : null}
       </div>
