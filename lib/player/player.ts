@@ -75,6 +75,16 @@ export function clampTempo(percent: number): number {
   return Math.min(TEMPO_MAX, Math.max(TEMPO_MIN, Math.round(percent)));
 }
 
+/** Where playback jumps back to once it reaches the end of a repeating passage; `null` while it plays on. */
+export function repeatJump(loop: Loop | null, position: number): number | null {
+  return isRepeating(loop) && position >= loop.end ? loop.start : null;
+}
+
+/** Where Play starts outside a repeating passage: at its beginning; `null` to play from the playhead. */
+export function playStart(loop: Loop | null, position: number): number | null {
+  return isRepeating(loop) && (position < loop.start || position >= loop.end) ? loop.start : null;
+}
+
 /**
  * "Start här" / "Slut här" at the playhead: starts a passage, or ends the one
  * being marked. An end before the start swaps them; an end at the start keeps

@@ -1,5 +1,5 @@
 import { browserFrames, type FrameScheduler } from "@/lib/player/frames";
-import { clampTempo, isRepeating, type Loop, type Player } from "@/lib/player/player";
+import { clampTempo, isRepeating, type Loop, playStart, type Player, repeatJump } from "@/lib/player/player";
 import { createSnapshotStore } from "@/lib/player/snapshot-store";
 
 /** The parts of an `<audio>` element the audio player uses. */
@@ -38,10 +38,8 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
 
   /** Jumps back to the passage's start once playback has reached its end. */
   function followPlayhead() {
-    const { loop } = store.get();
-    if (isRepeating(loop) && !media.paused && media.currentTime >= loop.end) {
-      media.currentTime = loop.start;
-    }
+    const jump = media.paused ? null : repeatJump(store.get().loop, media.currentTime);
+    if (jump !== null) media.currentTime = jump;
     update({ position: media.currentTime });
   }
 
@@ -92,11 +90,8 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
     getSnapshot: store.get,
     subscribe: store.subscribe,
     play() {
-      const { loop } = store.get();
-      // Pressing play outside a whole passage starts at its beginning.
-      if (isRepeating(loop) && (media.currentTime < loop.start || media.currentTime >= loop.end)) {
-        media.currentTime = loop.start;
-      }
+      const start = playStart(store.get().loop, media.currentTime);
+      if (start !== null) media.currentTime = start;
       media.play().catch(() => update({ playing: false }));
     },
     pause: () => media.pause(),
