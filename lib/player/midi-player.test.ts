@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { type MidiPart } from "@/lib/player/midi-parts";
 import { createMidiPlayer, type MidiSequencer } from "@/lib/player/midi-player";
+import { DEFAULT_GAIN } from "@/lib/player/mix";
 import type { Player } from "@/lib/player/player";
 import { manualFrames } from "@/lib/testing/player";
 
@@ -14,6 +16,9 @@ class FakeSequencer implements MidiSequencer {
   duration = 120;
   playbackRate = 1;
   destroyed = false;
+  /** Each channel's gain, as last set; 1 until set. */
+  channelGains = new Map<number, number>();
+  program = 0;
   private ended: (() => void) | null = null;
 
   play() {
@@ -30,6 +35,18 @@ class FakeSequencer implements MidiSequencer {
 
   destroy() {
     this.destroyed = true;
+  }
+
+  setChannelGain(channel: number, gain: number) {
+    this.channelGains.set(channel, gain);
+  }
+
+  setProgram(program: number) {
+    this.program = program;
+  }
+
+  gainOf(channel: number) {
+    return this.channelGains.get(channel) ?? 1;
   }
 
   /** Plays to the end of the song, where the sequencer stops by itself. */
@@ -56,6 +73,14 @@ function manualTimer() {
 
 const BARS = [0, 2, 4, 6];
 
+const PARTS: MidiPart[] = [
+  { id: "track-1", name: "Sopran", percussion: false, channels: [0] },
+  { id: "track-2", name: "Alt", percussion: false, channels: [1] },
+  // Shares a channel with the alto, as tracks sometimes do.
+  { id: "track-3", name: "Alt 2", percussion: false, channels: [1] },
+  { id: "track-4", name: "Trummor", percussion: true, channels: [9] },
+];
+
 let sequencer: FakeSequencer;
 let frames: ReturnType<typeof manualFrames>;
 let timer: ReturnType<typeof manualTimer>;
@@ -65,7 +90,7 @@ beforeEach(() => {
   sequencer = new FakeSequencer();
   frames = manualFrames();
   timer = manualTimer();
-  player = createMidiPlayer(sequencer, { bars: BARS, frames, timer });
+  player = createMidiPlayer(sequencer, { bars: BARS, parts: PARTS, frames, timer });
 });
 
 describe("the MIDI player", () => {
@@ -165,6 +190,54 @@ describe("the MIDI player", () => {
     sequencer.end();
 
     expect(player.getSnapshot()).toMatchObject({ playing: false, position: 120 });
+  });
+
+  it("lists the file's parts, all equal", () => {
+    expect(player.getSnapshot().parts).toEqual(
+      PARTS.map(({ id, name, percussion }) => ({
+        id,
+        name,
+        percussion,
+        gain: DEFAULT_GAIN,
+        muted: false,
+        solo: false,
+      })),
+    );
+  });
+
+  it("plays each part's channels at its volume, the default volume being the file's own", () => {
+    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([1, 1, 1]);
+
+    player.setPart("track-1", { gain: DEFAULT_GAIN / 2 });
+
+    expect(player.getSnapshot().parts[0].gain).toBe(DEFAULT_GAIN / 2);
+    expect(sequencer.gainOf(0)).toBe(0.5);
+  });
+
+  it("silences a muted part, and every part but the soloed ones", () => {
+    player.setPart("track-1", { muted: true });
+    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([0, 1, 1]);
+
+    player.setPart("track-4", { solo: true });
+    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([0, 0, 1]);
+
+    player.setPart("track-4", { solo: false });
+    player.setPart("track-1", { muted: false });
+    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([1, 1, 1]);
+  });
+
+  it("keeps a channel heard while any part on it is", () => {
+    player.setPart("track-2", { muted: true });
+
+    expect(sequencer.gainOf(1)).toBe(1);
+  });
+
+  it("switches between piano and choir", () => {
+    player.setSound("choir");
+    expect([player.getSnapshot().sound, sequencer.program]).toEqual(["choir", 52]);
+
+    player.setSound("piano");
+    expect([player.getSnapshot().sound, sequencer.program]).toEqual(["piano", 0]);
   });
 
   it("lets go of the synthesizer when destroyed", () => {

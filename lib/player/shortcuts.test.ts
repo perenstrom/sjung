@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { EQUAL_MIX } from "@/lib/player/mix";
 import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
+import { part } from "@/lib/testing/player";
 import { type KeyPress, listedShortcuts, shortcutFor, type ShortcutContext } from "@/lib/player/shortcuts";
 
 function context(snapshot: Partial<PlayerSnapshot> = {}, rest: Partial<Omit<ShortcutContext, "snapshot">> = {}) {
@@ -232,16 +234,48 @@ describe("shortcutFor in a file with bars", () => {
   });
 });
 
+describe("shortcutFor in a file with parts", () => {
+  const parts = [part("Sopran"), part("Alt", { solo: true }), part("Tenor", { gain: 0.2, muted: true })];
+
+  it.each([
+    { key: "1", expected: { action: { type: "part", partId: "Sopran", change: { solo: true } }, hud: "Solo: Sopran" } },
+    { key: "2", expected: { action: { type: "part", partId: "Alt", change: { solo: false } }, hud: "Solo av: Alt" } },
+  ])("$key toggles solo on part $key", ({ key, expected }) => {
+    expect(shortcutFor(press(key), context({ parts }))).toEqual(expected);
+  });
+
+  it("leaves a number past the last part, and the numbers in a file without parts, to the page", () => {
+    expect(shortcutFor(press("4"), context({ parts }))).toBeNull();
+    expect(shortcutFor(press("1"), context())).toBeNull();
+    expect(shortcutFor(press("0"), context())).toBeNull();
+  });
+
+  it("0 sets all parts equal", () => {
+    expect(shortcutFor(press("0"), context({ parts }))).toEqual({
+      action: { type: "mix", mix: { Sopran: EQUAL_MIX, Alt: EQUAL_MIX, Tenor: EQUAL_MIX } },
+      hud: "Alla stämmor lika",
+    });
+  });
+});
+
 describe("listedShortcuts", () => {
+  it("lists 1–9 and 0 only for a file with parts", () => {
+    const keys = (hasParts: boolean) => listedShortcuts({ hasBars: true, hasParts }).flatMap(({ keys }) => keys);
+
+    expect(keys(true)).toEqual(expect.arrayContaining(["1–9", "0"]));
+    expect(keys(false)).not.toContain("0");
+  });
+
   it.each([false, true])("never mentions the unlisted K, I and O (bars: %s)", (hasBars) => {
-    const listed = listedShortcuts({ hasBars })
+    const listed = listedShortcuts({ hasBars, hasParts: true })
       .flatMap(({ keys, what }) => [...keys, what])
       .join(" ");
     expect(listed).not.toMatch(/\b[KIO]\b/);
   });
 
   it("moves by seconds in a file without bars, and by bars in one with them", () => {
-    const arrows = (hasBars: boolean) => listedShortcuts({ hasBars }).find(({ keys }) => keys.includes("←"))?.what;
+    const arrows = (hasBars: boolean) =>
+      listedShortcuts({ hasBars, hasParts: false }).find(({ keys }) => keys.includes("←"))?.what;
 
     expect(arrows(false)).toBe("5 sekunder bakåt / framåt");
     expect(arrows(true)).toBe("En takt bakåt / framåt");

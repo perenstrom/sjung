@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Music, Repeat, Timer, X } from "lucide-react";
+import { ChevronDown, Music, Repeat, SlidersHorizontal, Timer, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -17,6 +17,7 @@ import {
   type Player,
   type PlayerSnapshot,
 } from "@/lib/player/player";
+import { mixChanged } from "@/lib/player/mix";
 import { loadWaveform } from "@/lib/player/waveform";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
@@ -24,6 +25,7 @@ import { closePlayer } from "./closePlayer";
 import {
   DockButton,
   NoScoreNote,
+  PartsControls,
   PlayButton,
   type PlayerPanel,
   RepeatControls,
@@ -149,7 +151,7 @@ function useWaveform(src: string | null): number[] | null {
   return peaks;
 }
 
-const SHEET_TITLES: Record<PlayerPanel, string> = { tempo: "Tempo", repeat: "Repetera" };
+const SHEET_TITLES: Record<PlayerPanel, string> = { tempo: "Tempo", repeat: "Repetera", parts: "Stämmor" };
 
 /**
  * What the player shows for a snapshot; `player` is `null` until the engine
@@ -176,6 +178,8 @@ export function PlayerScreen({
   const router = useRouter();
   const [sheet, setSheet] = useState<PlayerPanel | null>(null);
   const [panel, setPanel] = useState<PlayerPanel | null>(null);
+  // The singer's own part in Stämmor, for this visit only.
+  const [mine, setMine] = useState<string | null>(null);
   const shortcuts = useShortcuts({ player, snapshot, layerOpen: sheet !== null || panel !== null });
 
   return (
@@ -261,15 +265,31 @@ export function PlayerScreen({
             onClick={() => setSheet("repeat")}
           />
           <PlayButton playing={snapshot.playing} player={player} />
+          {snapshot.parts.length > 0 ? (
+            <DockButton
+              icon={<SlidersHorizontal className="size-5" aria-hidden />}
+              label="Stämmor"
+              active={mixChanged(snapshot.parts, snapshot.sound)}
+              onClick={() => setSheet("parts")}
+            />
+          ) : null}
         </div>
       </footer>
-      <DesktopTransport snapshot={snapshot} player={player} panel={panel} onPanel={setPanel} />
+      <DesktopTransport
+        snapshot={snapshot}
+        player={player}
+        panel={panel}
+        onPanel={setPanel}
+        mine={mine}
+        onMine={setMine}
+      />
 
       <ShortcutHud message={shortcuts.hud} />
       <ShortcutsDialog
         open={shortcuts.helpOpen}
         onOpenChange={shortcuts.setHelpOpen}
         hasBars={snapshot.bars.length > 0}
+        hasParts={snapshot.parts.length > 0}
       />
 
       <Sheet open={sheet !== null} onOpenChange={(open) => !open && setSheet(null)}>
@@ -286,6 +306,16 @@ export function PlayerScreen({
                 loop={snapshot.loop}
                 onMark={() => player?.setLoop(markLoop(snapshot.loop, snapshot.position))}
                 onStop={() => player?.setLoop(null)}
+              />
+            ) : null}
+            {sheet === "parts" ? (
+              <PartsControls
+                parts={snapshot.parts}
+                sound={snapshot.sound}
+                mine={mine}
+                onMine={setMine}
+                player={player}
+                numbered={false}
               />
             ) : null}
           </div>

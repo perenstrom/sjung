@@ -55,7 +55,20 @@ export function isRepeating(loop: Loop | null): loop is Loop & { end: number } {
   return loop?.end != null;
 }
 
-export type PlayerPart = { id: string; name: string; gain: number; muted: boolean; solo: boolean };
+/**
+ * One part to mix: a voice, or percussion. `gain` is its volume from 0 to 1;
+ * a muted part is silent, and while any part is soloed only soloed parts are
+ * heard (`audibleGain`).
+ */
+export type PlayerPart = {
+  id: string;
+  name: string;
+  /** Drums and the like, marked *slagverk*, and never anyone's own part. */
+  percussion: boolean;
+  gain: number;
+  muted: boolean;
+  solo: boolean;
+};
 
 /** The instrument a notation or MIDI file is played with. */
 export type PlayerSound = "piano" | "choir";
