@@ -57,7 +57,7 @@ The worker is one Coolify app shared by `sjung-staging` and `sjung-production`, 
    docker run --rm --network coolify -v "$PWD/score.mscz:/score.mscz:ro" curlimages/curl -s -o /dev/null -w '%{http_code}\n' --data-binary @/score.mscz http://musescore-converter:8080/convert
    ```
 
-7. Set the runtime variable `MUSESCORE_CONVERTER_URL` to `http://musescore-converter:8080` on both `sjung-staging` and `sjung-production`. The app starts calling it in PER-478.
+7. Set the runtime variable `MUSESCORE_CONVERTER_URL` to `http://musescore-converter:8080` on both `sjung-staging` and `sjung-production`.
 
 Building on the host needs about 1–2 GB of build cache on top of the image, because the build downloads and unpacks a 190 MB AppImage. Redeploy it by hand when this folder changes; it is not part of the app's CI deploys. On stop it finishes the running and waiting conversions first (at most about 2.5 minutes with the defaults), so a shorter stop grace period cuts them off; the app retries a failed conversion (ADR-0009).
 

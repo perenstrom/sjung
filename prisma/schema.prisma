@@ -246,6 +246,13 @@ model Link {
   @@map("links")
 }
 
+/// How preparing a MuseScore File for the player went (ADR-0009).
+enum FileConversionState {
+  PENDING
+  READY
+  FAILED
+}
+
 model File {
   id          String   @id @default(uuid())
   createdAt   DateTime @default(now()) @map("created_at")
@@ -260,6 +267,10 @@ model File {
   size        Int
   /// See Category in CONTEXT.md; `null` is uncategorized.
   category    String?
+  /// How preparing a MuseScore File for the player went (ADR-0009); `null` for a File played as uploaded, or not at all.
+  conversionState      FileConversionState? @map("conversion_state")
+  /// Where the MusicXML derived from a MuseScore File is stored, once its conversion is ready.
+  convertedStoragePath String?              @unique @map("converted_storage_path")
 
   pieceId   String @map("piece_id")
   createdBy User?  @relation("FileCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)

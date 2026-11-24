@@ -8,6 +8,8 @@ type FileFormat = {
   mimeTypes: readonly string[];
   /** How the player plays a File of this format; absent when it is not a Playable File (see CONTEXT.md). */
   playable?: PlayableFormat;
+  /** Whether the player plays a MusicXML copy converted from it, rather than the File itself (ADR-0009). */
+  converted?: boolean;
 };
 
 /** Which player engine plays a Playable File (ADR-0010). */
@@ -80,6 +82,12 @@ const FILE_FORMATS: readonly FileFormat[] = [
     ],
     playable: { engine: "notation", label: "MXL" },
   },
+  {
+    extensions: [".mscz"],
+    mimeTypes: ["application/x-musescore", "application/zip", "application/x-zip-compressed", UNKNOWN_MIME_TYPE],
+    playable: { engine: "notation", label: "MuseScore" },
+    converted: true,
+  },
 ];
 
 /** The `accept` attribute for a file input that picks a File. */
@@ -103,6 +111,14 @@ export function isAllowedFile({ fileName, mimeType }: { fileName: string; mimeTy
 /** The File's format if it is a Playable File, which the player opens instead of downloading; otherwise `null`. */
 export function playableFormatOf({ fileName }: { fileName: string }): PlayableFormat | null {
   return formatOf(fileName)?.playable ?? null;
+}
+
+/**
+ * Whether the player plays a MusicXML copy converted from the File rather
+ * than the File itself: a MuseScore File, which no browser can read (ADR-0009).
+ */
+export function needsConversion({ fileName }: { fileName: string }): boolean {
+  return formatOf(fileName)?.converted ?? false;
 }
 
 /** The MIME type to upload a picked file as: what the browser reports, or a generic binary file when it reports nothing. */

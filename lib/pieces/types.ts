@@ -78,6 +78,7 @@ export const pieceDetailSelect = {
       fileName: true,
       size: true,
       category: true,
+      conversionState: true,
     },
   },
   links: {

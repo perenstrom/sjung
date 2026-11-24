@@ -1,3 +1,5 @@
+import { FileConversionState } from "@/app/generated/prisma/enums";
+import { convertedStoragePathOf } from "@/lib/pieces/file-store";
 import { testPrisma } from "./db";
 import type {
   User,
@@ -208,15 +210,29 @@ export async function createSetListNote(
 export async function createFile(
   piece: Piece,
   category: string | null = null,
-  { displayName = "Score", fileName = "score.pdf", mimeType = "application/pdf" } = {},
+  {
+    displayName = "Score",
+    fileName = "score.pdf",
+    mimeType = "application/pdf",
+    conversionState = null,
+  }: {
+    displayName?: string;
+    fileName?: string;
+    mimeType?: string;
+    /** For a MuseScore File; a `READY` one gets a converted copy's key next to its own. */
+    conversionState?: FileConversionState | null;
+  } = {},
 ): Promise<File> {
   fileCounter += 1;
+  const storagePath = `groups/${piece.groupId}/pieces/${piece.id}/${fileCounter}-${fileName}`;
   return testPrisma.file.create({
     data: {
       pieceId: piece.id,
       displayName,
       fileName,
-      storagePath: `groups/${piece.groupId}/pieces/${piece.id}/${fileCounter}-${fileName}`,
+      storagePath,
+      conversionState,
+      convertedStoragePath: conversionState === FileConversionState.READY ? convertedStoragePathOf(storagePath) : null,
       mimeType,
       size: 1024,
       category,

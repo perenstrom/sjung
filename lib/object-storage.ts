@@ -72,6 +72,19 @@ export async function putObject(
   await getClient().send(command);
 }
 
+/** The object's bytes, or `null` when there is no object at `key`. */
+export async function getObject(key: string): Promise<Uint8Array | null> {
+  try {
+    const object = await getClient().send(new GetObjectCommand({ Bucket: getBucket(), Key: key }));
+    return object.Body ? await object.Body.transformToByteArray() : new Uint8Array();
+  } catch (error) {
+    if (error instanceof S3ServiceException && error.$metadata.httpStatusCode === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 /** The object's size and type, or `null` when there is no object at `key`. */
 export async function headObject(key: string): Promise<StoredObject | null> {
   try {

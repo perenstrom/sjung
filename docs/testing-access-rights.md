@@ -87,8 +87,15 @@ Environment expectations:
 
 - **Module**: all R2 access goes through `lib/object-storage.ts` (sign a PUT or GET, head, delete keys, delete a prefix). Features reach it through the Piece file store (`lib/pieces/file-store.ts`), never directly.
 - **Fake**: `__tests__/support/fake-object-storage.ts` replaces `@/lib/object-storage` for every integration test through `vi.mock` in `__tests__/support/setup.ts`, so no integration test can reach real storage, even with the `R2_*` variables in `.env`. It is reset in the same `beforeEach` as the database.
-- **Uploading**: signed URLs are only recognisable strings. To stand in for the browser's PUT, sign the upload through the action and then call `putStoredObject(storagePath, { size, contentType })`. `storedKeys()` lists what is left in storage.
+- **Uploading**: signed URLs are only recognisable strings. To stand in for the browser's PUT, sign the upload through the action and then call `putStoredObject(storagePath, { size, contentType }, body?)`. `storedKeys()` lists what is left in storage, and `storedBody(key)` what an object holds.
 - **Failure injection**: `failDeletesOf(key)` makes every later delete of that key fail, like a real R2 error. The object stays.
+
+## MuseScore converter in tests
+
+- **Module**: the app reaches the converter worker (ADR-0009) only through `lib/musescore-converter.ts`, called by `convertFile` in the Piece file store, which the file actions schedule with `after` from `next/server`.
+- **Fake**: `__tests__/support/fake-musescore-converter.ts` is a real HTTP server on a free local port, started for every integration test file by `__tests__/support/setup.ts`, which points `MUSESCORE_CONVERTER_URL` at it. The app's client runs for real against it. It answers a score with `CONVERTED_PREFIX` followed by the score's bytes, and is reset in the same `beforeEach` as the database. `convertedScores()` lists the scores it was sent.
+- **Running conversions**: `after` only works inside a Next request, so a test file that finalizes a MuseScore upload swaps it for `__tests__/support/after.ts` (see the comment there) and runs the scheduled conversions with `runAfterTasks()`.
+- **Failure injection**: `failConversionsWith(status)` makes it answer with an error, like MuseScore failing; `makeConverterUnreachable()` points the app where nothing answers; `holdConversions()` holds conversions until released, to change a File while it is being converted.
 
 ## Playwright smoke
 

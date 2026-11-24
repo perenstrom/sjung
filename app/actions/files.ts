@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { findInGroup } from "@/lib/find-in-group";
 import * as fileStore from "@/lib/pieces/file-store";
 import prisma from "@/lib/prisma";
@@ -34,7 +36,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId, { select: fileStore.STORE_PIECE_SELECT });
-    await fileStore.addFile(
+    const file = await fileStore.addFile(
       piece,
       { storagePath, fileName },
       {
@@ -43,6 +45,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
         userId,
       },
     );
+    convertAfterResponse(file);
 
     await revalidatePieceRoutes(groupSlug, piece.id);
   });
@@ -64,7 +67,7 @@ export async function finalizePieceFileReplace(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const file = await findInGroup(groupId, "file", fileId, { select: fileStore.STORE_FILE_SELECT });
-    await fileStore.replaceFile(file, { storagePath, fileName }, userId);
+    convertAfterResponse(await fileStore.replaceFile(file, { storagePath, fileName }, userId));
 
     await revalidatePieceRoutes(groupSlug, file.piece.id);
   });
@@ -102,4 +105,15 @@ export async function deletePieceFile(formData: FormData) {
 
     await revalidatePieceRoutes(groupSlug, file.piece.id);
   });
+}
+
+/**
+ * Converts a MuseScore File for the player after the response is sent, so
+ * the upload doesn't wait for the worker (ADR-0009). No queue: a File left
+ * pending by a restart is retried by hand.
+ */
+function convertAfterResponse(file: fileStore.SavedFile) {
+  if (file.pendingConversion) {
+    after(() => fileStore.convertFile(file.id));
+  }
 }
