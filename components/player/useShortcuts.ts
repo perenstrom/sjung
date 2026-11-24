@@ -2,8 +2,8 @@
 
 import { useEffect, useEffectEvent, useState } from "react";
 
-import type { Player, PlayerSnapshot } from "@/lib/player/player";
-import { runShortcutAction, shortcutFor } from "@/lib/player/shortcuts";
+import type { PlayerControls, PlayerControlsView } from "@/lib/player/player-controls";
+import { commandFor } from "@/lib/player/shortcuts";
 
 const HUD_MILLISECONDS = 1600;
 
@@ -11,17 +11,18 @@ const HUD_MILLISECONDS = 1600;
 const OWN_KEYS = "textarea, select, input:not([type=range]), [contenteditable]:not([contenteditable=false])";
 
 /**
- * The player's keyboard shortcuts (`shortcutFor`), and the short message
- * (HUD) saying what a key just did. `layerOpen` is whether one of the
- * player's popovers is open; the shortcuts list counts too.
+ * The player's keyboard shortcuts (`commandFor`), and the short message
+ * (HUD) saying what a key just did. `controls` is `null` until the file has
+ * loaded. `layerOpen` is whether one of the player's popovers is open; the
+ * shortcuts list counts too.
  */
 export function useShortcuts({
-  player,
-  snapshot,
+  controls,
+  view,
   layerOpen,
 }: {
-  player: Player | null;
-  snapshot: PlayerSnapshot;
+  controls: PlayerControls | null;
+  view: PlayerControlsView;
   layerOpen: boolean;
 }) {
   const [hud, setHud] = useState<string | null>(null);
@@ -31,22 +32,20 @@ export function useShortcuts({
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (target?.closest(OWN_KEYS)) return null;
     const sliderFocused = target instanceof HTMLInputElement && target.type === "range";
-    const shortcut = shortcutFor(event, { snapshot, layerOpen: layerOpen || helpOpen, sliderFocused });
-    if (!shortcut) return null;
+    const command = commandFor(event, { view, layerOpen: layerOpen || helpOpen, sliderFocused });
+    if (!command) return null;
     // The shortcuts list covers the player, so only ? (to close it) acts there.
-    if (helpOpen && shortcut.action?.type !== "help") return null;
+    if (helpOpen && command.type !== "help") return null;
 
-    const { action } = shortcut;
-    if (action?.type === "help") {
+    if (command.type === "help") {
       event.preventDefault();
       setHelpOpen((open) => !open);
       return null;
     }
     // Until the file has loaded there is nothing for a key to do.
-    if (!player) return null;
+    if (!controls) return null;
     event.preventDefault();
-    if (action) runShortcutAction(player, action);
-    return shortcut.hud;
+    return controls.run(command);
   });
 
   useEffect(() => {

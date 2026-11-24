@@ -5,21 +5,9 @@ import type { ComponentProps, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { PlayerEngine } from "@/lib/file-formats";
-import { applyMix, audibleGain, MIX_PRESETS, presetMix, presetOf, presetOnChoosing } from "@/lib/player/mix";
-import {
-  type BarTimeline,
-  barNumberAt,
-  formatTime,
-  isRepeating,
-  type Loop,
-  passageBarsLabel,
-  type Player,
-  type PlayerPart,
-  type PlayerSnapshot,
-  type PlayerSound,
-  TEMPO_MAX,
-  TEMPO_MIN,
-} from "@/lib/player/player";
+import { MIX_PRESETS } from "@/lib/player/mix";
+import { type Passage, type PlayerSnapshot, type PlayerSound, TEMPO_MAX, TEMPO_MIN } from "@/lib/player/player";
+import { type PartView, type PlayerCommand, type PlayerControlsView, TEMPO_STEP } from "@/lib/player/player-controls";
 import { cn } from "@/lib/utils";
 
 const QUICK_TEMPOS = [60, 75, 90, 100] as const;
@@ -27,12 +15,15 @@ const QUICK_TEMPOS = [60, 75, 90, 100] as const;
 /** The Tempo, Repetera and Stämmor controls: a bottom sheet each on a phone, a popover each on desktop. */
 export type PlayerPanel = "tempo" | "repeat" | "parts";
 
-/** Play/Pause: pauses while playing, plays otherwise. Does nothing until the engine is ready. */
-export function PlayButton({ playing, player }: { playing: boolean; player: Player | null }) {
+/** Asks the player's controls to do `command`; does nothing until the engine is ready. */
+export type RunCommand = (command: PlayerCommand) => void;
+
+/** Play/Pause: pauses while playing, plays otherwise. */
+export function PlayButton({ playing, run }: { playing: boolean; run: RunCommand }) {
   return (
     <button
       type="button"
-      onClick={() => (playing ? player?.pause() : player?.play())}
+      onClick={() => run({ type: "togglePlay" })}
       aria-label={playing ? "Pausa" : "Spela"}
       className="grid size-14 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow"
     >
@@ -56,19 +47,6 @@ export function NoScoreNote({ status, engine }: { status: PlayerSnapshot["status
   ) : (
     <p className="text-sm text-muted-foreground">{NO_SCORE[engine]}</p>
   );
-}
-
-/** The playhead's time, and its bar, as the score numbers it, in a file with bars. */
-export function playheadLabel(position: number, bars: readonly number[], barNumbers: readonly number[]): string {
-  const bar = barNumberAt(bars, barNumbers, position);
-  return bar === null ? formatTime(position) : `${formatTime(position)} · takt ${bar}`;
-}
-
-/** A passage that repeats, by bar in a score and by time otherwise. */
-export function passageLabel(loop: Loop & { end: number }, score: BarTimeline | null): string {
-  return score
-    ? `takt ${passageBarsLabel(loop, score.bars, score.barNumbers)}`
-    : `${formatTime(loop.start)}–${formatTime(loop.end)}`;
 }
 
 /** A dock button that opens its own bottom sheet; highlighted while its setting is changed from the default. */
@@ -103,26 +81,20 @@ export function DockButton({
  * (and bar, if the file has bars) on one side and the length on the other.
  */
 export function SeekBar({
-  position,
-  duration,
-  bars,
-  barNumbers,
-  loop,
+  playhead,
+  passage,
   onSeek,
 }: {
-  position: number;
-  duration: number;
-  bars: readonly number[];
-  barNumbers: readonly number[];
-  loop: Loop | null;
+  playhead: PlayerControlsView["playhead"];
+  passage: Passage | null;
   onSeek: (seconds: number) => void;
 }) {
   return (
     <div className="space-y-1">
-      <SeekTrack position={position} duration={duration} loop={loop} onSeek={onSeek} />
+      <SeekTrack position={playhead.position} duration={playhead.duration} passage={passage} onSeek={onSeek} />
       <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-        <span>{playheadLabel(position, bars, barNumbers)}</span>
-        <span>{formatTime(duration)}</span>
+        <span>{playhead.label}</span>
+        <span>{playhead.length}</span>
       </div>
     </div>
   );
@@ -132,20 +104,24 @@ export function SeekBar({
 export function SeekTrack({
   position,
   duration,
-  loop,
+  passage,
   onSeek,
   className,
 }: {
   position: number;
   duration: number;
-  loop: Loop | null;
+  passage: Passage | null;
   onSeek: (seconds: number) => void;
   className?: string;
 }) {
   return (
     <div className={cn("relative h-6", className)}>
-      {loop ? (
-        <div aria-hidden className="absolute top-2 h-2 rounded bg-amber-300/70" style={passageStyle(loop, duration)} />
+      {passage ? (
+        <div
+          aria-hidden
+          className="absolute top-2 h-2 rounded bg-amber-300/70"
+          style={passageStyle(passage, duration)}
+        />
       ) : null}
       <input
         type="range"
@@ -165,9 +141,9 @@ export function SeekTrack({
 }
 
 /** Where the repeat passage sits along the whole file; a thin mark while only its start is set. */
-export function passageStyle(loop: Loop, duration: number) {
+export function passageStyle(passage: Passage, duration: number) {
   const percent = (seconds: number) => `${duration > 0 ? (seconds / duration) * 100 : 0}%`;
-  return { left: percent(loop.start), width: loop.end === null ? "3px" : percent(loop.end - loop.start) };
+  return { left: percent(passage.start), width: passage.end === null ? "3px" : percent(passage.end - passage.start) };
 }
 
 /** The Tempo sheet: a slider and quick buttons. Pitch never changes with tempo. */
@@ -183,7 +159,7 @@ export function TempoControls({ tempo, onTempo }: { tempo: number; onTempo: (per
           type="range"
           min={TEMPO_MIN}
           max={TEMPO_MAX}
-          step={5}
+          step={TEMPO_STEP}
           value={tempo}
           onChange={(event) => onTempo(Number(event.target.value))}
           className="w-full accent-primary"
@@ -209,53 +185,33 @@ export function TempoControls({ tempo, onTempo }: { tempo: number; onTempo: (per
 }
 
 /**
- * The Repetera sheet. In a `score`, a tap on a bar starts the passage and a
- * tap on another ends it. Without one, "Start här" and "Slut här" mark it at
- * the playhead. Either way it then repeats until stopped.
+ * The Repetera sheet. Where the score takes taps, a tap on a bar starts the
+ * passage and a tap on another ends it. Otherwise "Start här" and "Slut här"
+ * mark it at the playhead as A and B do: by whole bars in a file with bars.
+ * Either way it then repeats until stopped.
  */
-export function RepeatControls({
-  loop,
-  score = null,
-  onMark,
-  onStop,
-}: {
-  loop: Loop | null;
-  score?: BarTimeline | null;
-  onMark: () => void;
-  onStop: () => void;
-}) {
-  const marking = loop !== null && loop.end === null;
-
+export function RepeatControls({ passage, run }: { passage: PlayerControlsView["passage"]; run: RunCommand }) {
   return (
     <div className="space-y-3">
-      <p className="text-sm">{repeatStatus(loop, score)}</p>
+      <p className="text-sm">{passage.status}</p>
       <div className="flex gap-2">
-        {score ? null : (
-          <Button type="button" onClick={onMark} className="flex-1">
-            {marking ? "Slut här" : "Start här"}
+        {passage.markButton === null ? null : (
+          <Button
+            type="button"
+            onClick={() => run({ type: passage.marking ? "markEnd" : "markStart" })}
+            className="flex-1"
+          >
+            {passage.markButton}
           </Button>
         )}
-        {loop === null ? null : (
-          <Button type="button" variant="outline" onClick={onStop} className="flex-1">
+        {passage.range === null ? null : (
+          <Button type="button" variant="outline" onClick={() => run({ type: "stopRepeating" })} className="flex-1">
             Sluta repetera
           </Button>
         )}
       </div>
     </div>
   );
-}
-
-/** What the Repetera sheet says about the passage, by bar in a score. */
-function repeatStatus(loop: Loop | null, score: BarTimeline | null): string {
-  if (isRepeating(loop)) return `Repeterar ${passageLabel(loop, score)}`;
-  if (score === null) {
-    return loop === null
-      ? "Sätt start och slut för att repetera ett avsnitt."
-      : `Start ${formatTime(loop.start)}. Sätt slutet där avsnittet slutar.`;
-  }
-  return loop === null
-    ? "Tryck på en takt i noterna där avsnittet börjar."
-    : `Start: takt ${barNumberAt(score.bars, score.barNumbers, loop.start)}. Tryck på takten där avsnittet slutar.`;
 }
 
 const SOUNDS: readonly { sound: PlayerSound; label: string }[] = [
@@ -265,30 +221,19 @@ const SOUNDS: readonly { sound: PlayerSound; label: string }[] = [
 
 /**
  * The Stämmor sheet: the Kör | Piano switch, "Min stämma" with its presets,
- * then a row per part with volume, mute (M) and solo (S). `mine` is the
- * singer's own part, which the player view keeps; on desktop the parts are
- * `numbered` for the keys 1–9. Does nothing until the engine is ready.
+ * then a row per part with volume, mute (M) and solo (S). On desktop the
+ * parts are `numbered` for the keys 1–9.
  */
 export function PartsControls({
   parts,
-  sound,
-  mine,
-  onMine,
-  player,
+  run,
   numbered,
 }: {
-  parts: readonly PlayerPart[];
-  sound: PlayerSound;
-  mine: string | null;
-  onMine: (partId: string | null) => void;
-  player: Player | null;
+  parts: PlayerControlsView["parts"];
+  run: RunCommand;
   numbered: boolean;
 }) {
-  const preset = presetOf(parts, mine);
-  const choose = (chosen: string | null) => {
-    onMine(chosen);
-    if (player) applyMix(player, presetMix(presetOnChoosing(parts, mine, chosen), parts, chosen));
-  };
+  const { mine, preset, sound, list } = parts;
 
   return (
     <div className="space-y-4">
@@ -297,7 +242,7 @@ export function PartsControls({
           <ToggleButton
             key={option.sound}
             pressed={sound === option.sound}
-            onClick={() => player?.setSound(option.sound)}
+            onClick={() => run({ type: "setSound", sound: option.sound })}
             className="h-8 flex-1 rounded-md border-0"
           >
             {option.label}
@@ -308,13 +253,13 @@ export function PartsControls({
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">Min stämma</p>
         <div className="flex flex-wrap gap-1.5">
-          {parts
+          {list
             .filter(({ percussion }) => !percussion)
             .map((part) => (
               <ToggleButton
                 key={part.id}
                 pressed={mine === part.id}
-                onClick={() => choose(mine === part.id ? null : part.id)}
+                onClick={() => run({ type: "chooseMine", partId: mine === part.id ? null : part.id })}
                 className="min-h-10 min-w-12 rounded-full px-3"
               >
                 {part.name}
@@ -327,7 +272,7 @@ export function PartsControls({
               key={option.preset}
               pressed={preset === option.preset}
               disabled={mine === null && option.preset !== "equal"}
-              onClick={() => player && applyMix(player, presetMix(option.preset, parts, mine))}
+              onClick={() => run({ type: "applyPreset", preset: option.preset })}
               className="flex-1 px-1 py-1.5 text-xs"
             >
               {option.label}
@@ -337,14 +282,8 @@ export function PartsControls({
       </div>
 
       <div className="divide-y border-t">
-        {parts.map((part, index) => (
-          <PartRow
-            key={part.id}
-            part={part}
-            heard={audibleGain(part, parts) > 0}
-            number={numbered && index < 9 ? index + 1 : null}
-            player={player}
-          />
+        {list.map((part, index) => (
+          <PartRow key={part.id} part={part} number={numbered && index < 9 ? index + 1 : null} run={run} />
         ))}
       </div>
     </div>
@@ -352,17 +291,10 @@ export function PartsControls({
 }
 
 /** One part's volume, M and S; dimmed while it isn't heard. */
-function PartRow({
-  part,
-  heard,
-  number,
-  player,
-}: {
-  part: PlayerPart;
-  heard: boolean;
-  number: number | null;
-  player: Player | null;
-}) {
+function PartRow({ part, number, run }: { part: PartView; number: number | null; run: RunCommand }) {
+  const { heard } = part;
+  const setPart = (change: Partial<Pick<PartView, "gain" | "muted" | "solo">>) =>
+    run({ type: "setPart", partId: part.id, change });
   return (
     <div className="flex items-center gap-2 py-1.5">
       {number === null ? null : <Kbd className="w-5 shrink-0 text-center">{number}</Kbd>}
@@ -376,13 +308,13 @@ function PartRow({
         max={1}
         step={0.05}
         value={part.gain}
-        onChange={(event) => player?.setPart(part.id, { gain: Number(event.target.value) })}
+        onChange={(event) => setPart({ gain: Number(event.target.value) })}
         aria-label={`Volym ${part.name}`}
         className={cn("min-w-0 flex-1 accent-primary", !heard && "opacity-40")}
       />
       <ToggleButton
         pressed={part.muted}
-        onClick={() => player?.setPart(part.id, { muted: !part.muted })}
+        onClick={() => setPart({ muted: !part.muted })}
         aria-label={`Tysta ${part.name}`}
         title="Tysta"
         className="size-9 shrink-0 text-xs font-semibold aria-pressed:border-red-500 aria-pressed:bg-red-500 aria-pressed:text-white"
@@ -391,7 +323,7 @@ function PartRow({
       </ToggleButton>
       <ToggleButton
         pressed={part.solo}
-        onClick={() => player?.setPart(part.id, { solo: !part.solo })}
+        onClick={() => setPart({ solo: !part.solo })}
         aria-label={`Solo ${part.name}`}
         title="Solo"
         className="size-9 shrink-0 text-xs font-semibold aria-pressed:border-amber-500 aria-pressed:bg-amber-400 aria-pressed:text-black"

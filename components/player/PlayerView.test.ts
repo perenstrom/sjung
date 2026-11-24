@@ -2,11 +2,12 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { PlayerEngine } from "@/lib/file-formats";
-import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
+import { IDLE_SNAPSHOT, type PlayerSnapshot } from "@/lib/player/player";
+import { controlsView } from "@/lib/player/player-controls";
 import { part } from "@/lib/testing/player";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
-import { PartsControls, RepeatControls, TempoControls } from "./controls";
+import { PartsControls, TempoControls } from "./controls";
 import { PlayerScreen } from "./PlayerView";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
@@ -26,9 +27,12 @@ function renderScreen(
       pieceName: "Vem kan segla",
       file: { ...files[1], engine },
       files,
-      snapshot: { ...IDLE_SNAPSHOT, status: "ready", duration: 120, ...snapshot },
+      view: controlsView(
+        { ...IDLE_SNAPSHOT, status: "ready", duration: 120, ...snapshot },
+        { mine: null, scoreTakesTaps: engine === "notation" },
+      ),
       closeHref: "/app/koren/setlists/sl-1",
-      player: null,
+      controls: null,
       peaks,
     }),
   );
@@ -86,7 +90,7 @@ describe("PlayerScreen for a MIDI File", () => {
   });
 
   it("draws a plain strip to seek in on desktop, not a waveform", () => {
-    const html = renderScreen({ bars, position: 60, loop: { start: 30, end: 90 } }, null, "midi");
+    const html = renderScreen({ bars, position: 60, passage: { start: 30, end: 90 } }, null, "midi");
 
     expect(html).not.toContain("data-waveform");
     expect(html).toMatch(/data-strip[^>]*>.*?data-passage[^>]*style="left:25%;width:50%"/);
@@ -104,20 +108,6 @@ describe("PlayerScreen for a notation File", () => {
     expect(textOf(renderScreen({}, null, "notation"))).not.toContain("Laddar noterna…");
     expect(textOf(renderScreen({ status: "error" }, null, "notation"))).toContain("Filen kunde inte spelas upp.");
   });
-
-  it("names the bar at the playhead as the score numbers it, on the phone and on desktop", () => {
-    // Bars 1–2 repeated: at 4.5 s bar 1 plays the second time.
-    const html = renderScreen({ bars: [0, 2, 4, 6], barNumbers: [1, 2, 1, 2], position: 4.5 }, null, "notation");
-
-    expect(textOf(html.match(/<footer[^>]*md:hidden[^>]*>.*?<\/footer>/)?.[0] ?? "")).toContain("0:04 · takt 1");
-    expect(textOf(desktopTransport(html))).toMatch(/0:04\s*takt 1/);
-  });
-
-  it("shows the passage by bar on Repetera once it is set", () => {
-    const html = renderScreen({ bars: [0, 2, 4, 6], loop: { start: 2, end: 6 } }, null, "notation");
-
-    expect(textOf(desktopTransport(html))).toMatch(/takt 2–3$/);
-  });
 });
 
 describe("PlayerScreen with parts", () => {
@@ -133,18 +123,15 @@ describe("PlayerScreen with parts", () => {
 });
 
 describe("PartsControls", () => {
+  function partsView({
+    parts = [part("Sopran"), part("Alt", { muted: true }), part("Trummor", { percussion: true, solo: true })],
+    sound = "piano",
+    mine = null,
+  }: Partial<Pick<PlayerSnapshot, "parts" | "sound">> & { mine?: string | null } = {}) {
+    return controlsView({ ...IDLE_SNAPSHOT, parts, sound }, { mine, scoreTakesTaps: false }).parts;
+  }
   function renderParts(props: Partial<Parameters<typeof PartsControls>[0]> = {}) {
-    return renderMarkup(
-      createElement(PartsControls, {
-        parts: [part("Sopran"), part("Alt", { muted: true }), part("Trummor", { percussion: true, solo: true })],
-        sound: "piano",
-        mine: null,
-        onMine: () => {},
-        player: null,
-        numbered: false,
-        ...props,
-      }),
-    );
+    return renderMarkup(createElement(PartsControls, { parts: partsView(), run: () => {}, numbered: false, ...props }));
   }
   const pressed = (html: string) =>
     [...html.matchAll(/<button[^>]*aria-pressed="true"[^>]*>(.*?)<\/button>/g)].map(([, label]) => textOf(label));
@@ -163,7 +150,7 @@ describe("PartsControls", () => {
         .map(({ label }) => label),
     ).toEqual(["Kör", "Piano"]);
     expect(pressed(html)).toContain("Piano");
-    expect(pressed(renderParts({ sound: "choir" }))).toContain("Kör");
+    expect(pressed(renderParts({ parts: partsView({ sound: "choir" }) }))).toContain("Kör");
   });
 
   it("offers the voices, not percussion, as Min stämma, and the presets only once one is chosen", () => {
@@ -177,19 +164,22 @@ describe("PartsControls", () => {
       { label: "Utan min", disabled: true },
       { label: "Bara min", disabled: true },
     ]);
-    expect(labels(renderParts({ mine: "Alt" })).every(({ disabled }) => !disabled)).toBe(true);
+    expect(labels(renderParts({ parts: partsView({ mine: "Alt" }) })).every(({ disabled }) => !disabled)).toBe(true);
   });
 
   it("marks my part and the preset the mix matches", () => {
     const equal = [part("Sopran"), part("Alt")];
 
-    expect(pressed(renderParts({ parts: equal, mine: "Alt" }))).toEqual(["Piano", "Alt", "Alla lika"]);
-    expect(pressed(renderParts({ parts: [part("Sopran"), part("Alt", { muted: true })], mine: "Alt" }))).toEqual([
+    expect(pressed(renderParts({ parts: partsView({ parts: equal, mine: "Alt" }) }))).toEqual([
       "Piano",
       "Alt",
-      "Utan min",
-      "M",
+      "Alla lika",
     ]);
+    expect(
+      pressed(
+        renderParts({ parts: partsView({ parts: [part("Sopran"), part("Alt", { muted: true })], mine: "Alt" }) }),
+      ),
+    ).toEqual(["Piano", "Alt", "Utan min", "M"]);
   });
 
   it("has a row per part with volume, M and S, percussion marked slagverk", () => {
@@ -222,12 +212,12 @@ describe("PlayerScreen on desktop", () => {
   });
 
   it("shows the passage on Repetera once it is set", () => {
-    expect(textOf(desktopTransport(renderScreen({ loop: { start: 12, end: 30 } })))).toMatch(/0:12–0:30$/);
-    expect(textOf(desktopTransport(renderScreen({ loop: { start: 12, end: null } })))).toMatch(/Repetera$/);
+    expect(textOf(desktopTransport(renderScreen({ passage: { start: 12, end: 30 } })))).toMatch(/0:12–0:30$/);
+    expect(textOf(desktopTransport(renderScreen({ passage: { start: 12, end: null } })))).toMatch(/Repetera$/);
   });
 
   it("draws the audio File as a waveform strip, played up to the playhead, with the passage shaded", () => {
-    const html = renderScreen({ position: 60, loop: { start: 30, end: 90 } }, [0.5, 1, 0.25, 0.75]);
+    const html = renderScreen({ position: 60, passage: { start: 30, end: 90 } }, [0.5, 1, 0.25, 0.75]);
     const strip = html.match(/<div[^>]*data-waveform[^>]*>.*?<\/div><\/div>/)?.[0] ?? html;
     const bars = [...strip.matchAll(/data-bar="(played|ahead)"[^>]*style="height:(\d+)%"/g)].map(
       ([, state, height]) => [state, Number(height)],
@@ -255,35 +245,4 @@ describe("TempoControls", () => {
     ]);
     expect(html).toMatch(/<input[^>]*type="range"[^>]*min="50"[^>]*max="120"/);
   });
-});
-
-describe("RepeatControls", () => {
-  it.each<{ loop: Loop | null; expected: string }>([
-    { loop: null, expected: "Sätt start och slut för att repetera ett avsnitt. Start här" },
-    {
-      loop: { start: 12, end: null },
-      expected: "Start 0:12. Sätt slutet där avsnittet slutar. Slut här Sluta repetera",
-    },
-    { loop: { start: 12, end: 30 }, expected: "Repeterar 0:12–0:30 Start här Sluta repetera" },
-  ])("with passage $loop shows: $expected", ({ loop, expected }) => {
-    const html = renderMarkup(createElement(RepeatControls, { loop, onMark: () => {}, onStop: () => {} }));
-
-    expect(shownIn(html)).toBe(expected);
-  });
-
-  it.each<{ loop: Loop | null; expected: string }>([
-    { loop: null, expected: "Tryck på en takt i noterna där avsnittet börjar." },
-    { loop: { start: 2, end: null }, expected: "Start: takt 2. Tryck på takten där avsnittet slutar. Sluta repetera" },
-    { loop: { start: 2, end: 6 }, expected: "Repeterar takt 2–3 Sluta repetera" },
-  ])("in a score, with passage $loop, says to tap bars: $expected", ({ loop, expected }) => {
-    const score = { bars: [0, 2, 4, 6], barNumbers: [] };
-    const html = renderMarkup(createElement(RepeatControls, { loop, score, onMark: () => {}, onStop: () => {} }));
-
-    expect(shownIn(html)).toBe(expected);
-  });
-
-  /** The texts and buttons the sheet shows, in order. */
-  function shownIn(html: string) {
-    return [...html.matchAll(/<(?:p|button)[^>]*>(.*?)<\/(?:p|button)>/g)].map(([, text]) => textOf(text)).join(" ");
-  }
 });

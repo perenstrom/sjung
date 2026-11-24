@@ -4,7 +4,7 @@ import { DEFAULT_GAIN } from "@/lib/player/mix";
 import type { NotationBar } from "@/lib/player/notation-bars";
 import { createNotationPlayer, type NotationPart, type ScoreEngine } from "@/lib/player/notation-player";
 import type { Player } from "@/lib/player/player";
-import { shortcutFor } from "@/lib/player/shortcuts";
+import { createPlayerControls } from "@/lib/player/player-controls";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
 /** A 4/4 bar in alphaTab's ticks. */
@@ -159,13 +159,8 @@ describe("createNotationPlayer", () => {
   });
 
   it("steps bar by bar from where the last step went, before alphaTab has caught up", () => {
-    const step = () => {
-      const shortcut = shortcutFor(
-        { key: "ArrowRight", shiftKey: false, metaKey: false, ctrlKey: false, altKey: false },
-        { snapshot: player.getSnapshot(), layerOpen: false, sliderFocused: false },
-      );
-      if (shortcut?.action?.type === "seek") player.seek(shortcut.action.seconds);
-    };
+    const controls = createPlayerControls(player, { scoreTakesTaps: true });
+    const step = () => controls.run({ type: "stepBars", by: 1 });
 
     step();
     score.report(0); // From before the step: the worker hasn't seen it yet.
@@ -195,15 +190,15 @@ describe("createNotationPlayer", () => {
     expect(player.getSnapshot().tempo).toBe(75);
   });
 
-  it("repeats a passage through alphaTab's own loop, shading its bars in the score, and keeps the playhead where it is", () => {
+  it("repeats a passage through alphaTab's own passage, shading its bars in the score, and keeps the playhead where it is", () => {
     player.seek(3);
-    player.setLoop({ start: 2, end: 6 });
+    player.setPassage({ start: 2, end: 6 });
     score.catchUp();
 
     expect(score.range).toEqual({ startTick: BAR, endTick: BAR * 3 });
     expect(score.shaded).toEqual({ first: 1, last: 0 });
     expect(score.tick).toBe(BAR * 1.5);
-    expect(player.getSnapshot()).toMatchObject({ loop: { start: 2, end: 6 }, position: 3 });
+    expect(player.getSnapshot()).toMatchObject({ passage: { start: 2, end: 6 }, position: 3 });
   });
 
   it.each([
@@ -212,7 +207,7 @@ describe("createNotationPlayer", () => {
   ])("moves the playhead to the start of a passage set $case, where alphaTab plays it from", ({ position }) => {
     player.seek(position);
     player.play();
-    player.setLoop({ start: 4, end: 8 });
+    player.setPassage({ start: 4, end: 8 });
     score.catchUp();
 
     expect(score.tick).toBe(BAR * 2);
@@ -220,7 +215,7 @@ describe("createNotationPlayer", () => {
   });
 
   it("keeps a seek within the passage while it repeats, as alphaTab plays only that", () => {
-    player.setLoop({ start: 4, end: 8 });
+    player.setPassage({ start: 4, end: 8 });
     player.seek(1);
     score.catchUp();
 
@@ -232,16 +227,16 @@ describe("createNotationPlayer", () => {
   });
 
   it("shades only the start bar while a passage is being marked, and nothing once repeating stops", () => {
-    player.setLoop({ start: 2, end: null });
+    player.setPassage({ start: 2, end: null });
     expect(score.range).toBeNull();
     expect(score.shaded).toEqual({ first: 1, last: 1 });
 
-    player.setLoop(null);
+    player.setPassage(null);
     expect(score.shaded).toBeNull();
   });
 
   it("plays a passage from its start when the playhead is outside it", () => {
-    player.setLoop({ start: 2, end: 6 });
+    player.setPassage({ start: 2, end: 6 });
     player.seek(8);
     player.play();
 
@@ -249,18 +244,18 @@ describe("createNotationPlayer", () => {
     expect(player.getSnapshot().position).toBe(2);
   });
 
-  it.each<{ taps: number[]; position: number; loop: { start: number; end: number | null } }>([
-    { taps: [1], position: 0, loop: { start: 2, end: null } },
-    { taps: [0, 1], position: 0, loop: { start: 0, end: 4 } },
-    { taps: [1, 0], position: 0, loop: { start: 0, end: 4 } },
+  it.each<{ taps: number[]; position: number; passage: { start: number; end: number | null } }>([
+    { taps: [1], position: 0, passage: { start: 2, end: null } },
+    { taps: [0, 1], position: 0, passage: { start: 0, end: 4 } },
+    { taps: [1, 0], position: 0, passage: { start: 0, end: 4 } },
     // The second time round bars 1–2 are played from 4 s; the tap picks the time nearest the playhead.
-    { taps: [0, 2], position: 5, loop: { start: 4, end: 10 } },
-    { taps: [0], position: 7, loop: { start: 4, end: null } },
-  ])("sets the passage from taps on bars $taps of the score at $position s", ({ taps, position, loop }) => {
+    { taps: [0, 2], position: 5, passage: { start: 4, end: 10 } },
+    { taps: [0], position: 7, passage: { start: 4, end: null } },
+  ])("sets the passage from taps on bars $taps of the score at $position s", ({ taps, position, passage }) => {
     player.seek(position);
     for (const tap of taps) score.tap(tap);
 
-    expect(player.getSnapshot().loop).toEqual(loop);
+    expect(player.getSnapshot().passage).toEqual(passage);
   });
 
   it("starts a new passage with a tap once one is set", () => {
@@ -268,7 +263,7 @@ describe("createNotationPlayer", () => {
     score.tap(1);
     score.tap(2);
 
-    expect(player.getSnapshot().loop).toEqual({ start: 8, end: null });
+    expect(player.getSnapshot().passage).toEqual({ start: 8, end: null });
   });
 
   it("mixes each part through its track's volume, the default volume being the file's own", () => {

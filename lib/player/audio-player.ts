@@ -1,5 +1,5 @@
 import { browserFrames, type FrameScheduler } from "@/lib/player/frames";
-import { clampTempo, isRepeating, type Loop, playStart, type Player, repeatJump } from "@/lib/player/player";
+import { clampTempo, isRepeating, type Passage, playStart, type Player, repeatJump } from "@/lib/player/player";
 import { createSnapshotStore } from "@/lib/player/snapshot-store";
 
 /** The parts of an `<audio>` element the audio player uses. */
@@ -38,7 +38,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
 
   /** Jumps back to the passage's start once playback has reached its end. */
   function followPlayhead() {
-    const jump = media.paused ? null : repeatJump(store.get().loop, media.currentTime);
+    const jump = media.paused ? null : repeatJump(store.get().passage, media.currentTime);
     if (jump !== null) media.currentTime = jump;
     update({ position: media.currentTime });
   }
@@ -66,10 +66,10 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
       update({ playing: false, position: media.currentTime });
     },
     ended: () => {
-      const { loop } = store.get();
-      if (isRepeating(loop)) {
+      const { passage } = store.get();
+      if (isRepeating(passage)) {
         // A passage that ends with the file: the element has stopped, so start it again.
-        media.currentTime = loop.start;
+        media.currentTime = passage.start;
         update({ position: media.currentTime });
         media.play().catch(() => update({ playing: false }));
         return;
@@ -90,7 +90,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
     getSnapshot: store.get,
     subscribe: store.subscribe,
     play() {
-      const start = playStart(store.get().loop, media.currentTime);
+      const start = playStart(store.get().passage, media.currentTime);
       if (start !== null) media.currentTime = start;
       media.play().catch(() => update({ playing: false }));
     },
@@ -107,8 +107,8 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
       media.preservesPitch = true;
       update({ tempo });
     },
-    setLoop(loop: Loop | null) {
-      update({ loop });
+    setPassage(passage: Passage | null) {
+      update({ passage });
     },
     setPart() {},
     setSound() {},

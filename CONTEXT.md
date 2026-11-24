@@ -88,6 +88,10 @@ _Avoid_: Rehearsal file, Audio file, Track — a Playable File may be a score, a
 One voice or instrument in a MIDI or notation Playable File that the player mixes on its own: a MIDI file's own tracks, or a score's voices. Its name comes from the file only, or is "Stämma n" when the file gives none; percussion is a Part of its own. The singer may pick one Part as their own (_Min stämma_) for the presets, but only for that visit: nothing about Parts or the mix is stored. Swedish UI: _Stämma_ / _Stämmor_. See ADR-0010.
 _Avoid_: Voice (a staff can hold two), Channel, Track (outside MIDI).
 
+**Passage**:
+The stretch of a Playable File the player repeats, from a start to an end. In a file with bars it runs over whole bars and is named by them ("takt 16–19"); otherwise by time. Marked by the singer for that visit only and never stored. Swedish UI: _Repetera_ (the control), _avsnitt_.
+_Avoid_: Loop, Range, A–B (the keys that mark one, not the thing).
+
 **Link**:
 An external URL reference attached to a Piece (e.g. a recording or streaming link).
 

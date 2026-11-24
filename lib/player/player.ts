@@ -16,7 +16,7 @@ export interface Player {
   /** Sets the tempo in percent, kept within `TEMPO_MIN`–`TEMPO_MAX`. Pitch never changes. */
   setTempo(percent: number): void;
   /** Sets the passage to repeat, or `null` to stop repeating. */
-  setLoop(loop: Loop | null): void;
+  setPassage(passage: Passage | null): void;
   /** Changes one part's gain, mute or solo. */
   setPart(partId: string, change: Partial<Pick<PlayerPart, "gain" | "muted" | "solo">>): void;
   setSound(sound: PlayerSound): void;
@@ -33,7 +33,7 @@ export type PlayerSnapshot = {
   duration: number;
   /** In percent of the file's own tempo. */
   tempo: number;
-  loop: Loop | null;
+  passage: Passage | null;
   /**
    * When each bar starts, in seconds, in order. Empty for a file without
    * bars, such as audio.
@@ -54,11 +54,11 @@ export type PlayerSnapshot = {
  * A passage to repeat, in seconds. Playback loops it once it has an end;
  * with only a start, it is still being marked.
  */
-export type Loop = { start: number; end: number | null };
+export type Passage = { start: number; end: number | null };
 
 /** Whether a passage is set and repeats: it has an end, not just a start being marked. */
-export function isRepeating(loop: Loop | null): loop is Loop & { end: number } {
-  return loop?.end != null;
+export function isRepeating(passage: Passage | null): passage is Passage & { end: number } {
+  return passage?.end != null;
 }
 
 /**
@@ -98,7 +98,7 @@ export const IDLE_SNAPSHOT: PlayerSnapshot = {
   position: 0,
   duration: 0,
   tempo: DEFAULT_TEMPO,
-  loop: null,
+  passage: null,
   bars: [],
   barNumbers: [],
   parts: [],
@@ -110,24 +110,48 @@ export function clampTempo(percent: number): number {
 }
 
 /** Where playback jumps back to once it reaches the end of a repeating passage; `null` while it plays on. */
-export function repeatJump(loop: Loop | null, position: number): number | null {
-  return isRepeating(loop) && position >= loop.end ? loop.start : null;
+export function repeatJump(passage: Passage | null, position: number): number | null {
+  return isRepeating(passage) && position >= passage.end ? passage.start : null;
 }
 
 /** Where Play starts outside a repeating passage: at its beginning; `null` to play from the playhead. */
-export function playStart(loop: Loop | null, position: number): number | null {
-  return isRepeating(loop) && (position < loop.start || position >= loop.end) ? loop.start : null;
+export function playStart(passage: Passage | null, position: number): number | null {
+  return isRepeating(passage) && (position < passage.start || position >= passage.end) ? passage.start : null;
+}
+
+/** The passage starting at `seconds`, keeping the end of `passage` if that is still after it. */
+export function startAt(passage: Passage | null, seconds: number): Passage {
+  return { start: seconds, end: isRepeating(passage) && passage.end > seconds ? passage.end : null };
+}
+
+/** The passage starting at bar `bar` (counted from 1), keeping a later end of `passage`. */
+export function startAtBar(passage: Passage | null, bar: number, bars: readonly number[]): Passage {
+  return startAt(passage, bars[bar - 1]);
 }
 
 /**
- * "Start här" / "Slut här" at the playhead: starts a passage, or ends the one
- * being marked. An end before the start swaps them; an end at the start keeps
- * marking.
+ * The passage ending at `seconds`, from the start of `passage` or of the
+ * file, in whichever order they come; `null` for an end at the start.
  */
-export function markLoop(loop: Loop | null, position: number): Loop {
-  if (loop === null || loop.end !== null) return { start: position, end: null };
-  if (position === loop.start) return loop;
-  return position > loop.start ? { start: loop.start, end: position } : { start: position, end: loop.start };
+export function endAt(passage: Passage | null, seconds: number): Passage | null {
+  const start = passage?.start ?? 0;
+  if (seconds === start) return null;
+  return seconds > start ? { start, end: seconds } : { start: seconds, end: start };
+}
+
+/**
+ * The passage over whole bars from the bar `passage` starts in (or the
+ * first) to the end of bar `bar` (counted from 1), in whichever order they
+ * come. A bar ends where the next starts, or the last at `duration`.
+ */
+export function endAtBar(
+  passage: Passage | null,
+  bar: number,
+  { bars, duration }: { bars: readonly number[]; duration: number },
+): Passage {
+  const marked = barAt(bars, passage?.start ?? 0) ?? 1;
+  const [first, last] = marked <= bar ? [marked, bar] : [bar, marked];
+  return { start: bars[first - 1], end: bars[last] ?? duration };
 }
 
 /** The bar `seconds` falls in, counted from 1; `null` for a file without bars. */
@@ -136,9 +160,6 @@ export function barAt(bars: readonly number[], seconds: number): number | null {
   const next = bars.findIndex((start) => start > seconds);
   return next === -1 ? bars.length : Math.max(1, next);
 }
-
-/** When each bar starts and the number the score gives it: what labels and steps a file by bar. */
-export type BarTimeline = Pick<PlayerSnapshot, "bars" | "barNumbers">;
 
 /** The number the score gives `bar`, counted from 1 in playing order (see `PlayerSnapshot.barNumbers`). */
 export function barNumber(barNumbers: readonly number[], bar: number): number {
@@ -156,12 +177,12 @@ export function barNumberAt(bars: readonly number[], barNumbers: readonly number
  * or "16" for one bar. It ends in the bar before the one starting where it ends.
  */
 export function passageBarsLabel(
-  loop: { start: number; end: number },
+  passage: { start: number; end: number },
   bars: readonly number[],
   barNumbers: readonly number[],
 ): string {
-  const first = barAt(bars, loop.start) ?? 1;
-  const last = barAt(bars, bars.findLast((start) => start < loop.end) ?? loop.end) ?? first;
+  const first = barAt(bars, passage.start) ?? 1;
+  const last = barAt(bars, bars.findLast((start) => start < passage.end) ?? passage.end) ?? first;
   return first === last
     ? `${barNumber(barNumbers, first)}`
     : `${barNumber(barNumbers, first)}–${barNumber(barNumbers, last)}`;
