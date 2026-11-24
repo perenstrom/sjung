@@ -51,7 +51,7 @@ describe("the audio player", () => {
       position: 0,
       duration: 120,
       tempo: 100,
-      loop: null,
+      passage: null,
       parts: [],
     });
   });
@@ -92,7 +92,7 @@ describe("the audio player", () => {
   });
 
   it("jumps back to the start of the passage when playback reaches its end, until repeating stops", async () => {
-    player.setLoop({ start: 10, end: 20 });
+    player.setPassage({ start: 10, end: 20 });
     player.play();
     await Promise.resolve();
 
@@ -100,14 +100,14 @@ describe("the audio player", () => {
     frames.run();
     expect(player.getSnapshot().position).toBe(10);
 
-    player.setLoop(null);
+    player.setPassage(null);
     audio.currentTime = 20.05;
     frames.run();
     expect(player.getSnapshot().position).toBe(20.05);
   });
 
   it("repeats a passage that ends at the end of the file", async () => {
-    player.setLoop({ start: 100, end: 120 });
+    player.setPassage({ start: 100, end: 120 });
     player.play();
     await Promise.resolve();
 
@@ -120,7 +120,7 @@ describe("the audio player", () => {
   });
 
   it("keeps repeating while no frames run, as with the screen locked", async () => {
-    player.setLoop({ start: 10, end: 20 });
+    player.setPassage({ start: 10, end: 20 });
     player.play();
     await Promise.resolve();
 
@@ -131,7 +131,7 @@ describe("the audio player", () => {
   });
 
   it("plays on past a passage that has only a start", async () => {
-    player.setLoop({ start: 10, end: null });
+    player.setPassage({ start: 10, end: null });
     player.play();
     await Promise.resolve();
 

@@ -14,7 +14,7 @@ function press(key: string, modifiers: Partial<Omit<KeyPress, "key">> = {}): Key
   return { key, shiftKey: false, metaKey: false, ctrlKey: false, altKey: false, ...modifiers };
 }
 
-const passage = { loop: { start: 10, end: 50 } };
+const passage = { passage: { start: 10, end: 50 } };
 const parts = { parts: [part("Sopran"), part("Alt"), part("Tenor")] };
 
 describe("commandFor", () => {

@@ -5,7 +5,7 @@ import {
   clampTempo,
   IDLE_SNAPSHOT,
   isRepeating,
-  type Loop,
+  type Passage,
   type Player,
   type PlayerPart,
   playStart,
@@ -66,7 +66,7 @@ export function createMidiPlayer(
   let stopTimer: (() => void) | null = null;
 
   function followPlayhead() {
-    const jump = repeatJump(store.get().loop, sequencer.currentTime);
+    const jump = repeatJump(store.get().passage, sequencer.currentTime);
     if (jump !== null) sequencer.currentTime = jump;
     update({ position: sequencer.currentTime });
   }
@@ -85,7 +85,7 @@ export function createMidiPlayer(
   }
 
   function play() {
-    const start = playStart(store.get().loop, sequencer.currentTime);
+    const start = playStart(store.get().passage, sequencer.currentTime);
     if (start !== null) sequencer.currentTime = start;
     sequencer.play();
     update({ playing: true, position: sequencer.currentTime });
@@ -106,7 +106,7 @@ export function createMidiPlayer(
   sequencer.onEnded(() => {
     stopFollowing();
     // A passage that ends with the file: the sequencer has stopped, so start it again.
-    if (isRepeating(store.get().loop)) {
+    if (isRepeating(store.get().passage)) {
       play();
       return;
     }
@@ -131,8 +131,8 @@ export function createMidiPlayer(
       sequencer.playbackRate = tempo / 100;
       update({ tempo });
     },
-    setLoop(loop: Loop | null) {
-      update({ loop });
+    setPassage(passage: Passage | null) {
+      update({ passage });
     },
     setPart(partId, change) {
       const mixed = store.get().parts.map((part) => (part.id === partId ? { ...part, ...change } : part));

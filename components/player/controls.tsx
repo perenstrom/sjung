@@ -6,7 +6,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { PlayerEngine } from "@/lib/file-formats";
 import { MIX_PRESETS } from "@/lib/player/mix";
-import { type Loop, type PlayerSnapshot, type PlayerSound, TEMPO_MAX, TEMPO_MIN } from "@/lib/player/player";
+import { type Passage, type PlayerSnapshot, type PlayerSound, TEMPO_MAX, TEMPO_MIN } from "@/lib/player/player";
 import { type PartView, type PlayerCommand, type PlayerControlsView, TEMPO_STEP } from "@/lib/player/player-controls";
 import { cn } from "@/lib/utils";
 
@@ -82,16 +82,16 @@ export function DockButton({
  */
 export function SeekBar({
   playhead,
-  loop,
+  passage,
   onSeek,
 }: {
   playhead: PlayerControlsView["playhead"];
-  loop: Loop | null;
+  passage: Passage | null;
   onSeek: (seconds: number) => void;
 }) {
   return (
     <div className="space-y-1">
-      <SeekTrack position={playhead.position} duration={playhead.duration} loop={loop} onSeek={onSeek} />
+      <SeekTrack position={playhead.position} duration={playhead.duration} passage={passage} onSeek={onSeek} />
       <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
         <span>{playhead.label}</span>
         <span>{playhead.length}</span>
@@ -104,20 +104,24 @@ export function SeekBar({
 export function SeekTrack({
   position,
   duration,
-  loop,
+  passage,
   onSeek,
   className,
 }: {
   position: number;
   duration: number;
-  loop: Loop | null;
+  passage: Passage | null;
   onSeek: (seconds: number) => void;
   className?: string;
 }) {
   return (
     <div className={cn("relative h-6", className)}>
-      {loop ? (
-        <div aria-hidden className="absolute top-2 h-2 rounded bg-amber-300/70" style={passageStyle(loop, duration)} />
+      {passage ? (
+        <div
+          aria-hidden
+          className="absolute top-2 h-2 rounded bg-amber-300/70"
+          style={passageStyle(passage, duration)}
+        />
       ) : null}
       <input
         type="range"
@@ -137,9 +141,9 @@ export function SeekTrack({
 }
 
 /** Where the repeat passage sits along the whole file; a thin mark while only its start is set. */
-export function passageStyle(loop: Loop, duration: number) {
+export function passageStyle(passage: Passage, duration: number) {
   const percent = (seconds: number) => `${duration > 0 ? (seconds / duration) * 100 : 0}%`;
-  return { left: percent(loop.start), width: loop.end === null ? "3px" : percent(loop.end - loop.start) };
+  return { left: percent(passage.start), width: passage.end === null ? "3px" : percent(passage.end - passage.start) };
 }
 
 /** The Tempo sheet: a slider and quick buttons. Pitch never changes with tempo. */

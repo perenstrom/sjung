@@ -90,7 +90,7 @@ describe("PlayerScreen for a MIDI File", () => {
   });
 
   it("draws a plain strip to seek in on desktop, not a waveform", () => {
-    const html = renderScreen({ bars, position: 60, loop: { start: 30, end: 90 } }, null, "midi");
+    const html = renderScreen({ bars, position: 60, passage: { start: 30, end: 90 } }, null, "midi");
 
     expect(html).not.toContain("data-waveform");
     expect(html).toMatch(/data-strip[^>]*>.*?data-passage[^>]*style="left:25%;width:50%"/);
@@ -212,12 +212,12 @@ describe("PlayerScreen on desktop", () => {
   });
 
   it("shows the passage on Repetera once it is set", () => {
-    expect(textOf(desktopTransport(renderScreen({ loop: { start: 12, end: 30 } })))).toMatch(/0:12–0:30$/);
-    expect(textOf(desktopTransport(renderScreen({ loop: { start: 12, end: null } })))).toMatch(/Repetera$/);
+    expect(textOf(desktopTransport(renderScreen({ passage: { start: 12, end: 30 } })))).toMatch(/0:12–0:30$/);
+    expect(textOf(desktopTransport(renderScreen({ passage: { start: 12, end: null } })))).toMatch(/Repetera$/);
   });
 
   it("draws the audio File as a waveform strip, played up to the playhead, with the passage shaded", () => {
-    const html = renderScreen({ position: 60, loop: { start: 30, end: 90 } }, [0.5, 1, 0.25, 0.75]);
+    const html = renderScreen({ position: 60, passage: { start: 30, end: 90 } }, [0.5, 1, 0.25, 0.75]);
     const strip = html.match(/<div[^>]*data-waveform[^>]*>.*?<\/div><\/div>/)?.[0] ?? html;
     const bars = [...strip.matchAll(/data-bar="(played|ahead)"[^>]*style="height:(\d+)%"/g)].map(
       ([, state, height]) => [state, Number(height)],

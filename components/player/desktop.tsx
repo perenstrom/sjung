@@ -5,7 +5,7 @@ import type { MouseEvent, ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { Loop } from "@/lib/player/player";
+import type { Passage } from "@/lib/player/player";
 import type { PlayerControlsView } from "@/lib/player/player-controls";
 import { listedShortcuts } from "@/lib/player/shortcuts";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,7 @@ export function NoScoreStrip({
   onSeek: (seconds: number) => void;
 }) {
   const { playhead, passage } = view;
-  const strip = { position: playhead.position, duration: playhead.duration, loop: passage.range, onSeek };
+  const strip = { position: playhead.position, duration: playhead.duration, passage: passage.range, onSeek };
   return (
     <div className="flex size-full flex-col items-center justify-center gap-6 px-10">
       <div className="space-y-2 text-center">
@@ -86,7 +86,13 @@ export function NoScoreStrip({
  * Flat until the file is decoded, or if it can't be. A mouse shortcut: the
  * seek bar and the arrow keys do the same from the keyboard.
  */
-function WaveformStrip({ peaks, position, duration, loop, onSeek }: StripProps & { peaks: readonly number[] | null }) {
+function WaveformStrip({
+  peaks,
+  position,
+  duration,
+  passage,
+  onSeek,
+}: StripProps & { peaks: readonly number[] | null }) {
   const heights = peaks ?? Array.from({ length: WAVEFORM_BARS }, () => 0);
   const progress = duration > 0 ? position / duration : 0;
   return (
@@ -96,8 +102,12 @@ function WaveformStrip({ peaks, position, duration, loop, onSeek }: StripProps &
       className="relative flex h-32 w-full max-w-5xl cursor-pointer items-center gap-px"
       onClick={seekOnClick(duration, onSeek)}
     >
-      {loop ? (
-        <div data-passage className="absolute inset-y-0 rounded bg-amber-300/40" style={passageStyle(loop, duration)} />
+      {passage ? (
+        <div
+          data-passage
+          className="absolute inset-y-0 rounded bg-amber-300/40"
+          style={passageStyle(passage, duration)}
+        />
       ) : null}
       {heights.map((height, index) => {
         const played = index / heights.length < progress;
@@ -114,7 +124,7 @@ function WaveformStrip({ peaks, position, duration, loop, onSeek }: StripProps &
   );
 }
 
-type StripProps = { position: number; duration: number; loop: Loop | null; onSeek: (seconds: number) => void };
+type StripProps = { position: number; duration: number; passage: Passage | null; onSeek: (seconds: number) => void };
 
 /** Seeks to where the strip was clicked, as a share of the whole file. */
 function seekOnClick(duration: number, onSeek: (seconds: number) => void) {
@@ -128,7 +138,7 @@ function seekOnClick(duration: number, onSeek: (seconds: number) => void) {
  * The whole file as a plain bar, played up to the playhead, with the repeat
  * passage shaded. A mouse shortcut, as the waveform is.
  */
-function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
+function PlainStrip({ position, duration, passage, onSeek }: StripProps) {
   const played = duration > 0 ? (Math.min(position, duration) / duration) * 100 : 0;
   return (
     <div
@@ -137,8 +147,8 @@ function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
       className="relative h-4 w-full max-w-5xl cursor-pointer overflow-hidden rounded-full bg-primary/25"
       onClick={seekOnClick(duration, onSeek)}
     >
-      {loop ? (
-        <div data-passage className="absolute inset-y-0 bg-amber-300/70" style={passageStyle(loop, duration)} />
+      {passage ? (
+        <div data-passage className="absolute inset-y-0 bg-amber-300/70" style={passageStyle(passage, duration)} />
       ) : null}
       <div data-played className="absolute inset-y-0 left-0 bg-primary" style={{ width: `${played}%` }} />
     </div>
@@ -177,7 +187,7 @@ export function DesktopTransport({
       <SeekTrack
         position={playhead.position}
         duration={playhead.duration}
-        loop={passage.range}
+        passage={passage.range}
         onSeek={(seconds) => run({ type: "seek", seconds })}
         className="min-w-0 flex-1"
       />

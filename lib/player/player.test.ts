@@ -1,29 +1,29 @@
 import { describe, expect, it } from "vitest";
 
-import { barAt, formatTime, markLoop } from "@/lib/player/player";
+import { barAt, formatTime, markPassage } from "@/lib/player/player";
 
-describe("markLoop", () => {
+describe("markPassage", () => {
   it.each([
-    { case: "no passage yet: Start här", loop: null, at: 12, expected: { start: 12, end: null } },
-    { case: "a start: Slut här after it", loop: { start: 12, end: null }, at: 30, expected: { start: 12, end: 30 } },
+    { case: "no passage yet: Start här", passage: null, at: 12, expected: { start: 12, end: null } },
+    { case: "a start: Slut här after it", passage: { start: 12, end: null }, at: 30, expected: { start: 12, end: 30 } },
     {
       case: "a start: Slut här before it swaps them",
-      loop: { start: 12, end: null },
+      passage: { start: 12, end: null },
       at: 5,
       expected: { start: 5, end: 12 },
     },
     {
       case: "a whole passage: Start här begins a new one",
-      loop: { start: 12, end: 30 },
+      passage: { start: 12, end: 30 },
       at: 40,
       expected: { start: 40, end: null },
     },
-  ])("$case", ({ loop, at, expected }) => {
-    expect(markLoop(loop, at)).toEqual(expected);
+  ])("$case", ({ passage, at, expected }) => {
+    expect(markPassage(passage, at)).toEqual(expected);
   });
 
   it("keeps marking when the end is marked at the start", () => {
-    expect(markLoop({ start: 12, end: null }, 12)).toEqual({ start: 12, end: null });
+    expect(markPassage({ start: 12, end: null }, 12)).toEqual({ start: 12, end: null });
   });
 });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { EQUAL_MIX } from "@/lib/player/mix";
-import type { Loop, PlayerSnapshot } from "@/lib/player/player";
+import type { Passage, PlayerSnapshot } from "@/lib/player/player";
 import { createPlayerControls, type PlayerCommand } from "@/lib/player/player-controls";
 import { fakePlayer, part } from "@/lib/testing/player";
 
@@ -56,134 +56,158 @@ describe("playing and moving", () => {
     const repeated = { bars: [0, 2, 4, 6, 8], barNumbers: [1, 2, 1, 2, 3], position: 4.5 };
 
     expect(run({ type: "stepBars", by: 1 }, repeated)).toMatchObject({ message: "Takt 2", after: { position: 6 } });
-    expect(run({ type: "markEnd" }, { ...repeated, loop: { start: 2, end: null } })).toMatchObject({
+    expect(run({ type: "markEnd" }, { ...repeated, passage: { start: 2, end: null } })).toMatchObject({
       message: "Repeterar takt 2–1",
-      after: { loop: { start: 2, end: 6 } },
+      after: { passage: { start: 2, end: 6 } },
     });
   });
 
-  it.each<{ loop: Loop | null; seconds: number; message: string }>([
-    { loop: null, seconds: 0, message: "Till början" },
-    { loop: { start: 12, end: null }, seconds: 0, message: "Till början" },
-    { loop: { start: 12, end: 40 }, seconds: 12, message: "Till repetitionens start" },
-  ])("rewind with passage $loop goes to $seconds s", ({ loop, seconds, message }) => {
-    expect(run({ type: "rewind" }, { loop })).toMatchObject({ message, after: { position: seconds } });
+  it.each<{ passage: Passage | null; seconds: number; message: string }>([
+    { passage: null, seconds: 0, message: "Till början" },
+    { passage: { start: 12, end: null }, seconds: 0, message: "Till början" },
+    { passage: { start: 12, end: 40 }, seconds: 12, message: "Till repetitionens start" },
+  ])("rewind with passage $passage goes to $seconds s", ({ passage, seconds, message }) => {
+    expect(run({ type: "rewind" }, { passage })).toMatchObject({ message, after: { position: seconds } });
   });
 });
 
 describe("marking a passage", () => {
-  it.each<{ command: PlayerCommand["type"]; loop: Loop | null; position: number; expected: Loop; message: string }>([
+  it.each<{
+    command: PlayerCommand["type"];
+    passage: Passage | null;
+    position: number;
+    expected: Passage;
+    message: string;
+  }>([
     {
       command: "markStart",
-      loop: null,
+      passage: null,
       position: 30,
       expected: { start: 30, end: null },
       message: "Repetera härifrån – tryck B vid slutet",
     },
     {
       command: "markStart",
-      loop: { start: 10, end: 50 },
+      passage: { start: 10, end: 50 },
       position: 30,
       expected: { start: 30, end: 50 },
       message: "Repeterar 0:30–0:50",
     },
     {
       command: "markStart",
-      loop: { start: 10, end: 50 },
+      passage: { start: 10, end: 50 },
       position: 60,
       expected: { start: 60, end: null },
       message: "Repetera härifrån – tryck B vid slutet",
     },
     {
       command: "markEnd",
-      loop: { start: 10, end: null },
+      passage: { start: 10, end: null },
       position: 30,
       expected: { start: 10, end: 30 },
       message: "Repeterar 0:10–0:30",
     },
     {
       command: "markEnd",
-      loop: { start: 10, end: 50 },
+      passage: { start: 10, end: 50 },
       position: 30,
       expected: { start: 10, end: 30 },
       message: "Repeterar 0:10–0:30",
     },
     {
       command: "markEnd",
-      loop: { start: 40, end: null },
+      passage: { start: 40, end: null },
       position: 30,
       expected: { start: 30, end: 40 },
       message: "Repeterar 0:30–0:40",
     },
-    { command: "markEnd", loop: null, position: 30, expected: { start: 0, end: 30 }, message: "Repeterar 0:00–0:30" },
+    {
+      command: "markEnd",
+      passage: null,
+      position: 30,
+      expected: { start: 0, end: 30 },
+      message: "Repeterar 0:00–0:30",
+    },
   ])(
-    "$command with passage $loop at $position s marks the playhead: $message",
-    ({ command, loop, position, expected, message }) => {
-      expect(run({ type: command } as PlayerCommand, { loop, position })).toEqual({
+    "$command with passage $passage at $position s marks the playhead: $message",
+    ({ command, passage, position, expected, message }) => {
+      expect(run({ type: command } as PlayerCommand, { passage, position })).toEqual({
         message,
-        after: expect.objectContaining({ loop: expected }),
+        after: expect.objectContaining({ passage: expected }),
       });
     },
   );
 
   it("leaves the passage when its end is marked at its start", () => {
-    expect(run({ type: "markEnd" }, { loop: { start: 30, end: null }, position: 30 })).toMatchObject({
+    expect(run({ type: "markEnd" }, { passage: { start: 30, end: null }, position: 30 })).toMatchObject({
       message: "Sätt slutet efter starten",
-      after: { loop: { start: 30, end: null } },
+      after: { passage: { start: 30, end: null } },
     });
   });
 
-  it.each<{ command: PlayerCommand["type"]; loop: Loop | null; position: number; expected: Loop; message: string }>([
+  it.each<{
+    command: PlayerCommand["type"];
+    passage: Passage | null;
+    position: number;
+    expected: Passage;
+    message: string;
+  }>([
     {
       command: "markStart",
-      loop: null,
+      passage: null,
       position: 31,
       expected: { start: 30, end: null },
       message: "Repetera från takt 16 – tryck B vid slutet",
     },
     {
       command: "markStart",
-      loop: { start: 20, end: 50 },
+      passage: { start: 20, end: 50 },
       position: 31,
       expected: { start: 30, end: 50 },
       message: "Repeterar takt 16–25",
     },
     {
       command: "markEnd",
-      loop: { start: 30, end: null },
+      passage: { start: 30, end: null },
       position: 37,
       expected: { start: 30, end: 38 },
       message: "Repeterar takt 16–19",
     },
     {
       command: "markEnd",
-      loop: { start: 30, end: null },
+      passage: { start: 30, end: null },
       position: 31,
       expected: { start: 30, end: 32 },
       message: "Repeterar takt 16",
     },
     {
       command: "markEnd",
-      loop: { start: 30, end: null },
+      passage: { start: 30, end: null },
       position: 25,
       expected: { start: 24, end: 32 },
       message: "Repeterar takt 13–16",
     },
-    { command: "markEnd", loop: null, position: 119, expected: { start: 0, end: 120 }, message: "Repeterar takt 1–60" },
+    {
+      command: "markEnd",
+      passage: null,
+      position: 119,
+      expected: { start: 0, end: 120 },
+      message: "Repeterar takt 1–60",
+    },
   ])(
-    "$command with passage $loop at $position s marks whole bars: $message",
-    ({ command, loop, position, expected, message }) => {
-      expect(run({ type: command } as PlayerCommand, { bars, loop, position })).toEqual({
+    "$command with passage $passage at $position s marks whole bars: $message",
+    ({ command, passage, position, expected, message }) => {
+      expect(run({ type: command } as PlayerCommand, { bars, passage, position })).toEqual({
         message,
-        after: expect.objectContaining({ loop: expected }),
+        after: expect.objectContaining({ passage: expected }),
       });
     },
   );
 
   it("stops repeating, and says nothing when nothing repeats", () => {
-    expect(run({ type: "stopRepeating" }, { loop: { start: 10, end: 50 } })).toMatchObject({
+    expect(run({ type: "stopRepeating" }, { passage: { start: 10, end: 50 } })).toMatchObject({
       message: "Repeterar inte längre",
-      after: { loop: null },
+      after: { passage: null },
     });
     expect(run({ type: "stopRepeating" }).message).toBeNull();
   });
@@ -193,29 +217,34 @@ describe("the passage as the controls show it", () => {
   const passageOf = (snapshot: Partial<PlayerSnapshot>, scoreTakesTaps = false) =>
     controlsOver(snapshot, { scoreTakesTaps }).controls.getView().passage;
 
-  it.each<{ loop: Loop | null; label: string | null; status: string; markButton: string }>([
-    { loop: null, label: null, status: "Sätt start och slut för att repetera ett avsnitt.", markButton: "Start här" },
+  it.each<{ passage: Passage | null; label: string | null; status: string; markButton: string }>([
     {
-      loop: { start: 12, end: null },
+      passage: null,
+      label: null,
+      status: "Sätt start och slut för att repetera ett avsnitt.",
+      markButton: "Start här",
+    },
+    {
+      passage: { start: 12, end: null },
       label: null,
       status: "Start 0:12. Sätt slutet där avsnittet slutar.",
       markButton: "Slut här",
     },
-    { loop: { start: 12, end: 30 }, label: "0:12–0:30", status: "Repeterar 0:12–0:30", markButton: "Start här" },
-  ])("without bars, passage $loop reads $status", ({ loop, label, status, markButton }) => {
-    expect(passageOf({ loop })).toMatchObject({ label, status, markButton });
+    { passage: { start: 12, end: 30 }, label: "0:12–0:30", status: "Repeterar 0:12–0:30", markButton: "Start här" },
+  ])("without bars, passage $passage reads $status", ({ passage, label, status, markButton }) => {
+    expect(passageOf({ passage })).toMatchObject({ label, status, markButton });
   });
 
-  it.each<{ loop: Loop | null; label: string | null; status: string }>([
-    { loop: null, label: null, status: "Tryck på en takt i noterna där avsnittet börjar." },
+  it.each<{ passage: Passage | null; label: string | null; status: string }>([
+    { passage: null, label: null, status: "Tryck på en takt i noterna där avsnittet börjar." },
     {
-      loop: { start: 2, end: null },
+      passage: { start: 2, end: null },
       label: null,
       status: "Start: takt 2. Tryck på takten där avsnittet slutar.",
     },
-    { loop: { start: 2, end: 6 }, label: "takt 2–3", status: "Repeterar takt 2–3" },
-  ])("in a score that takes taps, passage $loop reads $status, with no button", ({ loop, label, status }) => {
-    expect(passageOf({ bars: [0, 2, 4, 6], loop }, true)).toMatchObject({ label, status, markButton: null });
+    { passage: { start: 2, end: 6 }, label: "takt 2–3", status: "Repeterar takt 2–3" },
+  ])("in a score that takes taps, passage $passage reads $status, with no button", ({ passage, label, status }) => {
+    expect(passageOf({ bars: [0, 2, 4, 6], passage }, true)).toMatchObject({ label, status, markButton: null });
   });
 });
 

@@ -18,8 +18,8 @@ import {
   formatTime,
   IDLE_SNAPSHOT,
   isRepeating,
-  type Loop,
-  markLoop,
+  type Passage,
+  markPassage,
   passageBarsLabel,
   type Player,
   type PlayerPart,
@@ -79,7 +79,7 @@ export type PlayerControlsView = {
   tempo: { percent: number; changed: boolean };
   passage: {
     /** The passage, to shade along the file. */
-    range: Loop | null;
+    range: Passage | null;
     /** The passage once it repeats: "takt 16–19", or "0:12–0:30" by time. */
     label: string | null;
     /** What Repetera says about it, and how to mark one. */
@@ -163,7 +163,7 @@ function runCommand(
   command: PlayerCommand,
   { mine, setMine }: { mine: string | null; setMine: (partId: string | null) => void },
 ): string | null {
-  const { position, duration, loop, playing, tempo, bars, barNumbers, parts } = snapshot;
+  const { position, duration, passage, playing, tempo, bars, barNumbers, parts } = snapshot;
   switch (command.type) {
     case "togglePlay":
       if (playing) {
@@ -186,25 +186,25 @@ function runCommand(
       player.seek(command.seconds);
       return null;
     case "rewind":
-      if (isRepeating(loop)) {
-        player.seek(loop.start);
+      if (isRepeating(passage)) {
+        player.seek(passage.start);
         return "Till repetitionens start";
       }
       player.seek(0);
       return "Till början";
     case "mark":
-      player.setLoop(markLoop(loop, position));
+      player.setPassage(markPassage(passage, position));
       return null;
     case "markStart":
-      return markPassage(player, startAt(loop, bars.length > 0 ? barStartAt(bars, position) : position), snapshot);
+      return setMarked(player, startAt(passage, bars.length > 0 ? barStartAt(bars, position) : position), snapshot);
     case "markEnd": {
       const marked =
-        bars.length > 0 ? endAtBar(loop, barAt(bars, position) ?? 1, { bars, duration }) : endAt(loop, position);
-      return marked ? markPassage(player, marked, snapshot) : "Sätt slutet efter starten";
+        bars.length > 0 ? endAtBar(passage, barAt(bars, position) ?? 1, { bars, duration }) : endAt(passage, position);
+      return marked ? setMarked(player, marked, snapshot) : "Sätt slutet efter starten";
     }
     case "stopRepeating":
-      if (loop === null) return null;
-      player.setLoop(null);
+      if (passage === null) return null;
+      player.setPassage(null);
       return "Repeterar inte längre";
     case "stepTempo":
     case "setTempo": {
@@ -237,8 +237,8 @@ function runCommand(
 }
 
 /** Sets `passage` on `player`, and says so, by bar in a file with bars. */
-function markPassage(player: Player, passage: Loop, { bars, barNumbers }: PlayerSnapshot): string {
-  player.setLoop(passage);
+function setMarked(player: Player, passage: Passage, { bars, barNumbers }: PlayerSnapshot): string {
+  player.setPassage(passage);
   if (isRepeating(passage)) {
     return `Repeterar ${bars.length > 0 ? `takt ${passageBarsLabel(passage, bars, barNumbers)}` : timeRange(passage)}`;
   }
@@ -252,7 +252,7 @@ export function controlsView(
   snapshot: PlayerSnapshot,
   { mine, scoreTakesTaps }: ControlsOptions & { mine: string | null },
 ): PlayerControlsView {
-  const { position, duration, loop, bars, barNumbers, parts, sound } = snapshot;
+  const { position, duration, passage, bars, barNumbers, parts, sound } = snapshot;
   const bar = barNumberAt(bars, barNumbers, position);
   const time = formatTime(position);
   const labelBars = scoreTakesTaps ? bars : [];
@@ -270,12 +270,12 @@ export function controlsView(
     },
     tempo: { percent: snapshot.tempo, changed: snapshot.tempo !== DEFAULT_TEMPO },
     passage: {
-      range: loop,
-      label: isRepeating(loop) ? passageLabel(loop, labelBars, barNumbers) : null,
-      status: passageStatus(loop, { bars: labelBars, barNumbers, scoreTakesTaps }),
-      repeating: isRepeating(loop),
-      marking: loop !== null && loop.end === null,
-      markButton: scoreTakesTaps ? null : loop !== null && loop.end === null ? "Slut här" : "Start här",
+      range: passage,
+      label: isRepeating(passage) ? passageLabel(passage, labelBars, barNumbers) : null,
+      status: passageStatus(passage, { bars: labelBars, barNumbers, scoreTakesTaps }),
+      repeating: isRepeating(passage),
+      marking: passage !== null && passage.end === null,
+      markButton: scoreTakesTaps ? null : passage !== null && passage.end === null ? "Slut här" : "Start här",
     },
     parts: {
       shown: parts.length > 0,
@@ -294,7 +294,7 @@ export function idleControlsView({ failed, scoreTakesTaps }: { failed: boolean }
 }
 
 /** A passage that repeats, by bar in a file with bars and by time otherwise. */
-function passageLabel(passage: Loop & { end: number }, bars: readonly number[], barNumbers: readonly number[]) {
+function passageLabel(passage: Passage & { end: number }, bars: readonly number[], barNumbers: readonly number[]) {
   return bars.length > 0 ? `takt ${passageBarsLabel(passage, bars, barNumbers)}` : timeRange(passage);
 }
 
@@ -304,21 +304,22 @@ function timeRange({ start, end }: { start: number; end: number }) {
 
 /** What Repetera says about the passage, and how to mark one: with the buttons, or by tapping bars. */
 function passageStatus(
-  loop: Loop | null,
+  passage: Passage | null,
   {
     bars,
     barNumbers,
     scoreTakesTaps,
   }: { bars: readonly number[]; barNumbers: readonly number[]; scoreTakesTaps: boolean },
 ): string {
-  if (isRepeating(loop)) return `Repeterar ${passageLabel(loop, bars, barNumbers)}`;
+  if (isRepeating(passage)) return `Repeterar ${passageLabel(passage, bars, barNumbers)}`;
   if (scoreTakesTaps) {
-    return loop === null
+    return passage === null
       ? "Tryck på en takt i noterna där avsnittet börjar."
-      : `Start: takt ${barNumberAt(bars, barNumbers, loop.start)}. Tryck på takten där avsnittet slutar.`;
+      : `Start: takt ${barNumberAt(bars, barNumbers, passage.start)}. Tryck på takten där avsnittet slutar.`;
   }
-  if (loop === null) return "Sätt start och slut för att repetera ett avsnitt.";
-  const start = bars.length > 0 ? `: takt ${barNumberAt(bars, barNumbers, loop.start)}` : ` ${formatTime(loop.start)}`;
+  if (passage === null) return "Sätt start och slut för att repetera ett avsnitt.";
+  const start =
+    bars.length > 0 ? `: takt ${barNumberAt(bars, barNumbers, passage.start)}` : ` ${formatTime(passage.start)}`;
   return `Start${start}. Sätt slutet där avsnittet slutar.`;
 }
 
@@ -328,12 +329,12 @@ function barStartAt(bars: readonly number[], seconds: number): number {
 }
 
 /** The passage starting at `seconds`, keeping the end of `passage` if that is still after it. */
-export function startAt(passage: Loop | null, seconds: number): Loop {
+export function startAt(passage: Passage | null, seconds: number): Passage {
   return { start: seconds, end: isRepeating(passage) && passage.end > seconds ? passage.end : null };
 }
 
 /** The passage starting at bar `bar` (counted from 1), keeping a later end of `passage`. */
-export function startAtBar(passage: Loop | null, bar: number, bars: readonly number[]): Loop {
+export function startAtBar(passage: Passage | null, bar: number, bars: readonly number[]): Passage {
   return startAt(passage, bars[bar - 1]);
 }
 
@@ -341,7 +342,7 @@ export function startAtBar(passage: Loop | null, bar: number, bars: readonly num
  * The passage ending at `seconds`, from the start of `passage` or of the
  * file, in whichever order they come; `null` for an end at the start.
  */
-export function endAt(passage: Loop | null, seconds: number): Loop | null {
+export function endAt(passage: Passage | null, seconds: number): Passage | null {
   const start = passage?.start ?? 0;
   if (seconds === start) return null;
   return seconds > start ? { start, end: seconds } : { start: seconds, end: start };
@@ -353,10 +354,10 @@ export function endAt(passage: Loop | null, seconds: number): Loop | null {
  * come. A bar ends where the next starts, or the last at `duration`.
  */
 export function endAtBar(
-  passage: Loop | null,
+  passage: Passage | null,
   bar: number,
   { bars, duration }: { bars: readonly number[]; duration: number },
-): Loop {
+): Passage {
   const marked = barAt(bars, passage?.start ?? 0) ?? 1;
   const [first, last] = marked <= bar ? [marked, bar] : [bar, marked];
   return { start: bars[first - 1], end: bars[last] ?? duration };

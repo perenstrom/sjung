@@ -16,7 +16,7 @@ export interface Player {
   /** Sets the tempo in percent, kept within `TEMPO_MIN`–`TEMPO_MAX`. Pitch never changes. */
   setTempo(percent: number): void;
   /** Sets the passage to repeat, or `null` to stop repeating. */
-  setLoop(loop: Loop | null): void;
+  setPassage(passage: Passage | null): void;
   /** Changes one part's gain, mute or solo. */
   setPart(partId: string, change: Partial<Pick<PlayerPart, "gain" | "muted" | "solo">>): void;
   setSound(sound: PlayerSound): void;
@@ -33,7 +33,7 @@ export type PlayerSnapshot = {
   duration: number;
   /** In percent of the file's own tempo. */
   tempo: number;
-  loop: Loop | null;
+  passage: Passage | null;
   /**
    * When each bar starts, in seconds, in order. Empty for a file without
    * bars, such as audio.
@@ -54,11 +54,11 @@ export type PlayerSnapshot = {
  * A passage to repeat, in seconds. Playback loops it once it has an end;
  * with only a start, it is still being marked.
  */
-export type Loop = { start: number; end: number | null };
+export type Passage = { start: number; end: number | null };
 
 /** Whether a passage is set and repeats: it has an end, not just a start being marked. */
-export function isRepeating(loop: Loop | null): loop is Loop & { end: number } {
-  return loop?.end != null;
+export function isRepeating(passage: Passage | null): passage is Passage & { end: number } {
+  return passage?.end != null;
 }
 
 /**
@@ -98,7 +98,7 @@ export const IDLE_SNAPSHOT: PlayerSnapshot = {
   position: 0,
   duration: 0,
   tempo: DEFAULT_TEMPO,
-  loop: null,
+  passage: null,
   bars: [],
   barNumbers: [],
   parts: [],
@@ -110,13 +110,13 @@ export function clampTempo(percent: number): number {
 }
 
 /** Where playback jumps back to once it reaches the end of a repeating passage; `null` while it plays on. */
-export function repeatJump(loop: Loop | null, position: number): number | null {
-  return isRepeating(loop) && position >= loop.end ? loop.start : null;
+export function repeatJump(passage: Passage | null, position: number): number | null {
+  return isRepeating(passage) && position >= passage.end ? passage.start : null;
 }
 
 /** Where Play starts outside a repeating passage: at its beginning; `null` to play from the playhead. */
-export function playStart(loop: Loop | null, position: number): number | null {
-  return isRepeating(loop) && (position < loop.start || position >= loop.end) ? loop.start : null;
+export function playStart(passage: Passage | null, position: number): number | null {
+  return isRepeating(passage) && (position < passage.start || position >= passage.end) ? passage.start : null;
 }
 
 /**
@@ -124,10 +124,10 @@ export function playStart(loop: Loop | null, position: number): number | null {
  * being marked. An end before the start swaps them; an end at the start keeps
  * marking.
  */
-export function markLoop(loop: Loop | null, position: number): Loop {
-  if (loop === null || loop.end !== null) return { start: position, end: null };
-  if (position === loop.start) return loop;
-  return position > loop.start ? { start: loop.start, end: position } : { start: position, end: loop.start };
+export function markPassage(passage: Passage | null, position: number): Passage {
+  if (passage === null || passage.end !== null) return { start: position, end: null };
+  if (position === passage.start) return passage;
+  return position > passage.start ? { start: passage.start, end: position } : { start: position, end: passage.start };
 }
 
 /** The bar `seconds` falls in, counted from 1; `null` for a file without bars. */
@@ -153,12 +153,12 @@ export function barNumberAt(bars: readonly number[], barNumbers: readonly number
  * or "16" for one bar. It ends in the bar before the one starting where it ends.
  */
 export function passageBarsLabel(
-  loop: { start: number; end: number },
+  passage: { start: number; end: number },
   bars: readonly number[],
   barNumbers: readonly number[],
 ): string {
-  const first = barAt(bars, loop.start) ?? 1;
-  const last = barAt(bars, bars.findLast((start) => start < loop.end) ?? loop.end) ?? first;
+  const first = barAt(bars, passage.start) ?? 1;
+  const last = barAt(bars, bars.findLast((start) => start < passage.end) ?? passage.end) ?? first;
   return first === last
     ? `${barNumber(barNumbers, first)}`
     : `${barNumber(barNumbers, first)}–${barNumber(barNumbers, last)}`;

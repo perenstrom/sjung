@@ -5,7 +5,7 @@ import {
   clampTempo,
   IDLE_SNAPSHOT,
   isRepeating,
-  type Loop,
+  type Passage,
   type Player,
   type PlayerPart,
   type PlayerSnapshot,
@@ -99,8 +99,8 @@ export function createNotationPlayer(
   let staleReports = 0;
 
   function seekTo(seconds: number) {
-    const { loop } = store.get();
-    const [from, to] = isRepeating(loop) ? [loop.start, loop.end] : [0, duration];
+    const { passage } = store.get();
+    const [from, to] = isRepeating(passage) ? [passage.start, passage.end] : [0, duration];
     const position = Math.min(to, Math.max(from, seconds));
     unreportedSeeks += 1;
     score.seek(tickAtSeconds(bars, position));
@@ -118,28 +118,28 @@ export function createNotationPlayer(
     update({ position: secondsAtTick(bars, tick) });
   });
   score.onPlaying((playing) => update({ playing }));
-  score.onBarTapped((tapped) => setLoop(tapBar(tapped, bars, store.get())));
+  score.onBarTapped((tapped) => setPassage(tapBar(tapped, bars, store.get())));
 
-  function setLoop(loop: Loop | null) {
-    if (isRepeating(loop)) {
+  function setPassage(passage: Passage | null) {
+    if (isRepeating(passage)) {
       const { position } = store.get();
-      score.setLoopRange({ startTick: tickAtSeconds(bars, loop.start), endTick: tickAtSeconds(bars, loop.end) });
+      score.setLoopRange({ startTick: tickAtSeconds(bars, passage.start), endTick: tickAtSeconds(bars, passage.end) });
       unreportedSeeks += 1;
-      update({ loop, position: loop.start });
+      update({ passage, position: passage.start });
       // alphaTab has moved the playhead to the passage's start; put it back if it was inside.
-      if (position > loop.start && position < loop.end) seekTo(position);
+      if (position > passage.start && position < passage.end) seekTo(position);
     } else {
       score.setLoopRange(null);
-      update({ loop });
+      update({ passage });
     }
-    score.shadeBars(shadedBars(loop, bars));
+    score.shadeBars(shadedBars(passage, bars));
   }
 
   return {
     getSnapshot: store.get,
     subscribe: store.subscribe,
     play() {
-      const start = playStart(store.get().loop, store.get().position);
+      const start = playStart(store.get().passage, store.get().position);
       if (start !== null) seekTo(start);
       score.play();
       update({ playing: true });
@@ -154,7 +154,7 @@ export function createNotationPlayer(
       score.setSpeed(tempo / 100);
       update({ tempo });
     },
-    setLoop,
+    setPassage,
     setPart(partId, change) {
       const mixed = store.get().parts.map((part) => (part.id === partId ? { ...part, ...change } : part));
       notationParts.forEach(({ track }, index) => {
@@ -183,12 +183,13 @@ export function createNotationPlayer(
 function tapBar(
   tapped: number,
   notationBars: readonly NotationBar[],
-  { loop, position, bars, duration }: PlayerSnapshot,
-): Loop {
+  { passage, position, bars, duration }: PlayerSnapshot,
+): Passage {
   const played = notationBars.flatMap(({ number }, index) => (number === tapped + 1 ? [index + 1] : []));
-  if (played.length === 0) return loop ?? { start: position, end: null };
-  if (loop === null || loop.end !== null) return startAtBar(null, nearest(played, barAt(bars, position) ?? 1), bars);
-  return endAtBar(loop, nearest(played, barAt(bars, loop.start) ?? 1), { bars, duration });
+  if (played.length === 0) return passage ?? { start: position, end: null };
+  if (passage === null || passage.end !== null)
+    return startAtBar(null, nearest(played, barAt(bars, position) ?? 1), bars);
+  return endAtBar(passage, nearest(played, barAt(bars, passage.start) ?? 1), { bars, duration });
 }
 
 /** The one of `indexes` nearest `index`, the earlier of two as near. */
@@ -196,13 +197,13 @@ function nearest(indexes: readonly number[], index: number): number {
   return indexes.reduce((best, candidate) => (Math.abs(candidate - index) < Math.abs(best - index) ? candidate : best));
 }
 
-/** The bars of the score to shade for `loop`: its start bar while it is being marked. */
-function shadedBars(loop: Loop | null, bars: readonly NotationBar[]): { first: number; last: number } | null {
-  if (loop === null) return null;
+/** The bars of the score to shade for `passage`: its start bar while it is being marked. */
+function shadedBars(passage: Passage | null, bars: readonly NotationBar[]): { first: number; last: number } | null {
+  if (passage === null) return null;
   const starts = bars.map(({ start }) => start);
-  const first = bars[(barAt(starts, loop.start) ?? 1) - 1].number - 1;
-  if (loop.end === null) return { first, last: first };
+  const first = bars[(barAt(starts, passage.start) ?? 1) - 1].number - 1;
+  if (passage.end === null) return { first, last: first };
   // The bar the passage ends in, not the one starting where it ends.
-  const endsIn = bars.findLast(({ start }) => start < (loop.end ?? 0)) ?? bars[0];
+  const endsIn = bars.findLast(({ start }) => start < (passage.end ?? 0)) ?? bars[0];
   return { first, last: endsIn.number - 1 };
 }

@@ -296,7 +296,7 @@ export function PlayerScreen({
       )}
 
       <footer className="border-t bg-background px-4 pt-2 pb-[max(env(safe-area-inset-bottom),12px)] md:hidden">
-        <SeekBar playhead={view.playhead} loop={view.passage.range} onSeek={seek} />
+        <SeekBar playhead={view.playhead} passage={view.passage.range} onSeek={seek} />
         <div className="mt-1 grid grid-cols-5 place-items-center">
           <DockButton
             icon={<Timer className="size-5" aria-hidden />}

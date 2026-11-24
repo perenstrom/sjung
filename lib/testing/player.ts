@@ -41,7 +41,7 @@ export function fakePlayer(snapshot: Partial<PlayerSnapshot> = {}): Player {
     pause: () => update({ playing: false }),
     seek: (seconds) => update({ position: Math.min(store.get().duration, Math.max(0, seconds)) }),
     setTempo: (percent) => update({ tempo: clampTempo(percent) }),
-    setLoop: (loop) => update({ loop }),
+    setPassage: (passage) => update({ passage }),
     setPart: (partId, change) =>
       update({ parts: store.get().parts.map((part) => (part.id === partId ? { ...part, ...change } : part)) }),
     setSound: (sound) => update({ sound }),

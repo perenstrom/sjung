@@ -101,7 +101,7 @@ describe("the MIDI player", () => {
       position: 0,
       duration: 120,
       tempo: 100,
-      loop: null,
+      passage: null,
       bars: BARS,
       sound: "piano",
     });
@@ -143,21 +143,21 @@ describe("the MIDI player", () => {
   });
 
   it("jumps back to the start of the passage when playback reaches its end, until repeating stops", () => {
-    player.setLoop({ start: 10, end: 20 });
+    player.setPassage({ start: 10, end: 20 });
     player.play();
 
     sequencer.currentTime = 20.05;
     frames.run();
     expect([sequencer.currentTime, player.getSnapshot().position]).toEqual([10, 10]);
 
-    player.setLoop(null);
+    player.setPassage(null);
     sequencer.currentTime = 20.05;
     frames.run();
     expect(player.getSnapshot().position).toBe(20.05);
   });
 
   it("keeps repeating while no frames run, as with the screen locked", () => {
-    player.setLoop({ start: 10, end: 20 });
+    player.setPassage({ start: 10, end: 20 });
     player.play();
 
     sequencer.currentTime = 20.2;
@@ -167,7 +167,7 @@ describe("the MIDI player", () => {
   });
 
   it("starts a whole passage from its beginning when Play is pressed outside it", () => {
-    player.setLoop({ start: 10, end: 20 });
+    player.setPassage({ start: 10, end: 20 });
     player.seek(30);
     player.play();
 
@@ -175,7 +175,7 @@ describe("the MIDI player", () => {
   });
 
   it("repeats a passage that ends at the end of the file", () => {
-    player.setLoop({ start: 100, end: 120 });
+    player.setPassage({ start: 100, end: 120 });
     player.play();
 
     sequencer.end();
