@@ -47,7 +47,12 @@ const FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
 export type StorePiece = { id: string; groupId: string };
 
 /** A File as the store needs it. */
-export type StoreFile = { id: string; storagePath: string; convertedStoragePath: string | null; piece: StorePiece };
+export type StoreFile = {
+  id: string;
+  storagePath: string;
+  conversionState: FileConversionState | null;
+  piece: StorePiece;
+};
 
 /** Selects a Piece as the store needs it, e.g. for `findInGroup`. */
 export const STORE_PIECE_SELECT = { id: true, groupId: true } as const;
@@ -56,7 +61,7 @@ export const STORE_PIECE_SELECT = { id: true, groupId: true } as const;
 export const STORE_FILE_SELECT = {
   id: true,
   storagePath: true,
-  convertedStoragePath: true,
+  conversionState: true,
   piece: { select: STORE_PIECE_SELECT },
 } as const;
 
@@ -148,7 +153,7 @@ export async function replaceFile(file: StoreFile, upload: FinishedUpload, userI
 }
 
 /** Deletes the File and its stored content, its converted copy included. */
-export async function deleteFile(file: Pick<StoreFile, "id" | "storagePath" | "convertedStoragePath">) {
+export async function deleteFile(file: Pick<StoreFile, "id" | "storagePath" | "conversionState">) {
   await prisma.file.delete({ where: { id: file.id } });
   await cleanUp("deleteFile", { fileId: file.id }, () => deleteObjects(storedKeysOf(file)));
 }
@@ -167,7 +172,7 @@ export async function convertFile(fileId: string) {
   });
   if (file?.conversionState !== FileConversionState.PENDING) return;
 
-  const convertedStoragePath = `${file.storagePath}.mxl`;
+  const convertedStoragePath = convertedStoragePathOf(file.storagePath);
   let converted = false;
   try {
     const score = await getObject(file.storagePath);
@@ -219,9 +224,20 @@ function savedFile({ id, conversionState }: { id: string; conversionState: FileC
   return { id, pendingConversion: conversionState === FileConversionState.PENDING };
 }
 
-/** Every object stored for the File: its content and any converted copy. */
-function storedKeysOf(file: Pick<StoreFile, "storagePath" | "convertedStoragePath">): string[] {
-  return file.convertedStoragePath ? [file.storagePath, file.convertedStoragePath] : [file.storagePath];
+/** Where the MusicXML converted from the File's content is stored; next to it, so it goes with its Piece. */
+export function convertedStoragePathOf(storagePath: string): string {
+  return `${storagePath}.mxl`;
+}
+
+/**
+ * Every object stored for the File: its content and, if it is converted, its
+ * copy. Derived from the content's key rather than read from the row, since a
+ * conversion may store the copy after the caller read the File as pending.
+ */
+function storedKeysOf(file: Pick<StoreFile, "storagePath" | "conversionState">): string[] {
+  return file.conversionState === null
+    ? [file.storagePath]
+    : [file.storagePath, convertedStoragePathOf(file.storagePath)];
 }
 
 /** A File's stored content, as signing needs it. */

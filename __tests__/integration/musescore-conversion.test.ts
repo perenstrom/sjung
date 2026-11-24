@@ -18,6 +18,7 @@ import {
   finalizePieceFileReplace,
   finalizePieceFileUpload,
 } from "@/app/actions/files";
+import * as fileStore from "@/lib/pieces/file-store";
 import { resetAfterTasks, runAfterTasks, takeAfterTasks } from "../support/after";
 import { testPrisma } from "../support/db";
 import {
@@ -199,6 +200,40 @@ describe("deleting a MuseScore File", () => {
     await deletePieceFile(formData({ groupSlug: group.slug, fileId: file.id }));
 
     expect(storedKeys()).toEqual([]);
+  });
+});
+
+describe("a conversion finishing after a delete or replace has read the File", () => {
+  it.each([
+    { case: "delete", change: (file: fileStore.StoreFile) => fileStore.deleteFile(file) },
+    {
+      case: "replace",
+      change: async (file: fileStore.StoreFile) => {
+        const { storagePath } = await createPieceFileReplaceUploadUrl(
+          formData({
+            groupSlug: group.slug,
+            fileId: file.id,
+            fileName: "ny.pdf",
+            mimeType: "application/pdf",
+            size: "1",
+          }),
+        );
+        putStoredObject(storagePath, { size: 1, contentType: "application/pdf" });
+        await fileStore.replaceFile(file, { storagePath, fileName: "ny.pdf" }, group.createdById);
+        return storagePath;
+      },
+    },
+  ])("still removes the copy on $case", async ({ change }) => {
+    const pending = await uploadFile("Partitur.mscz", "partitur");
+    const readWhilePending = await testPrisma.file.findUniqueOrThrow({
+      where: { id: pending.id },
+      select: fileStore.STORE_FILE_SELECT,
+    });
+    await runAfterTasks();
+
+    const kept = await change(readWhilePending);
+
+    expect(storedKeys()).toEqual(kept ? [kept] : []);
   });
 });
 

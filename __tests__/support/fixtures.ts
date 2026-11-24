@@ -1,4 +1,5 @@
 import { FileConversionState } from "@/app/generated/prisma/enums";
+import { convertedStoragePathOf } from "@/lib/pieces/file-store";
 import { testPrisma } from "./db";
 import type {
   User,
@@ -231,7 +232,7 @@ export async function createFile(
       fileName,
       storagePath,
       conversionState,
-      convertedStoragePath: conversionState === FileConversionState.READY ? `${storagePath}.mxl` : null,
+      convertedStoragePath: conversionState === FileConversionState.READY ? convertedStoragePathOf(storagePath) : null,
       mimeType,
       size: 1024,
       category,
