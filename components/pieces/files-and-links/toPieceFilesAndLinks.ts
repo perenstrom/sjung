@@ -1,3 +1,4 @@
+import type { FileConversionState } from "@/app/generated/prisma/enums";
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
 import { playbackOf } from "@/lib/pieces/playback";
 
@@ -14,7 +15,7 @@ export type PieceFilesAndLinksData = {
 export function toPieceFilesAndLinks(piece: {
   files: readonly (Omit<PieceFileListItem, "playback"> & {
     fileName: string;
-    conversionState?: Parameters<typeof playbackOf>[0]["conversionState"];
+    conversionState?: FileConversionState | null;
   })[];
   links: readonly PieceLink[];
 }): PieceFilesAndLinksData {

@@ -1,4 +1,4 @@
-import type { FileConversionState } from "@/app/generated/prisma/enums";
+import { FileConversionState } from "@/app/generated/prisma/enums";
 import { needsConversion, playableFormatOf } from "@/lib/file-formats";
 
 /**
@@ -12,9 +12,9 @@ export function playbackOf(file: { fileName: string; conversionState?: FileConve
   if (!playableFormatOf(file)) return null;
   if (!needsConversion(file)) return "ready";
   switch (file.conversionState) {
-    case "READY":
+    case FileConversionState.READY:
       return "ready";
-    case "FAILED":
+    case FileConversionState.FAILED:
       return "failed";
     default:
       return "preparing";

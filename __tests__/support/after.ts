@@ -20,8 +20,7 @@ export function after(task: Task) {
 /** Runs every task scheduled so far, and any they schedule, in order. */
 export async function runAfterTasks() {
   while (tasks.length > 0) {
-    const task = tasks.shift()!;
-    await (typeof task === "function" ? task() : task);
+    await run(tasks.shift()!);
   }
 }
 
@@ -31,9 +30,13 @@ export function takeAfterTasks(): () => Promise<void> {
   tasks = [];
   return async () => {
     for (const task of taken) {
-      await (typeof task === "function" ? task() : task);
+      await run(task);
     }
   };
+}
+
+function run(task: Task) {
+  return typeof task === "function" ? task() : task;
 }
 
 export function resetAfterTasks() {

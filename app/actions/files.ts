@@ -45,7 +45,7 @@ export async function finalizePieceFileUpload(formData: FormData) {
         userId,
       },
     );
-    convertOnceSent(file);
+    convertAfterResponse(file);
 
     await revalidatePieceRoutes(groupSlug, piece.id);
   });
@@ -67,7 +67,7 @@ export async function finalizePieceFileReplace(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const file = await findInGroup(groupId, "file", fileId, { select: fileStore.STORE_FILE_SELECT });
-    convertOnceSent(await fileStore.replaceFile(file, { storagePath, fileName }, userId));
+    convertAfterResponse(await fileStore.replaceFile(file, { storagePath, fileName }, userId));
 
     await revalidatePieceRoutes(groupSlug, file.piece.id);
   });
@@ -112,7 +112,7 @@ export async function deletePieceFile(formData: FormData) {
  * the upload doesn't wait for the worker (ADR-0009). No queue: a File left
  * pending by a restart is retried by hand.
  */
-function convertOnceSent(file: fileStore.SavedFile) {
+function convertAfterResponse(file: fileStore.SavedFile) {
   if (file.pendingConversion) {
     after(() => fileStore.convertFile(file.id));
   }

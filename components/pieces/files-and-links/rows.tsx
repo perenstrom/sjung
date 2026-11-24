@@ -93,7 +93,7 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
           </FileOpenLink>
         </TruncatedTooltip>
         <FilePlaybackNote file={file} />
-        {file.playback === "ready" ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
+        {opensPlayer(file) ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
         {actions}
       </InlineRow>
     );
@@ -114,7 +114,7 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
       <span className="inline-flex items-center gap-2">
         <FilePlaybackNote file={file} />
         <span className="text-xs text-muted-foreground">{metadataForFile(file)}</span>
-        {file.playback === "ready" ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
+        {opensPlayer(file) ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
         {actions === null ? null : <span className="inline-flex items-center">{actions}</span>}
       </span>
     </li>
@@ -220,7 +220,7 @@ function RemoveButton({ label, disabled, onClick }: { label: string; disabled: b
 
 function FileIcon({ file }: { file: PieceFileListItem }) {
   // A File that couldn't be prepared shows as an ordinary File (PER-479).
-  const Icon = file.playback === "ready" || file.playback === "preparing" ? Play : FileText;
+  const Icon = opensPlayer(file) || file.playback === "preparing" ? Play : FileText;
   return <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />;
 }
 
@@ -229,6 +229,11 @@ function FilePlaybackNote({ file }: { file: PieceFileListItem }) {
   return file.playback === "preparing" ? (
     <span className="shrink-0 text-xs text-muted-foreground">Förbereds…</span>
   ) : null;
+}
+
+/** Whether the File's name opens the player, with a separate download button, rather than downloading it. */
+function opensPlayer(file: PieceFileListItem): boolean {
+  return file.playback === "ready";
 }
 
 const DIMMED = "pointer-events-none opacity-50";
@@ -252,7 +257,7 @@ function FileOpenLink({
   children: ReactNode;
 }) {
   const classes = cn("text-left text-primary underline-offset-4 hover:underline", dimmed && DIMMED, className);
-  if (file.playback !== "ready") {
+  if (!opensPlayer(file)) {
     return (
       <FileDownloadLink ctx={ctx} file={file} dimmed={dimmed} className={classes}>
         {children}

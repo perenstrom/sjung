@@ -33,8 +33,7 @@ export async function putObject(
 }
 
 export async function getObject(key: string): Promise<Uint8Array | null> {
-  const object = objects.get(key);
-  return object ? (bodies.get(key) ?? new Uint8Array(object.size)) : null;
+  return storedBody(key);
 }
 
 export async function headObject(key: string): Promise<StoredObject | null> {
