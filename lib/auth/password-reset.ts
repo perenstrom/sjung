@@ -43,7 +43,7 @@ export async function requestPasswordReset(email: string, now: Date = new Date()
             validForHours: PASSWORD_RESET_VALID_FOR_HOURS,
           }),
         }),
-      now
+      now,
     );
   } catch (sendError) {
     console.error("Kunde inte skicka mejl för lösenordsåterställning", sendError);
@@ -58,7 +58,7 @@ export type PasswordResetTokenState = { state: "valid"; email: string } | { stat
  */
 export async function getPasswordResetTokenState(
   token: string,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<PasswordResetTokenState> {
   const lookup = await resetLinks.lookUp(token, now);
   if (lookup.status !== "usable") {
@@ -80,7 +80,7 @@ export async function getPasswordResetTokenState(
 export async function completePasswordReset(
   token: string,
   newPassword: string,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<{ ok: boolean }> {
   // Hashed up front: argon2 is slow and shouldn't hold the transaction open.
   const passwordHash = await argon2.hash(newPassword);

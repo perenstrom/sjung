@@ -56,11 +56,9 @@ export function PieceImportPreview({
                   >
                     <span className="block truncate">{line.row.raw}</span>
                   </td>
-                  <td className="border-t px-2 py-1.5 text-xs text-destructive">
-                    Hoppas över: {line.row.reason}
-                  </td>
+                  <td className="border-t px-2 py-1.5 text-xs text-destructive">Hoppas över: {line.row.reason}</td>
                 </tr>
-              )
+              ),
             )}
           </tbody>
         </table>
@@ -77,13 +75,7 @@ export function PieceImportPreview({
   );
 }
 
-function ColumnHeader({
-  column,
-  onChange,
-}: {
-  column: ImportColumn;
-  onChange: (index: number, use: boolean) => void;
-}) {
+function ColumnHeader({ column, onChange }: { column: ImportColumn; onChange: (index: number, use: boolean) => void }) {
   return (
     <th scope="col" className={cn("min-w-40 border-r px-2 py-2 text-left", !column.use && "bg-muted")}>
       <div className={cn("break-words", !column.use && "text-muted-foreground line-through")}>
@@ -151,7 +143,7 @@ function PreviewRow({
               ))}
             </div>
           </td>
-        )
+        ),
       )}
       <td className="border-t px-2 py-1.5 text-xs">
         {row.duplicate ? (
@@ -189,7 +181,7 @@ function PersonChip({ person }: { person: ImportPerson }) {
         "rounded px-1.5 py-0.5 text-xs",
         isNew
           ? "border border-dashed border-sky-500 text-sky-800 dark:text-sky-200"
-          : "bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100"
+          : "bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100",
       )}
     >
       {person.name}

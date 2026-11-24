@@ -91,9 +91,7 @@ export function PieceCreditDraftRow({
 
     setPending(true);
     try {
-      await onAdd(
-        creditsFromDraft(draft).map((credit) => ({ ...credit, person: { name: person.name } }))
-      );
+      await onAdd(creditsFromDraft(draft).map((credit) => ({ ...credit, person: { name: person.name } })));
       setError(null);
       onDraftChange(EMPTY_CREDIT_DRAFT);
       personPickerRef.current?.focus();
@@ -146,13 +144,7 @@ export function PieceCreditDraftRow({
             <X className="size-4" aria-hidden="true" />
           </Button>
         ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleAdd}
-          disabled={pending}
-          className="flex-1 @md:flex-none"
-        >
+        <Button type="button" variant="outline" onClick={handleAdd} disabled={pending} className="flex-1 @md:flex-none">
           <Plus className="size-4" aria-hidden="true" />
           {pending ? "Lägger till…" : "Lägg till"}
         </Button>

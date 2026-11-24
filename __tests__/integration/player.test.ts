@@ -92,7 +92,7 @@ describe("opening the player", () => {
 
     expect(player?.closeHref).toBe(groupSetListPath(group.slug, setList.id));
     expect(player?.files[0].href).toBe(
-      playerHref(group.slug, piece.id, sopran.id, { fromSetListPieceId: setListPiece.id })
+      playerHref(group.slug, piece.id, sopran.id, { fromSetListPieceId: setListPiece.id }),
     );
   });
 

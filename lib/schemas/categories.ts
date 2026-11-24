@@ -3,9 +3,12 @@ import { z } from "zod";
 import { MAX_CATEGORY_LENGTH } from "@/lib/pieces/categories";
 import { formDataString } from "@/lib/schemas/form-data";
 
-const categorySchema = z.string().trim().max(MAX_CATEGORY_LENGTH, {
-  error: `Kategorin får vara högst ${MAX_CATEGORY_LENGTH} tecken`,
-});
+const categorySchema = z
+  .string()
+  .trim()
+  .max(MAX_CATEGORY_LENGTH, {
+    error: `Kategorin får vara högst ${MAX_CATEGORY_LENGTH} tecken`,
+  });
 
 /**
  * The typed Category of a File or Link, trimmed; empty when none was given.

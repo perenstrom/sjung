@@ -9,9 +9,7 @@ export default async function proxy(req: NextRequest) {
   // Auth.js names the session cookie `__Secure-…` when the request is https, judged from
   // x-forwarded-proto behind a TLS-terminating proxy. getToken defaults to the plain name,
   // so it must be told which one to read or it never finds the session.
-  const protocol =
-    req.headers.get("x-forwarded-proto")?.split(",")[0].trim() ??
-    nextUrl.protocol.replace(/:$/, "");
+  const protocol = req.headers.get("x-forwarded-proto")?.split(",")[0].trim() ?? nextUrl.protocol.replace(/:$/, "");
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET,

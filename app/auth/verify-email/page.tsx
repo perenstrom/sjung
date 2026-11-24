@@ -36,8 +36,8 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Vi har skickat en länk till <strong className="text-foreground">{user.email}</strong>.
-              Öppna den för att börja använda Sjung.
+              Vi har skickat en länk till <strong className="text-foreground">{user.email}</strong>. Öppna den för att
+              börja använda Sjung.
             </p>
           )}
         </div>

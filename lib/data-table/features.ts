@@ -1,9 +1,4 @@
-import {
-  createSortedRowModel,
-  rowSortingFeature,
-  sortFn_datetime,
-  tableFeatures,
-} from "@tanstack/react-table";
+import { createSortedRowModel, rowSortingFeature, sortFn_datetime, tableFeatures } from "@tanstack/react-table";
 
 import { caseInsensitiveSortFn } from "@/lib/data-table/sorting";
 

@@ -59,7 +59,7 @@ type Groupable = { id: string; category: string | null };
  */
 export function groupByCategory<F extends Groupable & { displayName: string }, L extends Groupable & NamedLink>(
   files: readonly F[],
-  links: readonly L[]
+  links: readonly L[],
 ): CategoryGroup<F, L>[] {
   // Sorted with `id` breaking the last tie, so the order and the spelling of
   // each heading don't depend on the order the database returns them in.
@@ -70,7 +70,7 @@ export function groupByCategory<F extends Groupable & { displayName: string }, L
     (a, b) =>
       swedishNumericCollator.compare(a.name, b.name) ||
       Number(a.entry.kind === "link") - Number(b.entry.kind === "link") ||
-      (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0)
+      (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0),
   );
 
   const entriesOf = (inGroup: (category: string | null) => boolean): CategoryEntry<F, L>[] =>
@@ -98,6 +98,6 @@ export function groupByCategory<F extends Groupable & { displayName: string }, L
 /** Files alone in the order `groupByCategory` lists them: by Category, then by name. */
 export function inCategoryOrder<F extends Groupable & { displayName: string }>(files: readonly F[]): F[] {
   return groupByCategory(files, [] as (Groupable & NamedLink)[]).flatMap((group) =>
-    group.entries.flatMap((entry) => (entry.kind === "file" ? [entry.file] : []))
+    group.entries.flatMap((entry) => (entry.kind === "file" ? [entry.file] : [])),
   );
 }

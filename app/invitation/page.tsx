@@ -50,9 +50,7 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
             </Heading>
             <div className="space-y-3">
               <Button asChild className="w-full">
-                <Link href={loginPath(invitationPagePath(token))}>
-                  Logga in
-                </Link>
+                <Link href={loginPath(invitationPagePath(token))}>Logga in</Link>
               </Button>
               {view.canSignUp && (
                 <Button asChild variant="outline" className="w-full">
@@ -66,9 +64,8 @@ export default async function InvitationPage({ searchParams }: InvitationPagePro
         {view.state === "wrong-account" && viewer && (
           <form action={logOutFromInvitation} className="space-y-6">
             <Heading title="Inbjudan skickades till en annan adress">
-              Du är inloggad som <strong className="text-foreground">{viewer.email}</strong>, men
-              inbjudan till {view.groupName} skickades till en annan adress. Logga ut och logga in
-              med rätt konto för att gå med.
+              Du är inloggad som <strong className="text-foreground">{viewer.email}</strong>, men inbjudan till{" "}
+              {view.groupName} skickades till en annan adress. Logga ut och logga in med rätt konto för att gå med.
             </Heading>
             <input type="hidden" name="token" value={token} />
             <Button type="submit" variant="outline" className="w-full">

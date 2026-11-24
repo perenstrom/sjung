@@ -140,7 +140,7 @@ export function userLinks(purpose: UserTokenPurpose, options: { validForHours: n
         return count > 0;
       },
     },
-    options
+    options,
   );
 }
 
@@ -184,6 +184,6 @@ export function invitationLinks(options: { validForHours: number }): EmailLinks 
         return count > 0;
       },
     },
-    options
+    options,
   );
 }

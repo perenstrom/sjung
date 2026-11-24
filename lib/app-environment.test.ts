@@ -1,10 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  appIcons,
-  appTitle,
-  brandMarkSrc,
-  getAppEnvironment,
-} from "@/lib/app-environment";
+import { appIcons, appTitle, brandMarkSrc, getAppEnvironment } from "@/lib/app-environment";
 
 describe("getAppEnvironment", () => {
   afterEach(() => {
@@ -95,25 +90,20 @@ describe("appIcons", () => {
     });
   });
 
-  it.each(["staging", "local"] as const)(
-    "uses the staging icons on %s",
-    (environment) => {
-      expect(appIcons(environment)).toEqual({
-        icon: [
-          { url: "/icons/staging/favicon.ico", sizes: "16x16 32x32 48x48" },
-          { url: "/icons/staging/icon.svg", type: "image/svg+xml" },
-        ],
-        apple: "/icons/staging/apple-icon.png",
-      });
-    },
-  );
+  it.each(["staging", "local"] as const)("uses the staging icons on %s", (environment) => {
+    expect(appIcons(environment)).toEqual({
+      icon: [
+        { url: "/icons/staging/favicon.ico", sizes: "16x16 32x32 48x48" },
+        { url: "/icons/staging/icon.svg", type: "image/svg+xml" },
+      ],
+      apple: "/icons/staging/apple-icon.png",
+    });
+  });
 });
 
 describe("brandMarkSrc", () => {
   it("matches the production SVG favicon", () => {
-    const productionSvg = appIcons("production").icon.find(
-      (icon) => icon.type === "image/svg+xml",
-    );
+    const productionSvg = appIcons("production").icon.find((icon) => icon.type === "image/svg+xml");
 
     expect(brandMarkSrc).toBe(productionSvg?.url);
   });

@@ -1,9 +1,9 @@
 # Piece import: a linear walkthrough
 
-*2026-11-18T12:45:34Z by Showboat 0.6.1*
+_2026-11-18T12:45:34Z by Showboat 0.6.1_
 <!-- showboat-id: 2a92aab0-d30d-4a02-b0b2-445a88ac5238 -->
 
-This document walks through **Piece import** (PER-434): pasting rows from a spreadsheet on *Alla noter* and getting Pieces, new People and their Credits out of it. It follows the code in the order the feature runs: the page loads what the import matches against, the client builds a preview as the user types, and the server rebuilds the same plan inside a transaction before saving.
+This document walks through **Piece import** (PER-434): pasting rows from a spreadsheet on _Alla noter_ and getting Pieces, new People and their Credits out of it. It follows the code in the order the feature runs: the page loads what the import matches against, the client builds a preview as the user types, and the server rebuilds the same plan inside a transaction before saving.
 
 Every code excerpt is pulled live from the repository with `sed`, `grep` or `cat`, and several sections run the real `lib/pieces/import.ts` through `tsx` so you can see what it returns for a given paste. Source excerpts are fenced as `tsx` for syntax highlighting, so `showboat verify` no longer works on this file; re-run the `bash` block above an excerpt to check it against the current code.
 
@@ -48,7 +48,7 @@ wc -l lib/pieces/import.ts lib/pieces/queries.ts lib/schemas/pieces.ts app/actio
     1601 total
 ```
 
-The one idea to hold on to: **`buildImportPlan` is a pure function that runs twice.** The browser runs it on every keystroke to draw the preview, against a snapshot of the Group (its People, Credit roles in use and Piece titles) that the page loaded. When the user confirms, the browser posts the *raw text and choices* — not the computed plan — plus a fingerprint of the outcome it showed. The server loads the Group fresh inside a serializable transaction, runs the very same function, and only saves if its fingerprint matches. If someone added a Person or Piece in the meantime, the server saves nothing and sends back the current Group so the preview can redraw.
+The one idea to hold on to: **`buildImportPlan` is a pure function that runs twice.** The browser runs it on every keystroke to draw the preview, against a snapshot of the Group (its People, Credit roles in use and Piece titles) that the page loaded. When the user confirms, the browser posts the _raw text and choices_ — not the computed plan — plus a fingerprint of the outcome it showed. The server loads the Group fresh inside a serializable transaction, runs the very same function, and only saves if its fingerprint matches. If someone added a Person or Piece in the meantime, the server saves nothing and sends back the current Group so the preview can redraw.
 
 The module's header comment says the same thing:
 
@@ -95,7 +95,7 @@ export function matchKey(text: string): string {
 }
 ```
 
-`normalizeSpacing` is the *display/storage* form (what gets written), and `matchKey` is the *comparison* form (what gets looked up). Note the Swedish locale and that accents still count:
+`normalizeSpacing` is the _display/storage_ form (what gets written), and `matchKey` is the _comparison_ form (what gets looked up). Note the Swedish locale and that accents still count:
 
 ```bash
 npx --yes tsx@4.23.15 -e '
@@ -113,7 +113,7 @@ true
 false
 ```
 
-Credit roles are free text, with three built-in ones. When a typed role matches a built-in role or one the Group already uses, `resolveCreditRole` returns the *existing spelling*, so a header `KOMPOSITÖR` stores as `Kompositör` instead of creating a near-duplicate role:
+Credit roles are free text, with three built-in ones. When a typed role matches a built-in role or one the Group already uses, `resolveCreditRole` returns the _existing spelling_, so a header `KOMPOSITÖR` stores as `Kompositör` instead of creating a near-duplicate role:
 
 ```bash
 sed -n '9,11p;37,48p' lib/pieces/credit-roles.ts
@@ -131,16 +131,13 @@ export const MAX_CREDIT_ROLE_LENGTH = 50;
  */
 export function resolveCreditRole(typed: string, groupRoles: readonly string[]): string {
   const key = matchKey(typed);
-  return (
-    rankCreditRoles(groupRoles).find((role) => matchKey(role) === key) ??
-    normalizeSpacing(typed)
-  );
+  return rankCreditRoles(groupRoles).find((role) => matchKey(role) === key) ?? normalizeSpacing(typed);
 }
 ```
 
 ## 3. Where it starts: the page, `getPieceImportGroup` and the panel switch
 
-*Alla noter* is a server component. Next to the Pieces, People and Credit roles it already loads, it loads the `ImportGroup` — but only for Members allowed to change content; everyone else gets an empty one, since they never see the Importera button:
+_Alla noter_ is a server component. Next to the Pieces, People and Credit roles it already loads, it loads the `ImportGroup` — but only for Members allowed to change content; everyone else gets an empty one, since they never see the Importera button:
 
 ```bash
 sed -n '15,26p' 'app/app/[groupSlug]/pieces/page.tsx'
@@ -177,7 +174,7 @@ export async function getPieceImportGroup(groupSlug: string): Promise<ImportGrou
 }
 ```
 
-The query reads the three things the import matches against. Notice the optional `db` parameter: it defaults to the global Prisma client, but the confirming action will pass its transaction client `tx`, so the *same* query runs inside the serializable transaction later on (section 12). People are ordered by name and then id, so if a Group has two People whose names share a `matchKey`, the import consistently picks the same one.
+The query reads the three things the import matches against. Notice the optional `db` parameter: it defaults to the global Prisma client, but the confirming action will pass its transaction client `tx`, so the _same_ query runs inside the serializable transaction later on (section 12). People are ordered by name and then id, so if a Group has two People whose names share a `matchKey`, the import consistently picks the same one.
 
 ```bash
 sed -n '67,95p' lib/pieces/queries.ts
@@ -188,7 +185,7 @@ sed -n '67,95p' lib/pieces/queries.ts
 /** The distinct Credit roles on the Group's credits, as stored. */
 export async function getCreditRolesUsedInGroup(
   groupId: string,
-  db: Pick<typeof prisma, "personToPiece"> = prisma
+  db: Pick<typeof prisma, "personToPiece"> = prisma,
 ): Promise<string[]> {
   const credits = await db.personToPiece.findMany({
     where: { piece: { groupId } },
@@ -201,7 +198,7 @@ export async function getCreditRolesUsedInGroup(
 /** What a Piece import matches against: the Group's People, Credit roles in use and Piece titles. */
 export async function getPieceImportGroupFor(
   groupId: string,
-  db: Pick<typeof prisma, "person" | "personToPiece" | "piece"> = prisma
+  db: Pick<typeof prisma, "person" | "personToPiece" | "piece"> = prisma,
 ): Promise<ImportGroup> {
   const [people, creditRoles, pieces] = await Promise.all([
     db.person.findMany({
@@ -224,41 +221,36 @@ sed -n '32,61p' components/pieces/PiecesPageContent.tsx
 ```
 
 ```tsx
-  const { isEditing } = useEditMode();
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const importing = isEditing && isImportOpen;
+const { isEditing } = useEditMode();
+const [isImportOpen, setIsImportOpen] = useState(false);
+const importing = isEditing && isImportOpen;
 
-  return (
-    <>
-      <PageHeader
-        title="Alla noter"
-        editActions={
-          <>
-            <Button variant="outline" onClick={() => setIsImportOpen(true)} disabled={importing}>
-              Importera
-            </Button>
-            <CreatePieceDialog people={people} creditRoles={creditRoles} groupSlug={groupSlug} />
-          </>
-        }
-      />
+return (
+  <>
+    <PageHeader
+      title="Alla noter"
+      editActions={
+        <>
+          <Button variant="outline" onClick={() => setIsImportOpen(true)} disabled={importing}>
+            Importera
+          </Button>
+          <CreatePieceDialog people={people} creditRoles={creditRoles} groupSlug={groupSlug} />
+        </>
+      }
+    />
 
-      {importing ? (
-        <PieceImportPanel groupSlug={groupSlug} group={importGroup} onClose={() => setIsImportOpen(false)} />
-      ) : (
-        <SearchablePiecesTable
-          pieces={pieces}
-          people={people}
-          creditRoles={creditRoles}
-          groupSlug={groupSlug}
-        />
-      )}
-    </>
-  );
+    {importing ? (
+      <PieceImportPanel groupSlug={groupSlug} group={importGroup} onClose={() => setIsImportOpen(false)} />
+    ) : (
+      <SearchablePiecesTable pieces={pieces} people={people} creditRoles={creditRoles} groupSlug={groupSlug} />
+    )}
+  </>
+);
 ```
 
 ## 4. The engine's vocabulary: the types in `lib/pieces/import.ts`
 
-Everything from here to section 10 is in one file with no I/O, which is what lets it run in both the browser and the server action. It starts with two limits and the two *inputs* to the plan: the `ImportGroup` (what we match against) and the `ImportChoices` (what the user has overridden in the preview).
+Everything from here to section 10 is in one file with no I/O, which is what lets it run in both the browser and the server action. It starts with two limits and the two _inputs_ to the plan: the `ImportGroup` (what we match against) and the `ImportChoices` (what the user has overridden in the preview).
 
 ```bash
 sed -n '20,41p' lib/pieces/import.ts
@@ -290,9 +282,9 @@ export type ImportChoices = {
 export const NO_IMPORT_CHOICES: ImportChoices = { columns: {}, addDuplicateLines: [] };
 ```
 
-`ImportChoices` deliberately stores only *overrides*. `columns` maps a column index to on/off only where the user flipped the default, and `addDuplicateLines` lists line numbers of duplicate titles the user ticked "Lägg till ändå" for. Keeping choices this small matters because they are posted to the server as JSON and must mean the same thing when the plan is rebuilt there.
+`ImportChoices` deliberately stores only _overrides_. `columns` maps a column index to on/off only where the user flipped the default, and `addDuplicateLines` lists line numbers of duplicate titles the user ticked "Lägg till ändå" for. Keeping choices this small matters because they are posted to the server as JSON and must mean the same thing when the plan is rebuilt there.
 
-Then the *output* types. A person in the paste is either an `existing` Person (with an id) or a `new` one (name only). A row carries its cells for display, its Credits grouped per Person for saving, and whether it is a duplicate and will be added:
+Then the _output_ types. A person in the paste is either an `existing` Person (with an id) or a `new` one (name only). A row carries its cells for display, its Credits grouped per Person for saving, and whether it is a duplicate and will be added:
 
 ```bash
 sed -n '43,94p' lib/pieces/import.ts
@@ -376,7 +368,7 @@ function detectDelimiter(text: string): ImportDelimiter {
 }
 ```
 
-The fallback matters: a header with no delimiter at all means a titles-only paste, and it falls back to tab — so a title like *Ave, verum corpus* in a later row is *not* split on its comma (one of the fixes in `da2ef1f`). Here it is on four pastes:
+The fallback matters: a header with no delimiter at all means a titles-only paste, and it falls back to tab — so a title like _Ave, verum corpus_ in a later row is _not_ split on its comma (one of the fixes in `da2ef1f`). Here it is on four pastes:
 
 ```bash
 npx --yes tsx@4.23.15 -e '
@@ -398,7 +390,7 @@ for (const text of ["Titel\tKompositör\nA\tBach", "Titel;Kompositör\nA;Bach", 
 
 ## 6. Splitting records: `readRecords` and `readQuoted`
 
-`readRecords` is a small hand-written RFC 4180 reader. It walks the text one character at a time, building `cells` for the current record. Three things can happen at each character: a `"` at the *start* of a cell hands off to `readQuoted`; the delimiter closes the cell; a line break ends the record. Anything else is appended to the cell — and leading spaces don't count as "having started" the cell, so `  "quoted"` still reads as quoted.
+`readRecords` is a small hand-written RFC 4180 reader. It walks the text one character at a time, building `cells` for the current record. Three things can happen at each character: a `"` at the _start_ of a cell hands off to `readQuoted`; the delimiter closes the cell; a line break ends the record. Anything else is appended to the cell — and leading spaces don't count as "having started" the cell, so `  "quoted"` still reads as quoted.
 
 ```bash
 sed -n '107,178p' lib/pieces/import.ts
@@ -483,7 +475,7 @@ function readRecords(text: string, delimiter: ImportDelimiter): RawRecord[] {
 Two details worth slowing down for:
 
 - **Line numbers.** `lineStarts` records the offset of each line, and `lineAt` maps a record's start offset back to its line. That keeps line numbers right even when a quoted cell spans several lines, so "Rad 7" in the preview is the seventh line of what the user pasted.
-- **Error recovery.** When a quoted cell never closes properly, the record gets `UNCLOSED_QUOTE` and reading resumes at the *line after the one the record started on*. One bad row costs one row.
+- **Error recovery.** When a quoted cell never closes properly, the record gets `UNCLOSED_QUOTE` and reading resumes at the _line after the one the record started on_. One bad row costs one row.
 
 `readQuoted` reads from just after the opening quote. `""` is an escaped quote; a lone `"` closes the cell — but only if what follows actually ends the cell (end of text, the delimiter, or a line break). Otherwise it returns `null`, which `readRecords` treats as unreadable:
 
@@ -494,11 +486,7 @@ sed -n '180,200p' lib/pieces/import.ts
 
 ```tsx
 /** The quoted cell's text from just after its opening `"`, or null when it never closes. */
-function readQuoted(
-  text: string,
-  from: number,
-  delimiter: ImportDelimiter
-): { value: string; end: number } | null {
+function readQuoted(text: string, from: number, delimiter: ImportDelimiter): { value: string; end: number } | null {
   let value = "";
   for (let i = from; i < text.length; i++) {
     if (text[i] !== '"') {
@@ -558,7 +546,10 @@ sed -n '202,206p' lib/pieces/import.ts
 const isBlank = (record: RawRecord) => record.error === null && record.cells.every((c) => c.trim() === "");
 
 function splitNames(cell: string): string[] {
-  return cell.split(";").map(normalizeSpacing).filter((name) => name !== "");
+  return cell
+    .split(";")
+    .map(normalizeSpacing)
+    .filter((name) => name !== "");
 }
 ```
 
@@ -599,9 +590,9 @@ function readColumns(header: string[], group: ImportGroup, choices: ImportChoice
 }
 ```
 
-The `use` line is the whole default-plus-override rule: an unusable column is never used; otherwise the user's choice wins if there is one, and the default is "used if the header is a known role" — built-in or already used in the Group. So a header like *Anteckning* is ignored by default (its text is shown greyed out in the preview) but the user can flip it to *Roll*.
+The `use` line is the whole default-plus-override rule: an unusable column is never used; otherwise the user's choice wins if there is one, and the default is "used if the header is a known role" — built-in or already used in the Group. So a header like _Anteckning_ is ignored by default (its text is shown greyed out in the preview) but the user can flip it to _Roll_.
 
-Note `isNewToGroup` is checked against the Group's roles only, not the built-in ones: *Arrangör* is a built-in role but still "new to the Group" until some Credit in the Group uses it. Here is a Group that already uses *Sopran*:
+Note `isNewToGroup` is checked against the Group's roles only, not the built-in ones: _Arrangör_ is a built-in role but still "new to the Group" until some Credit in the Group uses it. Here is a Group that already uses _Sopran_:
 
 ```bash
 npx --yes tsx@4.23.15 -e '
@@ -642,7 +633,7 @@ after the user switches column 3 to Roll:
 
 ## 8. Rows that can't be read: `rowProblem`
 
-Each data record is checked before any matching. The checks run in order and the first problem found is the reason shown in the preview: a record-level read error, a missing title, cells *with content* past the last header (empty trailing cells are fine — spreadsheets paste those), a title over 200 characters, or a name over 200 characters in a used column. Only *used* columns are checked for long names, since an ignored column's text is never saved.
+Each data record is checked before any matching. The checks run in order and the first problem found is the reason shown in the preview: a record-level read error, a missing title, cells _with content_ past the last header (empty trailing cells are fine — spreadsheets paste those), a title over 200 characters, or a name over 200 characters in a used column. Only _used_ columns are checked for long names, since an ignored column's text is never saved.
 
 ```bash
 sed -n '234,246p' lib/pieces/import.ts
@@ -702,7 +693,7 @@ export function buildImportPlan(text: string, group: ImportGroup, choices: Impor
 Four lookups drive the matching:
 
 - `existingPeople` — the Group's People by `matchKey`. If two existing People share a key, the first (by name, then id, from the query's ordering) wins.
-- `newPeople` — People the paste will create, also by `matchKey`, filled in as the loop meets them. Being a `Map` keyed by match key means the *first spelling seen* is the one created, and later rows reuse the same `ImportPerson` object.
+- `newPeople` — People the paste will create, also by `matchKey`, filled in as the loop meets them. Being a `Map` keyed by match key means the _first spelling seen_ is the one created, and later rows reuse the same `ImportPerson` object.
 - `existingTitles` / `seenTitles` — for spotting a title the Group already has, or one an earlier row of this paste already had.
 - `addDuplicateLines` — the user's "add anyway" ticks, as a `Set` for quick lookup.
 
@@ -714,47 +705,47 @@ sed -n '271,311p' lib/pieces/import.ts
 ```
 
 ```tsx
-  for (const record of data) {
-    const problem = rowProblem(record, header.cells.length, columns);
-    if (problem) {
-      skipped.push({ line: record.line, raw: record.raw, reason: problem });
-      continue;
-    }
-
-    const title = normalizeSpacing(record.cells[0]);
-    const titleKey = matchKey(title);
-    const duplicate = existingTitles.has(titleKey) ? "existing" : seenTitles.has(titleKey) ? "earlier" : null;
-    seenTitles.add(titleKey);
-    const add = duplicate === null || addDuplicateLines.has(record.line);
-
-    const personFor = (name: string): ImportPerson => {
-      const key = matchKey(name);
-      const known = existingPeople.get(key) ?? newPeople.get(key);
-      if (known) return known;
-      const person: ImportPerson = { kind: "new", name };
-      // Only a Piece that is added creates its People.
-      if (add) newPeople.set(key, person);
-      return person;
-    };
-
-    const credits = new Map<string, ImportCredit>();
-    const cells: ImportCell[] = columns.map((column) => {
-      const raw = record.cells[column.index] ?? "";
-      if (!column.use) return { kind: "ignored", text: raw.trim() };
-      const people: ImportPerson[] = [];
-      for (const name of splitNames(raw)) {
-        const person = personFor(name);
-        const key = matchKey(person.name);
-        if (!people.some((p) => matchKey(p.name) === key)) people.push(person);
-        const credit = credits.get(key) ?? { person, roles: [] };
-        if (!credit.roles.includes(column.role)) credit.roles.push(column.role);
-        credits.set(key, credit);
-      }
-      return { kind: "people", people };
-    });
-
-    rows.push({ line: record.line, title, cells, credits: [...credits.values()], duplicate, add });
+for (const record of data) {
+  const problem = rowProblem(record, header.cells.length, columns);
+  if (problem) {
+    skipped.push({ line: record.line, raw: record.raw, reason: problem });
+    continue;
   }
+
+  const title = normalizeSpacing(record.cells[0]);
+  const titleKey = matchKey(title);
+  const duplicate = existingTitles.has(titleKey) ? "existing" : seenTitles.has(titleKey) ? "earlier" : null;
+  seenTitles.add(titleKey);
+  const add = duplicate === null || addDuplicateLines.has(record.line);
+
+  const personFor = (name: string): ImportPerson => {
+    const key = matchKey(name);
+    const known = existingPeople.get(key) ?? newPeople.get(key);
+    if (known) return known;
+    const person: ImportPerson = { kind: "new", name };
+    // Only a Piece that is added creates its People.
+    if (add) newPeople.set(key, person);
+    return person;
+  };
+
+  const credits = new Map<string, ImportCredit>();
+  const cells: ImportCell[] = columns.map((column) => {
+    const raw = record.cells[column.index] ?? "";
+    if (!column.use) return { kind: "ignored", text: raw.trim() };
+    const people: ImportPerson[] = [];
+    for (const name of splitNames(raw)) {
+      const person = personFor(name);
+      const key = matchKey(person.name);
+      if (!people.some((p) => matchKey(p.name) === key)) people.push(person);
+      const credit = credits.get(key) ?? { person, roles: [] };
+      if (!credit.roles.includes(column.role)) credit.roles.push(column.role);
+      credits.set(key, credit);
+    }
+    return { kind: "people", people };
+  });
+
+  rows.push({ line: record.line, title, cells, credits: [...credits.values()], duplicate, add });
+}
 ```
 
 Reading it top to bottom:
@@ -762,10 +753,10 @@ Reading it top to bottom:
 1. A row with a problem goes to `skipped` and the loop moves on.
 2. The title is normalized and checked for duplicates — `existing` beats `earlier`. Every title is added to `seenTitles`, even a duplicate, so a third copy is also an `earlier` duplicate.
 3. `add` is true for non-duplicates, or for duplicates the user ticked.
-4. `personFor` resolves a name: existing Person first, then a new Person already planned, else a fresh `new` one. The comment carries a subtle rule: **only a row that is added registers its new People.** A skipped duplicate still *shows* its People as new chips, but they won't be created — unless the user ticks the row, which re-runs the plan with that line in `addDuplicateLines`.
-5. For each column, an ignored cell keeps its text for display; a used cell is split on `;` into People. Within a cell a repeated name is shown once. Across cells, `credits` groups by Person so that one Person in *Kompositör* and *Textförfattare* gets one `ImportCredit` with two roles, and two columns that resolve to the same role don't give a Person that role twice.
+4. `personFor` resolves a name: existing Person first, then a new Person already planned, else a fresh `new` one. The comment carries a subtle rule: **only a row that is added registers its new People.** A skipped duplicate still _shows_ its People as new chips, but they won't be created — unless the user ticks the row, which re-runs the plan with that line in `addDuplicateLines`.
+5. For each column, an ignored cell keeps its text for display; a used cell is split on `;` into People. Within a cell a repeated name is shown once. Across cells, `credits` groups by Person so that one Person in _Kompositör_ and _Textförfattare_ gets one `ImportCredit` with two roles, and two columns that resolve to the same role don't give a Person that role twice.
 
-Finally, the counts. `newCreditRoles` lists roles new to the Group that some *added* row actually uses (an empty new column creates no role, because roles only exist through Credits), de-duplicated in column order. `skipped` in the counts includes both unreadable rows and duplicates left out.
+Finally, the counts. `newCreditRoles` lists roles new to the Group that some _added_ row actually uses (an empty new column creates no role, because roles only exist through Credits), de-duplicated in column order. `skipped` in the counts includes both unreadable rows and duplicates left out.
 
 ```bash
 sed -n '313,333p' lib/pieces/import.ts
@@ -796,7 +787,7 @@ sed -n '313,333p' lib/pieces/import.ts
 }
 ```
 
-Here is the whole thing on a realistic paste. The Group already has *Anna Berg*, uses the role *Kompositör*, and has a Piece called *Ave Maria*:
+Here is the whole thing on a realistic paste. The Group already has _Anna Berg_, uses the role _Kompositör_, and has a Piece called _Ave Maria_:
 
 ```bash
 npx --yes tsx@4.23.15 -e "$(cat <<'TS'
@@ -847,11 +838,11 @@ counts: {"pieces":2,"skipped":3,"newPeople":3,"newCreditRoles":["Textförfattare
 
 `=` marks an existing Person, `+` a new one. Things to notice:
 
-- *anna  berg* and *ANNA BERG* both matched the existing *Anna Berg*, and she got one Credit with two roles.
-- *Hugo Alfvén*, named in two columns, got one Credit with *Kompositör* and *Arrangör*.
-- Line 4, *Ave maria*, is an `existing` duplicate of *Ave Maria*; line 5 is an `earlier` duplicate of line 3. Both are skipped, and *Schubert* is **not** in `newPeople` because his only row isn't added.
+- _anna berg_ and _ANNA BERG_ both matched the existing _Anna Berg_, and she got one Credit with two roles.
+- _Hugo Alfvén_, named in two columns, got one Credit with _Kompositör_ and _Arrangör_.
+- Line 4, _Ave maria_, is an `existing` duplicate of _Ave Maria_; line 5 is an `earlier` duplicate of line 3. Both are skipped, and _Schubert_ is **not** in `newPeople` because his only row isn't added.
 - Line 6 has no title, so it is skipped with its reason.
-- *Arrangör* and *Textförfattare* are new to the Group; *Kompositör* isn't.
+- _Arrangör_ and _Textförfattare_ are new to the Group; _Kompositör_ isn't.
 
 Now the user ticks "Lägg till ändå" on line 4. The client just re-runs the plan with `addDuplicateLines: [4]` (same Group and paste as above):
 
@@ -902,7 +893,7 @@ newPeople: ["Alice Tegnér","Viktor Rydberg","Hugo Alfvén","Schubert"]
 counts: {"pieces":3,"skipped":2,"newPeople":4,"newCreditRoles":["Textförfattare","Arrangör"]}
 ```
 
-*Schubert* now appears as a new Person and the counts follow.
+_Schubert_ now appears as a new Person and the counts follow.
 
 ## 10. Detecting a stale preview: `importOutcome`
 
@@ -933,7 +924,7 @@ export function importOutcome(preview: ImportPreview): string {
 }
 ```
 
-What's *in* the fingerprint is exactly what would change what gets saved: if *Hugo Alfvén* were added to the Group meanwhile, he'd flip from `+Hugo Alfvén` to an id; if *Gläns över sjö och strand* were added as a Piece, that row would flip to a duplicate. What's *not* in it — column headers, counts — is derived from those. Watch it change:
+What's _in_ the fingerprint is exactly what would change what gets saved: if _Hugo Alfvén_ were added to the Group meanwhile, he'd flip from `+Hugo Alfvén` to an id; if _Gläns över sjö och strand_ were added as a Piece, that row would flip to a duplicate. What's _not_ in it — column headers, counts — is derived from those. Watch it change:
 
 ```bash
 npx --yes tsx@4.23.15 -e "$(cat <<'TS'
@@ -981,28 +972,28 @@ sed -n '40,58p' components/pieces/import/PieceImportPanel.tsx
 ```
 
 ```tsx
-  const router = useRouter();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [text, setText] = useState("");
-  const [choices, setChoices] = useState<ImportChoices>(NO_IMPORT_CHOICES);
-  const [group, setGroup] = useState(initialGroup);
-  const [error, setError] = useState<string | null>(null);
-  const [groupChanged, setGroupChanged] = useState(false);
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [isSaving, startSaving] = useTransition();
+const router = useRouter();
+const textareaRef = useRef<HTMLTextAreaElement>(null);
+const [text, setText] = useState("");
+const [choices, setChoices] = useState<ImportChoices>(NO_IMPORT_CHOICES);
+const [group, setGroup] = useState(initialGroup);
+const [error, setError] = useState<string | null>(null);
+const [groupChanged, setGroupChanged] = useState(false);
+const [summary, setSummary] = useState<Summary | null>(null);
+const [isSaving, startSaving] = useTransition();
 
-  const plan = useMemo(() => buildImportPlan(text, group, choices), [text, group, choices]);
-  const preview = plan.kind === "preview" ? plan : null;
+const plan = useMemo(() => buildImportPlan(text, group, choices), [text, group, choices]);
+const preview = plan.kind === "preview" ? plan : null;
 
-  function changeText(next: string) {
-    setText(next);
-    setChoices(NO_IMPORT_CHOICES);
-    setError(null);
-    setGroupChanged(false);
-  }
+function changeText(next: string) {
+  setText(next);
+  setChoices(NO_IMPORT_CHOICES);
+  setError(null);
+  setGroupChanged(false);
+}
 ```
 
-`changeText` resets the choices on every edit. That's necessary, not just tidy: choices are keyed by column index and *line number*, and a different paste could put a different column or row at those positions. It also clears the error and the "Group changed" banner, since the user is now looking at a new preview.
+`changeText` resets the choices on every edit. That's necessary, not just tidy: choices are keyed by column index and _line number_, and a different paste could put a different column or row at those positions. It also clears the error and the "Group changed" banner, since the user is now looking at a new preview.
 
 The two preview callbacks just update `choices`, which re-derives the plan:
 
@@ -1012,18 +1003,16 @@ sed -n '60,71p' components/pieces/import/PieceImportPanel.tsx
 ```
 
 ```tsx
-  function changeColumn(index: number, use: boolean) {
-    setChoices((current) => ({ ...current, columns: { ...current.columns, [index]: use } }));
-  }
+function changeColumn(index: number, use: boolean) {
+  setChoices((current) => ({ ...current, columns: { ...current.columns, [index]: use } }));
+}
 
-  function changeDuplicate(line: number, add: boolean) {
-    setChoices((current) => ({
-      ...current,
-      addDuplicateLines: add
-        ? [...current.addDuplicateLines, line]
-        : current.addDuplicateLines.filter((l) => l !== line),
-    }));
-  }
+function changeDuplicate(line: number, add: boolean) {
+  setChoices((current) => ({
+    ...current,
+    addDuplicateLines: add ? [...current.addDuplicateLines, line] : current.addDuplicateLines.filter((l) => l !== line),
+  }));
+}
 ```
 
 `PieceImportPreview` is presentational. It interleaves the readable rows and the skipped rows back into paste order by line number, so an unreadable row stays where the user pasted it, with its raw text and reason:
@@ -1034,13 +1023,13 @@ sed -n '20,23p' components/pieces/import/PieceImportPreview.tsx
 ```
 
 ```tsx
-  const lines: ({ kind: "row"; row: ImportRow } | { kind: "skipped"; row: SkippedImportRow })[] = [
-    ...preview.rows.map((row) => ({ kind: "row" as const, row })),
-    ...preview.skipped.map((row) => ({ kind: "skipped" as const, row })),
-  ].sort((a, b) => a.row.line - b.row.line);
+const lines: ({ kind: "row"; row: ImportRow } | { kind: "skipped"; row: SkippedImportRow })[] = [
+  ...preview.rows.map((row) => ({ kind: "row" as const, row })),
+  ...preview.skipped.map((row) => ({ kind: "skipped" as const, row })),
+].sort((a, b) => a.row.line - b.row.line);
 ```
 
-Each column header shows either why it can't be used or a *Roll / Ignorera* toggle (wired to `onColumnChange`) with "Ny roll i gruppen" or the existing role it matched; each duplicate row gets a "Lägg till ändå" checkbox (wired to `onDuplicateChange`); and each Person renders as a chip — solid green for an existing Person, dashed blue for one the import creates.
+Each column header shows either why it can't be used or a _Roll / Ignorera_ toggle (wired to `onColumnChange`) with "Ny roll i gruppen" or the existing role it matched; each duplicate row gets a "Lägg till ändå" checkbox (wired to `onDuplicateChange`); and each Person renders as a chip — solid green for an existing Person, dashed blue for one the import creates.
 
 ```bash
 grep -n 'onChange(column.index\|isNewToGroup ?\|onDuplicateChange(row.line\|const isNew' components/pieces/import/PieceImportPreview.tsx
@@ -1063,29 +1052,29 @@ sed -n '78,100p' components/pieces/import/PieceImportPanel.tsx
 ```
 
 ```tsx
-  function confirm() {
-    if (!preview) return;
-    const formData = new FormData();
-    formData.set("groupSlug", groupSlug);
-    formData.set("text", text);
-    formData.set("choices", JSON.stringify(choices));
-    formData.set("outcome", importOutcome(preview));
-    startSaving(async () => {
-      try {
-        const result = await importPieces(formData);
-        setError(null);
-        if (result.kind === "changed") {
-          setGroup(result.group);
-          setGroupChanged(true);
-        } else {
-          setSummary(result.summary);
-          router.refresh();
-        }
-      } catch (err) {
-        setError(getThrownMessage(err, "Kunde inte importera noterna"));
+function confirm() {
+  if (!preview) return;
+  const formData = new FormData();
+  formData.set("groupSlug", groupSlug);
+  formData.set("text", text);
+  formData.set("choices", JSON.stringify(choices));
+  formData.set("outcome", importOutcome(preview));
+  startSaving(async () => {
+    try {
+      const result = await importPieces(formData);
+      setError(null);
+      if (result.kind === "changed") {
+        setGroup(result.group);
+        setGroupChanged(true);
+      } else {
+        setSummary(result.summary);
+        router.refresh();
       }
-    });
-  }
+    } catch (err) {
+      setError(getThrownMessage(err, "Kunde inte importera noterna"));
+    }
+  });
+}
 ```
 
 Posting the inputs instead of the computed plan is the key security property: the server never trusts a client-built list of Pieces, Person ids or roles. A tampered request can at most change the text or choices — which the server reads and validates like any paste — or the outcome string, which only decides whether to save or reply `changed`.
@@ -1171,7 +1160,7 @@ export async function importPieces(formData: FormData): Promise<PieceImportResul
           return { kind: "imported", summary: plan.counts };
         },
         // Serializable, so a Person or Piece someone adds meanwhile fails the save rather than being duplicated.
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30_000 }
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 30_000 },
       );
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
@@ -1199,7 +1188,7 @@ Step by step:
 6. A preview with zero Pieces to add (everything a duplicate, say) throws "Det finns inga noter att importera".
 7. Otherwise `saveImport` writes, and the action returns the plan's counts for the summary.
 
-Why serializable? Steps 3–7 are a read-then-write. At a weaker isolation level, another request could insert *Hugo Alfvén* between our read and our write, and the import would create a second *Hugo Alfvén*. Under `Serializable`, Postgres detects that the transaction's reads are no longer valid and aborts it; Prisma surfaces that as `P2034`. The `catch` turns exactly that error into another `changed` reply — re-reading the Group *outside* the failed transaction — so a race looks to the user just like any other "the Group changed, check the preview" (the third fix in `da2ef1f`). Any other error propagates.
+Why serializable? Steps 3–7 are a read-then-write. At a weaker isolation level, another request could insert _Hugo Alfvén_ between our read and our write, and the import would create a second _Hugo Alfvén_. Under `Serializable`, Postgres detects that the transaction's reads are no longer valid and aborts it; Prisma surfaces that as `P2034`. The `catch` turns exactly that error into another `changed` reply — re-reading the Group _outside_ the failed transaction — so a race looks to the user just like any other "the Group changed, check the preview" (the third fix in `da2ef1f`). Any other error propagates.
 
 After a successful import, `revalidateGroupPeopleRoutes` refreshes the cached pages that list Pieces and People; new Pieces are in no Set list, so nothing else needs revalidating.
 
@@ -1215,12 +1204,11 @@ sed -n '125,150p' app/actions/pieces.ts
 async function saveImport(
   tx: Prisma.TransactionClient,
   plan: ImportPreview,
-  { groupId, userId }: { groupId: string; userId: string }
+  { groupId, userId }: { groupId: string; userId: string },
 ) {
   const pieces = plan.rows.filter((row) => row.add).map((row) => ({ row, id: randomUUID() }));
   const newPersonIds = new Map(plan.newPeople.map((name) => [name, randomUUID()]));
-  const personId = (person: ImportPerson) =>
-    person.kind === "existing" ? person.id : newPersonIds.get(person.name)!;
+  const personId = (person: ImportPerson) => (person.kind === "existing" ? person.id : newPersonIds.get(person.name)!);
   const audit = { createdById: userId, updatedById: userId };
 
   await tx.person.createMany({
@@ -1232,8 +1220,8 @@ async function saveImport(
   await tx.personToPiece.createMany({
     data: pieces.flatMap(({ row, id }) =>
       row.credits.flatMap((credit) =>
-        credit.roles.map((role) => ({ pieceId: id, personId: personId(credit.person), role }))
-      )
+        credit.roles.map((role) => ({ pieceId: id, personId: personId(credit.person), role })),
+      ),
     ),
   });
 }
@@ -1309,23 +1297,23 @@ sed -n '/saves nothing and returns the Group as it is now/,/^  });/p' __tests__/
 ```
 
 ```tsx
-  it("saves nothing and returns the Group as it is now when it changed since the preview", async () => {
-    const text = "Titel\tKompositör\nKyrie\tMozart\nGloria\tVivaldi";
-    const outcome = await previewedOutcome(group, text, NO_IMPORT_CHOICES);
-    const mozart = await createPerson(group, "Mozart");
+it("saves nothing and returns the Group as it is now when it changed since the preview", async () => {
+  const text = "Titel\tKompositör\nKyrie\tMozart\nGloria\tVivaldi";
+  const outcome = await previewedOutcome(group, text, NO_IMPORT_CHOICES);
+  const mozart = await createPerson(group, "Mozart");
 
-    const result = await confirm(group, text, NO_IMPORT_CHOICES, outcome);
+  const result = await confirm(group, text, NO_IMPORT_CHOICES, outcome);
 
-    expect(result).toEqual({
-      kind: "changed",
-      group: { people: [{ id: mozart.id, name: "Mozart" }], creditRoles: [], pieceTitles: [] },
-    });
-    expect(await testPrisma.piece.count({ where: { groupId: group.id } })).toBe(0);
-    expect(await peopleInGroup(group)).toEqual(["Mozart"]);
+  expect(result).toEqual({
+    kind: "changed",
+    group: { people: [{ id: mozart.id, name: "Mozart" }], creditRoles: [], pieceTitles: [] },
   });
+  expect(await testPrisma.piece.count({ where: { groupId: group.id } })).toBe(0);
+  expect(await peopleInGroup(group)).toEqual(["Mozart"]);
+});
 ```
 
-The rollback test (rewritten in `9501a6e`) makes the save fail *through the database* rather than by mocking `randomUUID`: a title holding a NUL character, which Postgres refuses, makes the Piece insert fail after the new People were already inserted. The test then checks that neither the People nor any Piece or Credit was left behind, and the Group's existing Piece is untouched.
+The rollback test (rewritten in `9501a6e`) makes the save fail _through the database_ rather than by mocking `randomUUID`: a title holding a NUL character, which Postgres refuses, makes the Piece insert fail after the new People were already inserted. The test then checks that neither the People nor any Piece or Credit was left behind, and the Group's existing Piece is untouched.
 
 ```bash
 sed -n '/leaves no Piece, Person or Credit behind/,/^  });/p' __tests__/integration/piece-import.test.ts
@@ -1333,16 +1321,16 @@ sed -n '/leaves no Piece, Person or Credit behind/,/^  });/p' __tests__/integrat
 ```
 
 ```tsx
-  it("leaves no Piece, Person or Credit behind when saving fails part-way", async () => {
-    await createPiece({ groupId: group.id, createdById: group.createdById, name: "Befintlig" });
-    // Postgres refuses text holding a NUL character, so this title fails the save after its People are new.
-    const text = "Titel\tKompositör\nKyrie\tMozart\nGlo\u0000ria\tVivaldi";
+it("leaves no Piece, Person or Credit behind when saving fails part-way", async () => {
+  await createPiece({ groupId: group.id, createdById: group.createdById, name: "Befintlig" });
+  // Postgres refuses text holding a NUL character, so this title fails the save after its People are new.
+  const text = "Titel\tKompositör\nKyrie\tMozart\nGlo\u0000ria\tVivaldi";
 
-    await expect(confirm(group, text)).rejects.toThrow();
+  await expect(confirm(group, text)).rejects.toThrow();
 
-    expect(await piecesInGroup(group)).toEqual(["Befintlig"]);
-    expect(await peopleInGroup(group)).toEqual([]);
-  });
+  expect(await piecesInGroup(group)).toEqual(["Befintlig"]);
+  expect(await peopleInGroup(group)).toEqual([]);
+});
 ```
 
 ## Recap
@@ -1353,4 +1341,3 @@ sed -n '/leaves no Piece, Person or Credit behind/,/^  });/p' __tests__/integrat
 - **Choices are small overrides** (column on/off, duplicate lines to add), posted as JSON and re-applied on the server.
 - **Staleness is detected, not merged.** `importOutcome` fingerprints exactly what would be saved; a mismatch — or a serialization failure (`P2034`) — saves nothing and returns the current Group so the preview redraws.
 - **The save is atomic**: three `createMany` calls in one serializable transaction, ids generated up front.
-

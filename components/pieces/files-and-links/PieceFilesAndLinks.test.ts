@@ -34,7 +34,7 @@ function render(
   layout: "detail" | "inline",
   files: PieceFileListItem[],
   links: PieceLink[],
-  { editing = false, setListPieceId }: { editing?: boolean; setListPieceId?: string } = {}
+  { editing = false, setListPieceId }: { editing?: boolean; setListPieceId?: string } = {},
 ): string {
   isEditing = editing;
   return renderMarkup(
@@ -44,7 +44,7 @@ function render(
       piece: { id: "piece-1", name: "Vem kan segla" },
       filesAndLinks: { files, links },
       setListPieceId,
-    })
+    }),
   );
 }
 
@@ -55,7 +55,7 @@ function render(
 function shownSequence(html: string): string[] {
   const shown = [
     ...html.matchAll(
-      /<(?:h3|p) class="text-xs font-medium[^"]*">(.*?)<\/(?:h3|p)>|<a[^>]*>(.*?)<\/a>|(aria-label="(?:Fil|Ladda upp fil)")/g
+      /<(?:h3|p) class="text-xs font-medium[^"]*">(.*?)<\/(?:h3|p)>|<a[^>]*>(.*?)<\/a>|(aria-label="(?:Fil|Ladda upp fil)")/g,
     ),
   ].map(([, category, item, add]) => {
     if (category !== undefined) return `### ${textOf(category).trim()}`;
@@ -80,7 +80,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
         layout,
         [file("Sopran.pdf", "Inspelningar"), file("Text.pdf"), file("Tenor.pdf", "Noter")],
         [link("Alt", "Inspelningar"), link("Annat")],
-        { editing }
+        { editing },
       );
 
       expect(shownSequence(html)).toEqual([
@@ -94,7 +94,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
         "Text.pdf",
         ...(editing ? ["[add]"] : []),
       ]);
-    }
+    },
   );
 
   it.each([
@@ -129,7 +129,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
       expect(open).not.toContain('target="_blank"');
       expect(download).toContain('aria-label="Ladda ner Sopran.mp3"');
       expect(download).toContain('target="_blank"');
-    }
+    },
   );
 
   it("on a Set list piece, opens the player for that Set list piece", () => {
@@ -161,7 +161,7 @@ describe("PieceFilesAndLinks, inline layout", () => {
 
   it("keeps the end of a long File name in its own part, which never shrinks", () => {
     expect(render("inline", [file("Sopran_stämma_REVIDERAD.pdf")], [])).toMatch(
-      />Sopran_stämma_REV<\/span><span[^>]*shrink-0[^>]*>IDERAD\.pdf</
+      />Sopran_stämma_REV<\/span><span[^>]*shrink-0[^>]*>IDERAD\.pdf</,
     );
   });
 

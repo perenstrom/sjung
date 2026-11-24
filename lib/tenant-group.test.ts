@@ -50,9 +50,7 @@ describe("runGroupMutation", () => {
     });
     const mutation = vi.fn();
 
-    await expect(runGroupMutation("kor", guard, mutation)).rejects.toThrow(
-      "Stycke hittades inte"
-    );
+    await expect(runGroupMutation("kor", guard, mutation)).rejects.toThrow("Stycke hittades inte");
     expect(mutation).not.toHaveBeenCalled();
   });
 
@@ -63,7 +61,7 @@ describe("runGroupMutation", () => {
     const mutation = vi.fn();
 
     await expect(runGroupMutation("okand-grupp", guard, mutation)).rejects.toThrow(
-      "Ogiltig grupp eller saknad behörighet"
+      "Ogiltig grupp eller saknad behörighet",
     );
     expect(guard).not.toHaveBeenCalled();
     expect(mutation).not.toHaveBeenCalled();
@@ -101,7 +99,7 @@ describe("runContentMutation", () => {
     const mutation = vi.fn();
 
     await expect(runContentMutation("kor", mutation)).rejects.toThrow(
-      "Du har inte behörighet att ändra innehåll i gruppen"
+      "Du har inte behörighet att ändra innehåll i gruppen",
     );
     expect(mutation).not.toHaveBeenCalled();
   });
@@ -110,9 +108,7 @@ describe("runContentMutation", () => {
     mockRequireGroupAccess.mockRejectedValue(new Error("Ogiltig grupp eller saknad behörighet"));
     const mutation = vi.fn();
 
-    await expect(runContentMutation("okand-grupp", mutation)).rejects.toThrow(
-      "Ogiltig grupp eller saknad behörighet"
-    );
+    await expect(runContentMutation("okand-grupp", mutation)).rejects.toThrow("Ogiltig grupp eller saknad behörighet");
     expect(mutation).not.toHaveBeenCalled();
   });
 });

@@ -32,10 +32,7 @@ export default async function TenantSetListsPage({ params }: PageProps) {
             tail: { kind: "static", label: "Repertoarer" },
           }}
         />
-        <PageHeader
-          title="Repertoarer"
-          editActions={<CreateSetListDialog groupSlug={groupSlug} />}
-        />
+        <PageHeader title="Repertoarer" editActions={<CreateSetListDialog groupSlug={groupSlug} />} />
 
         <SetListsTable
           groupSlug={groupSlug}

@@ -138,8 +138,7 @@ export function PieceImportPanel({
 
       {plan.kind === "tooMany" ? (
         <p role="alert" className="rounded-md border border-destructive p-3 text-sm text-destructive">
-          Texten har {plan.rowCount} rader, men högst {MAX_IMPORT_ROWS} kan importeras åt gången. Inget
-          importeras.
+          Texten har {plan.rowCount} rader, men högst {MAX_IMPORT_ROWS} kan importeras åt gången. Inget importeras.
         </p>
       ) : null}
 
@@ -147,19 +146,15 @@ export function PieceImportPanel({
         <>
           {groupChanged ? (
             <p role="status" className="rounded-md border border-amber-500 p-3 text-sm">
-              Gruppen har ändrats sedan förhandsvisningen. Inget sparades. Kontrollera förhandsvisningen
-              och importera igen.
+              Gruppen har ändrats sedan förhandsvisningen. Inget sparades. Kontrollera förhandsvisningen och importera
+              igen.
             </p>
           ) : null}
-          <PieceImportPreview
-            preview={preview}
-            onColumnChange={changeColumn}
-            onDuplicateChange={changeDuplicate}
-          />
+          <PieceImportPreview preview={preview} onColumnChange={changeColumn} onDuplicateChange={changeDuplicate} />
           <div className="sticky bottom-4 z-10 mx-auto flex w-fit max-w-full flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border bg-background px-4 py-2 shadow-lg">
             <span className="text-sm">
-              <strong>{preview.counts.pieces}</strong> noter · <strong>{preview.counts.newPeople}</strong>{" "}
-              nya personer · <strong>{preview.counts.skipped}</strong> hoppas över
+              <strong>{preview.counts.pieces}</strong> noter · <strong>{preview.counts.newPeople}</strong> nya personer
+              · <strong>{preview.counts.skipped}</strong> hoppas över
             </span>
             <div className="flex gap-2">
               <Button variant="outline" onClick={backToText} disabled={isSaving}>

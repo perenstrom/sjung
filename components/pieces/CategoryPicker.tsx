@@ -4,14 +4,7 @@ import { Check, Folder, Plus, X } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 import { SearchCombobox, useCloseSearchCombobox } from "@/components/SearchCombobox";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import {
   categorySuggestions,
@@ -25,13 +18,7 @@ import { cn } from "@/lib/utils";
 const CategoriesContext = createContext<string[]>(rankCategories([]));
 
 /** Gives the pickers below the Group's Categories, ranked (see `getCategories`). */
-export function PieceCategoriesProvider({
-  categories,
-  children,
-}: {
-  categories: string[];
-  children: ReactNode;
-}) {
+export function PieceCategoriesProvider({ categories, children }: { categories: string[]; children: ReactNode }) {
   return <CategoriesContext.Provider value={categories}>{children}</CategoriesContext.Provider>;
 }
 

@@ -10,12 +10,7 @@ import { LinkPlus } from "@/components/pieces/LinkPlus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  FormPopover,
-  FormPopoverContent,
-  FormPopoverFooter,
-  FormPopoverTrigger,
-} from "@/components/ui/form-popover";
+import { FormPopover, FormPopoverContent, FormPopoverFooter, FormPopoverTrigger } from "@/components/ui/form-popover";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 export function AddPieceLinkPopover({
@@ -85,11 +80,7 @@ export function AddPieceLinkPopover({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <FormPopoverFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Avbryt
             </Button>
             <Button type="submit">Lägg till</Button>

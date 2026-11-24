@@ -15,9 +15,7 @@ export function VerificationEmail({ name, confirmUrl, validForHours }: Verificat
       <p>Bekräfta din e-postadress för att börja använda Sjung.</p>
       <EmailButton href={confirmUrl}>Bekräfta e-postadressen</EmailButton>
       <p>Länken gäller i {validForHours} timmar.</p>
-      <p style={{ color: "#666" }}>
-        Om du inte har skapat ett konto på Sjung kan du ignorera det här mejlet.
-      </p>
+      <p style={{ color: "#666" }}>Om du inte har skapat ett konto på Sjung kan du ignorera det här mejlet.</p>
     </EmailLayout>
   );
 }

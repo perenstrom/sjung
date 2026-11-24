@@ -6,14 +6,7 @@ import { useState } from "react";
 import { deletePerson } from "@/app/actions/people";
 import { DeletePersonWarning } from "@/components/people/DeletePersonWarning";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 /** Deletes a Person with all of their Credits; the action then sends the user to Upphovspersoner. */

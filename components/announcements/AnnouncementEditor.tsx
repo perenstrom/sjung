@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import {
-  createAnnouncement,
-  updateAnnouncement,
-  type AnnouncementFormState,
-} from "@/app/actions/announcements";
+import { createAnnouncement, updateAnnouncement, type AnnouncementFormState } from "@/app/actions/announcements";
 import { AnnouncementBody } from "@/components/announcements/AnnouncementBody";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +24,7 @@ type AnnouncementEditorProps = {
 export function AnnouncementEditor({ announcement }: AnnouncementEditorProps) {
   const [state, formAction, isPending] = useActionState<AnnouncementFormState, FormData>(
     announcement ? updateAnnouncement : createAnnouncement,
-    null
+    null,
   );
   // Controlled, so what was typed survives a rejected save and the preview.
   const [title, setTitle] = useState(announcement?.title ?? "");
@@ -96,11 +92,11 @@ export function AnnouncementEditor({ announcement }: AnnouncementEditorProps) {
             {body.trim() ? (
               <AnnouncementBody body={body} />
             ) : (
-              <p className="text-muted-foreground text-sm">Inget att förhandsgranska än.</p>
+              <p className="text-sm text-muted-foreground">Inget att förhandsgranska än.</p>
             )}
           </div>
         ) : (
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             Markdown: rubriker, fetstil, listor, länkar och tabeller. HTML och bilder visas inte.
           </p>
         )}

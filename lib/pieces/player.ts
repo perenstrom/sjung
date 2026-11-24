@@ -34,7 +34,7 @@ export async function getPlayerData(
   groupSlug: string,
   pieceId: string,
   fileId: string,
-  { fromSetListPieceId }: { fromSetListPieceId?: string } = {}
+  { fromSetListPieceId }: { fromSetListPieceId?: string } = {},
 ): Promise<PlayerData | null> {
   const access = await findGroupAccess(groupSlug);
   if (!access) return null;

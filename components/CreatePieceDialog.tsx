@@ -3,10 +3,7 @@
 import { type FormEvent, useRef, useState } from "react";
 import { createPiece } from "@/app/actions/pieces";
 import { PieceCreditDraftRow } from "@/components/pieces/PieceCreditDraftRow";
-import {
-  PieceCreditsList,
-  RemoveCreditedPersonButton,
-} from "@/components/pieces/PieceCreditsList";
+import { PieceCreditsList, RemoveCreditedPersonButton } from "@/components/pieces/PieceCreditsList";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import {
   type CreditedPerson,
@@ -18,14 +15,7 @@ import {
 } from "@/lib/pieces/credits";
 import type { Person } from "@/types/piece-credit-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -63,10 +53,7 @@ export function CreatePieceDialog({
     const resolved = resolveCreditsToSubmit(credits, draft);
     if ("error" in resolved) return;
 
-    formData.set(
-      "credits",
-      JSON.stringify(resolved.credits.map(({ personId, role }) => ({ personId, role })))
-    );
+    formData.set("credits", JSON.stringify(resolved.credits.map(({ personId, role }) => ({ personId, role }))));
     try {
       await createPiece(formData);
       setError(null);
@@ -100,12 +87,7 @@ export function CreatePieceDialog({
         <DialogHeader>
           <DialogTitle>Lägg till noter</DialogTitle>
         </DialogHeader>
-        <form
-          ref={formRef}
-          action={handleSubmit}
-          onSubmit={handleFormSubmit}
-          className="space-y-5"
-        >
+        <form ref={formRef} action={handleSubmit} onSubmit={handleFormSubmit} className="space-y-5">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <div className="space-y-2">
             <Label htmlFor="name">Namn</Label>
@@ -121,9 +103,7 @@ export function CreatePieceDialog({
               <PieceCreditsList
                 credits={credits}
                 className="space-y-2"
-                renderPersonAction={(person) => (
-                  <RemoveCreditedPersonButton person={person} onRemove={removePerson} />
-                )}
+                renderPersonAction={(person) => <RemoveCreditedPersonButton person={person} onRemove={removePerson} />}
               />
             )}
 

@@ -31,10 +31,7 @@ export function PieceCreditsList({
         <li key={person.personId} className="flex min-h-7 items-start gap-2">
           <div className="flex min-h-7 min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
             {personHref ? (
-              <Link
-                href={personHref(person.personId)}
-                className="min-w-0 font-medium break-words underline"
-              >
+              <Link href={personHref(person.personId)} className="min-w-0 font-medium break-words underline">
                 {person.name}
               </Link>
             ) : (

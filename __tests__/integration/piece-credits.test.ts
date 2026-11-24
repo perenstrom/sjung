@@ -46,9 +46,9 @@ describe("Credits only name People in the Piece's Group", () => {
   it("addCredits refuses a Person from another Group and writes nothing", async () => {
     const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
 
-    await expect(
-      addCredits(addCreditsInput(group, piece.id, otherGroupsPerson.id, ["Kompositör"]))
-    ).rejects.toThrow("Upphovsperson hittades inte");
+    await expect(addCredits(addCreditsInput(group, piece.id, otherGroupsPerson.id, ["Kompositör"]))).rejects.toThrow(
+      "Upphovsperson hittades inte",
+    );
 
     expect(await testPrisma.personToPiece.count({ where: { pieceId: piece.id } })).toBe(0);
   });
@@ -57,9 +57,7 @@ describe("Credits only name People in the Piece's Group", () => {
     const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
 
     await expect(
-      removePersonCredits(
-        formData({ groupSlug: group.slug, pieceId: piece.id, personId: otherGroupsPerson.id })
-      )
+      removePersonCredits(formData({ groupSlug: group.slug, pieceId: piece.id, personId: otherGroupsPerson.id })),
     ).rejects.toThrow("Upphovsperson hittades inte");
   });
 
@@ -73,8 +71,8 @@ describe("Credits only name People in the Piece's Group", () => {
             { personId: ownPerson.id, role: "Kompositör" },
             { personId: otherGroupsPerson.id, role: "Arrangör" },
           ]),
-        })
-      )
+        }),
+      ),
     ).rejects.toThrow("Upphovsperson hittades inte");
 
     expect(await testPrisma.piece.count({ where: { groupId: group.id } })).toBe(0);
@@ -97,13 +95,13 @@ describe("Credit roles are free text, stored in the spelling the Group already u
     await createCredit(
       await createPiece({ groupId: otherGroup.id, createdById: otherGroup.createdById }),
       await createPerson(otherGroup),
-      "Ljudtekniker"
+      "Ljudtekniker",
     );
   });
 
   const storedRoles = async (pieceId: string) =>
     (await testPrisma.personToPiece.findMany({ where: { pieceId }, select: { role: true } })).map(
-      (credit) => credit.role
+      (credit) => credit.role,
     );
 
   it.each([
@@ -128,7 +126,7 @@ describe("Credit roles are free text, stored in the spelling the Group already u
           { personId: person.id, role: " DIRIGENT" },
           { personId: person.id, role: "Körledare" },
         ]),
-      })
+      }),
     );
 
     const piece = await testPrisma.piece.findFirstOrThrow({ where: { name: "Midsommarvaka" } });
@@ -145,20 +143,15 @@ describe("Credit roles are free text, stored in the spelling the Group already u
             { personId: person.id, role: "Kompositör" },
             { personId: person.id, role: "kompositör " },
           ]),
-        })
-      )
+        }),
+      ),
     ).rejects.toThrow(DUPLICATE_CREDITS_ERROR);
 
     expect(await testPrisma.piece.count({ where: { name: "Midsommarvaka" } })).toBe(0);
   });
 
   it("getCreditRoles suggests the built-in roles, then the Group's own, never another Group's", async () => {
-    expect(await getCreditRoles(group.slug)).toEqual([
-      "Arrangör",
-      "Kompositör",
-      "Textförfattare",
-      "Dirigent",
-    ]);
+    expect(await getCreditRoles(group.slug)).toEqual(["Arrangör", "Kompositör", "Textförfattare", "Dirigent"]);
   });
 });
 
@@ -173,9 +166,7 @@ describe("A Person gets several Credit roles on a Piece at once, and loses them 
   });
 
   const rolesOf = async (pieceId: string, personId: string) =>
-    (
-      await testPrisma.personToPiece.findMany({ where: { pieceId, personId }, select: { role: true } })
-    )
+    (await testPrisma.personToPiece.findMany({ where: { pieceId, personId }, select: { role: true } }))
       .map((credit) => credit.role)
       .sort();
 
@@ -195,7 +186,7 @@ describe("A Person gets several Credit roles on a Piece at once, and loses them 
     await createCredit(piece, person, "Kompositör");
 
     await expect(addCredits(addCreditsInput(group, piece.id, person.id, roles))).rejects.toThrow(
-      DUPLICATE_CREDITS_ERROR
+      DUPLICATE_CREDITS_ERROR,
     );
 
     expect(await rolesOf(piece.id, person.id)).toEqual(["Kompositör"]);
@@ -210,9 +201,7 @@ describe("A Person gets several Credit roles on a Piece at once, and loses them 
     await createCredit(piece, otherPerson, "Arrangör");
     await createCredit(otherPiece, person, "Kompositör");
 
-    await removePersonCredits(
-      formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id })
-    );
+    await removePersonCredits(formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id }));
 
     expect(await rolesOf(piece.id, person.id)).toEqual([]);
     expect(await rolesOf(piece.id, otherPerson.id)).toEqual(["Arrangör"]);
@@ -223,7 +212,7 @@ describe("A Person gets several Credit roles on a Piece at once, and loses them 
     const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
 
     await expect(
-      removePersonCredits(formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id }))
+      removePersonCredits(formData({ groupSlug: group.slug, pieceId: piece.id, personId: person.id })),
     ).rejects.toThrow("Upphovspersonen finns inte på stycket");
   });
 });

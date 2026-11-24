@@ -37,10 +37,7 @@ export async function findCreatorGroups(userId: string, db: Db = prisma): Promis
   return { soloGroups, sharedGroups };
 }
 
-export type DeleteAccountResult =
-  | { status: "deleted" }
-  | { status: "wrong-password" }
-  | { status: "blocked" };
+export type DeleteAccountResult = { status: "deleted" } | { status: "wrong-password" } | { status: "blocked" };
 
 /**
  * Deletes the User if `password` is theirs and no Group blocks it, along with

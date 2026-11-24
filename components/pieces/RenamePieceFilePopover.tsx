@@ -9,12 +9,7 @@ import { CategoryField } from "@/components/pieces/CategoryPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  FormPopover,
-  FormPopoverContent,
-  FormPopoverFooter,
-  FormPopoverTrigger,
-} from "@/components/ui/form-popover";
+import { FormPopover, FormPopoverContent, FormPopoverFooter, FormPopoverTrigger } from "@/components/ui/form-popover";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 export function RenamePieceFilePopover({
@@ -72,22 +67,14 @@ export function RenamePieceFilePopover({
           <Pencil className="size-3.5" aria-hidden="true" />
         </Button>
       </FormPopoverTrigger>
-      <FormPopoverContent
-        title="Redigera fil"
-        description={pieceName ?? displayName}
-      >
+      <FormPopoverContent title="Redigera fil" description={pieceName ?? displayName}>
         <form action={handleUpdate} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="fileId" value={fileId} />
 
           <div className="space-y-2">
             <Label htmlFor={`edit-display-name-${fileId}`}>Visningsnamn</Label>
-            <Input
-              id={`edit-display-name-${fileId}`}
-              name="displayName"
-              defaultValue={displayName}
-              required
-            />
+            <Input id={`edit-display-name-${fileId}`} name="displayName" defaultValue={displayName} required />
           </div>
 
           <CategoryField defaultValue={category} />
@@ -95,11 +82,7 @@ export function RenamePieceFilePopover({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <FormPopoverFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Avbryt
             </Button>
             <Button type="submit">Spara</Button>

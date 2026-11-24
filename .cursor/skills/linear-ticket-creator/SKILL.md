@@ -11,13 +11,13 @@ Creates agent-sized Linear tickets for the Sjung project from a rough input list
 
 Sjung issues use team **Per Enström**. Size is expressed with **issue labels** in the **Size** group (the group itself is for organization in Linear; **do not** use `Size` as the only size label on an issue). Use **exactly one** of these leaf labels per ticket, with the **exact names** below in `save_issue` → `labels`:
 
-| Label | Meaning |
-|-------|--------|
-| `XS` | Trivial: few lines or one obvious file. |
-| `S` | Small: few files, follows existing patterns. |
-| `M` | Medium: several files or some edge-case judgment. |
-| `L` | Large: broad touch surface, schema/auth, or major UI flows. |
-| `XL` | Extra large: should usually be split; use only if the user insists on one ticket — call that out when presenting for approval. |
+| Label | Meaning                                                                                                                        |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `XS`  | Trivial: few lines or one obvious file.                                                                                        |
+| `S`   | Small: few files, follows existing patterns.                                                                                   |
+| `M`   | Medium: several files or some edge-case judgment.                                                                              |
+| `L`   | Large: broad touch surface, schema/auth, or major UI flows.                                                                    |
+| `XL`  | Extra large: should usually be split; use only if the user insists on one ticket — call that out when presenting for approval. |
 
 If `list_issue_labels` no longer returns all five names (rename or deletion), stop and agree with the user on replacements before drafting or creating tickets.
 
@@ -28,6 +28,7 @@ If `list_issue_labels` no longer returns all five names (rename or deletion), st
 Read MCP tool descriptors under `mcps/plugin-linear-linear/tools/` before calling any Linear tool.
 
 Use the `plugin-linear-linear` MCP server to look up:
+
 - The team: `list_teams` (expect **Per Enström** for Sjung)
 - The "Backlog" status ID for that team: `list_issue_statuses` (requires `team`)
 - Confirm the project name "Sjung" exists: `list_projects`
@@ -46,6 +47,7 @@ The user provides a rough, potentially incomplete list of features or tasks.
 ### Step 3: Break down into agent-sized tickets
 
 Split and reorganize items so each ticket is:
+
 - Small enough for a coding agent to implement in one session
 - Touching a limited number of files with a clear "done" state
 - Independent enough to be worked on in isolation where possible
@@ -110,11 +112,11 @@ Read `.cursor/skills/_shared/codebase-reference.md` when drafting hints or explo
 
 Server: `plugin-linear-linear`
 
-| Task | Tool |
-|------|------|
-| List teams | `list_teams` |
-| List issue statuses | `list_issue_statuses` (requires `team`) |
-| List projects | `list_projects` |
-| List issue labels (for size/complexity) | `list_issue_labels` (pass `team`) |
-| Create/update issue | `save_issue` |
-| List existing issues | `list_issues` |
+| Task                                    | Tool                                    |
+| --------------------------------------- | --------------------------------------- |
+| List teams                              | `list_teams`                            |
+| List issue statuses                     | `list_issue_statuses` (requires `team`) |
+| List projects                           | `list_projects`                         |
+| List issue labels (for size/complexity) | `list_issue_labels` (pass `team`)       |
+| Create/update issue                     | `save_issue`                            |
+| List existing issues                    | `list_issues`                           |

@@ -32,7 +32,7 @@ Required variables (from `.env.example`):
 - `RESEND_API_KEY` (optional locally — see "Emails in local development" below)
 - `EMAIL_FROM` (sender address for every email, e.g. `Sjung <noreply@per.fyi>`; optional locally)
 - `FEEDBACK_EMAIL_TO` (inbox that Feedback sent from the app goes to; optional locally)
-- `OPERATORS_EMAIL` (comma-separated addresses of the Operators, who publish Announcements under *Nyheter* and see the Group overview under *Drift*; empty means nobody, see ADR-0008)
+- `OPERATORS_EMAIL` (comma-separated addresses of the Operators, who publish Announcements under _Nyheter_ and see the Group overview under _Drift_; empty means nobody, see ADR-0008)
 - `APP_BASE_URL` (origin for links in emails, e.g. `https://www.sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 - `APP_COMMIT` (optional; leave empty locally — set on staging only, see "Deploying" below)
@@ -125,13 +125,13 @@ Each Coolify app sets the runtime variable `APP_ENV`: `staging` on `sjung-stagin
 
 Both apps also set four runtime variables for email, and `OPERATORS_EMAIL` for who the Operators are. Without them signup still works, but no verification email goes out and new users get stuck on the "check your email" page.
 
-| Variable | `sjung-staging` | `sjung-production` |
-| --- | --- | --- |
-| `RESEND_API_KEY` | Resend key `sjung-staging` | Resend key `sjung-production` |
-| `EMAIL_FROM` | `Sjung <noreply@per.fyi>` | `Sjung <noreply@per.fyi>` |
-| `APP_BASE_URL` | `https://staging.sjung.app` | `https://www.sjung.app` |
-| `FEEDBACK_EMAIL_TO` | Inbox for Feedback | Inbox for Feedback |
-| `OPERATORS_EMAIL` | Operators' addresses, comma-separated | Operators' addresses, comma-separated |
+| Variable            | `sjung-staging`                       | `sjung-production`                    |
+| ------------------- | ------------------------------------- | ------------------------------------- |
+| `RESEND_API_KEY`    | Resend key `sjung-staging`            | Resend key `sjung-production`         |
+| `EMAIL_FROM`        | `Sjung <noreply@per.fyi>`             | `Sjung <noreply@per.fyi>`             |
+| `APP_BASE_URL`      | `https://staging.sjung.app`           | `https://www.sjung.app`               |
+| `FEEDBACK_EMAIL_TO` | Inbox for Feedback                    | Inbox for Feedback                    |
+| `OPERATORS_EMAIL`   | Operators' addresses, comma-separated | Operators' addresses, comma-separated |
 
 Each app has its own sending-only Resend key, so either can be revoked alone. The sender must be on a domain verified in Resend. Production uses `www` because `sjung.app` redirects there, and links in emails shouldn't go through a redirect. Set them as runtime variables, not build variables; a restart picks up a change.
 
@@ -189,4 +189,3 @@ Don't attribute PRs to Claude and don't link the session that produced them — 
 Unit tests (`npm run test:unit`) run in Node next to the code they test. Integration tests (`npm run test:integration`) call server actions against a disposable Postgres set by `TEST_DATABASE_URL`. Playwright end-to-end tests (`npm run test:e2e`) drive a production build in Chromium against a third disposable Postgres set by `E2E_DATABASE_URL`.
 
 See `docs/testing.md` for which layer a test belongs in, what to assert and the test budget, and `docs/testing-access-rights.md` for the integration harness and the Playwright setup.
-

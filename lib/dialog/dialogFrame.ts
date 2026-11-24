@@ -41,10 +41,7 @@ export type VerticalBounds = { top: number; bottom: number };
  * it is read from its start. Scrolling only the body (not `scrollIntoView`)
  * keeps iOS from panning the visual viewport again.
  */
-export function revealScrollDelta(
-  field: VerticalBounds,
-  body: VerticalBounds,
-): number {
+export function revealScrollDelta(field: VerticalBounds, body: VerticalBounds): number {
   const highest = body.top + DIALOG_STICKY_CLEARANCE_PX;
   const lowest = body.bottom - DIALOG_STICKY_CLEARANCE_PX;
   if (field.bottom - field.top > lowest - highest) return field.top - highest;

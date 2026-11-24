@@ -17,14 +17,21 @@ import {
   SidebarMenuButton,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Boxes, CircleUser, Gauge, ListMusic, LogOut, Music, Newspaper, ScrollText, ShieldCheck, UserPlus, Users } from "lucide-react";
-import { logOut } from "@/app/actions/auth";
 import {
-  closeMobileSidebar,
-  groupNavItems,
-  isAtOrUnder,
-  type GroupNavItem,
-} from "@/lib/sidebar-navigation";
+  Boxes,
+  CircleUser,
+  Gauge,
+  ListMusic,
+  LogOut,
+  Music,
+  Newspaper,
+  ScrollText,
+  ShieldCheck,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { logOut } from "@/app/actions/auth";
+import { closeMobileSidebar, groupNavItems, isAtOrUnder, type GroupNavItem } from "@/lib/sidebar-navigation";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { GroupSwitcher, type SwitchableGroup } from "@/components/GroupSwitcher";
 import { UnreadDot } from "@/components/announcements/UnreadDot";
@@ -121,12 +128,17 @@ type AppSidebarProps = {
   appVersion: string;
 };
 
-export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, isOperator, appVersion }: AppSidebarProps) {
+export function AppSidebar({
+  groups,
+  activeGroupSlug,
+  hasUnreadAnnouncements,
+  isOperator,
+  appVersion,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const [isLoggingOut, startLogOutTransition] = useTransition();
   const tenantSlug = tenantSlugFromPathname(pathname);
-  const currentGroupSlug =
-    tenantSlug ?? activeGroupSlug ?? groups[0]?.slug ?? "";
+  const currentGroupSlug = tenantSlug ?? activeGroupSlug ?? groups[0]?.slug ?? "";
   const currentGroup = groups.find((group) => group.slug === currentGroupSlug);
 
   const navItems = groupNavItems({
@@ -154,17 +166,8 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, is
               className="hover:bg-transparent hover:text-sidebar-foreground active:bg-transparent active:text-sidebar-foreground"
             >
               <div>
-                <Image
-                  src={brandMarkSrc}
-                  alt="Sjung"
-                  width={32}
-                  height={32}
-                  className="size-8 shrink-0"
-                />
-                <span
-                  aria-hidden="true"
-                  className="font-semibold group-data-[collapsible=icon]:hidden"
-                >
+                <Image src={brandMarkSrc} alt="Sjung" width={32} height={32} className="size-8 shrink-0" />
+                <span aria-hidden="true" className="font-semibold group-data-[collapsible=icon]:hidden">
                   Sjung
                 </span>
               </div>
@@ -174,9 +177,7 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, is
       </SidebarHeader>
       <SidebarContent className="flex flex-col">
         <SidebarGroup>
-          <SidebarGroupLabel>
-            {currentGroup?.name ?? "Ingen grupp"}
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>{currentGroup?.name ?? "Ingen grupp"}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -208,11 +209,7 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, is
                 isActive={pathname === ACCOUNT_PATH}
               />
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="Logga ut"
-                  onClick={handleLogOut}
-                  disabled={isLoggingOut}
-                >
+                <SidebarMenuButton tooltip="Logga ut" onClick={handleLogOut} disabled={isLoggingOut}>
                   <LogOut />
                   <span>Logga ut</span>
                 </SidebarMenuButton>
@@ -245,22 +242,10 @@ export function AppSidebar({ groups, activeGroupSlug, hasUnreadAnnouncements, is
             isActive={isAtOrUnder(pathname, ANNOUNCEMENTS_PATH)}
           />
           <FeedbackDialog pagePath={pathname} groupSlug={tenantSlug} appVersion={appVersion} />
-          <NavItem
-            href={PRIVACY_POLICY_PATH}
-            label="Integritetspolicy"
-            icon={<ShieldCheck />}
-            isActive={false}
-          />
-          <NavItem
-            href={TERMS_OF_USE_PATH}
-            label="Användarvillkor"
-            icon={<ScrollText />}
-            isActive={false}
-          />
+          <NavItem href={PRIVACY_POLICY_PATH} label="Integritetspolicy" icon={<ShieldCheck />} isActive={false} />
+          <NavItem href={TERMS_OF_USE_PATH} label="Användarvillkor" icon={<ScrollText />} isActive={false} />
         </SidebarMenu>
-        <p className="px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-          Version {appVersion}
-        </p>
+        <p className="px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">Version {appVersion}</p>
       </SidebarFooter>
     </Sidebar>
   );

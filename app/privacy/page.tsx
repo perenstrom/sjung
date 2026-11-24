@@ -35,8 +35,8 @@ export default function PrivacyPolicyPage() {
         </li>
         <li>
           <strong>Gruppens innehåll:</strong> det gruppens medlemmar lägger in – noter, repertoarer, länkar,
-          anteckningar och uppladdade filer, och vem som skapade eller senast ändrade dem. Upphovspersoner
-          sparas bara med namn och roll, aldrig med kontaktuppgifter.
+          anteckningar och uppladdade filer, och vem som skapade eller senast ändrade dem. Upphovspersoner sparas bara
+          med namn och roll, aldrig med kontaktuppgifter.
         </li>
         <li>
           <strong>Feedback:</strong> när du skickar feedback mejlas meddelandet till oss tillsammans med ditt namn, din
@@ -44,7 +44,8 @@ export default function PrivacyPolicyPage() {
         </li>
         <li>
           <strong>Cookies:</strong> cookies som behövs för att du ska kunna logga in och hållas inloggad, och en som
-          kommer ihåg vilken grupp du senast valde. Alla behövs för att tjänsten ska fungera. Sjung använder ingen statistik, spårning eller annonser.
+          kommer ihåg vilken grupp du senast valde. Alla behövs för att tjänsten ska fungera. Sjung använder ingen
+          statistik, spårning eller annonser.
         </li>
       </ul>
 
@@ -68,9 +69,7 @@ export default function PrivacyPolicyPage() {
           <strong>Resend</strong> – utskick av e-post, från Irland.
         </li>
       </ul>
-      <p>
-        Cloudflare och Resend är amerikanska företag. Båda är certifierade enligt EU–US Data Privacy Framework.
-      </p>
+      <p>Cloudflare och Resend är amerikanska företag. Båda är certifierade enligt EU–US Data Privacy Framework.</p>
       <p>
         Medlemmarna i en grupp ser varandras namn och e-postadresser. Utöver det och biträdena ovan lämnar vi inte ut
         personuppgifter till någon, och vi säljer dem aldrig.
@@ -78,8 +77,8 @@ export default function PrivacyPolicyPage() {
 
       <h2>Hur länge vi sparar dem och hur du får dem raderade</h2>
       <p>
-        Vi sparar dina uppgifter så länge du har ett konto. Du tar själv bort ditt konto under <em>Mitt konto</em>,
-        med knappen <em>Ta bort konto</em>, och bekräftar med ditt lösenord. Då händer det här:
+        Vi sparar dina uppgifter så länge du har ett konto. Du tar själv bort ditt konto under <em>Mitt konto</em>, med
+        knappen <em>Ta bort konto</em>, och bekräftar med ditt lösenord. Då händer det här:
       </p>
       <ul>
         <li>Ditt namn, din e-postadress och ditt lösenord raderas direkt, och du loggas ut överallt.</li>
@@ -96,8 +95,8 @@ export default function PrivacyPolicyPage() {
         <li>Du får ett kvitto på e-post när kontot är borttaget.</li>
       </ul>
       <p>
-        Har du inte bekräftat din e-postadress kan du inte ta bort kontot själv. Mejla då <ContactLink /> så tar vi
-        bort det åt dig.
+        Har du inte bekräftat din e-postadress kan du inte ta bort kontot själv. Mejla då <ContactLink /> så tar vi bort
+        det åt dig.
       </p>
       <p>
         En inbjudan som inte har tagits emot finns kvar tills gruppen tar tillbaka den, och en mottagen inbjudan finns
@@ -115,8 +114,8 @@ export default function PrivacyPolicyPage() {
       <h2>Dina rättigheter</h2>
       <p>
         Du har rätt att få veta vilka uppgifter vi har om dig, att få fel rättade, att få uppgifterna raderade och att
-        invända mot att vi behandlar dem. Mejla <ContactLink /> så hjälper vi dig. Om du
-        tycker att vi hanterar dina uppgifter fel kan du klaga hos Integritetsskyddsmyndigheten (IMY).
+        invända mot att vi behandlar dem. Mejla <ContactLink /> så hjälper vi dig. Om du tycker att vi hanterar dina
+        uppgifter fel kan du klaga hos Integritetsskyddsmyndigheten (IMY).
       </p>
 
       <h2>Ändringar</h2>

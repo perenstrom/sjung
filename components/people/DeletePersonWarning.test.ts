@@ -8,8 +8,8 @@ import { DeletePersonWarning } from "./DeletePersonWarning";
 function render(pieces: { pieceId: string; name: string }[]): string {
   return textOf(
     renderMarkup(
-      createElement(Dialog, { open: true }, createElement(DeletePersonWarning, { personName: "Hugo Alfvén", pieces }))
-    )
+      createElement(Dialog, { open: true }, createElement(DeletePersonWarning, { personName: "Hugo Alfvén", pieces })),
+    ),
   );
 }
 
@@ -23,10 +23,10 @@ describe("DeletePersonWarning", () => {
       render([
         { pieceId: "ave", name: "Ave Maria" },
         { pieceId: "kyrie", name: "Kyrie" },
-      ])
+      ]),
     ).toBe(
       "Hugo Alfvén tas bort permanent, och tas då också bort som upphovsperson på de här styckena:" +
-        "Ave MariaKyrieDetta går inte att ångra."
+        "Ave MariaKyrieDetta går inte att ångra.",
     );
   });
 });

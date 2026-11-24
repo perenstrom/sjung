@@ -5,20 +5,11 @@ import { useState } from "react";
 
 import { AddPieceCreditRow } from "@/components/pieces/AddPieceCreditRow";
 import { Button } from "@/components/ui/button";
-import {
-  FormPopover,
-  FormPopoverContent,
-  FormPopoverTrigger,
-} from "@/components/ui/form-popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { FormPopover, FormPopoverContent, FormPopoverTrigger } from "@/components/ui/form-popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
-const NO_PEOPLE_TOOLTIP =
-  "Inga upphovspersoner tillagda ännu. Lägg till upphovspersoner under Upphovspersoner först.";
+const NO_PEOPLE_TOOLTIP = "Inga upphovspersoner tillagda ännu. Lägg till upphovspersoner under Upphovspersoner först.";
 
 /** The "+" in a Pieces list row: the add-credit row in a popover, closed once the Credits are saved. */
 export function AddPieceCreditPopover({

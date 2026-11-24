@@ -33,14 +33,12 @@ export async function sendVerificationEmail(userId: string, now: Date = new Date
           validForHours: VALID_FOR_HOURS,
         }),
       }),
-    now
+    now,
   );
 }
 
 export type VerificationTokenState =
-  | { state: "valid"; email: string }
-  | { state: "already-verified" }
-  | { state: "invalid" };
+  { state: "valid"; email: string } | { state: "already-verified" } | { state: "invalid" };
 
 /**
  * What the confirm page shows for a token. Read-only on purpose: see the
@@ -48,7 +46,7 @@ export type VerificationTokenState =
  */
 export async function getVerificationTokenState(
   token: string,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): Promise<VerificationTokenState> {
   const lookup = await verificationLinks.lookUp(token, now);
   if (lookup.status === "invalid") {
@@ -66,10 +64,7 @@ export async function getVerificationTokenState(
 }
 
 /** Uses up the token and marks its User Verified (keeping an earlier time), together. */
-export async function confirmEmailVerification(
-  token: string,
-  now: Date = new Date()
-): Promise<{ ok: boolean }> {
+export async function confirmEmailVerification(token: string, now: Date = new Date()): Promise<{ ok: boolean }> {
   return prisma.$transaction(async (tx) => {
     const userId = await verificationLinks.redeem(tx, token, now);
     if (!userId) {

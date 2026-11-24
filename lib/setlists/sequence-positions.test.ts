@@ -36,7 +36,7 @@ describe("SetListPositions.positionsAfterReorder", () => {
         { kind: "piece", id: "B", position: 1 },
         { kind: "piece", id: "A", position: 2 },
         { kind: "note", id: "N", position: 3 },
-      ])
+      ]),
     );
     expect(updates).toHaveLength(3);
   });
@@ -49,7 +49,7 @@ describe("SetListPositions.positionsAfterReorder", () => {
         { kind: "note", id: "N", position: 1 },
         { kind: "piece", id: "A", position: 2 },
         { kind: "piece", id: "B", position: 3 },
-      ])
+      ]),
     );
     expect(updates).toHaveLength(3);
   });
@@ -66,15 +66,11 @@ describe("SetListPositions.positionsAfterReorder", () => {
 
   it("throws when the ordered ids contain a duplicate", () => {
     const steps = [step("piece", "A", 1), step("note", "N", 2)];
-    expect(() => SetListPositions.positionsAfterReorder(steps, ["A", "A"])).toThrow(
-      "Ogiltig ordning"
-    );
+    expect(() => SetListPositions.positionsAfterReorder(steps, ["A", "A"])).toThrow("Ogiltig ordning");
   });
 
   it("throws when the ordered ids reference an unknown step", () => {
     const steps = [step("piece", "A", 1), step("note", "N", 2)];
-    expect(() => SetListPositions.positionsAfterReorder(steps, ["A", "X"])).toThrow(
-      "Ogiltig ordning"
-    );
+    expect(() => SetListPositions.positionsAfterReorder(steps, ["A", "X"])).toThrow("Ogiltig ordning");
   });
 });

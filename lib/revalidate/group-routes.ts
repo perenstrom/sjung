@@ -55,11 +55,7 @@ export function revalidateGroupPieceDetailRoutes(groupSlug: string, pieceId: str
  * cascades to the piece's set list entries, so `deletePiece` passes the set
  * list ids it looked up before deleting.
  */
-export async function revalidatePieceRoutes(
-  groupSlug: string,
-  pieceId: string,
-  setListIds?: string[]
-) {
+export async function revalidatePieceRoutes(groupSlug: string, pieceId: string, setListIds?: string[]) {
   const containingSetListIds = setListIds ?? (await getSetListIdsContainingPiece(pieceId));
   revalidateGroupPieceDetailRoutes(groupSlug, pieceId);
   for (const setListId of containingSetListIds) {

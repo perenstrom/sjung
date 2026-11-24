@@ -66,7 +66,6 @@ describe("sendFeedback", () => {
     expect(sentEmails()[0].text).not.toMatch(/Grupp:/);
   });
 
-
   it.each([
     ["a blank message", "   ", "Skriv din feedback innan du skickar", ""],
     ["a message over 5 000 characters", "a".repeat(5001), "Feedbacken får vara högst 5 000 tecken", "a".repeat(5001)],

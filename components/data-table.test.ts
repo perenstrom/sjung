@@ -7,9 +7,7 @@ import { renderMarkup } from "@/lib/testing/markup";
 
 type Row = { name: string };
 
-const columns: ColumnDef<Row>[] = [
-  { accessorKey: "name", header: "Namn", sortFn: "caseInsensitive" },
-];
+const columns: ColumnDef<Row>[] = [{ accessorKey: "name", header: "Namn", sortFn: "caseInsensitive" }];
 
 function sortedNames(data: Row[], sorting: SortingState): string[] {
   const html = renderMarkup(createElement(DataTable<Row>, { columns, data, initialSorting: sorting }));
@@ -17,26 +15,14 @@ function sortedNames(data: Row[], sorting: SortingState): string[] {
 }
 
 describe("DataTable sorting", () => {
-  const data: Row[] = [
-    { name: "Charlie" },
-    { name: "Alice" },
-    { name: "Bob" },
-  ];
+  const data: Row[] = [{ name: "Charlie" }, { name: "Alice" }, { name: "Bob" }];
 
   it("sorts ascending by column id", () => {
-    expect(sortedNames(data, [{ id: "name", desc: false }])).toEqual([
-      "Alice",
-      "Bob",
-      "Charlie",
-    ]);
+    expect(sortedNames(data, [{ id: "name", desc: false }])).toEqual(["Alice", "Bob", "Charlie"]);
   });
 
   it("sorts descending by column id", () => {
-    expect(sortedNames(data, [{ id: "name", desc: true }])).toEqual([
-      "Charlie",
-      "Bob",
-      "Alice",
-    ]);
+    expect(sortedNames(data, [{ id: "name", desc: true }])).toEqual(["Charlie", "Bob", "Alice"]);
   });
 
   it("keeps source order when sorting state is empty", () => {
@@ -45,15 +31,7 @@ describe("DataTable sorting", () => {
 
   it("sorts case insensitively", () => {
     // A case-sensitive sort would put "Charlie" first.
-    const mixedCase: Row[] = [
-      { name: "bravo" },
-      { name: "Charlie" },
-      { name: "alpha" },
-    ];
-    expect(sortedNames(mixedCase, [{ id: "name", desc: false }])).toEqual([
-      "alpha",
-      "bravo",
-      "Charlie",
-    ]);
+    const mixedCase: Row[] = [{ name: "bravo" }, { name: "Charlie" }, { name: "alpha" }];
+    expect(sortedNames(mixedCase, [{ id: "name", desc: false }])).toEqual(["alpha", "bravo", "Charlie"]);
   });
 });

@@ -9,7 +9,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { PlayerEngine } from "@/lib/file-formats";
 import { createAudioPlayer } from "@/lib/player/audio-player";
-import { DEFAULT_TEMPO, IDLE_SNAPSHOT, isRepeating, markLoop, type Player, type PlayerSnapshot } from "@/lib/player/player";
+import {
+  DEFAULT_TEMPO,
+  IDLE_SNAPSHOT,
+  isRepeating,
+  markLoop,
+  type Player,
+  type PlayerSnapshot,
+} from "@/lib/player/player";
 import { loadWaveform } from "@/lib/player/waveform";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
@@ -61,7 +68,7 @@ export function PlayerView({ pieceName, file, soundfontSrc, files, closeHref }: 
   const playerSnapshot = useSyncExternalStore(
     player?.subscribe ?? noSubscription,
     () => player?.getSnapshot() ?? IDLE_SNAPSHOT,
-    () => IDLE_SNAPSHOT
+    () => IDLE_SNAPSHOT,
   );
   const peaks = useWaveform(engine === "audio" ? file.src : null);
 
@@ -109,7 +116,7 @@ function useMidiPlayer(src: string | null, soundfontSrc: string | null) {
           if (controller.signal.aborted) return;
           console.error("Kunde inte ladda MIDI-filen", error);
           setFailed(true);
-        }
+        },
       );
     return () => {
       controller.abort();

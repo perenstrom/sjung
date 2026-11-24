@@ -15,16 +15,12 @@ export function NewPasswordForm({ token, email }: { token: string; email: string
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Välj nytt lösenord</h1>
         <p className="text-sm text-muted-foreground">
-          För kontot <strong className="text-foreground">{email}</strong>. Du loggas ut på alla
-          enheter när lösenordet är bytt.
+          För kontot <strong className="text-foreground">{email}</strong>. Du loggas ut på alla enheter när lösenordet
+          är bytt.
         </p>
       </div>
 
-      {state?.error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
+      {state?.error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.error}</p>}
 
       <input type="hidden" name="token" value={token} />
 

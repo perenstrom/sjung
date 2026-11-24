@@ -29,7 +29,7 @@ export function SearchablePiecesTable(props: {
     <div className="space-y-4">
       <div className="relative md:max-w-sm">
         <SearchIcon
-          className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden="true"
         />
         <Input

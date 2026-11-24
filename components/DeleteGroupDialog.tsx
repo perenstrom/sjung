@@ -60,8 +60,8 @@ export function DeleteGroupDialog({
         <DialogHeader>
           <DialogTitle>Ta bort grupp?</DialogTitle>
           <DialogDescription>
-            Gruppen <strong>{group.name}</strong> tas bort permanent. All data
-            som hör till gruppen raderas. Detta går inte att ångra.
+            Gruppen <strong>{group.name}</strong> tas bort permanent. All data som hör till gruppen raderas. Detta går
+            inte att ångra.
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit}>

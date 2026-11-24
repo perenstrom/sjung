@@ -3,11 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import * as announcementStore from "@/lib/announcements/announcements";
-import type {
-  AnnouncementDetail,
-  AnnouncementListItem,
-  ManagedAnnouncement,
-} from "@/lib/announcements/announcements";
+import type { AnnouncementDetail, AnnouncementListItem, ManagedAnnouncement } from "@/lib/announcements/announcements";
 import { isOperator } from "@/lib/operators/operators";
 import { requireOperator, requireOperatorPage } from "@/lib/operators/require-operator";
 import { MANAGE_ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
@@ -87,7 +83,7 @@ export type AnnouncementFormState = { error: string; values: AnnouncementForm } 
  */
 async function saveAnnouncement(
   formData: FormData,
-  write: (operator: SessionUser, form: AnnouncementForm) => Promise<string | null>
+  write: (operator: SessionUser, form: AnnouncementForm) => Promise<string | null>,
 ): Promise<AnnouncementFormState> {
   const operator = await requireOperator();
   const parsed = parseAnnouncementForm(formData);
@@ -106,7 +102,7 @@ async function saveAnnouncement(
 /** Publishes a new Announcement at once, to every Verified user. */
 export async function createAnnouncement(
   _prevState: AnnouncementFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AnnouncementFormState> {
   return saveAnnouncement(formData, async (operator, form) => {
     await prisma.announcement.create({
@@ -125,7 +121,7 @@ export async function createAnnouncement(
 /** Saves changes to an Announcement. Those who have read it keep it read. */
 export async function updateAnnouncement(
   _prevState: AnnouncementFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AnnouncementFormState> {
   return saveAnnouncement(formData, async (operator, form) => {
     const { count } = await prisma.announcement.updateMany({

@@ -38,9 +38,7 @@ const names = setLists.map(({ name }) => name);
 
 /** The given Set list names in `html`, in the order shown. */
 function shownNames(html: string): string[] {
-  return [...html.matchAll(/>([^<]+)</g)]
-    .map((match) => match[1])
-    .filter((text) => names.includes(text));
+  return [...html.matchAll(/>([^<]+)</g)].map((match) => match[1]).filter((text) => names.includes(text));
 }
 
 function desktopTable(html: string): string {
@@ -64,13 +62,7 @@ describe("SetListsTable", () => {
   ])("shows Current Set lists first, badged Aktuell, then the rest in the %s", (_, part) => {
     const html = part(renderMarkup(createElement(SetListsTable, { setLists, groupSlug: "koren" })));
 
-    expect(shownNames(html)).toEqual([
-      "Vårkonsert",
-      "Julkonsert",
-      "Lucia",
-      "Öppet hus",
-      "Utan datum",
-    ]);
+    expect(shownNames(html)).toEqual(["Vårkonsert", "Julkonsert", "Lucia", "Öppet hus", "Utan datum"]);
     expect(textOf(html).match(/Aktuell/g)).toHaveLength(1);
     expect(textOf(html)).toMatch(/Vårkonsert\s*Aktuell/);
   });
@@ -93,9 +85,7 @@ describe("SetListsTable", () => {
 
   it("lets Namn and Datum be sorted, but not Åtgärder", () => {
     editMode.isEditing = true;
-    const headers = desktopTable(
-      renderMarkup(createElement(SetListsTable, { setLists, groupSlug: "koren" }))
-    );
+    const headers = desktopTable(renderMarkup(createElement(SetListsTable, { setLists, groupSlug: "koren" })));
     const headerCells = [...headers.matchAll(/<th[^>]*>(.*?)<\/th>/g)].map((match) => match[1]);
 
     expect(headerCells.map((cell) => [textOf(cell), cell.includes("<button")])).toEqual([
@@ -123,7 +113,7 @@ describe("SetListsTable", () => {
         // SetListsTable hands the table its rows in the default order, which settles ties.
         data: [...setLists].sort(compareSetListsByDefault),
         initialSorting: sorting,
-      })
+      }),
     );
 
     expect(shownNames(html)).toEqual(expected);

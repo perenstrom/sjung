@@ -1,11 +1,5 @@
 import { getThrownMessage } from "@/lib/getThrownMessage";
-import {
-  groupMembersPath,
-  groupPath,
-  groupPeoplePath,
-  groupPiecesPath,
-  groupSetListsPath,
-} from "@/lib/groups/routes";
+import { groupMembersPath, groupPath, groupPeoplePath, groupPiecesPath, groupSetListsPath } from "@/lib/groups/routes";
 
 export type GroupNavItem = {
   key: "setLists" | "pieces" | "people" | "members";

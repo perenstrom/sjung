@@ -4,11 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createUser } from "../support/fixtures";
 import { emailedLinkToken, failEmailsTo, sentEmails, type SentEmail } from "../support/fake-email";
 import { testPrisma } from "../support/db";
-import {
-  completePasswordReset,
-  getPasswordResetTokenState,
-  requestPasswordReset,
-} from "@/lib/auth/password-reset";
+import { completePasswordReset, getPasswordResetTokenState, requestPasswordReset } from "@/lib/auth/password-reset";
 import { NEW_PASSWORD_PATH } from "@/lib/auth/routes";
 
 const NEW_PASSWORD = "ett nytt långt lösenord";
@@ -66,7 +62,6 @@ describe("requestPasswordReset", () => {
     expect(sentEmails()).toHaveLength(1);
   });
 
-
   it("swallows a failed send, so the result never reveals whether the account exists", async () => {
     await createUser({ email: "anna@example.com" });
     failEmailsTo("anna@example.com");
@@ -92,7 +87,6 @@ describe("opening the reset link", () => {
   it("treats an unknown token as invalid", async () => {
     await expect(getPasswordResetTokenState("not-a-real-token")).resolves.toEqual({ state: "invalid" });
   });
-
 });
 
 describe("completePasswordReset", () => {

@@ -11,9 +11,7 @@ type AppBreadcrumbContextValue = {
 
 const AppBreadcrumbContext = createContext<AppBreadcrumbContextValue | null>(null);
 
-export function AppBreadcrumbProvider({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export function AppBreadcrumbProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [state, setState] = useState<{
     sourceId: string;
     trail: AppBreadcrumbStaticTrail;
@@ -21,11 +19,7 @@ export function AppBreadcrumbProvider({
 
   const registerTrail = useCallback((sourceId: string, trail: AppBreadcrumbStaticTrail) => {
     setState((current) => {
-      if (
-        current &&
-        current.sourceId === sourceId &&
-        JSON.stringify(current.trail) === JSON.stringify(trail)
-      ) {
+      if (current && current.sourceId === sourceId && JSON.stringify(current.trail) === JSON.stringify(trail)) {
         return current;
       }
       return { sourceId, trail };
@@ -47,7 +41,7 @@ export function AppBreadcrumbProvider({
       registerTrail,
       unregisterTrail,
     }),
-    [registerTrail, state, unregisterTrail]
+    [registerTrail, state, unregisterTrail],
   );
 
   return <AppBreadcrumbContext.Provider value={value}>{children}</AppBreadcrumbContext.Provider>;

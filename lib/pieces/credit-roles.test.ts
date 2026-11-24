@@ -28,9 +28,14 @@ describe("rankCreditRoles", () => {
   });
 
   it("lists the built-in roles first, then the Group's other roles alphabetically, each once", () => {
-    expect(
-      rankCreditRoles(["Översättare", "Kompositör", "Dirigent", "Åsikt", "Dirigent"])
-    ).toEqual(["Arrangör", "Kompositör", "Textförfattare", "Dirigent", "Åsikt", "Översättare"]);
+    expect(rankCreditRoles(["Översättare", "Kompositör", "Dirigent", "Åsikt", "Dirigent"])).toEqual([
+      "Arrangör",
+      "Kompositör",
+      "Textförfattare",
+      "Dirigent",
+      "Åsikt",
+      "Översättare",
+    ]);
   });
 
   it("keeps one spelling of roles that differ only in case or spacing", () => {
@@ -45,11 +50,13 @@ describe("rankCreditRoles", () => {
 
 describe("compareCreditRoles", () => {
   it("ranks Arrangör, Kompositör, Textförfattare, then other roles in Swedish order", () => {
-    expect(
-      ["Översättare", "Textförfattare", "Annan roll", "Kompositör", "Arrangör"].sort(
-        compareCreditRoles
-      )
-    ).toEqual(["Arrangör", "Kompositör", "Textförfattare", "Annan roll", "Översättare"]);
+    expect(["Översättare", "Textförfattare", "Annan roll", "Kompositör", "Arrangör"].sort(compareCreditRoles)).toEqual([
+      "Arrangör",
+      "Kompositör",
+      "Textförfattare",
+      "Annan roll",
+      "Översättare",
+    ]);
   });
 });
 

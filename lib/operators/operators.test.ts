@@ -8,7 +8,12 @@ afterEach(() => {
 describe("isOperator", () => {
   it.each([
     ["listed", "anna@example.com", "anna@example.com", true],
-    ["listed among others, in another case and with spaces", " bo@example.com , ANNA@Example.com ", "anna@example.com", true],
+    [
+      "listed among others, in another case and with spaces",
+      " bo@example.com , ANNA@Example.com ",
+      "anna@example.com",
+      true,
+    ],
     ["not listed", "bo@example.com", "anna@example.com", false],
     ["only a part of a listed address", "anna@example.com.evil", "anna@example.com", false],
     ["the list is empty", "", "anna@example.com", false],

@@ -39,10 +39,7 @@ export async function createVerifiedCreator(): Promise<VerifiedCreator> {
       [groupId, userId, groupSlug],
     );
     // Creator ⇒ Member, as in app/actions/groups.ts.
-    await client.query(`INSERT INTO users_to_groups (user_id, group_id) VALUES ($1, $2)`, [
-      userId,
-      groupId,
-    ]);
+    await client.query(`INSERT INTO users_to_groups (user_id, group_id) VALUES ($1, $2)`, [userId, groupId]);
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");

@@ -15,9 +15,7 @@ export function PasswordResetEmail({ name, resetUrl, validForHours }: PasswordRe
       <p>Någon har bett om att få återställa lösenordet till ditt konto på Sjung.</p>
       <EmailButton href={resetUrl}>Välj ett nytt lösenord</EmailButton>
       <p>Länken gäller i {hoursInSwedish(validForHours)} och kan bara användas en gång.</p>
-      <p style={{ color: "#666" }}>
-        Om det inte var du kan du ignorera det här mejlet. Ditt lösenord ändras inte.
-      </p>
+      <p style={{ color: "#666" }}>Om det inte var du kan du ignorera det här mejlet. Ditt lösenord ändras inte.</p>
     </EmailLayout>
   );
 }

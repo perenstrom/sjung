@@ -1,8 +1,8 @@
-import * as React from "react"
-import Link from "next/link"
-import { ChevronDown } from "lucide-react"
+import * as React from "react";
+import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 /**
  * The shared list used by every list view below `md` (desktop keeps its
@@ -11,68 +11,49 @@ import { cn } from "@/lib/utils"
  * row. Hidden from `md` up, so a page renders it next to its table.
  */
 function MobileList({ className, ...props }: React.ComponentProps<"ul">) {
-  return (
-    <ul
-      data-slot="mobile-list"
-      className={cn("-mx-4 divide-y border-y md:hidden", className)}
-      {...props}
-    />
-  )
+  return <ul data-slot="mobile-list" className={cn("-mx-4 divide-y border-y md:hidden", className)} {...props} />;
 }
 
 /** The one muted line an empty list shows instead of rows. */
 function MobileListEmpty({ className, ...props }: React.ComponentProps<"li">) {
   return (
-    <li
-      data-slot="mobile-list-empty"
-      className={cn("text-muted-foreground px-4 py-3 text-sm", className)}
-      {...props}
-    />
-  )
+    <li data-slot="mobile-list-empty" className={cn("px-4 py-3 text-sm text-muted-foreground", className)} {...props} />
+  );
 }
 
 type MobileListRowProps = {
   /** One line, truncated. */
-  primary: React.ReactNode
+  primary: React.ReactNode;
   /** Optional one line below the primary line, truncated. Omit rather than pass a placeholder. */
-  secondary?: React.ReactNode
+  secondary?: React.ReactNode;
   /** Trailing slot, e.g. a chevron, badges or icon buttons. */
-  trailing?: React.ReactNode
+  trailing?: React.ReactNode;
   /**
    * Makes the whole row a link (at least 56px tall). Trailing content stays
    * above the link, so icon buttons there remain their own tap targets.
    * Without it the row is static text, at least 44px tall.
    */
-  href?: string
+  href?: string;
   /** Extra content below the text lines, e.g. a wrapping line of badges. */
-  children?: React.ReactNode
-  className?: string
-}
+  children?: React.ReactNode;
+  className?: string;
+};
 
-function MobileListRow({
-  primary,
-  secondary,
-  trailing,
-  href,
-  children,
-  className,
-}: MobileListRowProps) {
+function MobileListRow({ primary, secondary, trailing, href, children, className }: MobileListRowProps) {
   const textLines = (
     <>
       <span className="block truncate">{primary}</span>
-      {secondary ? (
-        <span className="text-muted-foreground block truncate text-sm">{secondary}</span>
-      ) : null}
+      {secondary ? <span className="block truncate text-sm text-muted-foreground">{secondary}</span> : null}
     </>
-  )
+  );
 
   return (
     <li
       data-slot="mobile-list-row"
       className={cn(
         "relative flex items-center gap-2 px-4",
-        href ? "has-[a:active]:bg-muted/50 min-h-14 py-2" : "min-h-11 py-2.5",
-        className
+        href ? "min-h-14 py-2 has-[a:active]:bg-muted/50" : "min-h-11 py-2.5",
+        className,
       )}
     >
       <div className="min-w-0 flex-1">
@@ -80,7 +61,7 @@ function MobileListRow({
           // The link stretches over the whole row, so the full row is its tap target.
           <Link
             href={href}
-            className="focus-visible:after:ring-ring/50 block outline-none after:absolute after:inset-0 focus-visible:after:ring-[3px] focus-visible:after:ring-inset"
+            className="block outline-none after:absolute after:inset-0 focus-visible:after:ring-[3px] focus-visible:after:ring-ring/50 focus-visible:after:ring-inset"
           >
             {textLines}
           </Link>
@@ -89,26 +70,24 @@ function MobileListRow({
         )}
         {children}
       </div>
-      {trailing ? (
-        <div className="relative flex shrink-0 items-center gap-1">{trailing}</div>
-      ) : null}
+      {trailing ? <div className="relative flex shrink-0 items-center gap-1">{trailing}</div> : null}
     </li>
-  )
+  );
 }
 
 type MobileListExpandableRowProps = {
   /** Optional content before the text lines, e.g. a running-order number. */
-  leading?: React.ReactNode
+  leading?: React.ReactNode;
   /** One line, truncated while closed and shown in full when open. */
-  primary: React.ReactNode
+  primary: React.ReactNode;
   /** Optional line below the primary line, truncated while closed. Omit rather than pass a placeholder. */
-  secondary?: React.ReactNode
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  secondary?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   /** What the row shows below its summary when open. Unmounted while closed. */
-  children: React.ReactNode
-  className?: string
-}
+  children: React.ReactNode;
+  className?: string;
+};
 
 /**
  * A row that opens in place. The whole summary (at least 56px tall) is one
@@ -123,7 +102,7 @@ function MobileListExpandableRow({
   children,
   className,
 }: MobileListExpandableRowProps) {
-  const panelId = React.useId()
+  const panelId = React.useId();
 
   return (
     <li data-slot="mobile-list-expandable-row" className={className}>
@@ -132,25 +111,18 @@ function MobileListExpandableRow({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => onOpenChange(!open)}
-        className="focus-visible:ring-ring/50 active:bg-muted/50 flex min-h-14 w-full items-center gap-2 px-4 py-2 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-inset"
+        className="flex min-h-14 w-full items-center gap-2 px-4 py-2 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-inset active:bg-muted/50"
       >
         {leading}
         <span className="min-w-0 flex-1">
           <span className={cn("block", !open && "truncate")}>{primary}</span>
           {secondary ? (
-            <span
-              className={cn("text-muted-foreground block text-sm", !open && "truncate")}
-            >
-              {secondary}
-            </span>
+            <span className={cn("block text-sm text-muted-foreground", !open && "truncate")}>{secondary}</span>
           ) : null}
         </span>
         {/* Rotate a wrapper, not the svg: Safari ignores `rotate` on svg elements. */}
         <span
-          className={cn(
-            "text-muted-foreground inline-flex shrink-0 transition-transform",
-            open && "rotate-180",
-          )}
+          className={cn("inline-flex shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
           aria-hidden="true"
         >
           <ChevronDown className="size-4" />
@@ -162,7 +134,7 @@ function MobileListExpandableRow({
         </div>
       ) : null}
     </li>
-  )
+  );
 }
 
-export { MobileList, MobileListEmpty, MobileListExpandableRow, MobileListRow }
+export { MobileList, MobileListEmpty, MobileListExpandableRow, MobileListRow };

@@ -6,13 +6,7 @@ import { addPieceToSetList } from "@/app/actions/setlists";
 import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import { SearchCombobox, useCloseSearchCombobox } from "@/components/SearchCombobox";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { searchPieces } from "@/lib/pieces/search";
@@ -33,26 +27,19 @@ type AddPieceToSetListFormProps = {
  * After a successful add the pick starts over, ready for the next Piece; after
  * a failed add it is kept so the user can retry.
  */
-export function AddPieceToSetListForm({
-  groupSlug,
-  setListId,
-  pieces,
-}: AddPieceToSetListFormProps) {
+export function AddPieceToSetListForm({ groupSlug, setListId, pieces }: AddPieceToSetListFormProps) {
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const selectedPiece = pieces.find((piece) => piece.id === selectedPieceId);
 
-  const [error, formAction, isPending] = useActionState(
-    async (_previousError: string | null, formData: FormData) => {
-      try {
-        await addPieceToSetList(formData);
-      } catch (err) {
-        return getThrownMessage(err, "Kunde inte lägga till stycke");
-      }
-      setSelectedPieceId(null);
-      return null;
-    },
-    null
-  );
+  const [error, formAction, isPending] = useActionState(async (_previousError: string | null, formData: FormData) => {
+    try {
+      await addPieceToSetList(formData);
+    } catch (err) {
+      return getThrownMessage(err, "Kunde inte lägga till stycke");
+    }
+    setSelectedPieceId(null);
+    return null;
+  }, null);
 
   return (
     <form action={formAction} className="space-y-2">
@@ -68,11 +55,7 @@ export function AddPieceToSetListForm({
             selectedLabel={selectedPiece?.name}
             placeholder="Välj stycke…"
           >
-            <PieceSearch
-              pieces={pieces}
-              selectedPieceId={selectedPiece?.id}
-              onPick={setSelectedPieceId}
-            />
+            <PieceSearch pieces={pieces} selectedPieceId={selectedPiece?.id} onPick={setSelectedPieceId} />
           </SearchCombobox>
         </div>
         <Button type="submit" disabled={!selectedPiece || isPending}>

@@ -1,8 +1,4 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppBreadcrumb } from "@/components/AppBreadcrumb";
 import { AppBreadcrumbProvider } from "@/components/AppBreadcrumbContext";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -16,9 +12,7 @@ import { SESSION_ENDED_PATH, VERIFY_EMAIL_PATH } from "@/lib/auth/routes";
 import { isOperator } from "@/lib/operators/operators";
 import { redirect } from "next/navigation";
 
-export default async function ProtectedLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default async function ProtectedLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // proxy.ts has already bounced visitors without a session cookie, so no
   // user here means the session was revoked (or its User deleted). The
   // verified state is read from the database, not the JWT, so verifying on
@@ -34,9 +28,7 @@ export default async function ProtectedLayout({
 
   const [groups, unreadAnnouncements] = await Promise.all([getGroups(), hasUnreadAnnouncements(user)]);
   const activeGroupSlugFromCookie = await getActiveGroupSlugCookie();
-  const activeGroupSlug = groups.some(
-    (group) => group.slug === activeGroupSlugFromCookie
-  )
+  const activeGroupSlug = groups.some((group) => group.slug === activeGroupSlugFromCookie)
     ? activeGroupSlugFromCookie
     : null;
 
@@ -54,7 +46,7 @@ export default async function ProtectedLayout({
           {/* Below md: a 56px bar (plus hairline) that scrolls away, with a flush,
               square, full-height trigger. */}
           <header className="box-content flex h-14 shrink-0 items-center gap-3 border-b pr-4 md:box-border md:h-16 md:gap-2 md:pl-4">
-            <SidebarTrigger className="size-14 rounded-none border-r pointer-coarse:size-14 md:size-7 md:rounded-md md:border-r-0 md:pointer-coarse:size-11" />
+            <SidebarTrigger className="size-14 rounded-none border-r md:size-7 md:rounded-md md:border-r-0 pointer-coarse:size-14 md:pointer-coarse:size-11" />
             <Separator orientation="vertical" className="mx-2 hidden h-4 md:block" />
             <AppBreadcrumb />
           </header>

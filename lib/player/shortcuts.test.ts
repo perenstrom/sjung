@@ -37,7 +37,10 @@ describe("shortcutFor", () => {
 
   it("keeps the arrows within the file", () => {
     expect(shortcutFor(press("ArrowLeft"), context({ position: 2 }))?.action).toEqual({ type: "seek", seconds: 0 });
-    expect(shortcutFor(press("ArrowRight"), context({ position: 118 }))?.action).toEqual({ type: "seek", seconds: 120 });
+    expect(shortcutFor(press("ArrowRight"), context({ position: 118 }))?.action).toEqual({
+      type: "seek",
+      seconds: 120,
+    });
   });
 
   it.each<{ loop: Loop | null; seconds: number; hud: string }>([
@@ -49,16 +52,61 @@ describe("shortcutFor", () => {
   });
 
   it.each<{ key: string; loop: Loop | null; position: number; expected: Loop; hud: string }>([
-    { key: "a", loop: null, position: 30, expected: { start: 30, end: null }, hud: "Repetera härifrån – tryck B vid slutet" },
-    { key: "I", loop: null, position: 30, expected: { start: 30, end: null }, hud: "Repetera härifrån – tryck B vid slutet" },
-    { key: "A", loop: { start: 10, end: 50 }, position: 30, expected: { start: 30, end: 50 }, hud: "Repeterar 0:30–0:50" },
-    { key: "a", loop: { start: 10, end: 50 }, position: 60, expected: { start: 60, end: null }, hud: "Repetera härifrån – tryck B vid slutet" },
-    { key: "b", loop: { start: 10, end: null }, position: 30, expected: { start: 10, end: 30 }, hud: "Repeterar 0:10–0:30" },
-    { key: "O", loop: { start: 10, end: 50 }, position: 30, expected: { start: 10, end: 30 }, hud: "Repeterar 0:10–0:30" },
-    { key: "B", loop: { start: 40, end: null }, position: 30, expected: { start: 30, end: 40 }, hud: "Repeterar 0:30–0:40" },
+    {
+      key: "a",
+      loop: null,
+      position: 30,
+      expected: { start: 30, end: null },
+      hud: "Repetera härifrån – tryck B vid slutet",
+    },
+    {
+      key: "I",
+      loop: null,
+      position: 30,
+      expected: { start: 30, end: null },
+      hud: "Repetera härifrån – tryck B vid slutet",
+    },
+    {
+      key: "A",
+      loop: { start: 10, end: 50 },
+      position: 30,
+      expected: { start: 30, end: 50 },
+      hud: "Repeterar 0:30–0:50",
+    },
+    {
+      key: "a",
+      loop: { start: 10, end: 50 },
+      position: 60,
+      expected: { start: 60, end: null },
+      hud: "Repetera härifrån – tryck B vid slutet",
+    },
+    {
+      key: "b",
+      loop: { start: 10, end: null },
+      position: 30,
+      expected: { start: 10, end: 30 },
+      hud: "Repeterar 0:10–0:30",
+    },
+    {
+      key: "O",
+      loop: { start: 10, end: 50 },
+      position: 30,
+      expected: { start: 10, end: 30 },
+      hud: "Repeterar 0:10–0:30",
+    },
+    {
+      key: "B",
+      loop: { start: 40, end: null },
+      position: 30,
+      expected: { start: 30, end: 40 },
+      hud: "Repeterar 0:30–0:40",
+    },
     { key: "b", loop: null, position: 30, expected: { start: 0, end: 30 }, hud: "Repeterar 0:00–0:30" },
   ])("$key with passage $loop at $position s repeats $expected", ({ key, loop, position, expected, hud }) => {
-    expect(shortcutFor(press(key), context({ loop, position }))).toEqual({ action: { type: "loop", loop: expected }, hud });
+    expect(shortcutFor(press(key), context({ loop, position }))).toEqual({
+      action: { type: "loop", loop: expected },
+      hud,
+    });
   });
 
   it("leaves the passage when B is pressed at its start", () => {
@@ -108,9 +156,12 @@ describe("shortcutFor", () => {
     }
   });
 
-  it.each([{ metaKey: true }, { ctrlKey: true }, { altKey: true }])("leaves keys with %o to the browser", (modifier) => {
-    expect(shortcutFor(press("a", modifier), context())).toBeNull();
-  });
+  it.each([{ metaKey: true }, { ctrlKey: true }, { altKey: true }])(
+    "leaves keys with %o to the browser",
+    (modifier) => {
+      expect(shortcutFor(press("a", modifier), context())).toBeNull();
+    },
+  );
 
   it("ignores other keys", () => {
     expect(shortcutFor(press("x"), context())).toBeNull();
@@ -130,24 +181,62 @@ describe("shortcutFor in a file with bars", () => {
     { key: "ArrowLeft", shiftKey: false, position: 1, seconds: 0, hud: "Takt 1" },
     { key: "ArrowRight", shiftKey: false, position: 119, seconds: 118, hud: "Takt 60" },
   ])("$key (Shift: $shiftKey) at $position s moves to bar $hud", ({ key, shiftKey, position, seconds, hud }) => {
-    expect(shortcutFor(press(key, { shiftKey }), inBars({ position }))).toEqual({ action: { type: "seek", seconds }, hud });
+    expect(shortcutFor(press(key, { shiftKey }), inBars({ position }))).toEqual({
+      action: { type: "seek", seconds },
+      hud,
+    });
   });
 
   it.each<{ key: string; loop: Loop | null; position: number; expected: Loop; hud: string }>([
-    { key: "a", loop: null, position: 31, expected: { start: 30, end: null }, hud: "Repetera från takt 16 – tryck B vid slutet" },
-    { key: "A", loop: { start: 20, end: 50 }, position: 31, expected: { start: 30, end: 50 }, hud: "Repeterar takt 16–25" },
-    { key: "b", loop: { start: 30, end: null }, position: 37, expected: { start: 30, end: 38 }, hud: "Repeterar takt 16–19" },
-    { key: "b", loop: { start: 30, end: null }, position: 31, expected: { start: 30, end: 32 }, hud: "Repeterar takt 16" },
-    { key: "B", loop: { start: 30, end: null }, position: 25, expected: { start: 24, end: 32 }, hud: "Repeterar takt 13–16" },
+    {
+      key: "a",
+      loop: null,
+      position: 31,
+      expected: { start: 30, end: null },
+      hud: "Repetera från takt 16 – tryck B vid slutet",
+    },
+    {
+      key: "A",
+      loop: { start: 20, end: 50 },
+      position: 31,
+      expected: { start: 30, end: 50 },
+      hud: "Repeterar takt 16–25",
+    },
+    {
+      key: "b",
+      loop: { start: 30, end: null },
+      position: 37,
+      expected: { start: 30, end: 38 },
+      hud: "Repeterar takt 16–19",
+    },
+    {
+      key: "b",
+      loop: { start: 30, end: null },
+      position: 31,
+      expected: { start: 30, end: 32 },
+      hud: "Repeterar takt 16",
+    },
+    {
+      key: "B",
+      loop: { start: 30, end: null },
+      position: 25,
+      expected: { start: 24, end: 32 },
+      hud: "Repeterar takt 13–16",
+    },
     { key: "b", loop: null, position: 119, expected: { start: 0, end: 120 }, hud: "Repeterar takt 1–60" },
   ])("$key with passage $loop at $position s marks whole bars: $hud", ({ key, loop, position, expected, hud }) => {
-    expect(shortcutFor(press(key), inBars({ loop, position }))).toEqual({ action: { type: "loop", loop: expected }, hud });
+    expect(shortcutFor(press(key), inBars({ loop, position }))).toEqual({
+      action: { type: "loop", loop: expected },
+      hud,
+    });
   });
 });
 
 describe("listedShortcuts", () => {
   it.each([false, true])("never mentions the unlisted K, I and O (bars: %s)", (hasBars) => {
-    const listed = listedShortcuts({ hasBars }).flatMap(({ keys, what }) => [...keys, what]).join(" ");
+    const listed = listedShortcuts({ hasBars })
+      .flatMap(({ keys, what }) => [...keys, what])
+      .join(" ");
     expect(listed).not.toMatch(/\b[KIO]\b/);
   });
 

@@ -56,13 +56,8 @@ function MobileBreadcrumb({ trail }: { trail: AppBreadcrumbStaticTrail }) {
         <BreadcrumbPage className="truncate">{crumb.label}</BreadcrumbPage>
       ) : (
         <BreadcrumbLink asChild>
-          <Link
-            href={crumb.href}
-            className="-mx-2 flex h-11 min-w-0 items-center gap-1 px-2 text-muted-foreground"
-          >
-            {crumb.kind === "back" ? (
-              <ChevronLeft aria-hidden="true" className="size-4 shrink-0" />
-            ) : null}
+          <Link href={crumb.href} className="-mx-2 flex h-11 min-w-0 items-center gap-1 px-2 text-muted-foreground">
+            {crumb.kind === "back" ? <ChevronLeft aria-hidden="true" className="size-4 shrink-0" /> : null}
             <span className="truncate">{crumb.label}</span>
           </Link>
         </BreadcrumbLink>

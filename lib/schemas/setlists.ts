@@ -5,10 +5,7 @@ const setListNameSchema = z.string().trim().min(1, { error: "Namn krävs" });
 
 const setListIdSchema = z.string().trim().min(1, { error: "Repertoar saknas" });
 
-const setListPieceIdSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Repertoarpost saknas" });
+const setListPieceIdSchema = z.string().trim().min(1, { error: "Repertoarpost saknas" });
 
 const setListNoteIdSchema = z.string().trim().min(1, { error: "Anteckning saknas" });
 
@@ -35,9 +32,7 @@ export function parseSetListIdFromFormData(formData: FormData): string {
 }
 
 export function parseSetListPieceIdFromFormData(formData: FormData): string {
-  const result = setListPieceIdSchema.safeParse(
-    formDataString(formData, "setListPieceId")
-  );
+  const result = setListPieceIdSchema.safeParse(formDataString(formData, "setListPieceId"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Repertoarpost saknas");
   }
@@ -45,9 +40,7 @@ export function parseSetListPieceIdFromFormData(formData: FormData): string {
 }
 
 export function parseSetListNoteIdFromFormData(formData: FormData): string {
-  const result = setListNoteIdSchema.safeParse(
-    formDataString(formData, "setListNoteId")
-  );
+  const result = setListNoteIdSchema.safeParse(formDataString(formData, "setListNoteId"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Anteckning saknas");
   }

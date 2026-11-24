@@ -39,14 +39,7 @@ import { useControllableOpen } from "@/hooks/use-controllable-open";
 import { useMergedRefs } from "@/hooks/use-merged-refs";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type EntityFormDialogContextValue = {
   setOpen: (open: boolean) => void;
@@ -55,8 +48,7 @@ type EntityFormDialogContextValue = {
   fallbackSv: string;
 };
 
-const EntityFormDialogContext =
-  React.createContext<EntityFormDialogContextValue | null>(null);
+const EntityFormDialogContext = React.createContext<EntityFormDialogContextValue | null>(null);
 
 function useEntityFormDialog(part: string): EntityFormDialogContextValue {
   const ctx = React.useContext(EntityFormDialogContext);
@@ -129,39 +121,35 @@ function Title(props: React.ComponentProps<typeof DialogTitle>) {
   return <DialogTitle {...props} />;
 }
 
-export type EntityFormDialogFormProps = Omit<
-  React.ComponentProps<"form">,
-  "action"
-> & {
+export type EntityFormDialogFormProps = Omit<React.ComponentProps<"form">, "action"> & {
   action: (formData: FormData) => Promise<void>;
 };
 
-const Form = React.forwardRef<HTMLFormElement, EntityFormDialogFormProps>(
-  function Form({ action: actionProp, ...formProps }, ref) {
-    const { setError, setOpen, fallbackSv } = useEntityFormDialog(
-      "EntityFormDialog.Form",
-    );
-    const innerRef = React.useRef<HTMLFormElement>(null);
+const Form = React.forwardRef<HTMLFormElement, EntityFormDialogFormProps>(function Form(
+  { action: actionProp, ...formProps },
+  ref,
+) {
+  const { setError, setOpen, fallbackSv } = useEntityFormDialog("EntityFormDialog.Form");
+  const innerRef = React.useRef<HTMLFormElement>(null);
 
-    const mergedRef = useMergedRefs(innerRef, ref);
+  const mergedRef = useMergedRefs(innerRef, ref);
 
-    const handleAction = React.useCallback(
-      async (formData: FormData) => {
-        try {
-          await actionProp(formData);
-          setError(null);
-          setOpen(false);
-          innerRef.current?.reset();
-        } catch (err) {
-          setError(getThrownMessage(err, fallbackSv));
-        }
-      },
-      [actionProp, setError, setOpen, fallbackSv],
-    );
+  const handleAction = React.useCallback(
+    async (formData: FormData) => {
+      try {
+        await actionProp(formData);
+        setError(null);
+        setOpen(false);
+        innerRef.current?.reset();
+      } catch (err) {
+        setError(getThrownMessage(err, fallbackSv));
+      }
+    },
+    [actionProp, setError, setOpen, fallbackSv],
+  );
 
-    return <form ref={mergedRef} {...formProps} action={handleAction} />;
-  },
-);
+  return <form ref={mergedRef} {...formProps} action={handleAction} />;
+});
 
 function ErrorMessage({ className, ...props }: React.ComponentProps<"p">) {
   const { error } = useEntityFormDialog("EntityFormDialog.Error");
@@ -169,10 +157,7 @@ function ErrorMessage({ className, ...props }: React.ComponentProps<"p">) {
     return null;
   }
   return (
-    <p
-      className={cn("text-sm text-destructive", className)}
-      {...props}
-    >
+    <p className={cn("text-sm text-destructive", className)} {...props}>
       {error}
     </p>
   );

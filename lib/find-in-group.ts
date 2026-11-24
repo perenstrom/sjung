@@ -62,22 +62,40 @@ type ContentSelect<K extends ContentKind> = Parameters<(typeof CONTENT)[K]["find
 
 /** What `findInGroup` returns for a kind and select: the row with just the selected fields. */
 type ContentRow<K extends ContentKind, S> = K extends "piece"
-  ? S extends Prisma.PieceSelect ? Prisma.PieceGetPayload<{ select: S }> : never
+  ? S extends Prisma.PieceSelect
+    ? Prisma.PieceGetPayload<{ select: S }>
+    : never
   : K extends "setList"
-    ? S extends Prisma.SetListSelect ? Prisma.SetListGetPayload<{ select: S }> : never
+    ? S extends Prisma.SetListSelect
+      ? Prisma.SetListGetPayload<{ select: S }>
+      : never
     : K extends "setListPiece"
-      ? S extends Prisma.SetListPieceSelect ? Prisma.SetListPieceGetPayload<{ select: S }> : never
+      ? S extends Prisma.SetListPieceSelect
+        ? Prisma.SetListPieceGetPayload<{ select: S }>
+        : never
       : K extends "setListNote"
-        ? S extends Prisma.SetListNoteSelect ? Prisma.SetListNoteGetPayload<{ select: S }> : never
+        ? S extends Prisma.SetListNoteSelect
+          ? Prisma.SetListNoteGetPayload<{ select: S }>
+          : never
         : K extends "file"
-          ? S extends Prisma.FileSelect ? Prisma.FileGetPayload<{ select: S }> : never
+          ? S extends Prisma.FileSelect
+            ? Prisma.FileGetPayload<{ select: S }>
+            : never
           : K extends "link"
-            ? S extends Prisma.LinkSelect ? Prisma.LinkGetPayload<{ select: S }> : never
+            ? S extends Prisma.LinkSelect
+              ? Prisma.LinkGetPayload<{ select: S }>
+              : never
             : K extends "pieceAlias"
-              ? S extends Prisma.PieceAliasSelect ? Prisma.PieceAliasGetPayload<{ select: S }> : never
+              ? S extends Prisma.PieceAliasSelect
+                ? Prisma.PieceAliasGetPayload<{ select: S }>
+                : never
               : K extends "pieceNote"
-                ? S extends Prisma.PieceNoteSelect ? Prisma.PieceNoteGetPayload<{ select: S }> : never
-                : S extends Prisma.PersonSelect ? Prisma.PersonGetPayload<{ select: S }> : never;
+                ? S extends Prisma.PieceNoteSelect
+                  ? Prisma.PieceNoteGetPayload<{ select: S }>
+                  : never
+                : S extends Prisma.PersonSelect
+                  ? Prisma.PersonGetPayload<{ select: S }>
+                  : never;
 
 const ID_ONLY = { id: true } as const;
 
@@ -87,10 +105,12 @@ const ID_ONLY = { id: true } as const;
  * one Group can never reach another's content. Selects only `id` unless told
  * otherwise.
  */
-export async function findInGroup<
-  K extends ContentKind,
-  S extends ContentSelect<K> = typeof ID_ONLY,
->(groupId: string, kind: K, id: string, options?: { select?: S }): Promise<ContentRow<K, S>> {
+export async function findInGroup<K extends ContentKind, S extends ContentSelect<K> = typeof ID_ONLY>(
+  groupId: string,
+  kind: K,
+  id: string,
+  options?: { select?: S },
+): Promise<ContentRow<K, S>> {
   const row = await findInGroupOrNull(groupId, kind, id, options);
   if (!row) {
     throw new Error(CONTENT[kind].notFound);
@@ -99,16 +119,18 @@ export async function findInGroup<
 }
 
 /** {@link findInGroup} for callers that answer a miss themselves, such as a route's 404. */
-export async function findInGroupOrNull<
-  K extends ContentKind,
-  S extends ContentSelect<K> = typeof ID_ONLY,
->(groupId: string, kind: K, id: string, options?: { select?: S }): Promise<ContentRow<K, S> | null> {
+export async function findInGroupOrNull<K extends ContentKind, S extends ContentSelect<K> = typeof ID_ONLY>(
+  groupId: string,
+  kind: K,
+  id: string,
+  options?: { select?: S },
+): Promise<ContentRow<K, S> | null> {
   const select = options?.select ?? ID_ONLY;
   // Each entry's `find` takes its own model's select; the union can't be called directly.
   const row = await (CONTENT[kind].find as (groupId: string, id: string, select: object) => Promise<unknown>)(
     groupId,
     id,
-    select
+    select,
   );
   return (row as ContentRow<K, S> | null) ?? null;
 }

@@ -10,6 +10,7 @@ description: Picks a Todo ticket from the Sjung Linear project and implements it
 Read MCP tool descriptors under `mcps/plugin-linear-linear/tools/` before calling any Linear tool.
 
 Use the `plugin-linear-linear` MCP server to look up:
+
 - The team: `list_teams` (expect **Per Enström** for Sjung)
 - Status IDs for "Todo", "In Progress", and "In Review": `list_issue_statuses` (requires `team`)
 - Confirm project "Sjung" exists: `list_projects`
@@ -86,17 +87,17 @@ See `.cursor/skills/_shared/codebase-reference.md`.
 
 Server: `plugin-linear-linear`
 
-| Task | Tool |
-|------|------|
-| List teams | `list_teams` |
-| List issue statuses | `list_issue_statuses` (requires `team`) |
-| List projects | `list_projects` |
-| List Todo issues | `list_issues` |
-| Get full issue details | `get_issue` |
-| Update issue state | `save_issue` |
+| Task                   | Tool                                    |
+| ---------------------- | --------------------------------------- |
+| List teams             | `list_teams`                            |
+| List issue statuses    | `list_issue_statuses` (requires `team`) |
+| List projects          | `list_projects`                         |
+| List Todo issues       | `list_issues`                           |
+| Get full issue details | `get_issue`                             |
+| Update issue state     | `save_issue`                            |
 
 Server: `user-github`
 
-| Task | Tool |
-|------|------|
+| Task                | Tool                                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Open PR into `main` | `create_pull_request` (`owner`, `repo`, `title`, `head`, `base`; optional `body`, `draft`) — always read the tool descriptor under the MCP folder before calling |

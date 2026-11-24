@@ -134,11 +134,7 @@ export function LinkRow({ ctx, item: link, removing, error, onRemove }: RowProps
         triggerClassName="size-7 shrink-0"
         onOpenChange={(opening) => ctx.setEditor(edit, opening)}
       />
-      <RemoveButton
-        label={`Ta bort länk ${label}`}
-        disabled={removing || isBlocked(ctx.editor)}
-        onClick={onRemove}
-      />
+      <RemoveButton label={`Ta bort länk ${label}`} disabled={removing || isBlocked(ctx.editor)} onClick={onRemove} />
     </>
   ) : null;
 
@@ -153,7 +149,7 @@ export function LinkRow({ ctx, item: link, removing, error, onRemove }: RowProps
             rel="noopener noreferrer"
             className={cn(
               "min-w-0 flex-1 truncate text-primary underline-offset-4 hover:underline",
-              ctx.touch && "leading-10"
+              ctx.touch && "leading-10",
             )}
           >
             {label}
@@ -268,7 +264,12 @@ function FileOpenLink({
 /** Downloads a Playable File, whose name opens the player instead. */
 function FileDownloadButton({ ctx, file, dimmed }: { ctx: RowContext; file: PieceFileListItem; dimmed: boolean }) {
   return (
-    <Button asChild variant="ghost" size="icon" className={cn("size-7 shrink-0 text-muted-foreground", dimmed && DIMMED)}>
+    <Button
+      asChild
+      variant="ghost"
+      size="icon"
+      className={cn("size-7 shrink-0 text-muted-foreground", dimmed && DIMMED)}
+    >
       <FileDownloadLink ctx={ctx} file={file} dimmed={dimmed} aria-label={`Ladda ner ${file.displayName}`}>
         <Download className="size-3.5" aria-hidden />
       </FileDownloadLink>

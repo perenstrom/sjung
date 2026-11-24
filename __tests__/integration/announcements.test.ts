@@ -55,7 +55,11 @@ describe("Operator gating", () => {
   it.each([
     // Actions are forbidden; pages are not found.
     ["publishing", "Forbidden", () => publishAnnouncement(null, formData({ title: "Ny", body: "Text" }))],
-    ["editing", "Forbidden", (id: string) => updateAnnouncement(null, formData({ id, title: "Ändrad", body: "Ändrad" }))],
+    [
+      "editing",
+      "Forbidden",
+      (id: string) => updateAnnouncement(null, formData({ id, title: "Ändrad", body: "Ändrad" })),
+    ],
     ["deleting", "Forbidden", (id: string) => deleteAnnouncement(formData({ id }))],
     ["listing for management", "notFound", () => getAnnouncementsToManage()],
     ["opening the editor", "notFound", (id: string) => getAnnouncementToEdit(id)],
@@ -88,7 +92,7 @@ describe("publishing", () => {
     actAs(operator.id);
 
     await expect(
-      publishAnnouncement(null, formData({ title: "  Nytt i Sjung  ", body: "  Nu finns **nyheter**.  " }))
+      publishAnnouncement(null, formData({ title: "  Nytt i Sjung  ", body: "  Nu finns **nyheter**.  " })),
     ).rejects.toThrow(`redirect:${MANAGE_ANNOUNCEMENTS_PATH}`);
 
     const [row] = await testPrisma.announcement.findMany();
@@ -125,7 +129,7 @@ describe("publishing", () => {
 
     actAs(operator.id);
     await expect(
-      updateAnnouncement(null, formData({ id: announcement.id, title: "Efter", body: "Ny text" }))
+      updateAnnouncement(null, formData({ id: announcement.id, title: "Efter", body: "Ny text" })),
     ).rejects.toThrow(`redirect:${MANAGE_ANNOUNCEMENTS_PATH}`);
 
     expect(await inboxOf(reader)).toEqual([{ title: "Efter", read: true }]);
@@ -138,7 +142,7 @@ describe("publishing", () => {
     actAs(operator.id);
 
     await expect(
-      updateAnnouncement(null, formData({ id: "00000000-0000-0000-0000-000000000000", title: "Efter", body: "Text" }))
+      updateAnnouncement(null, formData({ id: "00000000-0000-0000-0000-000000000000", title: "Efter", body: "Text" })),
     ).resolves.toEqual({ error: "Nyheten finns inte längre", values: { title: "Efter", body: "Text" } });
   });
 

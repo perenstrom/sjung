@@ -4,25 +4,14 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowLeftRight, Check } from "lucide-react";
 import { toast } from "sonner";
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { setActiveGroup } from "@/app/actions/groups";
 import { closeMobileSidebar, switchGroup } from "@/lib/sidebar-navigation";
 
@@ -72,8 +61,7 @@ export function GroupSwitcher({ groups, currentGroupSlug }: GroupSwitcherProps) 
   }
 
   if (isCollapsed) {
-    const currentGroupName =
-      groups.find((group) => group.slug === currentGroupSlug)?.name ?? "Välj grupp";
+    const currentGroupName = groups.find((group) => group.slug === currentGroupSlug)?.name ?? "Välj grupp";
 
     return (
       <SidebarMenu>
@@ -115,11 +103,7 @@ export function GroupSwitcher({ groups, currentGroupSlug }: GroupSwitcherProps) 
 
   return (
     <div className="space-y-1">
-      <Select
-        value={currentGroupSlug}
-        onValueChange={handleGroupChange}
-        disabled={isPending}
-      >
+      <Select value={currentGroupSlug} onValueChange={handleGroupChange} disabled={isPending}>
         <SelectTrigger size="sm" className="w-full">
           <SelectValue placeholder="Välj grupp" />
         </SelectTrigger>

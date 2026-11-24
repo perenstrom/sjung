@@ -4,14 +4,7 @@ import { Check, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { SearchCombobox, useCloseSearchCombobox } from "@/components/SearchCombobox";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { filterPeople, shouldOfferCreatePerson } from "@/lib/people/person-options";
 import { cn } from "@/lib/utils";
@@ -116,13 +109,7 @@ function PersonSearch({
                   close();
                 }}
               >
-                <Check
-                  className={cn(
-                    "size-4",
-                    person.id === value ? "opacity-100" : "opacity-0"
-                  )}
-                  aria-hidden="true"
-                />
+                <Check className={cn("size-4", person.id === value ? "opacity-100" : "opacity-0")} aria-hidden="true" />
                 {person.name}
               </CommandItem>
             ))}
@@ -130,11 +117,7 @@ function PersonSearch({
         )}
         {offerCreate && (
           <CommandGroup>
-            <CommandItem
-              value={CREATE_PERSON_ITEM_VALUE}
-              onSelect={handleCreate}
-              disabled={creating}
-            >
+            <CommandItem value={CREATE_PERSON_ITEM_VALUE} onSelect={handleCreate} disabled={creating}>
               <Plus className="size-4" aria-hidden="true" />
               Skapa &quot;{query.trim()}&quot;
             </CommandItem>

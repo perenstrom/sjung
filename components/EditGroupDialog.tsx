@@ -23,11 +23,7 @@ export function EditGroupDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <EntityFormDialog.Root
-      fallbackSv="Kunde inte spara gruppen"
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <EntityFormDialog.Root fallbackSv="Kunde inte spara gruppen" open={open} onOpenChange={onOpenChange}>
       {open === undefined ? (
         <EntityFormDialog.Trigger asChild>
           <Button variant="outline" size="sm">
@@ -49,13 +45,7 @@ export function EditGroupDialog({
           <input type="hidden" name="groupSlug" value={group.slug} />
           <div className="space-y-2">
             <Label htmlFor={`edit-group-name-${group.id}`}>Gruppnamn</Label>
-            <Input
-              id={`edit-group-name-${group.id}`}
-              name="name"
-              required
-              autoFocus
-              defaultValue={group.name}
-            />
+            <Input id={`edit-group-name-${group.id}`} name="name" required autoFocus defaultValue={group.name} />
           </div>
           <EntityFormDialog.Error />
           <EntityFormDialog.Footer>

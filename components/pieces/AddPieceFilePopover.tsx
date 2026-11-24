@@ -10,12 +10,7 @@ import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  FormPopover,
-  FormPopoverContent,
-  FormPopoverFooter,
-  FormPopoverTrigger,
-} from "@/components/ui/form-popover";
+import { FormPopover, FormPopoverContent, FormPopoverFooter, FormPopoverTrigger } from "@/components/ui/form-popover";
 import { Spinner } from "@/components/ui/spinner";
 import { FileRightsReminder } from "@/components/legal/FileRightsReminder";
 import { FILE_INPUT_ACCEPT } from "@/lib/file-formats";
@@ -99,12 +94,7 @@ export function AddPieceFilePopover({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <FormPopoverFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={isTransferring}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isTransferring}>
               Avbryt
             </Button>
             <Button type="submit" disabled={isTransferring}>

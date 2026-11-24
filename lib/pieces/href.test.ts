@@ -8,9 +8,7 @@ describe("pieceHref", () => {
   });
 
   it("carries the set list it was opened from", () => {
-    expect(pieceHref("kor", "p-1", { fromSetListId: "sl-1" })).toBe(
-      "/app/kor/pieces/p-1?setlist=sl-1"
-    );
+    expect(pieceHref("kor", "p-1", { fromSetListId: "sl-1" })).toBe("/app/kor/pieces/p-1?setlist=sl-1");
   });
 });
 
@@ -27,7 +25,7 @@ describe("playerHref", () => {
 
   it("carries the Set list piece it was opened from", () => {
     expect(playerHref("kor", "p-1", "f-1", { fromSetListPieceId: "slp-1" })).toBe(
-      "/app/kor/pieces/p-1/play/f-1?setlistpiece=slp-1"
+      "/app/kor/pieces/p-1/play/f-1?setlistpiece=slp-1",
     );
   });
 });

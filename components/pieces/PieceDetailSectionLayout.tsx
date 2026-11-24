@@ -9,9 +9,7 @@ import type { ReactNode } from "react";
 export function PieceDetailSectionLayout({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="grid gap-3 max-md:bg-card max-md:p-4 max-md:text-card-foreground md:grid-cols-[10rem_minmax(0,1fr)] md:gap-8 md:py-6">
-      <h2 className="text-lg leading-8 font-medium md:text-sm md:leading-6 md:text-muted-foreground">
-        {title}
-      </h2>
+      <h2 className="text-lg leading-8 font-medium md:text-sm md:leading-6 md:text-muted-foreground">{title}</h2>
       <div className="min-w-0 space-y-3">{children}</div>
     </section>
   );

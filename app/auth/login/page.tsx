@@ -20,9 +20,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { next, bekraftad, aterstallt } = await searchParams;
   const nextPath = parseRedirectPathFromValue(next);
   const notice =
-    (aterstallt === "1" && NOTICES.passwordReset) ||
-    (bekraftad === "1" && NOTICES.emailConfirmed) ||
-    undefined;
+    (aterstallt === "1" && NOTICES.passwordReset) || (bekraftad === "1" && NOTICES.emailConfirmed) || undefined;
 
   return (
     <PublicPageShell className="flex max-w-md items-center px-4 md:px-6">

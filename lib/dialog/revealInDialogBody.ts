@@ -24,8 +24,5 @@ export function revealTargetFor(focused: HTMLElement): HTMLElement {
 export function revealInDialogBody(element: HTMLElement) {
   const body = element.closest<HTMLElement>("[data-slot=dialog-body]");
   if (!body) return;
-  body.scrollTop += revealScrollDelta(
-    element.getBoundingClientRect(),
-    body.getBoundingClientRect(),
-  );
+  body.scrollTop += revealScrollDelta(element.getBoundingClientRect(), body.getBoundingClientRect());
 }

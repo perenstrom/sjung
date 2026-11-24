@@ -8,12 +8,7 @@ import { usePieceFileTransfer } from "@/components/pieces/usePieceFileTransfer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  FormPopover,
-  FormPopoverContent,
-  FormPopoverFooter,
-  FormPopoverTrigger,
-} from "@/components/ui/form-popover";
+import { FormPopover, FormPopoverContent, FormPopoverFooter, FormPopoverTrigger } from "@/components/ui/form-popover";
 import { Spinner } from "@/components/ui/spinner";
 import { FileRightsReminder } from "@/components/legal/FileRightsReminder";
 import { FILE_INPUT_ACCEPT } from "@/lib/file-formats";
@@ -81,10 +76,7 @@ export function ReplacePieceFilePopover({
           <RefreshCw className="size-3.5" aria-hidden="true" />
         </Button>
       </FormPopoverTrigger>
-      <FormPopoverContent
-        title="Ersätt fil"
-        description={pieceName ?? displayName}
-      >
+      <FormPopoverContent title="Ersätt fil" description={pieceName ?? displayName}>
         <form action={handleTransfer} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="fileId" value={fileId} />
@@ -105,12 +97,7 @@ export function ReplacePieceFilePopover({
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
           <FormPopoverFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={isTransferring}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isTransferring}>
               Avbryt
             </Button>
             <Button type="submit" disabled={isTransferring}>

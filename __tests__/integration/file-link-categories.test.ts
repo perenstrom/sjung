@@ -7,11 +7,7 @@ vi.mock("next/cache", () => ({
 
 import type { Group, Piece } from "@/app/generated/prisma/client";
 import { GroupClaim } from "@/app/generated/prisma/enums";
-import {
-  createPieceFileUploadUrl,
-  finalizePieceFileUpload,
-  updatePieceFileDisplayName,
-} from "@/app/actions/files";
+import { createPieceFileUploadUrl, finalizePieceFileUpload, updatePieceFileDisplayName } from "@/app/actions/files";
 import { addLink, getCategories, removeLink, updateLink } from "@/app/actions/pieces";
 import { testPrisma } from "../support/db";
 import { putStoredObject } from "../support/fake-object-storage";
@@ -30,7 +26,7 @@ beforeEach(async () => {
 
 async function uploadFile(category?: string) {
   const { storagePath } = await createPieceFileUploadUrl(
-    formData({ groupSlug: group.slug, pieceId: piece.id, fileName: "a.pdf", mimeType: "application/pdf", size: "10" })
+    formData({ groupSlug: group.slug, pieceId: piece.id, fileName: "a.pdf", mimeType: "application/pdf", size: "10" }),
   );
   putStoredObject(storagePath);
   await finalizePieceFileUpload(
@@ -40,7 +36,7 @@ async function uploadFile(category?: string) {
       fileName: "a.pdf",
       storagePath,
       ...(category === undefined ? {} : { category }),
-    })
+    }),
   );
   return testPrisma.file.findFirstOrThrow({ where: { storagePath } });
 }
@@ -68,9 +64,7 @@ describe("a File's Category", () => {
   ])("can be %s when renaming", async (_case, category, expected) => {
     const file = await createFile(piece, "Texter");
 
-    await updatePieceFileDisplayName(
-      formData({ groupSlug: group.slug, fileId: file.id, displayName: "Ny", category })
-    );
+    await updatePieceFileDisplayName(formData({ groupSlug: group.slug, fileId: file.id, displayName: "Ny", category }));
 
     expect(await testPrisma.file.findUniqueOrThrow({ where: { id: file.id } })).toMatchObject({
       displayName: "Ny",
@@ -81,7 +75,9 @@ describe("a File's Category", () => {
 
 describe("a Link's Category", () => {
   it("is saved when adding, in the spelling already in use", async () => {
-    await addLink(formData({ groupSlug: group.slug, pieceId: piece.id, url: "https://a.se", category: "INSPELNINGAR" }));
+    await addLink(
+      formData({ groupSlug: group.slug, pieceId: piece.id, url: "https://a.se", category: "INSPELNINGAR" }),
+    );
 
     expect(await testPrisma.link.findFirstOrThrow({ where: { pieceId: piece.id } })).toMatchObject({
       category: "Inspelningar",

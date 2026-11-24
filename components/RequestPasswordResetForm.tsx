@@ -22,15 +22,12 @@ export function RequestPasswordResetForm({ validFor }: { validFor: string }) {
       {/* Same message whether or not the address has an account. */}
       {state?.status === "sent" && (
         <p className="rounded-md bg-muted px-3 py-2 text-sm">
-          Om det finns ett konto för <strong>{state.email}</strong> har vi skickat en länk dit. Den
-          gäller i {validFor}.
+          Om det finns ett konto för <strong>{state.email}</strong> har vi skickat en länk dit. Den gäller i {validFor}.
         </p>
       )}
 
       {state?.status === "error" && (
-        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {state.error}
-        </p>
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.error}</p>
       )}
 
       <div className="space-y-2">

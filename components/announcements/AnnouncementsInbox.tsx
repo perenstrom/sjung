@@ -38,7 +38,7 @@ export function AnnouncementsInbox({ announcements, selected, canManage }: Annou
         <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
           <div>
             <h1 className="text-lg font-semibold">Nyheter</h1>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {unreadCount === 0 ? "Allt är läst" : `${unreadCount} olästa`}
             </p>
           </div>
@@ -78,7 +78,7 @@ export function AnnouncementsInbox({ announcements, selected, canManage }: Annou
                         {unread ? <span className="sr-only">, oläst</span> : null}
                       </span>
                     </span>
-                    <span className="text-muted-foreground mt-0.5 block pl-4 text-xs">
+                    <span className="mt-0.5 block pl-4 text-xs text-muted-foreground">
                       {formatDate(announcement.publishedAt)}
                     </span>
                   </Link>
@@ -91,7 +91,7 @@ export function AnnouncementsInbox({ announcements, selected, canManage }: Annou
       <section
         className={cn(
           "relative min-h-0 min-w-0 px-4 py-6 md:overflow-y-auto md:px-10 md:py-8 md:pb-24",
-          selected ? "block" : "hidden md:block"
+          selected ? "block" : "hidden md:block",
         )}
       >
         {selected ? (
@@ -99,13 +99,13 @@ export function AnnouncementsInbox({ announcements, selected, canManage }: Annou
             <AnnouncementReadMarker id={selected.id} />
             <Link
               href={ANNOUNCEMENTS_PATH}
-              className="text-muted-foreground inline-flex items-center gap-1 text-sm md:hidden"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground md:hidden"
             >
               <ArrowLeft className="size-4" aria-hidden="true" /> Alla nyheter
             </Link>
             <header className="space-y-1 border-b pb-4">
               <h2 className="text-2xl font-semibold">{selected.title}</h2>
-              <p className="text-muted-foreground text-sm">{formatDate(selected.publishedAt)}</p>
+              <p className="text-sm text-muted-foreground">{formatDate(selected.publishedAt)}</p>
             </header>
             <AnnouncementBody body={selected.body} />
           </article>

@@ -44,7 +44,7 @@ describe("isBlocked", () => {
     "blocks every other editor while one is open: %o",
     (target) => {
       expect(isBlocked(renameFile1, target)).toBe(true);
-    }
+    },
   );
 
   it("blocks removing anything while an editor is open", () => {

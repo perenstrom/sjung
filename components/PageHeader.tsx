@@ -6,13 +6,7 @@ import { EditModeToggle } from "@/components/EditModeToggle";
  * than push the toggle off screen. Edit-only actions sit to the left of the
  * toggle from `md` up, and on a second row below it, so the toggle never moves.
  */
-export function PageHeader({
-  title,
-  editActions,
-}: {
-  title: React.ReactNode;
-  editActions?: React.ReactNode;
-}) {
+export function PageHeader({ title, editActions }: { title: React.ReactNode; editActions?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:gap-2">
       <h1 className="min-w-0 flex-1 text-2xl font-semibold break-words md:mr-1">{title}</h1>

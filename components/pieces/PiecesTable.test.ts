@@ -37,16 +37,15 @@ const piece = {
 } as unknown as PieceWithRelations;
 
 function renderPieces(): string {
-  return renderMarkup(
-    createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] }),
-  );
+  return renderMarkup(createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] }));
 }
 
 function renderSetList(stepPiece: PieceWithRelations = piece): string {
   const steps = [{ kind: "piece", id: "step-1", position: 0, piece: stepPiece }] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesTable, {
-      people: [], creditRoles: [],
+      people: [],
+      creditRoles: [],
       groupSlug: "koren",
       setList: { id: "setlist-1", steps },
     }),
@@ -54,14 +53,7 @@ function renderSetList(stepPiece: PieceWithRelations = piece): string {
 }
 
 // The order the database may return: Ä among A, digits last.
-const unsortedNames = [
-  "Abendlied",
-  "Änglamark",
-  "Ave verum",
-  "Bred dina vida vingar",
-  "Över berg och dal",
-  "1700-tal",
-];
+const unsortedNames = ["Abendlied", "Änglamark", "Ave verum", "Bred dina vida vingar", "Över berg och dal", "1700-tal"];
 
 function namedPiece(name: string): PieceWithRelations {
   return { ...piece, id: name, name, credits: [] } as unknown as PieceWithRelations;
@@ -102,7 +94,8 @@ describe("PiecesTable letter dividers", () => {
     ])("sorts Alla noter in Swedish order with a divider before each letter group in the %s", (_, part) => {
       const html = renderMarkup(
         createElement(PiecesTable, {
-          people: [], creditRoles: [],
+          people: [],
+          creditRoles: [],
           groupSlug: "koren",
           pieces: unsortedNames.map(namedPiece),
         }),
@@ -125,9 +118,7 @@ describe("PiecesTable letter dividers", () => {
 
     it("renders a divider as a full-width heading row", () => {
       const html = desktopTable(
-        renderMarkup(
-          createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] }),
-        ),
+        renderMarkup(createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] })),
       );
       const columnCount = html.match(/<th[\s>]/g)?.length;
 
@@ -143,17 +134,15 @@ describe("PiecesTable letter dividers", () => {
       })) as unknown as SetListStep[];
       const html = renderMarkup(
         createElement(PiecesTable, {
-          people: [], creditRoles: [],
+          people: [],
+          creditRoles: [],
           groupSlug: "koren",
           setList: { id: "setlist-1", steps },
         }),
       );
 
       expect(html).not.toContain("<h2");
-      expect(shownSequence(desktopTable(html), unsortedNames)).toEqual([
-        "Över berg och dal",
-        "Abendlied",
-      ]);
+      expect(shownSequence(desktopTable(html), unsortedNames)).toEqual(["Över berg och dal", "Abendlied"]);
     });
 
     it("shows no dividers when there are no pieces", () => {
@@ -169,7 +158,14 @@ describe("PiecesTable letter dividers", () => {
 
 describe("PiecesTable Files in a set list", () => {
   it("opens a Playable File in the player for the row's Set list piece", () => {
-    const sopran = { id: "file-1", displayName: "Sopran.mp3", size: 1024, category: null, mimeType: "audio/mpeg", fileName: "Sopran.mp3" };
+    const sopran = {
+      id: "file-1",
+      displayName: "Sopran.mp3",
+      size: 1024,
+      category: null,
+      mimeType: "audio/mpeg",
+      fileName: "Sopran.mp3",
+    };
     const html = renderSetList({ ...piece, files: [sopran] } as unknown as PieceWithRelations);
 
     expect(html).toContain(`href="${playerHref("koren", "piece-1", "file-1", { fromSetListPieceId: "step-1" })}"`);
@@ -211,12 +207,7 @@ describe("PiecesTable search on Alla noter", () => {
       ["mobile list", mobileList],
     ])("in the %s", (_, part) => {
       it("shows only matching pieces, with dividers for their letter groups only", () => {
-        expect(shownSequence(part(renderSearch("av")), allNames)).toEqual([
-          "A",
-          "Ave verum",
-          "P",
-          "Pavane",
-        ]);
+        expect(shownSequence(part(renderSearch("av")), allNames)).toEqual(["A", "Ave verum", "P", "Pavane"]);
       });
 
       it("lists every piece a credited Person is on, whatever the role", () => {
@@ -288,9 +279,7 @@ describe.each([
         .find((td) => td.includes("Anna Andersson"));
       const contentClasses = cell?.match(/^[^>]*>\s*<div class="([^"]*)"/)?.[1].split(" ");
 
-      expect(contentClasses).toEqual(
-        expect.arrayContaining(["min-w-56", "max-w-xs", "whitespace-normal"]),
-      );
+      expect(contentClasses).toEqual(expect.arrayContaining(["min-w-56", "max-w-xs", "whitespace-normal"]));
     });
   });
 

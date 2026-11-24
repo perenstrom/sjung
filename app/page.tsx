@@ -25,9 +25,7 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
         </p>
       ) : null}
       <h1 className="text-4xl font-semibold">Sjung</h1>
-      <p className="text-muted-foreground">
-        Hantera noter och upphovspersoner tillsammans med din grupp.
-      </p>
+      <p className="text-muted-foreground">Hantera noter och upphovspersoner tillsammans med din grupp.</p>
       <div className="flex gap-3">
         <Button asChild>
           <Link href="/auth/login">Logga in</Link>

@@ -4,17 +4,10 @@ import { ChevronsUpDown } from "lucide-react";
 import { createContext, type ReactNode, useContext, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMergedRefs } from "@/hooks/use-merged-refs";
-import {
-  DIALOG_REVEAL_ATTRIBUTE,
-  revealInDialogBody,
-} from "@/lib/dialog/revealInDialogBody";
+import { DIALOG_REVEAL_ATTRIBUTE, revealInDialogBody } from "@/lib/dialog/revealInDialogBody";
 import { cn } from "@/lib/utils";
 
 export type SearchComboboxProps = {
@@ -74,10 +67,7 @@ function PopoverSearchCombobox({
           icon={icon}
         />
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-(--radix-popover-trigger-width) min-w-56 p-0"
-      >
+      <PopoverContent align="start" className="w-(--radix-popover-trigger-width) min-w-56 p-0">
         <CloseContext.Provider value={() => setOpen(false)}>{children}</CloseContext.Provider>
       </PopoverContent>
     </Popover>
@@ -189,9 +179,7 @@ function SearchComboboxTrigger({
       {...props}
     >
       {icon}
-      <span className={cn("truncate", !selectedLabel && "text-muted-foreground")}>
-        {selectedLabel || placeholder}
-      </span>
+      <span className={cn("truncate", !selectedLabel && "text-muted-foreground")}>{selectedLabel || placeholder}</span>
       {icon ? null : <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden="true" />}
     </Button>
   );

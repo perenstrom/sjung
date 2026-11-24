@@ -27,13 +27,7 @@ type GroupMember = {
   claims: GroupClaim[];
 };
 
-export function GroupMemberClaimsDialog({
-  groupSlug,
-  member,
-}: {
-  groupSlug: string;
-  member: GroupMember;
-}) {
+export function GroupMemberClaimsDialog({ groupSlug, member }: { groupSlug: string; member: GroupMember }) {
   const idPrefix = useId();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<GroupClaim[]>(member.claims);
@@ -50,9 +44,7 @@ export function GroupMemberClaimsDialog({
   }
 
   function toggleClaim(claim: GroupClaim, checked: boolean) {
-    setSelected((current) =>
-      checked ? [...current, claim] : current.filter((entry) => entry !== claim)
-    );
+    setSelected((current) => (checked ? [...current, claim] : current.filter((entry) => entry !== claim)));
   }
 
   // Submitted via onSubmit rather than a form action: React resets a form after its action,
@@ -129,12 +121,7 @@ export function GroupMemberClaimsDialog({
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={isPending}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
               Avbryt
             </Button>
             <Button type="submit" disabled={isPending}>

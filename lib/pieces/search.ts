@@ -31,9 +31,7 @@ export function matchPieceSearch(piece: SearchablePiece, query: string): PieceSe
 
   const matchingAliases = piece.aliases.map((alias) => alias.name).filter(contains);
   if (matchingAliases.length > 0) return { matchingAliases };
-  return (piece.credits ?? []).some((credit) => contains(credit.person.name))
-    ? { matchingAliases: [] }
-    : null;
+  return (piece.credits ?? []).some((credit) => contains(credit.person.name)) ? { matchingAliases: [] } : null;
 }
 
 /**
@@ -42,7 +40,7 @@ export function matchPieceSearch(piece: SearchablePiece, query: string): PieceSe
  */
 export function searchPieces<P extends SearchablePiece>(
   pieces: readonly P[],
-  query: string
+  query: string,
 ): { piece: P; matchingAliases: string[] }[] {
   return pieces.flatMap((piece) => {
     const match = matchPieceSearch(piece, query);

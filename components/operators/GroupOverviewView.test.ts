@@ -27,7 +27,18 @@ function render(overview: GroupOverview): string {
 
 describe("GroupOverviewView", () => {
   const html = render({
-    groups: [row(), row({ id: "g2", name: "Tomma kören", slug: "tomma", memberCount: 1, pieceCount: 0, setListCount: 0, storageBytes: 0 })],
+    groups: [
+      row(),
+      row({
+        id: "g2",
+        name: "Tomma kören",
+        slug: "tomma",
+        memberCount: 1,
+        pieceCount: 0,
+        setListCount: 0,
+        storageBytes: 0,
+      }),
+    ],
     totalStorageBytes: 3 * 1024 * 1024,
   });
   const text = textOf(html);
@@ -38,7 +49,16 @@ describe("GroupOverviewView", () => {
   });
 
   it("shows the eight columns", () => {
-    for (const heading of ["Namn", "Skapad", "Administratör", "Medlemmar", "Stycken", "Repertoarer", "Lagring", "Senast ändrad"]) {
+    for (const heading of [
+      "Namn",
+      "Skapad",
+      "Administratör",
+      "Medlemmar",
+      "Stycken",
+      "Repertoarer",
+      "Lagring",
+      "Senast ändrad",
+    ]) {
       expect(html).toContain(`>${heading}</th>`);
     }
   });

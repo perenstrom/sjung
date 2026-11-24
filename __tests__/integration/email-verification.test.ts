@@ -95,7 +95,6 @@ describe("confirmEmailVerification", () => {
     expect(await isVerified(user.id)).toBe(false);
   });
 
-
   it("rejects an unknown token", async () => {
     await expect(confirmEmailVerification("not-a-real-token")).resolves.toEqual({ ok: false });
   });

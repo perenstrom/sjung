@@ -9,9 +9,7 @@ import { AddPieceToSetListForm } from "./AddPieceToSetListForm";
 vi.mock("@/app/actions/setlists", () => ({}));
 
 function renderForm(pieces: SetListPieceOption[]): string {
-  return renderMarkup(
-    createElement(AddPieceToSetListForm, { groupSlug: "koren", setListId: "set-list-1", pieces }),
-  );
+  return renderMarkup(createElement(AddPieceToSetListForm, { groupSlug: "koren", setListId: "set-list-1", pieces }));
 }
 
 const pieces = [

@@ -9,7 +9,7 @@ import { matchKey } from "@/lib/text/match-key";
 export function findSameNamedPerson<P extends { id: string; name: string }>(
   name: string,
   people: readonly P[],
-  exceptId?: string
+  exceptId?: string,
 ): P | undefined {
   const key = matchKey(name);
   if (!key) return undefined;

@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  closestBreadcrumb,
-  createGroupAncestor,
-  createPiecesAncestor,
-  pieceDetailTrail,
-} from "@/lib/breadcrumbs";
+import { closestBreadcrumb, createGroupAncestor, createPiecesAncestor, pieceDetailTrail } from "@/lib/breadcrumbs";
 
 describe("createPiecesAncestor", () => {
   it("links Alla noter to the group's pieces page", () => {
@@ -24,7 +19,7 @@ describe("closestBreadcrumb", () => {
         visibility: "visible",
         ancestors: [createGroupAncestor("kor", "Kören")],
         tail: { kind: "static", label: "Alla noter" },
-      })
+      }),
     ).toEqual({ kind: "parent", label: "Kören", href: "/app/kor" });
   });
 
@@ -32,12 +27,9 @@ describe("closestBreadcrumb", () => {
     expect(
       closestBreadcrumb({
         visibility: "visible",
-        ancestors: [
-          createGroupAncestor("kor", "Kören"),
-          { label: "Repertoarer", href: "/app/kor/setlists" },
-        ],
+        ancestors: [createGroupAncestor("kor", "Kören"), { label: "Repertoarer", href: "/app/kor/setlists" }],
         tail: { kind: "static", label: "Vårkonsert" },
-      })
+      }),
     ).toEqual({ kind: "back", label: "Repertoarer", href: "/app/kor/setlists" });
   });
 
@@ -47,7 +39,7 @@ describe("closestBreadcrumb", () => {
         visibility: "visible",
         ancestors: [],
         tail: { kind: "static", label: "Mina grupper" },
-      })
+      }),
     ).toEqual({ kind: "current", label: "Mina grupper" });
   });
 });
@@ -66,7 +58,7 @@ describe("pieceDetailTrail", () => {
         pieceName: "Vem kan segla",
         setLists,
         fromSetListId: "sl-1",
-      })
+      }),
     ).toEqual({
       visibility: "visible",
       ancestors: [
@@ -95,7 +87,7 @@ describe("pieceDetailTrail", () => {
         pieceName: "Vem kan segla",
         setLists,
         fromSetListId: undefined,
-      })
+      }),
     ).toEqual(piecesTrail);
   });
 
@@ -107,7 +99,7 @@ describe("pieceDetailTrail", () => {
         pieceName: "Vem kan segla",
         setLists,
         fromSetListId: "sl-from-another-group",
-      })
+      }),
     ).toEqual(piecesTrail);
   });
 

@@ -5,13 +5,7 @@ import { Badge } from "@/components/ui/badge";
  * (CONTEXT.md, "Current"). `children` is the name as the caller shows it:
  * plain text, a link or a truncating span.
  */
-export function SetListName({
-  current,
-  children,
-}: {
-  current: boolean;
-  children: React.ReactNode;
-}) {
+export function SetListName({ current, children }: { current: boolean; children: React.ReactNode }) {
   if (!current) {
     return children;
   }

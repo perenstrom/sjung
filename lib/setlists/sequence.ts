@@ -21,10 +21,7 @@ async function lockSetList(tx: Prisma.TransactionClient, setListId: string): Pro
   await tx.$queryRaw`SELECT id FROM set_lists WHERE id = ${setListId} FOR UPDATE`;
 }
 
-async function readSequenceSteps(
-  tx: Prisma.TransactionClient,
-  setListId: string
-): Promise<SetListSequenceStep[]> {
+async function readSequenceSteps(tx: Prisma.TransactionClient, setListId: string): Promise<SetListSequenceStep[]> {
   const [pieces, notes] = await Promise.all([
     tx.setListPiece.findMany({ where: { setListId }, select: { id: true, position: true } }),
     tx.setListNote.findMany({ where: { setListId }, select: { id: true, position: true } }),

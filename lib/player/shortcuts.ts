@@ -40,7 +40,11 @@ const TEMPO_STEP = 5;
  * work, like Space, A and B, for people used to editing software, but
  * nothing in the player mentions them.
  */
-export function listedShortcuts({ hasBars }: { hasBars: boolean }): readonly { keys: readonly string[]; what: string }[] {
+export function listedShortcuts({
+  hasBars,
+}: {
+  hasBars: boolean;
+}): readonly { keys: readonly string[]; what: string }[] {
   return [
     { keys: ["Mellanslag"], what: "Spela / pausa" },
     { keys: ["←", "→"], what: hasBars ? "En takt bakåt / framåt" : "5 sekunder bakåt / framåt" },
@@ -150,7 +154,8 @@ function repeatShortcut(loop: Loop): Shortcut {
 function barRepeatShortcut(loop: Loop, bars: readonly number[]): Shortcut {
   const start = barAt(bars, loop.start);
   const endSeconds = loop.end;
-  if (endSeconds === null) return { action: { type: "loop", loop }, hud: `Repetera från takt ${start} – tryck B vid slutet` };
+  if (endSeconds === null)
+    return { action: { type: "loop", loop }, hud: `Repetera från takt ${start} – tryck B vid slutet` };
   // The bar the passage ends in, not the one starting where it ends.
   const end = barAt(bars, bars.findLast((barStart) => barStart < endSeconds) ?? endSeconds);
   return { action: { type: "loop", loop }, hud: `Repeterar takt ${start === end ? start : `${start}–${end}`}` };

@@ -1,10 +1,7 @@
-import * as React from "react"
+import * as React from "react";
 
-import { dialogFrame } from "@/lib/dialog/dialogFrame"
-import {
-  revealInDialogBody,
-  revealTargetFor,
-} from "@/lib/dialog/revealInDialogBody"
+import { dialogFrame } from "@/lib/dialog/dialogFrame";
+import { revealInDialogBody, revealTargetFor } from "@/lib/dialog/revealInDialogBody";
 
 /**
  * Keeps a dialog inside the visible area while the on-screen keyboard is open.
@@ -19,38 +16,38 @@ import {
  */
 export function useVisibleDialogFrame(node: HTMLElement | null) {
   React.useEffect(() => {
-    const viewport = window.visualViewport
-    if (!node) return
+    const viewport = window.visualViewport;
+    if (!node) return;
 
     const update = () => {
       const { top, maxHeight } = dialogFrame({
         height: viewport?.height ?? window.innerHeight,
         offsetTop: viewport?.offsetTop ?? 0,
-      })
-      node.style.setProperty("--dialog-top", `${top}px`)
-      node.style.setProperty("--dialog-max-h", `${maxHeight}px`)
-    }
+      });
+      node.style.setProperty("--dialog-top", `${top}px`);
+      node.style.setProperty("--dialog-max-h", `${maxHeight}px`);
+    };
 
     // When the keyboard opens the dialog shrinks under the focused field;
     // bring it back into view inside the dialog's scrolling body.
     const onResize = () => {
-      update()
-      const focused = document.activeElement
+      update();
+      const focused = document.activeElement;
       if (focused instanceof HTMLElement && node.contains(focused)) {
-        revealInDialogBody(revealTargetFor(focused))
+        revealInDialogBody(revealTargetFor(focused));
       }
-    }
+    };
 
-    update()
+    update();
     if (!viewport) {
-      window.addEventListener("resize", onResize)
-      return () => window.removeEventListener("resize", onResize)
+      window.addEventListener("resize", onResize);
+      return () => window.removeEventListener("resize", onResize);
     }
-    viewport.addEventListener("resize", onResize)
-    viewport.addEventListener("scroll", update)
+    viewport.addEventListener("resize", onResize);
+    viewport.addEventListener("scroll", update);
     return () => {
-      viewport.removeEventListener("resize", onResize)
-      viewport.removeEventListener("scroll", update)
-    }
-  }, [node])
+      viewport.removeEventListener("resize", onResize);
+      viewport.removeEventListener("scroll", update);
+    };
+  }, [node]);
 }

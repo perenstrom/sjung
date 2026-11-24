@@ -12,7 +12,7 @@ describe("appUrl", () => {
     process.env.APP_BASE_URL = "https://sjung.app";
 
     expect(appUrl("/auth/verify-email/confirm", { token: "a b" })).toBe(
-      "https://sjung.app/auth/verify-email/confirm?token=a+b"
+      "https://sjung.app/auth/verify-email/confirm?token=a+b",
     );
   });
 

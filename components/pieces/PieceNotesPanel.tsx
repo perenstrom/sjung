@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 
-import {
-  createPieceNote,
-  deletePieceNote,
-  listPieceNotes,
-  updatePieceNote,
-} from "@/app/actions/pieces";
+import { createPieceNote, deletePieceNote, listPieceNotes, updatePieceNote } from "@/app/actions/pieces";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { getThrownMessage } from "@/lib/getThrownMessage";
@@ -53,7 +48,7 @@ export type PieceNotesState = {
 export function usePieceNotes(
   groupSlug: string,
   pieceId: string,
-  initialNotes: PieceNoteListItem[] = []
+  initialNotes: PieceNoteListItem[] = [],
 ): PieceNotesState {
   const [notes, setNotes] = useState<PieceNoteListItem[]>(initialNotes);
   const [isLoading, setIsLoading] = useState(false);
@@ -234,45 +229,29 @@ export function PieceNotesPanel({
             aria-invalid={Boolean(createError)}
           />
           <div className="flex items-center justify-between gap-2">
-            <span
-              className={cn(
-                "text-xs text-muted-foreground",
-                newContentTooLong && "text-destructive"
-              )}
-            >
+            <span className={cn("text-xs text-muted-foreground", newContentTooLong && "text-destructive")}>
               {noteLengthHint(trimmedNewContent.length)}
             </span>
             <Button type="submit" size="sm" disabled={isCreating}>
               {isCreating ? "Sparar..." : "Lägg till anteckning"}
             </Button>
           </div>
-          {createError ? (
-            <p className="text-sm text-destructive">{createError}</p>
-          ) : null}
+          {createError ? <p className="text-sm text-destructive">{createError}</p> : null}
         </form>
       )}
 
       <div className={cn("space-y-3", listClassName)}>
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">
-            Hämtar anteckningar...
-          </p>
+          <p className="text-sm text-muted-foreground">Hämtar anteckningar...</p>
         ) : loadError ? (
           <div className="space-y-2">
             <p className="text-sm text-destructive">{loadError}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void reload()}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => void reload()}>
               Försök igen
             </Button>
           </div>
         ) : notes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Inga anteckningar tillagda ännu.
-          </p>
+          <p className="text-sm text-muted-foreground">Inga anteckningar tillagda ännu.</p>
         ) : (
           <ul className="space-y-3">
             {notes.map((note) => {
@@ -296,47 +275,26 @@ export function PieceNotesPanel({
                         autoFocus
                       />
                       <div className="flex items-center justify-between gap-2">
-                        <span
-                          className={cn(
-                            "text-xs text-muted-foreground",
-                            editTooLong && "text-destructive"
-                          )}
-                        >
+                        <span className={cn("text-xs text-muted-foreground", editTooLong && "text-destructive")}>
                           {noteLengthHint(trimmedEdit.length)}
                         </span>
                         <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={cancelEditing}
-                            disabled={isSaving}
-                          >
+                          <Button type="button" variant="outline" size="sm" onClick={cancelEditing} disabled={isSaving}>
                             Avbryt
                           </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => handleSaveEdit(note.id)}
-                            disabled={isSaving}
-                          >
+                          <Button type="button" size="sm" onClick={() => handleSaveEdit(note.id)} disabled={isSaving}>
                             {isSaving ? "Sparar..." : "Spara"}
                           </Button>
                         </div>
                       </div>
-                      {editError ? (
-                        <p className="text-sm text-destructive">{editError}</p>
-                      ) : null}
+                      {editError ? <p className="text-sm text-destructive">{editError}</p> : null}
                     </div>
                   ) : (
                     <>
-                      <p className="whitespace-pre-wrap text-sm">
-                        {note.content}
-                      </p>
+                      <p className="text-sm whitespace-pre-wrap">{note.content}</p>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs text-muted-foreground">
-                          {authorName(note.createdByName)} · uppdaterad{" "}
-                          {formatNoteTimestamp(note.updatedAt)}
+                          {authorName(note.createdByName)} · uppdaterad {formatNoteTimestamp(note.updatedAt)}
                         </p>
                         {readOnly ? null : (
                           <div className="flex gap-1">
@@ -356,20 +314,12 @@ export function PieceNotesPanel({
                               onClick={() => handleDelete(note.id)}
                               disabled={isDeleting}
                             >
-                              {isDeleting
-                                ? "Tar bort..."
-                                : deleteError
-                                  ? "Försök igen"
-                                  : "Ta bort"}
+                              {isDeleting ? "Tar bort..." : deleteError ? "Försök igen" : "Ta bort"}
                             </Button>
                           </div>
                         )}
                       </div>
-                      {deleteError ? (
-                        <p className="text-sm text-destructive">
-                          {deleteError}
-                        </p>
-                      ) : null}
+                      {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
                     </>
                   )}
                 </li>

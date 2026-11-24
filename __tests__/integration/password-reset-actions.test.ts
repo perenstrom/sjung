@@ -85,7 +85,7 @@ describe("setNewPassword", () => {
 
     await setNewPassword(
       null,
-      form({ token, password: "ett nytt långt lösenord", passwordConfirmation: "ett nytt långt lösenord" })
+      form({ token, password: "ett nytt långt lösenord", passwordConfirmation: "ett nytt långt lösenord" }),
     );
 
     const updated = await testPrisma.user.findUniqueOrThrow({ where: { id: user.id } });
@@ -97,13 +97,13 @@ describe("setNewPassword", () => {
     const { token } = await emailedToken();
 
     await expect(
-      setNewPassword(null, form({ token, password: "kort", passwordConfirmation: "kort" }))
+      setNewPassword(null, form({ token, password: "kort", passwordConfirmation: "kort" })),
     ).resolves.toEqual({ error: "Lösenordet måste vara minst 12 tecken" });
     expect(mockSignOut).not.toHaveBeenCalled();
 
     await setNewPassword(
       null,
-      form({ token, password: "ett nytt långt lösenord", passwordConfirmation: "ett nytt långt lösenord" })
+      form({ token, password: "ett nytt långt lösenord", passwordConfirmation: "ett nytt långt lösenord" }),
     );
     expect(mockSignOut).toHaveBeenCalled();
   });
@@ -116,8 +116,8 @@ describe("setNewPassword", () => {
           token: "not-a-real-token",
           password: "ett nytt långt lösenord",
           passwordConfirmation: "ett nytt långt lösenord",
-        })
-      )
+        }),
+      ),
     ).rejects.toThrow("redirect:/auth/reset-password/new?token=not-a-real-token");
     expect(mockSignOut).not.toHaveBeenCalled();
   });

@@ -18,7 +18,7 @@ const files = [
 function renderScreen(
   snapshot: Partial<PlayerSnapshot> = {},
   peaks: readonly number[] | null = null,
-  engine: PlayerEngine = "audio"
+  engine: PlayerEngine = "audio",
 ) {
   return renderMarkup(
     createElement(PlayerScreen, {
@@ -29,7 +29,7 @@ function renderScreen(
       closeHref: "/app/koren/setlists/sl-1",
       player: null,
       peaks,
-    })
+    }),
   );
 }
 
@@ -113,10 +113,9 @@ describe("PlayerScreen on desktop", () => {
   it("draws the audio File as a waveform strip, played up to the playhead, with the passage shaded", () => {
     const html = renderScreen({ position: 60, loop: { start: 30, end: 90 } }, [0.5, 1, 0.25, 0.75]);
     const strip = html.match(/<div[^>]*data-waveform[^>]*>.*?<\/div><\/div>/)?.[0] ?? html;
-    const bars = [...strip.matchAll(/data-bar="(played|ahead)"[^>]*style="height:(\d+)%"/g)].map(([, state, height]) => [
-      state,
-      Number(height),
-    ]);
+    const bars = [...strip.matchAll(/data-bar="(played|ahead)"[^>]*style="height:(\d+)%"/g)].map(
+      ([, state, height]) => [state, Number(height)],
+    );
 
     expect(bars).toEqual([
       ["played", 50],
@@ -145,7 +144,10 @@ describe("TempoControls", () => {
 describe("RepeatControls", () => {
   it.each<{ loop: Loop | null; expected: string }>([
     { loop: null, expected: "Sätt start och slut för att repetera ett avsnitt. Start här" },
-    { loop: { start: 12, end: null }, expected: "Start 0:12. Sätt slutet där avsnittet slutar. Slut här Sluta repetera" },
+    {
+      loop: { start: 12, end: null },
+      expected: "Start 0:12. Sätt slutet där avsnittet slutar. Slut här Sluta repetera",
+    },
     { loop: { start: 12, end: 30 }, expected: "Repeterar 0:12–0:30 Start här Sluta repetera" },
   ])("with passage $loop shows: $expected", ({ loop, expected }) => {
     const html = renderMarkup(createElement(RepeatControls, { loop, onMark: () => {}, onStop: () => {} }));

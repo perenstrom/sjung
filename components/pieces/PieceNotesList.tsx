@@ -10,11 +10,7 @@ import { cn } from "@/lib/utils";
  * Each note is cut off after 3 lines; a cut-off note expands in place when
  * clicked, and collapses again on a second click. Renders nothing without notes.
  */
-export function PieceNotesList({
-  notes,
-}: {
-  notes: ReadonlyArray<{ id: string; content: string }>;
-}) {
+export function PieceNotesList({ notes }: { notes: ReadonlyArray<{ id: string; content: string }> }) {
   if (notes.length === 0) {
     return null;
   }
@@ -56,10 +52,9 @@ function ClampedNote({ content }: { content: string }) {
     <p
       ref={ref}
       className={cn(
-        "text-sm leading-snug whitespace-pre-wrap break-words",
+        "text-sm leading-snug break-words whitespace-pre-wrap",
         !expanded && "line-clamp-3",
-        interactive &&
-          "focus-visible:ring-ring/50 cursor-pointer rounded-sm outline-none focus-visible:ring-[3px]",
+        interactive && "cursor-pointer rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
       )}
       {...(interactive
         ? {

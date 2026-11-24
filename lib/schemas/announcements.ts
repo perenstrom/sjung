@@ -19,8 +19,7 @@ const announcementSchema = z.object({
 export type AnnouncementForm = z.infer<typeof announcementSchema>;
 
 export type ParseAnnouncementFormResult =
-  | { success: true; data: AnnouncementForm }
-  | { success: false; error: string; values: AnnouncementForm };
+  { success: true; data: AnnouncementForm } | { success: false; error: string; values: AnnouncementForm };
 
 export function parseAnnouncementForm(formData: FormData): ParseAnnouncementFormResult {
   const values = {

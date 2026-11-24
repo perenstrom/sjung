@@ -8,9 +8,7 @@ export type TenantGroupContext = {
 };
 
 /** Resolves a tenant group by slug and ensures the current user is a member. */
-export async function requireTenantGroup(
-  groupSlug: string
-): Promise<TenantGroupContext> {
+export async function requireTenantGroup(groupSlug: string): Promise<TenantGroupContext> {
   const access = await findGroupAccess(groupSlug);
   if (!access) {
     notFound();
@@ -42,7 +40,7 @@ export type GroupMutationContext = {
 export async function runGroupMutation<TGuard, TResult>(
   groupSlug: string,
   guard: (ctx: GroupMutationContext) => Promise<TGuard>,
-  mutation: (ctx: GroupMutationContext, guarded: TGuard) => Promise<TResult>
+  mutation: (ctx: GroupMutationContext, guarded: TGuard) => Promise<TResult>,
 ): Promise<TResult> {
   const access = await requireGroupAccess(groupSlug);
   const ctx: GroupMutationContext = {
@@ -63,11 +61,11 @@ export async function runGroupMutation<TGuard, TResult>(
  */
 export async function runContentMutation<TResult>(
   groupSlug: string,
-  mutation: (ctx: GroupMutationContext) => Promise<TResult>
+  mutation: (ctx: GroupMutationContext) => Promise<TResult>,
 ): Promise<TResult> {
   return runGroupMutation(
     groupSlug,
     async ({ access }) => access.require("manageContent"),
-    (ctx) => mutation(ctx)
+    (ctx) => mutation(ctx),
   );
 }

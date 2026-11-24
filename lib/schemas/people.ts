@@ -1,15 +1,9 @@
 import { z } from "zod";
 import { formDataString } from "@/lib/schemas/form-data";
 
-export const personNameSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Namn krävs" });
+export const personNameSchema = z.string().trim().min(1, { error: "Namn krävs" });
 
-export const writableGroupSlugSchema = z
-  .string()
-  .trim()
-  .min(1, { error: "Saknar grupp" });
+export const writableGroupSlugSchema = z.string().trim().min(1, { error: "Saknar grupp" });
 
 export function parsePersonNameFromFormData(formData: FormData): string {
   const result = personNameSchema.safeParse(formDataString(formData, "name"));
@@ -20,9 +14,7 @@ export function parsePersonNameFromFormData(formData: FormData): string {
 }
 
 export function parseWritableGroupSlugFromFormData(formData: FormData): string {
-  const result = writableGroupSlugSchema.safeParse(
-    formDataString(formData, "groupSlug")
-  );
+  const result = writableGroupSlugSchema.safeParse(formDataString(formData, "groupSlug"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Saknar grupp");
   }

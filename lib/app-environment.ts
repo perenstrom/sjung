@@ -33,8 +33,7 @@ export const brandMarkSrc = `${iconsDir("production")}/icon.svg`;
 // non-production tab stands out even when its title is cut off. The .ico is a
 // fallback for browsers without SVG favicons.
 export function appIcons(environment: AppEnvironment) {
-  const variant: IconVariant =
-    environment === "production" ? "production" : "staging";
+  const variant: IconVariant = environment === "production" ? "production" : "staging";
   const dir = iconsDir(variant);
   const ico = variant === "production" ? "/favicon.ico" : `${dir}/favicon.ico`;
 

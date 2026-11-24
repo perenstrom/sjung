@@ -52,6 +52,7 @@ Use a deterministic auth seam in integration tests:
 - Keep this identity control in test setup utilities (`actAs` / `actAsAnonymous` in `__tests__/support/session.ts`) so each test describes identity in one line and avoids HTTP login ceremony.
 
 Why:
+
 - Fast and deterministic.
 - Makes guard-path tests focused on authorization logic instead of login mechanics.
 - Avoids coupling every integration test to browser/session setup.

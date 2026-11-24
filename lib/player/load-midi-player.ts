@@ -48,7 +48,9 @@ export async function loadMidiPlayer({
     signal.throwIfAborted();
 
     const sequencer = new Sequencer(synth, { skipToFirstNoteOn: false });
-    const loaded = new Promise<void>((resolve) => sequencer.eventHandler.addEvent("songChange", LISTENER, () => resolve()));
+    const loaded = new Promise<void>((resolve) =>
+      sequencer.eventHandler.addEvent("songChange", LISTENER, () => resolve()),
+    );
     sequencer.loadNewSongList([midi]);
     await loaded;
     signal.throwIfAborted();
@@ -87,7 +89,7 @@ export async function loadMidiPlayer({
           void context.close();
         },
       },
-      { bars: barStartsOf(midi) }
+      { bars: barStartsOf(midi) },
     );
   } catch (error) {
     synth?.destroy();

@@ -16,10 +16,7 @@ export const SetListPositions = {
    * Renumbers every step (pieces and notes alike) to match `orderedStepIds`.
    * Throws when the ids aren't exactly a permutation of `steps`.
    */
-  positionsAfterReorder(
-    steps: SetListSequenceStep[],
-    orderedStepIds: string[]
-  ): SetListSequenceStep[] {
+  positionsAfterReorder(steps: SetListSequenceStep[], orderedStepIds: string[]): SetListSequenceStep[] {
     if (orderedStepIds.length !== steps.length) {
       throw new Error(INVALID_ORDER_ERROR);
     }

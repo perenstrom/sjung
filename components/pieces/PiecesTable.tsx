@@ -77,9 +77,7 @@ const PiecesTableCellContext = createContext<{
   orderedStepIds: string[];
 }>({ people: [], creditRoles: [], orderedStepIds: [] });
 
-function AddCreditAction(
-  props: Omit<ComponentProps<typeof AddPieceCreditPopover>, "people" | "creditRoles">
-) {
+function AddCreditAction(props: Omit<ComponentProps<typeof AddPieceCreditPopover>, "people" | "creditRoles">) {
   const { people, creditRoles } = useContext(PiecesTableCellContext);
   return <AddPieceCreditPopover people={people} creditRoles={creditRoles} {...props} />;
 }
@@ -90,11 +88,7 @@ function StepActions(props: Omit<ComponentProps<typeof SetListStepActions>, "ord
 }
 
 /** On Alla noter: the letter heading before the first Piece of each letter group, as currently sorted. */
-function renderLetterDivider(
-  row: PiecesTableRow,
-  previousRow: PiecesTableRow | undefined,
-  colSpan: number
-): ReactNode {
+function renderLetterDivider(row: PiecesTableRow, previousRow: PiecesTableRow | undefined, colSpan: number): ReactNode {
   if (row.kind !== "piece") return null;
   const previousName = previousRow?.kind === "piece" ? previousRow.piece.name : undefined;
   const letter = letterDividerBefore(row.piece.name, previousName);
@@ -184,17 +178,14 @@ export function PiecesTable({
   // first load, the table and the mobile list then agree, and the letter groups hold.
   const sortedPieces = useMemo(
     () => props.pieces && [...props.pieces].sort((a, b) => compareCaseInsensitive(a.name, b.name)),
-    [props.pieces]
+    [props.pieces],
   );
   // Filtered before rows are made, so the letter dividers follow the matches.
-  const searchResults = useMemo(
-    () => sortedPieces && searchPieces(sortedPieces, search),
-    [sortedPieces, search]
-  );
+  const searchResults = useMemo(() => sortedPieces && searchPieces(sortedPieces, search), [sortedPieces, search]);
   const pieces = useMemo(() => searchResults?.map(({ piece }) => piece), [searchResults]);
   const matchingAliases = useMemo(
     () => new Map(searchResults?.map((result) => [result.piece.id, result.matchingAliases])),
-    [searchResults]
+    [searchResults],
   );
   const emptyMessage = setList
     ? "Inga steg i repertoaren ännu."
@@ -206,11 +197,11 @@ export function PiecesTable({
       setList
         ? setList.steps
         : (searchResults ?? []).map((result) => ({ kind: "piece", id: result.piece.id, ...result })),
-    [searchResults, setList]
+    [searchResults, setList],
   );
   const cellContext = useMemo(
     () => ({ people, creditRoles, orderedStepIds: setList?.steps.map((step) => step.id) ?? [] }),
-    [people, creditRoles, setList]
+    [people, creditRoles, setList],
   );
 
   const columns = useMemo<ColumnDef<PiecesTableRow>[]>(
@@ -220,11 +211,7 @@ export function PiecesTable({
             {
               id: "position",
               header: () => <span className="w-[1%] whitespace-nowrap">#</span>,
-              cell: ({ row }) => (
-                <div className={cn(FIRST_LINE_CLASS, "font-mono text-xs")}>
-                  {row.index + 1}
-                </div>
-              ),
+              cell: ({ row }) => <div className={cn(FIRST_LINE_CLASS, "font-mono text-xs")}>{row.index + 1}</div>,
             } satisfies ColumnDef<PiecesTableRow>,
           ]
         : []),
@@ -235,14 +222,10 @@ export function PiecesTable({
         meta: {
           getColSpan: (row) => (row.kind === "note" ? RUNNING_ORDER_NOTE_COL_SPAN : 1),
         },
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Namn" />
-        ),
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Namn" />,
         cell: ({ row }) =>
           row.original.kind === "note" ? (
-            <div className="whitespace-pre-wrap py-1.5 text-muted-foreground">
-              {row.original.content}
-            </div>
+            <div className="py-1.5 whitespace-pre-wrap text-muted-foreground">{row.original.content}</div>
           ) : (
             <PieceNameCell
               piece={row.original.piece}
@@ -262,11 +245,7 @@ export function PiecesTable({
             <div className={cn(LIST_COLUMN_WIDTH_CLASS, "flex items-start gap-2 whitespace-normal")}>
               <div className={cn("min-w-0 flex-1", LIST_CELL_OFFSET_CLASS)}>
                 {piece.credits.length === 0 ? null : isEditing ? (
-                  <RemovableCreditsList
-                    groupSlug={groupSlug}
-                    pieceId={piece.id}
-                    credits={piece.credits}
-                  />
+                  <RemovableCreditsList groupSlug={groupSlug} pieceId={piece.id} credits={piece.credits} />
                 ) : (
                   <PieceCreditsList credits={piece.credits} />
                 )}
@@ -289,9 +268,7 @@ export function PiecesTable({
         header: () => "Anteckningar",
         cell: pieceCell((piece) => {
           return (
-            <div
-              className={cn(LIST_COLUMN_WIDTH_CLASS, PIECE_NOTES_OFFSET_CLASS, "space-y-1 whitespace-normal")}
-            >
+            <div className={cn(LIST_COLUMN_WIDTH_CLASS, PIECE_NOTES_OFFSET_CLASS, "space-y-1 whitespace-normal")}>
               <PieceNotesList notes={piece.notes} />
               {isEditing ? (
                 <PieceNotesDialog
@@ -339,19 +316,11 @@ export function PiecesTable({
                   <div className={cn(FIRST_LINE_CLASS, "gap-2")}>
                     {setListId ? (
                       <div className="flex items-center">
-                        <StepActions
-                          step={step}
-                          stepIndex={row.index}
-                          groupSlug={groupSlug}
-                          setListId={setListId}
-                        />
+                        <StepActions step={step} stepIndex={row.index} groupSlug={groupSlug} setListId={setListId} />
                       </div>
                     ) : null}
                     {piece && !setListId ? (
-                      <DeletePieceDialog
-                        groupSlug={groupSlug}
-                        piece={{ id: piece.id, name: piece.name }}
-                      />
+                      <DeletePieceDialog groupSlug={groupSlug} piece={{ id: piece.id, name: piece.name }} />
                     ) : null}
                   </div>
                 );
@@ -360,7 +329,7 @@ export function PiecesTable({
           ]
         : []),
     ],
-    [groupSlug, isEditing, setListId]
+    [groupSlug, isEditing, setListId],
   );
 
   return (

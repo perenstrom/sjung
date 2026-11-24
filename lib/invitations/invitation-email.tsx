@@ -22,9 +22,7 @@ export function InvitationEmail({ groupName, inviterName, acceptUrl, validForDay
       </p>
       <EmailButton href={acceptUrl}>Visa inbjudan</EmailButton>
       <p>Länken gäller i {validForDays} dagar.</p>
-      <p style={{ color: "#666" }}>
-        Om du inte väntade dig den här inbjudan kan du ignorera det här mejlet.
-      </p>
+      <p style={{ color: "#666" }}>Om du inte väntade dig den här inbjudan kan du ignorera det här mejlet.</p>
     </EmailLayout>
   );
 }

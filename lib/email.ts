@@ -66,9 +66,7 @@ function emailDelivery(): EmailDelivery {
 
   if (outboxDir) {
     if (hasResendKey) {
-      throw new Error(
-        "Motstridiga miljövariabler: EMAIL_OUTBOX_DIR och RESEND_API_KEY får inte båda vara satta"
-      );
+      throw new Error("Motstridiga miljövariabler: EMAIL_OUTBOX_DIR och RESEND_API_KEY får inte båda vara satta");
     }
     return { kind: "outbox", dir: outboxDir };
   }
@@ -128,7 +126,7 @@ async function printToConsole({ to, subject, react, replyTo }: SendEmailInput): 
       "",
       text,
       rule,
-    ].join("\n")
+    ].join("\n"),
   );
 }
 

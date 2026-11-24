@@ -3,11 +3,7 @@
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import {
-  deleteSetListNote,
-  reorderSetListSteps,
-  removePieceFromSetList,
-} from "@/app/actions/setlists";
+import { deleteSetListNote, reorderSetListSteps, removePieceFromSetList } from "@/app/actions/setlists";
 import { buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SetListStep } from "@/lib/setlists/types";
@@ -18,11 +14,7 @@ import { cn } from "@/lib/utils";
 // on touch screens.
 const ICON_BUTTON_CLASS = "size-8";
 
-function moveStepIds(
-  setListStepIds: string[],
-  fromIndex: number,
-  direction: "up" | "down"
-): string[] {
+function moveStepIds(setListStepIds: string[], fromIndex: number, direction: "up" | "down"): string[] {
   const toIndex = direction === "up" ? fromIndex - 1 : fromIndex + 1;
   if (toIndex < 0 || toIndex >= setListStepIds.length) {
     return setListStepIds;
@@ -53,11 +45,7 @@ function MoveStepButton({
       <form action={reorderSetListSteps}>
         <input type="hidden" name="groupSlug" value={groupSlug} />
         <input type="hidden" name="setListId" value={setListId} />
-        <input
-          type="hidden"
-          name="orderedSetListStepIds"
-          value={JSON.stringify(orderedSetListStepIds)}
-        />
+        <input type="hidden" name="orderedSetListStepIds" value={JSON.stringify(orderedSetListStepIds)} />
         <TooltipTrigger
           type="submit"
           disabled={disabled}
@@ -110,17 +98,13 @@ export function SetListStepActions({
       <Tooltip>
         <form action={isNote ? deleteSetListNote : removePieceFromSetList}>
           <input type="hidden" name="groupSlug" value={groupSlug} />
-          <input
-            type="hidden"
-            name={isNote ? "setListNoteId" : "setListPieceId"}
-            value={step.id}
-          />
+          <input type="hidden" name={isNote ? "setListNoteId" : "setListPieceId"} value={step.id} />
           <TooltipTrigger
             type="submit"
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
               ICON_BUTTON_CLASS,
-              "text-destructive hover:text-destructive"
+              "text-destructive hover:text-destructive",
             )}
           >
             <Trash2 className="size-4" aria-hidden="true" />

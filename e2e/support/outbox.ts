@@ -16,9 +16,7 @@ const POLL_MS = 100;
 /** Empties the outbox and keeps the folder, if there is one. */
 export async function emptyOutbox(): Promise<void> {
   const names = await readdir(E2E_OUTBOX_DIR).catch(() => []);
-  await Promise.all(
-    names.map((name) => rm(join(E2E_OUTBOX_DIR, name), { recursive: true, force: true }))
-  );
+  await Promise.all(names.map((name) => rm(join(E2E_OUTBOX_DIR, name), { recursive: true, force: true })));
 }
 
 /**
@@ -44,7 +42,7 @@ export async function latestEmailTo(address: string): Promise<ReceivedEmail> {
       throw new Error(
         names
           ? `No email to ${address} in ${E2E_OUTBOX_DIR} within ${WAIT_MS / 1000} s. ${hint}`
-          : `Can't find ${E2E_OUTBOX_DIR}. ${hint}`
+          : `Can't find ${E2E_OUTBOX_DIR}. ${hint}`,
       );
     }
     await new Promise((done) => setTimeout(done, POLL_MS));
@@ -53,7 +51,10 @@ export async function latestEmailTo(address: string): Promise<ReceivedEmail> {
 
 async function newestTo(address: string, names: string[]): Promise<OutboxEmail | null> {
   // File names start with the send time, so the newest sorts last.
-  const files = names.filter((name) => name.endsWith(".json")).sort().reverse();
+  const files = names
+    .filter((name) => name.endsWith(".json"))
+    .sort()
+    .reverse();
   for (const name of files) {
     const email: OutboxEmail = JSON.parse(await readFile(join(E2E_OUTBOX_DIR, name), "utf8"));
     if (email.to === address) {

@@ -7,14 +7,7 @@ import { CreatePersonDialog } from "@/components/CreatePersonDialog";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
 import { PageHeader } from "@/components/PageHeader";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { groupPersonPath } from "@/lib/groups/routes";

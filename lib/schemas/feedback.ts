@@ -33,8 +33,7 @@ export type FeedbackForm = {
 };
 
 export type ParseFeedbackFormResult =
-  | { success: true; data: FeedbackForm }
-  | { success: false; error: string; values: { message: string } };
+  { success: true; data: FeedbackForm } | { success: false; error: string; values: { message: string } };
 
 function contextField(formData: FormData, field: string, maxLength = CONTEXT_MAX_LENGTH): string {
   return formDataString(formData, field).trim().slice(0, maxLength);

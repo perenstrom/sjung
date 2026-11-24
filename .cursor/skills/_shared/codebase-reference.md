@@ -13,19 +13,19 @@ When this file may be stale (new routes, actions, or conventions), run the **cod
 
 ## Routes
 
-| Area | Path | Notes |
-|------|------|--------|
-| Landing / redirect | `app/page.tsx` | Public entry |
-| Auth | `app/auth/login/page.tsx`, `app/auth/signup/page.tsx` | Login/signup |
-| App shell | `app/app/page.tsx` | Post-login hub |
-| User groups | `app/app/me/page.tsx`, `app/app/me/groups/page.tsx` | Manage memberships |
-| Group home (pieces) | `app/app/[groupSlug]/page.tsx` | Piece listing |
-| Piece detail | `app/app/[groupSlug]/pieces/[id]/page.tsx` | Metadata, files, links, notes |
-| People | `app/app/[groupSlug]/people/page.tsx` | Upphovspersoner |
-| Members | `app/app/[groupSlug]/members/page.tsx` | Group members |
-| Set lists | `app/app/[groupSlug]/setlists/page.tsx` | Setlist listing |
-| Set list detail | `app/app/[groupSlug]/setlists/[id]/page.tsx` | Pieces in set list |
-| Group layout guard | `app/app/[groupSlug]/layout.tsx` | Calls `requireTenantGroup` |
+| Area                | Path                                                  | Notes                         |
+| ------------------- | ----------------------------------------------------- | ----------------------------- |
+| Landing / redirect  | `app/page.tsx`                                        | Public entry                  |
+| Auth                | `app/auth/login/page.tsx`, `app/auth/signup/page.tsx` | Login/signup                  |
+| App shell           | `app/app/page.tsx`                                    | Post-login hub                |
+| User groups         | `app/app/me/page.tsx`, `app/app/me/groups/page.tsx`   | Manage memberships            |
+| Group home (pieces) | `app/app/[groupSlug]/page.tsx`                        | Piece listing                 |
+| Piece detail        | `app/app/[groupSlug]/pieces/[id]/page.tsx`            | Metadata, files, links, notes |
+| People              | `app/app/[groupSlug]/people/page.tsx`                 | Upphovspersoner               |
+| Members             | `app/app/[groupSlug]/members/page.tsx`                | Group members                 |
+| Set lists           | `app/app/[groupSlug]/setlists/page.tsx`               | Setlist listing               |
+| Set list detail     | `app/app/[groupSlug]/setlists/[id]/page.tsx`          | Pieces in set list            |
+| Group layout guard  | `app/app/[groupSlug]/layout.tsx`                      | Calls `requireTenantGroup`    |
 
 Register new sidebar nav entries in `components/AppSidebar.tsx`.
 
@@ -33,14 +33,14 @@ Register new sidebar nav entries in `components/AppSidebar.tsx`.
 
 Files in `app/actions/`:
 
-| File | Domain |
-|------|--------|
-| `pieces.ts` | Pieces, credits, links, piece notes |
-| `people.ts` | People |
-| `setlists.ts` | Set lists and set-list pieces |
-| `groups.ts` | Groups and membership |
-| `files.ts` | File upload/delete (R2) |
-| `auth.ts` | Sign up and log in (`useActionState` form state), log out |
+| File          | Domain                                                    |
+| ------------- | --------------------------------------------------------- |
+| `pieces.ts`   | Pieces, credits, links, piece notes                       |
+| `people.ts`   | People                                                    |
+| `setlists.ts` | Set lists and set-list pieces                             |
+| `groups.ts`   | Groups and membership                                     |
+| `files.ts`    | File upload/delete (R2)                                   |
+| `auth.ts`     | Sign up and log in (`useActionState` form state), log out |
 
 **Conventions:**
 
@@ -79,18 +79,18 @@ When adding interactive UI:
 
 ## Lib utilities (common in tickets)
 
-| Path | Purpose |
-|------|---------|
-| `lib/tenant-group.ts` | `requireTenantGroup`, `getWritableGroupIdForSlug`, `runGroupMutation` |
-| `lib/auth/require-user.ts` | `requireUser()` for authenticated server code |
-| `lib/actions/guards.ts` | Entity-in-group authorization guards, `noGuard` |
-| `lib/schemas/*.ts` | Zod validation per domain (the one FormData-reading convention) |
-| `lib/pieces/queries.ts`, `credits.ts`, `types.ts` | Piece reads and credit logic |
-| `lib/setlists/types.ts` | Set list types |
-| `lib/r2.ts` | R2 object storage |
-| `lib/group-slug.ts` | Slug helpers |
-| `lib/active-group-cookie.ts` | Active group selection |
-| `lib/revalidate/group-routes.ts` | `revalidatePath` helpers per route |
+| Path                                              | Purpose                                                               |
+| ------------------------------------------------- | --------------------------------------------------------------------- |
+| `lib/tenant-group.ts`                             | `requireTenantGroup`, `getWritableGroupIdForSlug`, `runGroupMutation` |
+| `lib/auth/require-user.ts`                        | `requireUser()` for authenticated server code                         |
+| `lib/actions/guards.ts`                           | Entity-in-group authorization guards, `noGuard`                       |
+| `lib/schemas/*.ts`                                | Zod validation per domain (the one FormData-reading convention)       |
+| `lib/pieces/queries.ts`, `credits.ts`, `types.ts` | Piece reads and credit logic                                          |
+| `lib/setlists/types.ts`                           | Set list types                                                        |
+| `lib/r2.ts`                                       | R2 object storage                                                     |
+| `lib/group-slug.ts`                               | Slug helpers                                                          |
+| `lib/active-group-cookie.ts`                      | Active group selection                                                |
+| `lib/revalidate/group-routes.ts`                  | `revalidatePath` helpers per route                                    |
 
 ## Testing
 

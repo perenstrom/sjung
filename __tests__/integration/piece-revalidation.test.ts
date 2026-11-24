@@ -73,7 +73,7 @@ describe("piece mutations revalidate every page that shows the piece", () => {
         `/app/${group.slug}/pieces/${piece.id}`,
         `/app/${group.slug}/setlists/${twice.id}`,
         `/app/${group.slug}/setlists/${once.id}`,
-      ])
+      ]),
     );
     expect(paths).not.toContain(`/app/${group.slug}/setlists/${without.id}`);
     expect(paths).not.toContain(`/app/${group.slug}/setlists`);

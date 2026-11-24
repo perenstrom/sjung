@@ -70,7 +70,7 @@ describe("deleteKeysWithConcurrency", () => {
 
     await deleteKeysWithConcurrency(
       Array.from({ length: 12 }, (_, i) => `key-${i}`),
-      deleteOne
+      deleteOne,
     );
 
     expect(tracker.maxActive).toBe(5);

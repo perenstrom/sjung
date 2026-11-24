@@ -19,7 +19,7 @@ function render(props: Partial<AnnouncementsInboxProps>) {
       selected: null,
       canManage: false,
       ...props,
-    })
+    }),
   );
 }
 
@@ -42,7 +42,9 @@ describe("AnnouncementsInbox", () => {
     expect(html).toContain("<strong>nytt</strong>");
     expect(textOf(html)).toContain("Allt är läst");
     expect(textOf(html)).not.toContain("oläst");
-    expect(html).toMatch(/<button[^>]*disabled=""[^>]*aria-label="Markera alla som lästa"|<button[^>]*aria-label="Markera alla som lästa"[^>]*disabled=""/);
+    expect(html).toMatch(
+      /<button[^>]*disabled=""[^>]*aria-label="Markera alla som lästa"|<button[^>]*aria-label="Markera alla som lästa"[^>]*disabled=""/,
+    );
   });
 
   it("shows an empty state when there are no Announcements", () => {

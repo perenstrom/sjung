@@ -22,17 +22,14 @@ describe("PieceCreditsList", () => {
   });
 
   it("breaks a long name instead of letting it overflow", () => {
-    expect(renderCredits()).toMatch(
-      /<span class="[^"]*\bmin-w-0\b[^"]*\bbreak-words\b[^"]*">Anna Andersson</,
-    );
+    expect(renderCredits()).toMatch(/<span class="[^"]*\bmin-w-0\b[^"]*\bbreak-words\b[^"]*">Anna Andersson</);
   });
 
   it("ends each Person's row with one remove button, not one per Credit role", () => {
     const html = renderMarkup(
       createElement(PieceCreditsList, {
         credits,
-        renderPersonAction: (person) =>
-          createElement(RemoveCreditedPersonButton, { person, onRemove: () => {} }),
+        renderPersonAction: (person) => createElement(RemoveCreditedPersonButton, { person, onRemove: () => {} }),
       }),
     );
 

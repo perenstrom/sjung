@@ -53,7 +53,7 @@ describe("deleteGroup", () => {
     expect(
       await testPrisma.personToPiece.findUnique({
         where: { personId_pieceId_role: { personId: person.id, pieceId: piece.id, role: "composer" } },
-      })
+      }),
     ).toBeNull();
     // The piece's own group was untouched by this deletion.
     expect(await testPrisma.piece.findUnique({ where: { id: piece.id } })).not.toBeNull();
