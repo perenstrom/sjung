@@ -53,6 +53,15 @@ function renderSetList(stepPiece: PieceWithRelations = piece): string {
   );
 }
 
+/** The markup inside the first body cell (`<td>`) that contains `text`, or "" if none does. */
+function cellContaining(markup: string, text: string): string {
+  const cell = markup
+    .split("<td")
+    .slice(1)
+    .find((td) => td.includes(text));
+  return cell ? cell.slice(cell.indexOf(">") + 1) : "";
+}
+
 // The order the database may return: Ä among A, digits last.
 const unsortedNames = ["Abendlied", "Änglamark", "Ave verum", "Bred dina vida vingar", "Över berg och dal", "1700-tal"];
 
@@ -277,13 +286,23 @@ describe.each([
     });
 
     it("caps Upphovspersoner at the width of the other list columns and lets it wrap", () => {
-      const cell = render()
-        .split("<td")
-        .slice(1)
-        .find((td) => td.includes("Anna Andersson"));
-      const contentClasses = cell?.match(/^[^>]*>\s*<div class="([^"]*)"/)?.[1].split(" ");
+      const contentClasses = cellContaining(render(), "Anna Andersson")
+        .match(/^\s*<div class="([^"]*)"/)?.[1]
+        .split(" ");
 
       expect(contentClasses).toEqual(expect.arrayContaining(["min-w-56", "max-w-xs", "whitespace-normal"]));
+    });
+
+    it("pads the piece name inside its 32px first line, not above it, so it lines up with the row", () => {
+      // Inside the cell: the <td>'s own padding is the same for every cell in the row.
+      const cell = cellContaining(render(), ">Vem kan segla</a>");
+      const beforeName = cell.slice(0, cell.indexOf(">Vem kan segla</a>"));
+      const classLists = [...beforeName.matchAll(/class="([^"]*)"/g)].map((match) => match[1].split(" "));
+      const nameClasses = classLists.at(-1);
+      const enclosingClasses = classLists.slice(0, -1).flat();
+
+      expect(nameClasses).toContain("py-1.5");
+      expect(enclosingClasses.filter((name) => /^(p|py|pt|m|my|mt)-/.test(name))).toEqual([]);
     });
   });
 
