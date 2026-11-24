@@ -55,8 +55,12 @@ class FakeScore implements ScoreEngine {
     this.playing = false;
     this.playingChanged?.(false);
   }
+  /**
+   * Like alphaTab, keeps the playhead within a range it loops, but reports
+   * the tick it was asked for.
+   */
   seek(tick: number) {
-    this.tick = tick;
+    this.tick = this.range ? Math.min(this.range.endTick, Math.max(this.range.startTick, tick)) : tick;
     this.seeks.push(tick);
   }
   setSpeed(rate: number) {
@@ -200,6 +204,31 @@ describe("createNotationPlayer", () => {
     expect(score.shaded).toEqual({ first: 1, last: 0 });
     expect(score.tick).toBe(BAR * 1.5);
     expect(player.getSnapshot()).toMatchObject({ loop: { start: 2, end: 6 }, position: 3 });
+  });
+
+  it.each([
+    { position: 1, case: "ahead of the playhead" },
+    { position: 9, case: "behind the playhead" },
+  ])("moves the playhead to the start of a passage set $case, where alphaTab plays it from", ({ position }) => {
+    player.seek(position);
+    player.play();
+    player.setLoop({ start: 4, end: 8 });
+    score.catchUp();
+
+    expect(score.tick).toBe(BAR * 2);
+    expect(player.getSnapshot().position).toBe(4);
+  });
+
+  it("keeps a seek within the passage while it repeats, as alphaTab plays only that", () => {
+    player.setLoop({ start: 4, end: 8 });
+    player.seek(1);
+    score.catchUp();
+
+    expect(score.tick).toBe(BAR * 2);
+    expect(player.getSnapshot().position).toBe(4);
+
+    player.seek(9);
+    expect(player.getSnapshot().position).toBe(8);
   });
 
   it("shades only the start bar while a passage is being marked, and nothing once repeating stops", () => {

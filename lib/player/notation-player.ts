@@ -32,7 +32,8 @@ export type ScoreEngine = {
   setSpeed(rate: number): void;
   /**
    * Loops `range` until it is `null`. A range also moves the playhead to its
-   * start, as a seek.
+   * start, as a seek. While it loops, alphaTab keeps every seek within it,
+   * though it reports the tick it was asked for and counts on from there.
    */
   setLoopRange(range: TickRange | null): void;
   /** Shades bars `first` to `last` of the drawn score, in either order, or none. */
@@ -72,7 +73,8 @@ const MAX_STALE_REPORTS = 40;
  * The playhead is what the player last sought until alphaTab has reported
  * every seek since, so quick steps by bar each measure from where the step
  * before them went. A tap on a bar in the score starts a passage, and a
- * second tap ends it.
+ * second tap ends it. alphaTab plays nothing outside a passage it repeats, so
+ * setting one moves the playhead into it, and seeks stay within it.
  */
 export function createNotationPlayer(
   score: ScoreEngine,
@@ -94,7 +96,9 @@ export function createNotationPlayer(
   let staleReports = 0;
 
   function seekTo(seconds: number) {
-    const position = Math.min(duration, Math.max(0, seconds));
+    const { loop } = store.get();
+    const [from, to] = isRepeating(loop) ? [loop.start, loop.end] : [0, duration];
+    const position = Math.min(to, Math.max(from, seconds));
     unreportedSeeks += 1;
     score.seek(tickAtSeconds(bars, position));
     update({ position });
@@ -115,15 +119,17 @@ export function createNotationPlayer(
 
   function setLoop(loop: Loop | null) {
     if (isRepeating(loop)) {
+      const { position } = store.get();
       score.setLoopRange({ startTick: tickAtSeconds(bars, loop.start), endTick: tickAtSeconds(bars, loop.end) });
       unreportedSeeks += 1;
-      // alphaTab has moved the playhead to the passage's start; put it back.
-      seekTo(store.get().position);
+      update({ loop, position: loop.start });
+      // alphaTab has moved the playhead to the passage's start; put it back if it was inside.
+      if (position > loop.start && position < loop.end) seekTo(position);
     } else {
       score.setLoopRange(null);
+      update({ loop });
     }
     score.shadeBars(shadedBars(loop, bars));
-    update({ loop });
   }
 
   return {
