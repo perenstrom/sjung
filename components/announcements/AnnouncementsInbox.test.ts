@@ -9,8 +9,20 @@ vi.mock("@/app/actions/announcements", () => ({
 import { AnnouncementsInbox, type AnnouncementsInboxProps } from "@/components/announcements/AnnouncementsInbox";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
-const older = { id: "a1", title: "Äldre nyhet", publishedAt: new Date("2026-10-01T12:00:00Z"), read: true };
-const newer = { id: "a2", title: "Nyare nyhet", publishedAt: new Date("2026-11-01T12:00:00Z"), read: false };
+const older = {
+  id: "a1",
+  slug: "2026-10-01-aldre-nyhet",
+  title: "Äldre nyhet",
+  publishedAt: new Date("2026-10-01T12:00:00Z"),
+  read: true,
+};
+const newer = {
+  id: "a2",
+  slug: "2026-11-01-nyare-nyhet",
+  title: "Nyare nyhet",
+  publishedAt: new Date("2026-11-01T12:00:00Z"),
+  read: false,
+};
 
 function render(props: Partial<AnnouncementsInboxProps>) {
   return renderMarkup(

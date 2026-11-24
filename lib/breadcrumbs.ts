@@ -74,7 +74,7 @@ export function pieceDetailTrail({
   groupSlug: string;
   groupName: string;
   pieceName: string;
-  setLists: { id: string; name: string }[];
+  setLists: { id: string; slug: string; name: string }[];
   fromSetListId: string | undefined;
 }): AppBreadcrumbStaticTrail {
   const setList = setLists.find((candidate) => candidate.id === fromSetListId);
@@ -87,7 +87,7 @@ export function pieceDetailTrail({
             createSetListsAncestor(groupSlug),
             {
               label: setListCrumbLabel(setList.name),
-              href: groupSetListPath(groupSlug, setList.id),
+              href: groupSetListPath(groupSlug, setList),
             },
           ]
         : [createPiecesAncestor(groupSlug)]),

@@ -32,14 +32,14 @@ export default async function ManageAnnouncementsPage() {
         <ul className="divide-y border-y">
           {announcements.map((announcement) => (
             <li key={announcement.id} className="flex items-center gap-2 py-2">
-              <Link href={announcementPath(announcement.id)} className="min-w-0 flex-1 px-2 py-1 hover:underline">
+              <Link href={announcementPath(announcement)} className="min-w-0 flex-1 px-2 py-1 hover:underline">
                 <span className="block truncate font-medium">{announcement.title}</span>
                 <span className="block text-xs text-muted-foreground">
                   Publicerad {formatDate(announcement.publishedAt)}
                 </span>
               </Link>
               <Button asChild variant="ghost" size="icon">
-                <Link href={editAnnouncementPath(announcement.id)} aria-label={`Redigera ${announcement.title}`}>
+                <Link href={editAnnouncementPath(announcement)} aria-label={`Redigera ${announcement.title}`}>
                   <Pencil className="size-4" aria-hidden="true" />
                 </Link>
               </Button>

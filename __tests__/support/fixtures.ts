@@ -1,5 +1,6 @@
 import { FileConversionState } from "@/app/generated/prisma/enums";
 import { convertedStoragePathOf } from "@/lib/pieces/file-store";
+import { freeAnnouncementSlug, freeContentSlug } from "@/lib/content-slug";
 import { testPrisma } from "./db";
 import type {
   User,
@@ -116,10 +117,12 @@ export async function createPiece(overrides: CreatePieceOptions = {}): Promise<P
     creatorId = (await createUser()).id;
   }
 
+  const name = overrides.name ?? "Test Piece";
   return testPrisma.piece.create({
     data: {
       ...(overrides.id !== undefined ? { id: overrides.id } : {}),
-      name: overrides.name ?? "Test Piece",
+      name,
+      slug: await freeContentSlug(testPrisma, "piece", groupId, name),
       groupId,
       createdById: creatorId,
       updatedById: overrides.updatedById ?? creatorId,
@@ -155,7 +158,13 @@ export async function createPieceNote({
 /** A Person in the Group, created by the Group's Creator. */
 export async function createPerson(group: Group, name = "Test Person"): Promise<Person> {
   return testPrisma.person.create({
-    data: { name, groupId: group.id, createdById: group.createdById, updatedById: group.createdById },
+    data: {
+      name,
+      slug: await freeContentSlug(testPrisma, "person", group.id, name),
+      groupId: group.id,
+      createdById: group.createdById,
+      updatedById: group.createdById,
+    },
   });
 }
 
@@ -169,7 +178,13 @@ export async function createCredit(piece: Piece, person: Person, role: string): 
 /** A Set list in the Group, created by the Group's Creator. */
 export async function createSetList(group: Group, name = "Test Set List"): Promise<SetList> {
   return testPrisma.setList.create({
-    data: { name, groupId: group.id, createdById: group.createdById, updatedById: group.createdById },
+    data: {
+      name,
+      slug: await freeContentSlug(testPrisma, "setList", group.id, name),
+      groupId: group.id,
+      createdById: group.createdById,
+      updatedById: group.createdById,
+    },
   });
 }
 
@@ -229,6 +244,7 @@ export async function createFile(
     data: {
       pieceId: piece.id,
       displayName,
+      slug: await freeContentSlug(testPrisma, "file", piece.groupId, displayName),
       fileName,
       storagePath,
       conversionState,
@@ -290,11 +306,14 @@ type CreateAnnouncementOptions = Partial<{
 /** A published Announcement; without an author unless `createdById` is given. */
 export async function createAnnouncement(overrides: CreateAnnouncementOptions = {}): Promise<Announcement> {
   const createdById = overrides.createdById ?? null;
+  const title = overrides.title ?? "Test Announcement";
+  const publishedAt = overrides.publishedAt ?? new Date();
   return testPrisma.announcement.create({
     data: {
-      title: overrides.title ?? "Test Announcement",
+      title,
+      slug: await freeAnnouncementSlug(testPrisma, title, publishedAt),
       body: overrides.body ?? "Något nytt i Sjung.",
-      ...(overrides.publishedAt !== undefined ? { publishedAt: overrides.publishedAt } : {}),
+      publishedAt,
       createdById,
       updatedById: createdById,
     },

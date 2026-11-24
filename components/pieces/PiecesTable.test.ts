@@ -25,6 +25,7 @@ vi.mock("@/components/EditModeContext", () => ({
 
 const piece = {
   id: "piece-1",
+  slug: "vem-kan-segla",
   name: "Vem kan segla",
   credits: [
     { personId: "person-1", role: "Kompositör", person: { name: "Anna Andersson" } },
@@ -160,6 +161,7 @@ describe("PiecesTable Files in a set list", () => {
   it("opens a Playable File in the player for the row's Set list piece", () => {
     const sopran = {
       id: "file-1",
+      slug: "file-1",
       displayName: "Sopran.mp3",
       size: 1024,
       category: null,
@@ -168,7 +170,9 @@ describe("PiecesTable Files in a set list", () => {
     };
     const html = renderSetList({ ...piece, files: [sopran] } as unknown as PieceWithRelations);
 
-    expect(html).toContain(`href="${playerHref("koren", "piece-1", "file-1", { fromSetListPieceId: "step-1" })}"`);
+    expect(html).toContain(
+      `href="${playerHref("koren", piece, { slug: "file-1" }, { fromSetListPieceId: "step-1" })}"`,
+    );
   });
 });
 

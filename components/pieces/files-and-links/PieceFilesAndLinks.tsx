@@ -22,7 +22,7 @@ import { useRefreshWhilePreparing } from "./useRefreshWhilePreparing";
 
 type PieceFilesAndLinksProps = {
   groupSlug: string;
-  piece: { id: string; name: string };
+  piece: { id: string; slug: string; name: string };
   /** From `toPieceFilesAndLinks`. */
   filesAndLinks: PieceFilesAndLinksData;
   /**
@@ -96,6 +96,7 @@ function Body({
   const ctx: RowContext = {
     groupSlug,
     pieceId: piece.id,
+    pieceSlug: piece.slug,
     pieceName: piece.name,
     setListPieceId,
     layout,

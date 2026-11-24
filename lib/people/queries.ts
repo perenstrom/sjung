@@ -12,6 +12,7 @@ export async function getPeopleForGroup(groupId: string) {
 
 export type PersonWithPieceCount = {
   id: string;
+  slug: string;
   name: string;
   /** How many distinct Pieces the Person is credited on; a Piece counts once whatever their roles. */
   pieceCount: number;
@@ -22,10 +23,11 @@ export async function getPeopleWithPieceCountsForGroup(groupId: string): Promise
   const people = await prisma.person.findMany({
     where: { groupId },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, credits: { select: { pieceId: true } } },
+    select: { id: true, slug: true, name: true, credits: { select: { pieceId: true } } },
   });
-  return people.map(({ id, name, credits }) => ({
+  return people.map(({ id, slug, name, credits }) => ({
     id,
+    slug,
     name,
     pieceCount: new Set(credits.map((credit) => credit.pieceId)).size,
   }));
@@ -44,7 +46,7 @@ export async function getPersonDetailForGroup(groupId: string, personId: string)
     select: {
       id: true,
       name: true,
-      credits: { select: { pieceId: true, role: true, piece: { select: { name: true } } } },
+      credits: { select: { pieceId: true, role: true, piece: { select: { name: true, slug: true } } } },
     },
   });
   if (!person) return null;

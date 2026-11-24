@@ -115,7 +115,7 @@ function PieceNameCell({
   setListId: string | undefined;
   isEditing: boolean;
 }) {
-  const href = pieceHref(groupSlug, piece.id, { fromSetListId: setListId });
+  const href = pieceHref(groupSlug, piece, { fromSetListId: setListId });
   const renderName = (name: string) => (
     <Link className="min-w-0 underline" href={href}>
       {name}
@@ -291,7 +291,7 @@ export function PiecesTable({
               <PieceFilesAndLinks
                 layout="inline"
                 groupSlug={groupSlug}
-                piece={{ id: piece.id, name: piece.name }}
+                piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
                 filesAndLinks={toPieceFilesAndLinks(piece)}
                 // A Set list row's id is its Set list piece's.
                 setListPieceId={setListId ? rowId : undefined}

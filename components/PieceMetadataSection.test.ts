@@ -24,6 +24,7 @@ function render(aliases: { id: string; name: string }[] = twoAliases): string {
       pieceId: "piece-1",
       initialName: "Vem kan segla",
       aliases,
+      fromSetListId: undefined,
     }),
   );
 }

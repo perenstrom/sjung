@@ -2,6 +2,7 @@
 
 import { after } from "next/server";
 
+import { freeContentSlug } from "@/lib/content-slug";
 import { findInGroup } from "@/lib/find-in-group";
 import * as fileStore from "@/lib/pieces/file-store";
 import prisma from "@/lib/prisma";
@@ -86,6 +87,7 @@ export async function updatePieceFileDisplayName(formData: FormData) {
       where: { id: file.id },
       data: {
         displayName,
+        slug: await freeContentSlug(prisma, "file", groupId, displayName, file.id),
         category: await resolveCategoryInGroup(groupId, typedCategory),
         updatedById: userId,
       },

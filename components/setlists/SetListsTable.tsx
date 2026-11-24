@@ -10,10 +10,12 @@ import { EditSetListDialog } from "@/components/EditSetListDialog";
 import { useEditMode } from "@/components/EditModeContext";
 import { SetListName } from "@/components/setlists/SetListName";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
+import { groupSetListPath } from "@/lib/groups/routes";
 import { compareSetListsByDefault } from "@/lib/setlists/sorting";
 
 export type SetListsTableRow = {
   id: string;
+  slug: string;
   name: string;
   date: Date | null;
   current: boolean;
@@ -33,7 +35,7 @@ export function setListsColumns(groupSlug: string, isEditing: boolean): ColumnDe
       header: ({ column }) => <DataTableColumnHeader column={column} title="Namn" />,
       cell: ({ row }) => (
         <SetListName current={row.original.current}>
-          <Link href={`/app/${groupSlug}/setlists/${row.original.id}`} className="underline-offset-4 hover:underline">
+          <Link href={groupSetListPath(groupSlug, row.original)} className="underline-offset-4 hover:underline">
             {row.original.name}
           </Link>
         </SetListName>
@@ -117,7 +119,7 @@ function SetListsMobileList({
         setLists.map((setList) => (
           <MobileListRow
             key={setList.id}
-            href={`/app/${groupSlug}/setlists/${setList.id}`}
+            href={groupSetListPath(groupSlug, setList)}
             primary={
               // One line: a long name truncates, the badge stays whole.
               <SetListName current={setList.current}>

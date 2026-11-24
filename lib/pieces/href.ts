@@ -1,13 +1,16 @@
+/** Content with its own page, linked by its Slug (ADR-0011). */
+type Slugged = { slug: string };
+
 /**
  * A Piece's detail page. Links from a Set list pass `fromSetListId`, so the
  * Piece's breadcrumb leads back to that Set list.
  */
 export function pieceHref(
   groupSlug: string,
-  pieceId: string,
+  piece: Slugged,
   { fromSetListId }: { fromSetListId?: string } = {},
 ): string {
-  const href = `/app/${groupSlug}/pieces/${pieceId}`;
+  const href = `/app/${groupSlug}/pieces/${piece.slug}`;
   if (!fromSetListId) return href;
   return `${href}?${new URLSearchParams({ setlist: fromSetListId })}`;
 }
@@ -17,8 +20,8 @@ export function pieceHref(
  * a plain link target, so the tap itself opens the new tab; iOS Safari blocks
  * tabs opened after an await (PER-415).
  */
-export function fileDownloadHref(groupSlug: string, fileId: string): string {
-  return `/app/${groupSlug}/files/${fileId}`;
+export function fileDownloadHref(groupSlug: string, file: Slugged): string {
+  return `/app/${groupSlug}/files/${file.slug}`;
 }
 
 /**
@@ -28,11 +31,11 @@ export function fileDownloadHref(groupSlug: string, fileId: string): string {
  */
 export function playerHref(
   groupSlug: string,
-  pieceId: string,
-  fileId: string,
+  piece: Slugged,
+  file: Slugged,
   { fromSetListPieceId }: { fromSetListPieceId?: string } = {},
 ): string {
-  const href = `${pieceHref(groupSlug, pieceId)}/play/${fileId}`;
+  const href = `${pieceHref(groupSlug, piece)}/play/${file.slug}`;
   if (!fromSetListPieceId) return href;
   return `${href}?${new URLSearchParams({ setlistpiece: fromSetListPieceId })}`;
 }

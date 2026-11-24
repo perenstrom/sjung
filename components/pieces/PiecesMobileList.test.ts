@@ -21,11 +21,12 @@ vi.mock("@/components/EditModeContext", () => ({
 
 const piece = {
   id: "piece-1",
+  slug: "vem-kan-segla",
   name: "Vem kan segla",
   credits: [],
   files: [
-    { id: "file-1", displayName: "Sopran.pdf", fileName: "Sopran.pdf", size: 1024, category: null },
-    { id: "file-2", displayName: "Alt.pdf", fileName: "Alt.pdf", size: 1024, category: null },
+    { id: "file-1", slug: "file-1", displayName: "Sopran.pdf", fileName: "Sopran.pdf", size: 1024, category: null },
+    { id: "file-2", slug: "file-2", displayName: "Alt.pdf", fileName: "Alt.pdf", size: 1024, category: null },
   ],
   links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: null }],
   aliases: [],
@@ -184,8 +185,22 @@ describe("PieceRowDetails, an open piece row", () => {
       const text = textOf(
         renderDetails(isEditing, {
           files: [
-            { id: "file-1", displayName: "Sopran.pdf", fileName: "Sopran.pdf", size: 1024, category: null },
-            { id: "file-2", displayName: "Alt.pdf", fileName: "Alt.pdf", size: 1024, category: "Noter" },
+            {
+              id: "file-1",
+              slug: "file-1",
+              displayName: "Sopran.pdf",
+              fileName: "Sopran.pdf",
+              size: 1024,
+              category: null,
+            },
+            {
+              id: "file-2",
+              slug: "file-2",
+              displayName: "Alt.pdf",
+              fileName: "Alt.pdf",
+              size: 1024,
+              category: "Noter",
+            },
           ],
           links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: "Noter" }],
         } as unknown as Partial<PieceWithRelations>),
@@ -258,10 +273,19 @@ describe("PieceRowDetails, an open piece row", () => {
   });
 
   it("in the running order, opens a Playable File in the player for its Set list piece", () => {
-    const sopran = { id: "file-1", displayName: "Sopran.mp3", fileName: "Sopran.mp3", size: 1024, category: null };
+    const sopran = {
+      id: "file-1",
+      slug: "file-1",
+      displayName: "Sopran.mp3",
+      fileName: "Sopran.mp3",
+      size: 1024,
+      category: null,
+    };
     const html = renderDetails(false, { files: [sopran] } as Partial<PieceWithRelations>, "setlist-1", "step-1");
 
-    expect(html).toContain(`href="${playerHref("koren", "piece-1", "file-1", { fromSetListPieceId: "step-1" })}"`);
+    expect(html).toContain(
+      `href="${playerHref("koren", piece, { slug: "file-1" }, { fromSetListPieceId: "step-1" })}"`,
+    );
   });
 
   describe.each([
@@ -271,7 +295,7 @@ describe("PieceRowDetails, an open piece row", () => {
     ["running order, edit mode", true, "setlist-1"],
   ])("in the %s", (_, isEditing, setListId) => {
     const html = renderDetails(isEditing, {}, setListId);
-    const href = pieceHref("koren", "piece-1", { fromSetListId: setListId }).replace("?", "\\?");
+    const href = pieceHref("koren", piece, { fromSetListId: setListId }).replace("?", "\\?");
 
     it("links to the piece's detail page as Detaljsida with a hidden chevron", () => {
       expect(textOf(html)).not.toContain("Öppna stycket");

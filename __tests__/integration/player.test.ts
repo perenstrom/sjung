@@ -118,8 +118,8 @@ describe("opening the player", () => {
 
     const player = await getPlayerData(group.slug, piece.id, sopran.id);
 
-    expect(player?.closeHref).toBe(pieceHref(group.slug, piece.id));
-    expect(player?.files[0].href).toBe(playerHref(group.slug, piece.id, sopran.id));
+    expect(player?.closeHref).toBe(pieceHref(group.slug, piece));
+    expect(player?.files[0].href).toBe(playerHref(group.slug, piece, sopran));
   });
 
   it("opened from a Set list piece, closes to its Set list and switches File on that Set list piece", async () => {
@@ -129,10 +129,8 @@ describe("opening the player", () => {
 
     const player = await getPlayerData(group.slug, piece.id, sopran.id, { fromSetListPieceId: setListPiece.id });
 
-    expect(player?.closeHref).toBe(groupSetListPath(group.slug, setList.id));
-    expect(player?.files[0].href).toBe(
-      playerHref(group.slug, piece.id, sopran.id, { fromSetListPieceId: setListPiece.id }),
-    );
+    expect(player?.closeHref).toBe(groupSetListPath(group.slug, setList));
+    expect(player?.files[0].href).toBe(playerHref(group.slug, piece, sopran, { fromSetListPieceId: setListPiece.id }));
   });
 
   it.each([

@@ -67,7 +67,7 @@ export function AnnouncementsInbox({ announcements, selected, canManage }: Annou
               return (
                 <li key={announcement.id}>
                   <Link
-                    href={announcementPath(announcement.id)}
+                    href={announcementPath(announcement)}
                     aria-current={active ? "page" : undefined}
                     className={cn("block border-b px-4 py-3 text-sm", active ? "bg-muted" : "hover:bg-muted/50")}
                   >

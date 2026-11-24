@@ -146,11 +146,13 @@ export function groupCreditsByPerson(credits: CreditForDisplay[]): CreditedPerso
 export type PersonCreditForDisplay = {
   pieceId: string;
   role: string;
-  piece: { name: string };
+  piece: { name: string; slug: string };
 };
 
 export type CreditedPiece = {
   pieceId: string;
+  /** For the link to the Piece's page. */
+  slug: string;
   name: string;
   roles: string[];
 };
@@ -160,12 +162,13 @@ export type CreditedPiece = {
  * Credit roles on it, ordered by Piece name as Alla noter orders them.
  */
 export function groupCreditsByPiece(credits: PersonCreditForDisplay[]): CreditedPiece[] {
+  const slugs = new Map(credits.map((credit) => [credit.pieceId, credit.piece.slug]));
   return mergeRolesBy(
     credits,
     (credit) => credit.pieceId,
     (credit) => credit.piece.name,
   )
-    .map(({ key, name, roles }) => ({ pieceId: key, name, roles }))
+    .map(({ key, name, roles }) => ({ pieceId: key, slug: slugs.get(key)!, name, roles }))
     .sort((a, b) => compareCaseInsensitive(a.name, b.name));
 }
 

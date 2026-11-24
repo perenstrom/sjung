@@ -46,8 +46,8 @@ describe("closestBreadcrumb", () => {
 
 describe("pieceDetailTrail", () => {
   const setLists = [
-    { id: "sl-1", name: "Vårkonsert" },
-    { id: "sl-2", name: "" },
+    { id: "sl-1", slug: "varkonsert", name: "Vårkonsert" },
+    { id: "sl-2", slug: "repertoar", name: "" },
   ];
 
   it("leads back to the set list the piece was opened from", () => {
@@ -64,7 +64,7 @@ describe("pieceDetailTrail", () => {
       ancestors: [
         { label: "Kören", href: "/app/kor" },
         { label: "Repertoarer", href: "/app/kor/setlists" },
-        { label: "Vårkonsert", href: "/app/kor/setlists/sl-1" },
+        { label: "Vårkonsert", href: "/app/kor/setlists/varkonsert" },
       ],
       tail: { kind: "static", label: "Vem kan segla" },
     });
@@ -114,7 +114,7 @@ describe("pieceDetailTrail", () => {
     expect(closestBreadcrumb(trail)).toEqual({
       kind: "back",
       label: "Repertoar",
-      href: "/app/kor/setlists/sl-2",
+      href: "/app/kor/setlists/repertoar",
     });
   });
 

@@ -19,9 +19,9 @@ export function groupPeoplePath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/people`;
 }
 
-/** One Person's page: the Pieces they are credited on. */
-export function groupPersonPath(groupSlug: string, personId: string): string {
-  return `${groupPeoplePath(groupSlug)}/${personId}`;
+/** One Person's page, by Slug: the Pieces they are credited on. */
+export function groupPersonPath(groupSlug: string, person: { slug: string }): string {
+  return `${groupPeoplePath(groupSlug)}/${person.slug}`;
 }
 
 /** Repertoarer: the Group's Set lists, and its start page. */
@@ -29,9 +29,9 @@ export function groupSetListsPath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/setlists`;
 }
 
-/** One Set list's page. */
-export function groupSetListPath(groupSlug: string, setListId: string): string {
-  return `${groupSetListsPath(groupSlug)}/${setListId}`;
+/** One Set list's page, by Slug. */
+export function groupSetListPath(groupSlug: string, setList: { slug: string }): string {
+  return `${groupSetListsPath(groupSlug)}/${setList.slug}`;
 }
 
 /** Medlemmar. */

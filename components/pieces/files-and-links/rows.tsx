@@ -26,6 +26,7 @@ import { type EditorTarget, isBlocked, isOpen, type OpenEditor } from "./editor"
 export type RowContext = {
   groupSlug: string;
   pieceId: string;
+  pieceSlug: string;
   pieceName: string;
   setListPieceId: string | undefined;
   layout: "detail" | "inline";
@@ -330,7 +331,7 @@ function FileOpenLink({
   }
   return (
     <Link
-      href={playerHref(ctx.groupSlug, ctx.pieceId, file.id, { fromSetListPieceId: ctx.setListPieceId })}
+      href={playerHref(ctx.groupSlug, { slug: ctx.pieceSlug }, file, { fromSetListPieceId: ctx.setListPieceId })}
       onClick={noteOpenedFromList}
       aria-disabled={dimmed || undefined}
       className={classes}
@@ -370,7 +371,7 @@ function FileDownloadLink({
   return (
     <a
       {...props}
-      href={fileDownloadHref(ctx.groupSlug, file.id)}
+      href={fileDownloadHref(ctx.groupSlug, file)}
       target="_blank"
       rel="noopener noreferrer"
       aria-disabled={dimmed || undefined}

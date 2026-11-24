@@ -15,17 +15,25 @@ import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPiec
 import { PieceDetailSectionLayout, PieceDetailSectionStack } from "@/components/pieces/PieceDetailSectionLayout";
 import { pieceDetailTrail } from "@/lib/breadcrumbs";
 import { searchParamId } from "@/lib/search-params";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findPageContent } from "@/lib/content-page";
+import { pieceHref } from "@/lib/pieces/href";
 
 type PageProps = {
-  params: Promise<{ groupSlug: string; id: string }>;
+  params: Promise<{ groupSlug: string; pieceSlug: string }>;
   searchParams: Promise<{ setlist?: string | string[] }>;
 };
 
 export default async function TenantPieceDetailPage({ params, searchParams }: PageProps) {
-  const [{ groupSlug, id }, { setlist }] = await Promise.all([params, searchParams]);
+  const [{ groupSlug, pieceSlug }, { setlist }] = await Promise.all([params, searchParams]);
+  const fromSetListId = searchParamId(setlist);
+  const match = await findPageContent(groupSlug, "piece", pieceSlug);
+  // A link by id always works and moves to the Slug URL (ADR-0011).
+  if (match.slug !== pieceSlug) {
+    permanentRedirect(pieceHref(groupSlug, match, { fromSetListId }));
+  }
   const [piece, people, creditRoles, categories, setLists, groups, access] = await Promise.all([
-    getPieceDetail(groupSlug, id),
+    getPieceDetail(groupSlug, match.id),
     getPeople(groupSlug),
     getCreditRoles(groupSlug),
     getCategories(groupSlug),
@@ -49,7 +57,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
               groupName,
               pieceName: piece.name,
               setLists,
-              fromSetListId: searchParamId(setlist),
+              fromSetListId,
             })}
           />
           <PieceMetadataSection
@@ -58,6 +66,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
             pieceId={piece.id}
             initialName={piece.name}
             aliases={piece.aliases}
+            fromSetListId={fromSetListId}
           />
 
           <PieceDetailSectionStack>
@@ -68,7 +77,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
               credits={piece.credits.map((credit) => ({
                 personId: credit.personId,
                 role: credit.role,
-                person: { name: credit.person.name },
+                person: { name: credit.person.name, slug: credit.person.slug },
               }))}
               people={people}
               creditRoles={creditRoles}
@@ -78,7 +87,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
               <PieceFilesAndLinks
                 layout="detail"
                 groupSlug={groupSlug}
-                piece={{ id: piece.id, name: piece.name }}
+                piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
                 filesAndLinks={toPieceFilesAndLinks(piece)}
               />
             </PieceDetailSectionLayout>

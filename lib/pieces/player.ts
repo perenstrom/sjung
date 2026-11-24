@@ -40,23 +40,15 @@ export async function getPlayerData(
   const access = await findGroupAccess(groupSlug);
   if (!access) return null;
 
-  let closeHref = pieceHref(groupSlug, pieceId);
-  if (fromSetListPieceId) {
-    const setListPiece = await prisma.setListPiece.findFirst({
-      where: { id: fromSetListPieceId, pieceId, setList: { groupId: access.group.id } },
-      select: { setListId: true },
-    });
-    if (!setListPiece) return null;
-    closeHref = groupSetListPath(groupSlug, setListPiece.setListId);
-  }
-
   const piece = await prisma.piece.findFirst({
     where: { id: pieceId, groupId: access.group.id },
     select: {
+      slug: true,
       name: true,
       files: {
         select: {
           id: true,
+          slug: true,
           displayName: true,
           fileName: true,
           category: true,
@@ -69,6 +61,16 @@ export async function getPlayerData(
     },
   });
   if (!piece) return null;
+
+  let closeHref = pieceHref(groupSlug, piece);
+  if (fromSetListPieceId) {
+    const setListPiece = await prisma.setListPiece.findFirst({
+      where: { id: fromSetListPieceId, pieceId, setList: { groupId: access.group.id } },
+      select: { setList: { select: { slug: true } } },
+    });
+    if (!setListPiece) return null;
+    closeHref = groupSetListPath(groupSlug, setListPiece.setList);
+  }
 
   // Every File shows on a Set list piece until Hidden ones exist (PER-137);
   // the player must then leave those out too. A MuseScore File not yet
@@ -84,11 +86,11 @@ export async function getPlayerData(
     pieceName: piece.name,
     file: { id: file.id, displayName: file.displayName, format: file.format, src: await fileStore.signPlayback(file) },
     soundfontSrc: file.format.engine === "audio" ? null : await fileStore.signSoundfont(),
-    files: inCategoryOrder(playable).map(({ id, displayName, format }) => ({
+    files: inCategoryOrder(playable).map(({ id, slug, displayName, format }) => ({
       id,
       displayName,
       formatLabel: format.label,
-      href: playerHref(groupSlug, pieceId, id, { fromSetListPieceId }),
+      href: playerHref(groupSlug, piece, { slug }, { fromSetListPieceId }),
     })),
     closeHref,
   };

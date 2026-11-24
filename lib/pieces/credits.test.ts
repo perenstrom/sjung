@@ -178,7 +178,7 @@ describe("groupCreditsByPiece", () => {
   const credit = (pieceId: string, name: string, role: string) => ({
     pieceId,
     role,
-    piece: { name },
+    piece: { name, slug: `${pieceId}-slug` },
   });
 
   it("lists each Piece once, with the Person's roles in Credit role order", () => {
@@ -189,7 +189,7 @@ describe("groupCreditsByPiece", () => {
     ];
 
     expect(groupCreditsByPiece(credits)).toEqual([
-      { pieceId: "ave", name: "Ave Maria", roles: ["Arrangör", "Textförfattare", "Övrigt"] },
+      { pieceId: "ave", slug: "ave-slug", name: "Ave Maria", roles: ["Arrangör", "Textförfattare", "Övrigt"] },
     ]);
   });
 

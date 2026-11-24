@@ -14,16 +14,23 @@ import { createGroupAncestor, createSetListsAncestor, setListCrumbLabel } from "
 import { formatDate } from "@/lib/format-date";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findPageContent } from "@/lib/content-page";
+import { groupSetListPath } from "@/lib/groups/routes";
 
 type PageProps = {
-  params: Promise<{ groupSlug: string; id: string }>;
+  params: Promise<{ groupSlug: string; setListSlug: string }>;
 };
 
 export default async function TenantSetListDetailPage({ params }: PageProps) {
-  const { groupSlug, id } = await params;
+  const { groupSlug, setListSlug } = await params;
+  const match = await findPageContent(groupSlug, "setList", setListSlug);
+  // A link by id always works and moves to the Slug URL (ADR-0011).
+  if (match.slug !== setListSlug) {
+    permanentRedirect(groupSetListPath(groupSlug, match));
+  }
   const [setList, pieces, people, creditRoles, categories, groups, access] = await Promise.all([
-    getSetListDetail(groupSlug, id),
+    getSetListDetail(groupSlug, match.id),
     getSetListPieceOptions(groupSlug),
     getPeople(groupSlug),
     getCreditRoles(groupSlug),

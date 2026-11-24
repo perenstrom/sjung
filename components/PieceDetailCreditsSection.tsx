@@ -9,7 +9,7 @@ import { groupPersonPath } from "@/lib/groups/routes";
 import { CREDITS_HEADING, NO_CREDITS_YET } from "@/lib/pieces/credits";
 import type { Person, PieceCredit } from "@/types/piece-credit-dialog";
 
-type PieceDetailCredit = PieceCredit & { person: { name: string } };
+type PieceDetailCredit = PieceCredit & { person: { name: string; slug: string } };
 
 type PieceDetailCreditsSectionProps = {
   groupSlug: string;
@@ -34,6 +34,7 @@ function PieceDetailCreditsBody({
   people,
   creditRoles,
 }: PieceDetailCreditsSectionProps & { readOnly: boolean }) {
+  const personSlugs = new Map(credits.map((credit) => [credit.personId, credit.person.slug]));
   return (
     <PieceDetailSectionLayout title={CREDITS_HEADING}>
       {credits.length === 0 ? (
@@ -42,7 +43,7 @@ function PieceDetailCreditsBody({
         <PieceCreditsList
           credits={credits}
           className="space-y-2"
-          personHref={(personId) => groupPersonPath(groupSlug, personId)}
+          personHref={(personId) => groupPersonPath(groupSlug, { slug: personSlugs.get(personId)! })}
         />
       ) : (
         <RemovableCreditsList groupSlug={groupSlug} pieceId={pieceId} credits={credits} className="space-y-2" />
