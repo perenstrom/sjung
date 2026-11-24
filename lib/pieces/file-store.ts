@@ -159,6 +159,22 @@ export async function deleteFile(file: Pick<StoreFile, "id" | "storagePath" | "c
 }
 
 /**
+ * Prepares a MuseScore File for the player again: a failed one, or one left
+ * pending by a restart (ADR-0009). It is pending until the caller has run
+ * `convertFile` again. Any other File is left as it is.
+ */
+export async function retryConversion(file: Pick<StoreFile, "id">): Promise<SavedFile> {
+  const { count } = await prisma.file.updateMany({
+    where: {
+      id: file.id,
+      conversionState: { in: [FileConversionState.FAILED, FileConversionState.PENDING] },
+    },
+    data: { conversionState: FileConversionState.PENDING },
+  });
+  return { id: file.id, pendingConversion: count > 0 };
+}
+
+/**
  * Converts a pending MuseScore File for the player and stores the copy next
  * to it: ready if the worker converts it, failed otherwise. Never throws; a
  * failure is logged. If the File was replaced or deleted meanwhile, the copy
@@ -192,7 +208,9 @@ export async function convertFile(fileId: string) {
         ? { conversionState: FileConversionState.READY, convertedStoragePath }
         : { conversionState: FileConversionState.FAILED },
     });
-    if (count === 0 && converted) {
+    // A retry may have converted the same content meanwhile and stored its
+    // copy under the same key; that copy is the File's, so it stays.
+    if (count === 0 && converted && !(await isConvertedStoragePathOf(fileId, convertedStoragePath))) {
       await cleanUp("convertFile", { fileId }, () => deleteObjects([convertedStoragePath]));
     }
   } catch (error) {
@@ -214,6 +232,10 @@ export async function deletePieceFiles(piece: StorePiece) {
  */
 export async function deleteGroupFiles(groupId: string) {
   await cleanUp("deleteGroupFiles", { groupId }, () => deletePrefix(groupStoragePrefix(groupId)));
+}
+
+async function isConvertedStoragePathOf(fileId: string, convertedStoragePath: string): Promise<boolean> {
+  return (await prisma.file.count({ where: { id: fileId, convertedStoragePath } })) > 0;
 }
 
 function initialConversionState({ fileName }: FinishedUpload): FileConversionState | null {

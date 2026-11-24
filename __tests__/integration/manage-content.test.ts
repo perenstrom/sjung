@@ -130,6 +130,7 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
     }),
   updatePieceFileDisplayName: (g, c) => formData({ groupSlug: g.slug, fileId: c.file.id, displayName: "Partitur" }),
   deletePieceFile: (g, c) => formData({ groupSlug: g.slug, fileId: c.file.id }),
+  retryPieceFileConversion: (g, c) => formData({ groupSlug: g.slug, fileId: c.file.id }),
   createSetList: (g) => formData({ groupSlug: g.slug, name: "Julkonsert" }),
   updateSetList: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, name: "Vårkonsert" }),
   deleteSetList: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id }),
