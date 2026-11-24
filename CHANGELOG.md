@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/perenstrom/sjung/compare/v0.3.0...v0.3.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **pieces:** line up the piece name with the rest of its row (PER-485) ([#235](https://github.com/perenstrom/sjung/issues/235)) ([cdaab8f](https://github.com/perenstrom/sjung/commit/cdaab8f7526ec0abbcb4a0633b3fc14cbfa2c773))
+* **player:** keep the Standard drum kit in the player's soundfont (PER-484) ([#233](https://github.com/perenstrom/sjung/issues/233)) ([b0f659f](https://github.com/perenstrom/sjung/commit/b0f659f44838f9c58af8b065e19a9f429a9b967c))
+
 ## [0.3.0](https://github.com/perenstrom/sjung/compare/v0.2.0...v0.3.0) (2026-11-24)
 
 
