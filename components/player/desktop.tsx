@@ -1,11 +1,13 @@
 "use client";
 
 import { Keyboard, Music, Repeat, Timer } from "lucide-react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { PlayerEngine } from "@/lib/file-formats";
 import {
+  barAt,
   DEFAULT_TEMPO,
   formatTime,
   isRepeating,
@@ -14,7 +16,7 @@ import {
   type Player,
   type PlayerSnapshot,
 } from "@/lib/player/player";
-import { LISTED_SHORTCUTS } from "@/lib/player/shortcuts";
+import { listedShortcuts } from "@/lib/player/shortcuts";
 import { cn } from "@/lib/utils";
 
 import {
@@ -48,33 +50,31 @@ export function ShortcutsButton({ onClick, className }: { onClick: () => void; c
 
 /**
  * A file without a score, at desktop width: its name, that it has no score,
- * and the whole file as a waveform strip to click and seek in.
+ * and the whole file as a strip to click and seek in: a waveform for audio,
+ * a plain bar otherwise.
  */
 export function NoScoreStrip({
   name,
+  engine,
   snapshot,
   peaks,
   onSeek,
 }: {
   name: string;
+  engine: PlayerEngine;
   snapshot: PlayerSnapshot;
   peaks: readonly number[] | null;
   onSeek: (seconds: number) => void;
 }) {
+  const strip = { position: snapshot.position, duration: snapshot.duration, loop: snapshot.loop, onSeek };
   return (
     <div className="flex size-full flex-col items-center justify-center gap-6 px-10">
       <div className="space-y-2 text-center">
         <Music className="mx-auto size-10 text-muted-foreground/50" aria-hidden />
         <p className="font-medium break-words">{name}</p>
-        <NoScoreNote status={snapshot.status} />
+        <NoScoreNote status={snapshot.status} engine={engine} />
       </div>
-      <WaveformStrip
-        peaks={peaks}
-        position={snapshot.position}
-        duration={snapshot.duration}
-        loop={snapshot.loop}
-        onSeek={onSeek}
-      />
+      {engine === "audio" ? <WaveformStrip peaks={peaks} {...strip} /> : <PlainStrip {...strip} />}
       <p className="text-xs text-muted-foreground">
         Klicka i remsan för att hoppa dit · <Kbd>A</Kbd> och <Kbd>B</Kbd> sätter start och slut för en repetition
       </p>
@@ -87,19 +87,7 @@ export function NoScoreStrip({
  * Flat until the file is decoded, or if it can't be. A mouse shortcut: the
  * seek bar and the arrow keys do the same from the keyboard.
  */
-function WaveformStrip({
-  peaks,
-  position,
-  duration,
-  loop,
-  onSeek,
-}: {
-  peaks: readonly number[] | null;
-  position: number;
-  duration: number;
-  loop: Loop | null;
-  onSeek: (seconds: number) => void;
-}) {
+function WaveformStrip({ peaks, position, duration, loop, onSeek }: StripProps & { peaks: readonly number[] | null }) {
   const heights = peaks ?? Array.from({ length: WAVEFORM_BARS }, () => 0);
   const progress = duration > 0 ? position / duration : 0;
   return (
@@ -107,10 +95,7 @@ function WaveformStrip({
       data-waveform
       aria-hidden
       className="relative flex h-32 w-full max-w-5xl cursor-pointer items-center gap-px"
-      onClick={(event) => {
-        const box = event.currentTarget.getBoundingClientRect();
-        onSeek(((event.clientX - box.left) / box.width) * duration);
-      }}
+      onClick={seekOnClick(duration, onSeek)}
     >
       {loop ? (
         <div data-passage className="absolute inset-y-0 rounded bg-amber-300/40" style={passageStyle(loop, duration)} />
@@ -126,6 +111,35 @@ function WaveformStrip({
           />
         );
       })}
+    </div>
+  );
+}
+
+type StripProps = { position: number; duration: number; loop: Loop | null; onSeek: (seconds: number) => void };
+
+/** Seeks to where the strip was clicked, as a share of the whole file. */
+function seekOnClick(duration: number, onSeek: (seconds: number) => void) {
+  return (event: MouseEvent<HTMLElement>) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    onSeek(((event.clientX - box.left) / box.width) * duration);
+  };
+}
+
+/**
+ * The whole file as a plain bar, played up to the playhead, with the repeat
+ * passage shaded. A mouse shortcut, as the waveform is.
+ */
+function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
+  const played = duration > 0 ? (Math.min(position, duration) / duration) * 100 : 0;
+  return (
+    <div
+      data-strip
+      aria-hidden
+      className="relative h-4 w-full max-w-5xl cursor-pointer overflow-hidden rounded-full bg-primary/25"
+      onClick={seekOnClick(duration, onSeek)}
+    >
+      {loop ? <div data-passage className="absolute inset-y-0 bg-amber-300/70" style={passageStyle(loop, duration)} /> : null}
+      <div data-played className="absolute inset-y-0 left-0 bg-primary" style={{ width: `${played}%` }} />
     </div>
   );
 }
@@ -146,6 +160,7 @@ export function DesktopTransport({
   onPanel: (panel: PlayerPanel | null) => void;
 }) {
   const { loop } = snapshot;
+  const bar = barAt(snapshot.bars, snapshot.position);
   const panelProps = (key: PlayerPanel) => ({
     open: panel === key,
     onOpenChange: (open: boolean) => onPanel(open ? key : null),
@@ -154,8 +169,9 @@ export function DesktopTransport({
   return (
     <footer data-layout="desktop" className="hidden items-center gap-4 border-t bg-background px-6 py-3 md:flex">
       <PlayButton playing={snapshot.playing} player={player} />
-      <span className="w-12 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-        {formatTime(snapshot.position)}
+      <span className="shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+        <span className="inline-block w-12">{formatTime(snapshot.position)}</span>
+        {bar === null ? null : <span className="ml-2 inline-block min-w-14 text-left">takt {bar}</span>}
       </span>
       <SeekTrack
         position={snapshot.position}
@@ -242,7 +258,15 @@ function PanelButton({
 }
 
 /** The listed keyboard shortcuts, opened with ? or the header button. */
-export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function ShortcutsDialog({
+  open,
+  onOpenChange,
+  hasBars,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  hasBars: boolean;
+}) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined}>
@@ -251,7 +275,7 @@ export function ShortcutsDialog({ open, onOpenChange }: { open: boolean; onOpenC
         </DialogHeader>
         <table className="w-full text-sm">
           <tbody className="divide-y">
-            {LISTED_SHORTCUTS.map(({ keys, what }) => (
+            {listedShortcuts({ hasBars }).map(({ keys, what }) => (
               <tr key={what}>
                 <td className="py-1.5 pr-4 whitespace-nowrap">
                   {keys.map((key) => (

@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { PlayerEngine } from "@/lib/file-formats";
 import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
@@ -14,11 +15,15 @@ const files = [
   { id: "sopran", displayName: "Sopran", formatLabel: "WAV", href: "/play/sopran" },
 ];
 
-function renderScreen(snapshot: Partial<PlayerSnapshot> = {}, peaks: readonly number[] | null = null) {
+function renderScreen(
+  snapshot: Partial<PlayerSnapshot> = {},
+  peaks: readonly number[] | null = null,
+  engine: PlayerEngine = "audio"
+) {
   return renderMarkup(
     createElement(PlayerScreen, {
       pieceName: "Vem kan segla",
-      file: files[1],
+      file: { ...files[1], engine },
       files,
       snapshot: { ...IDLE_SNAPSHOT, status: "ready", duration: 120, ...snapshot },
       closeHref: "/app/koren/setlists/sl-1",
@@ -61,6 +66,30 @@ describe("PlayerScreen", () => {
     expect(text).toMatch(/75 %.*Repetera/);
     expect(renderScreen()).toContain('aria-label="Spela"');
     expect(renderScreen({ playing: true })).toContain('aria-label="Pausa"');
+  });
+});
+
+describe("PlayerScreen for a MIDI File", () => {
+  /** Bars of two seconds each: bar 16 starts at 30 s. */
+  const bars = Array.from({ length: 60 }, (_, index) => index * 2);
+
+  it("shows the File's name and that it has no score", () => {
+    expect(renderScreen({}, null, "midi")).toMatch(/<\/header>.*>Sopran<.*>MIDI-fil – inga noter att visa\.</);
+  });
+
+  it("shows the bar at the playhead next to the time, on the phone and on desktop", () => {
+    const html = renderScreen({ bars, position: 31 }, null, "midi");
+
+    expect(textOf(html.match(/<footer[^>]*md:hidden[^>]*>.*?<\/footer>/)?.[0] ?? "")).toMatch(/0:31 · takt 16.*2:00/);
+    expect(textOf(desktopTransport(html))).toMatch(/0:31\s*takt 16.*2:00/);
+  });
+
+  it("draws a plain strip to seek in on desktop, not a waveform", () => {
+    const html = renderScreen({ bars, position: 60, loop: { start: 30, end: 90 } }, null, "midi");
+
+    expect(html).not.toContain("data-waveform");
+    expect(html).toMatch(/data-strip[^>]*>.*?data-passage[^>]*style="left:25%;width:50%"/);
+    expect(html).toMatch(/data-played[^>]*style="width:50%"/);
   });
 });
 

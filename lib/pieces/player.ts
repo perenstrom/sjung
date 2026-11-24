@@ -13,6 +13,8 @@ export type PlayerFileOption = { id: string; displayName: string; formatLabel: s
 export type PlayerData = {
   pieceName: string;
   file: { id: string; displayName: string; format: PlayableFormat; src: string };
+  /** Where the engine reads the player's soundfont from; `null` for a File played without one, such as audio. */
+  soundfontSrc: string | null;
   /** The Playable Files it was opened among, this one included, in the order they were listed. */
   files: PlayerFileOption[];
   /** Where closing the player goes: the Piece, or the Set list it was opened from. */
@@ -70,6 +72,7 @@ export async function getPlayerData(
   return {
     pieceName: piece.name,
     file: { id: file.id, displayName: file.displayName, format: file.format, src: await fileStore.signPlayback(file) },
+    soundfontSrc: file.format.engine === "midi" ? await fileStore.signSoundfont() : null,
     files: inCategoryOrder(playable).map(({ id, displayName, format }) => ({
       id,
       displayName,

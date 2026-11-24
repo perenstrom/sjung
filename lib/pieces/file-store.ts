@@ -11,6 +11,7 @@ import {
   type DeleteObjectsResult,
   type StoredObject,
 } from "@/lib/object-storage";
+import { PLAYER_SOUNDFONT_KEY } from "@/lib/player/soundfont";
 import prisma from "@/lib/prisma";
 import { assertAllowedStoredFile } from "@/lib/schemas/files";
 
@@ -163,6 +164,18 @@ export async function signPlayback(file: SignableFile) {
   return signGet(file.storagePath, {
     contentType: file.mimeType,
     contentDisposition: inlineDisposition(file.fileName),
+    expiresInSeconds: PLAYBACK_URL_EXPIRES_SECONDS,
+  });
+}
+
+/**
+ * A signed URL the player reads its soundfont from (ADR-0010), alongside a
+ * MIDI File's playback URL and lasting as long.
+ */
+export async function signSoundfont() {
+  return signGet(PLAYER_SOUNDFONT_KEY, {
+    contentType: "audio/x-sf3",
+    contentDisposition: inlineDisposition("soundfont.sf3"),
     expiresInSeconds: PLAYBACK_URL_EXPIRES_SECONDS,
   });
 }

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import type { PlayerEngine } from "@/lib/file-formats";
 import { createAudioPlayer } from "@/lib/player/audio-player";
 import { DEFAULT_TEMPO, IDLE_SNAPSHOT, isRepeating, markLoop, type Player, type PlayerSnapshot } from "@/lib/player/player";
 import { loadWaveform } from "@/lib/player/waveform";
@@ -36,58 +37,102 @@ type PlayerViewProps = PlayerData;
 
 const noSubscription = () => () => {};
 
+const FAILED_SNAPSHOT: PlayerSnapshot = { ...IDLE_SNAPSHOT, status: "error" };
+
 /**
  * The player, full screen over the app, open on one of a Piece's Playable
  * Files. It talks to the File's engine only through `Player`. Switching File
  * opens the player anew, so nothing carries over, as between visits.
  */
-export function PlayerView({ pieceName, file, files, closeHref }: PlayerViewProps) {
-  const [player, setPlayer] = useState<Player | null>(null);
+export function PlayerView({ pieceName, file, soundfontSrc, files, closeHref }: PlayerViewProps) {
+  const { engine } = file.format;
+  const [audioPlayer, setAudioPlayer] = useState<Player | null>(null);
   const attachAudio = useCallback((audio: HTMLAudioElement) => {
-    const audioPlayer = createAudioPlayer(audio);
-    setPlayer(audioPlayer);
+    const created = createAudioPlayer(audio);
+    setAudioPlayer(created);
     return () => {
-      audioPlayer.destroy();
-      setPlayer(null);
+      created.destroy();
+      setAudioPlayer(null);
     };
   }, []);
+  const midi = useMidiPlayer(engine === "midi" ? file.src : null, soundfontSrc);
+  const player = engine === "audio" ? audioPlayer : midi.player;
 
-  const snapshot = useSyncExternalStore(
+  const playerSnapshot = useSyncExternalStore(
     player?.subscribe ?? noSubscription,
     () => player?.getSnapshot() ?? IDLE_SNAPSHOT,
     () => IDLE_SNAPSHOT
   );
-  const peaks = useWaveform(file.src);
+  const peaks = useWaveform(engine === "audio" ? file.src : null);
 
   return (
     <>
       <PlayerScreen
         pieceName={pieceName}
-        file={{ id: file.id, displayName: file.displayName, formatLabel: file.format.label }}
+        file={{ id: file.id, displayName: file.displayName, formatLabel: file.format.label, engine }}
         files={files}
         closeHref={closeHref}
-        snapshot={snapshot}
+        snapshot={midi.failed ? FAILED_SNAPSHOT : playerSnapshot}
         player={player}
         peaks={peaks}
       />
-      <audio ref={attachAudio} src={file.src} preload="metadata" />
+      {engine === "audio" ? <audio ref={attachAudio} src={file.src} preload="metadata" /> : null}
     </>
   );
+}
+
+/**
+ * The MIDI engine for the file at `src`, played with the soundfont at
+ * `soundfontSrc`; nothing for `null`. SpessaSynth is imported only here, so
+ * it is downloaded only once a MIDI File is opened. `failed` once the file,
+ * the soundfont or the synthesizer couldn't be loaded.
+ */
+function useMidiPlayer(src: string | null, soundfontSrc: string | null) {
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (src === null) return;
+    const controller = new AbortController();
+    let loaded: Player | null = null;
+    import("@/lib/player/load-midi-player")
+      .then(({ loadMidiPlayer }) => {
+        if (soundfontSrc === null) throw new Error("A MIDI File needs the player's soundfont");
+        return loadMidiPlayer({ src, soundfontSrc, signal: controller.signal });
+      })
+      .then(
+        (midiPlayer) => {
+          if (controller.signal.aborted) return midiPlayer.destroy();
+          loaded = midiPlayer;
+          setPlayer(midiPlayer);
+        },
+        (error: unknown) => {
+          if (controller.signal.aborted) return;
+          console.error("Kunde inte ladda MIDI-filen", error);
+          setFailed(true);
+        }
+      );
+    return () => {
+      controller.abort();
+      loaded?.destroy();
+      setPlayer(null);
+    };
+  }, [src, soundfontSrc]);
+  return { player, failed };
 }
 
 /** Desktop and tablet width, where the player has its wide layout (Tailwind's `md`). */
 const WIDE_QUERY = "(min-width: 768px)";
 
 /**
- * The audio File's waveform for the strip on desktop, or `null` until it is
- * decoded. Only fetched at desktop width, where the strip shows; if it can't
+ * The audio File's waveform for the strip on desktop, or `null` until it
+ * is decoded, or for a File that isn't audio (`src` is `null`). Only fetched at desktop width, where the strip shows; if it can't
  * be fetched or decoded the strip stays flat.
  */
-function useWaveform(src: string): number[] | null {
+function useWaveform(src: string | null): number[] | null {
   const isMobile = useIsMobile();
   const [peaks, setPeaks] = useState<number[] | null>(null);
   useEffect(() => {
-    if (peaks || isMobile || !window.matchMedia(WIDE_QUERY).matches) return;
+    if (src === null || peaks || isMobile || !window.matchMedia(WIDE_QUERY).matches) return;
     const controller = new AbortController();
     loadWaveform(src, WAVEFORM_BARS, controller.signal).then(setPeaks, (error: unknown) => {
       if (!controller.signal.aborted) console.warn("Kunde inte rita vågformen", error);
@@ -114,7 +159,7 @@ export function PlayerScreen({
   peaks,
 }: {
   pieceName: string;
-  file: Pick<PlayerFileOption, "id" | "displayName" | "formatLabel">;
+  file: Pick<PlayerFileOption, "id" | "displayName" | "formatLabel"> & { engine: PlayerEngine };
   files: readonly PlayerFileOption[];
   closeHref: string;
   snapshot: PlayerSnapshot;
@@ -174,12 +219,13 @@ export function PlayerScreen({
         <div className="space-y-3 text-center">
           <Music className="mx-auto size-16 text-muted-foreground/40" aria-hidden />
           <p className="font-medium break-words">{file.displayName}</p>
-          <NoScoreNote status={snapshot.status} />
+          <NoScoreNote status={snapshot.status} engine={file.engine} />
         </div>
       </div>
       <div className="hidden min-h-0 flex-1 overflow-y-auto bg-muted/30 md:block">
         <NoScoreStrip
           name={file.displayName}
+          engine={file.engine}
           snapshot={snapshot}
           peaks={peaks}
           onSeek={(seconds) => player?.seek(seconds)}
@@ -190,6 +236,7 @@ export function PlayerScreen({
         <SeekBar
           position={snapshot.position}
           duration={snapshot.duration}
+          bars={snapshot.bars}
           loop={snapshot.loop}
           onSeek={(seconds) => player?.seek(seconds)}
         />
@@ -212,7 +259,11 @@ export function PlayerScreen({
       <DesktopTransport snapshot={snapshot} player={player} panel={panel} onPanel={setPanel} />
 
       <ShortcutHud message={shortcuts.hud} />
-      <ShortcutsDialog open={shortcuts.helpOpen} onOpenChange={shortcuts.setHelpOpen} />
+      <ShortcutsDialog
+        open={shortcuts.helpOpen}
+        onOpenChange={shortcuts.setHelpOpen}
+        hasBars={snapshot.bars.length > 0}
+      />
 
       <Sheet open={sheet !== null} onOpenChange={(open) => !open && setSheet(null)}>
         <SheetContent side="bottom" className="max-h-[80dvh] rounded-t-2xl" aria-describedby={undefined}>

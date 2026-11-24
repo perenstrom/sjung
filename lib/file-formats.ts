@@ -10,15 +10,24 @@ type FileFormat = {
   playable?: PlayableFormat;
 };
 
+/** Which player engine plays a Playable File (ADR-0010). */
+export type PlayerEngine = "audio" | "midi";
+
 /** A Playable File's format, as the player needs it. */
 export type PlayableFormat = {
   /** Which player engine plays it. */
-  engine: "audio";
+  engine: PlayerEngine;
   /** The format's name, shown in the player. */
   label: string;
 };
 
 const audio = (label: string): PlayableFormat => ({ engine: "audio", label });
+
+/**
+ * What a browser uploads a file as when it can't tell its type, as is common
+ * for MIDI. Allowed only for formats that browsers often report so.
+ */
+const UNKNOWN_MIME_TYPE = "application/octet-stream";
 
 const FILE_FORMATS: readonly FileFormat[] = [
   { extensions: [".pdf"], mimeTypes: ["application/pdf"] },
@@ -41,6 +50,11 @@ const FILE_FORMATS: readonly FileFormat[] = [
     extensions: [".wav"],
     mimeTypes: ["audio/wav", "audio/x-wav", "audio/wave", "audio/vnd.wave"],
     playable: audio("WAV"),
+  },
+  {
+    extensions: [".mid", ".midi"],
+    mimeTypes: ["audio/midi", "audio/x-midi", "audio/mid", "application/x-midi", UNKNOWN_MIME_TYPE],
+    playable: { engine: "midi", label: "MIDI" },
   },
 ];
 
@@ -65,4 +79,9 @@ export function isAllowedFile({ fileName, mimeType }: { fileName: string; mimeTy
 /** The File's format if it is a Playable File, which the player opens instead of downloading; otherwise `null`. */
 export function playableFormatOf({ fileName }: { fileName: string }): PlayableFormat | null {
   return formatOf(fileName)?.playable ?? null;
+}
+
+/** The MIME type to upload a picked file as: what the browser reports, or a generic binary file when it reports nothing. */
+export function uploadMimeType(file: Pick<File, "type">): string {
+  return file.type || UNKNOWN_MIME_TYPE;
 }

@@ -1,4 +1,5 @@
 import {
+  barAt,
   clampTempo,
   formatTime,
   isRepeating,
@@ -31,24 +32,27 @@ export type ShortcutAction =
 export type Shortcut = { action: ShortcutAction | null; hud: string | null };
 
 /** How far ← / → move in a file without bars, in seconds; Shift moves four times as far. */
-const AUDIO_STEP_SECONDS = 5;
+const STEP_SECONDS_WITHOUT_BARS = 5;
 const TEMPO_STEP = 5;
 
 /**
- * The keys listed under "?". K, I and O also work, like Space, A and B, for
- * people used to editing software, but nothing in the player mentions them.
+ * The keys listed under "?", for a file with or without bars. K, I and O also
+ * work, like Space, A and B, for people used to editing software, but
+ * nothing in the player mentions them.
  */
-export const LISTED_SHORTCUTS: readonly { keys: readonly string[]; what: string }[] = [
-  { keys: ["Mellanslag"], what: "Spela / pausa" },
-  { keys: ["←", "→"], what: "5 sekunder bakåt / framåt" },
-  { keys: ["Shift", "←/→"], what: "20 sekunder bakåt / framåt" },
-  { keys: ["Home"], what: "Till början (eller till repetitionens start)" },
-  { keys: ["A"], what: "Repetera härifrån" },
-  { keys: ["B"], what: "Repetera hit" },
-  { keys: ["Esc"], what: "Sluta repetera" },
-  { keys: ["−", "+"], what: "Tempo 5 % långsammare / snabbare" },
-  { keys: ["?"], what: "Visa kortkommandon" },
-];
+export function listedShortcuts({ hasBars }: { hasBars: boolean }): readonly { keys: readonly string[]; what: string }[] {
+  return [
+    { keys: ["Mellanslag"], what: "Spela / pausa" },
+    { keys: ["←", "→"], what: hasBars ? "En takt bakåt / framåt" : "5 sekunder bakåt / framåt" },
+    { keys: ["Shift", "←/→"], what: hasBars ? "Fyra takter bakåt / framåt" : "20 sekunder bakåt / framåt" },
+    { keys: ["Home"], what: "Till början (eller till repetitionens start)" },
+    { keys: ["A"], what: hasBars ? "Repetera från den här takten" : "Repetera härifrån" },
+    { keys: ["B"], what: hasBars ? "Repetera till och med den här takten" : "Repetera hit" },
+    { keys: ["Esc"], what: "Sluta repetera" },
+    { keys: ["−", "+"], what: "Tempo 5 % långsammare / snabbare" },
+    { keys: ["?"], what: "Visa kortkommandon" },
+  ];
+}
 
 /**
  * What a key does in the player on desktop, or `null` when the player leaves
@@ -57,7 +61,9 @@ export const LISTED_SHORTCUTS: readonly { keys: readonly string[]; what: string 
  */
 export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocused }: ShortcutContext): Shortcut | null {
   if (press.metaKey || press.ctrlKey || press.altKey) return null;
-  const { position, duration, loop, playing, tempo } = snapshot;
+  const { position, duration, loop, playing, tempo, bars } = snapshot;
+  const hasBars = bars.length > 0;
+  const bar = barAt(bars, position) ?? 1;
   const navigating = !layerOpen && !sliderFocused;
 
   switch (press.key) {
@@ -68,7 +74,12 @@ export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocuse
     case "ArrowLeft":
     case "ArrowRight": {
       if (!navigating) return null;
-      const step = (press.key === "ArrowLeft" ? -1 : 1) * (press.shiftKey ? 4 : 1) * AUDIO_STEP_SECONDS;
+      const direction = (press.key === "ArrowLeft" ? -1 : 1) * (press.shiftKey ? 4 : 1);
+      if (hasBars) {
+        const target = Math.min(bars.length, Math.max(1, bar + direction));
+        return { action: { type: "seek", seconds: barStart(bars, target) }, hud: `Takt ${target}` };
+      }
+      const step = direction * STEP_SECONDS_WITHOUT_BARS;
       return {
         action: { type: "seek", seconds: Math.min(duration, Math.max(0, position + step)) },
         hud: `${step > 0 ? "+" : "−"}${Math.abs(step)} s`,
@@ -83,11 +94,13 @@ export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocuse
     case "A":
     case "i":
     case "I":
+      if (hasBars) return barRepeatShortcut(markStart(loop, barStart(bars, bar)), bars);
       return repeatShortcut(markStart(loop, position));
     case "b":
     case "B":
     case "o":
     case "O": {
+      if (hasBars) return barRepeatShortcut(markEndBar(loop, bar, bars, duration), bars);
       const marked = markEnd(loop, position);
       return marked ? repeatShortcut(marked) : { action: null, hud: "Sätt slutet efter starten" };
     }
@@ -132,6 +145,32 @@ function repeatShortcut(loop: Loop): Shortcut {
         ? "Repetera härifrån – tryck B vid slutet"
         : `Repeterar ${formatTime(loop.start)}–${formatTime(loop.end)}`,
   };
+}
+
+function barRepeatShortcut(loop: Loop, bars: readonly number[]): Shortcut {
+  const start = barAt(bars, loop.start);
+  const endSeconds = loop.end;
+  if (endSeconds === null) return { action: { type: "loop", loop }, hud: `Repetera från takt ${start} – tryck B vid slutet` };
+  // The bar the passage ends in, not the one starting where it ends.
+  const end = barAt(bars, bars.findLast((barStart) => barStart < endSeconds) ?? endSeconds);
+  return { action: { type: "loop", loop }, hud: `Repeterar takt ${start === end ? start : `${start}–${end}`}` };
+}
+
+/**
+ * B in a file with bars: the passage runs over whole bars, from the bar it
+ * starts in (or the first) to the end of the `current` bar, in whichever
+ * order they come.
+ */
+function markEndBar(loop: Loop | null, current: number, bars: readonly number[], duration: number): Loop {
+  const marked = barAt(bars, loop?.start ?? 0) ?? 1;
+  const [first, last] = marked <= current ? [marked, current] : [current, marked];
+  // The end of the last bar is where the next one starts, or the end of the file.
+  return { start: barStart(bars, first), end: bars[last] ?? duration };
+}
+
+/** When bar `bar` (counted from 1) starts, in seconds. */
+function barStart(bars: readonly number[], bar: number): number {
+  return bars[bar - 1];
 }
 
 /** A: the passage starts here, keeping its end if that is still after it. */

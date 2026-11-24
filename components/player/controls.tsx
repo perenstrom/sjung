@@ -4,7 +4,16 @@ import { Pause, Play } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { formatTime, type Loop, type Player, type PlayerSnapshot, TEMPO_MAX, TEMPO_MIN } from "@/lib/player/player";
+import type { PlayerEngine } from "@/lib/file-formats";
+import {
+  barAt,
+  formatTime,
+  type Loop,
+  type Player,
+  type PlayerSnapshot,
+  TEMPO_MAX,
+  TEMPO_MIN,
+} from "@/lib/player/player";
 import { cn } from "@/lib/utils";
 
 const QUICK_TEMPOS = [60, 75, 90, 100] as const;
@@ -26,13 +35,24 @@ export function PlayButton({ playing, player }: { playing: boolean; player: Play
   );
 }
 
+const NO_SCORE: Record<PlayerEngine, string> = {
+  audio: "Ljudfil – inga noter att visa.",
+  midi: "MIDI-fil – inga noter att visa.",
+};
+
 /** What shows in place of a score for a file without one, or that it can't be played. */
-export function NoScoreNote({ status }: { status: PlayerSnapshot["status"] }) {
+export function NoScoreNote({ status, engine }: { status: PlayerSnapshot["status"]; engine: PlayerEngine }) {
   return status === "error" ? (
     <p className="text-sm text-destructive">Filen kunde inte spelas upp.</p>
   ) : (
-    <p className="text-sm text-muted-foreground">Ljudfil – inga noter att visa.</p>
+    <p className="text-sm text-muted-foreground">{NO_SCORE[engine]}</p>
   );
+}
+
+/** The playhead's time, and its bar in a file with bars. */
+export function playheadLabel(position: number, bars: readonly number[]): string {
+  const bar = barAt(bars, position);
+  return bar === null ? formatTime(position) : `${formatTime(position)} · takt ${bar}`;
 }
 
 /** A dock button that opens its own bottom sheet; highlighted while its setting is changed from the default. */
@@ -62,15 +82,20 @@ export function DockButton({
   );
 }
 
-/** The playhead over the whole file, with the repeat passage shaded, and the time on each side. */
+/**
+ * The playhead over the whole file, with the repeat passage shaded, the time
+ * (and bar, if the file has bars) on one side and the length on the other.
+ */
 export function SeekBar({
   position,
   duration,
+  bars,
   loop,
   onSeek,
 }: {
   position: number;
   duration: number;
+  bars: readonly number[];
   loop: Loop | null;
   onSeek: (seconds: number) => void;
 }) {
@@ -78,7 +103,7 @@ export function SeekBar({
     <div className="space-y-1">
       <SeekTrack position={position} duration={duration} loop={loop} onSeek={onSeek} />
       <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
-        <span>{formatTime(position)}</span>
+        <span>{playheadLabel(position, bars)}</span>
         <span>{formatTime(duration)}</span>
       </div>
     </div>
