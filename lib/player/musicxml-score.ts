@@ -185,12 +185,15 @@ export function playWith(at: AlphaTabModule, score: Score, program: number) {
   for (const track of score.tracks) {
     if (isPercussion(track)) continue;
     track.playbackInfo.program = program;
-    for (const beat of track.staves.flatMap((staff) =>
-      staff.bars.flatMap((bar) => bar.voices.flatMap((voice) => voice.beats)),
-    )) {
+    for (const beat of beatsOf(track)) {
       for (const automation of beat.automations) {
         if (automation.type === at.model.AutomationType.Instrument) automation.value = program;
       }
     }
   }
+}
+
+/** Every beat of `track`, in every staff, bar and voice. */
+export function beatsOf(track: AlphaTab.model.Track): AlphaTab.model.Beat[] {
+  return track.staves.flatMap((staff) => staff.bars.flatMap((bar) => bar.voices.flatMap((voice) => voice.beats)));
 }

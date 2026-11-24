@@ -1,7 +1,7 @@
 import type * as AlphaTab from "@coderline/alphatab";
 
 import { PERCUSSION_CHANNEL } from "@/lib/player/midi-parts";
-import { type AlphaTabModule, isPercussion } from "@/lib/player/musicxml-score";
+import { type AlphaTabModule, beatsOf, isPercussion } from "@/lib/player/musicxml-score";
 import type { NotationPart } from "@/lib/player/notation-player";
 import { partName } from "@/lib/player/player";
 
@@ -146,9 +146,7 @@ function silence(at: AlphaTabModule, track: Track) {
   playOn(track, DRAWN_CHANNEL);
   track.playbackInfo.volume = 0;
   track.playbackInfo.isMute = true;
-  for (const beat of track.staves.flatMap((staff) =>
-    staff.bars.flatMap((bar) => bar.voices.flatMap((voice) => voice.beats)),
-  )) {
+  for (const beat of beatsOf(track)) {
     // A volume change in the file would make it heard again.
     beat.automations = beat.automations.filter(({ type }) => type !== at.model.AutomationType.Volume);
   }
