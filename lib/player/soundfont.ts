@@ -33,14 +33,7 @@ export const SOUND_PROGRAMS: Record<PlayerSound, number> = {
  * Throws if the bank lacks one of the programs.
  */
 export function trimToPlayerPresets(bank: BasicSoundBank): void {
-  const kept = new Set<BasicPreset>();
-  for (const { program, name } of PLAYER_PROGRAMS) {
-    const preset = bank.presets.find((candidate) => isPlainGM(candidate) && candidate.program === program);
-    if (!preset) {
-      throw new Error(`The soundfont has no GM program ${program} (${name}).`);
-    }
-    kept.add(preset);
-  }
+  const kept = new Set(PLAYER_PROGRAMS.map((program) => findPreset(bank, program)));
 
   for (const preset of [...bank.presets]) {
     if (!kept.has(preset)) {
@@ -51,6 +44,17 @@ export function trimToPlayerPresets(bank: BasicSoundBank): void {
   bank.flush();
 }
 
-function isPlainGM(preset: BasicPreset): boolean {
-  return !preset.isGMGSDrum && preset.bankMSB === 0 && preset.bankLSB === 0;
+/**
+ * The bank's preset for `program`: the plain GM (bank 0, not drum) one.
+ * Throws, naming the preset, if the bank has none.
+ */
+function findPreset(bank: BasicSoundBank, { program, name }: { program: number; name: string }): BasicPreset {
+  const preset = bank.presets.find(
+    (candidate) =>
+      !candidate.isGMGSDrum && candidate.bankMSB === 0 && candidate.bankLSB === 0 && candidate.program === program,
+  );
+  if (!preset) {
+    throw new Error(`The soundfont has no GM program ${program} (${name}).`);
+  }
+  return preset;
 }
