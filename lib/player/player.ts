@@ -76,6 +76,14 @@ export type PlayerPart = {
   solo: boolean;
 };
 
+/**
+ * A part's name: as the file gives it, or "Stämma n" after its `place`
+ * among the parts (counted from 0) when the file gives none.
+ */
+export function partName(fromFile: string, place: number): string {
+  return fromFile.trim() || `Stämma ${place + 1}`;
+}
+
 /** The instrument a notation or MIDI file is played with. */
 export type PlayerSound = "piano" | "choir";
 
@@ -128,6 +136,9 @@ export function barAt(bars: readonly number[], seconds: number): number | null {
   const next = bars.findIndex((start) => start > seconds);
   return next === -1 ? bars.length : Math.max(1, next);
 }
+
+/** When each bar starts and the number the score gives it: what labels and steps a file by bar. */
+export type BarTimeline = Pick<PlayerSnapshot, "bars" | "barNumbers">;
 
 /** The number the score gives `bar`, counted from 1 in playing order (see `PlayerSnapshot.barNumbers`). */
 export function barNumber(barNumbers: readonly number[], bar: number): number {

@@ -3,7 +3,7 @@ import type * as AlphaTab from "@coderline/alphatab";
 import { fetchBuffer, playThroughSilentSwitch } from "@/lib/player/loading";
 import { notationBarsOf } from "@/lib/player/notation-bars";
 import { createNotationPlayer, type NotationPart, type TickRange } from "@/lib/player/notation-player";
-import { IDLE_SNAPSHOT, type Player } from "@/lib/player/player";
+import { IDLE_SNAPSHOT, partName, type Player } from "@/lib/player/player";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
 type AlphaTabModule = typeof AlphaTab;
@@ -244,10 +244,15 @@ function untilReady(api: AlphaTab.AlphaTabApi, signal: AbortSignal): Promise<voi
 function partsOf(score: Score): NotationPart[] {
   return score.tracks.map((track, index) => ({
     id: `track-${index}`,
-    name: track.name.trim() || `Stämma ${index + 1}`,
-    percussion: track.staves.every((staff) => staff.isPercussion),
+    name: partName(track.name, index),
+    percussion: isPercussion(track),
     track: index,
   }));
+}
+
+/** Whether every staff of `track` is percussion, so it plays drums and keeps its own sounds. */
+function isPercussion(track: AlphaTab.model.Track): boolean {
+  return track.staves.every((staff) => staff.isPercussion);
 }
 
 /** The first beat of bar `first` and the last of bar `last` in the score's first staff, to shade them. */
@@ -266,7 +271,7 @@ function beatsOf(score: Score, first: number, last: number) {
  */
 function playWith(at: AlphaTabModule, score: Score, program: number) {
   for (const track of score.tracks) {
-    if (track.staves.every((staff) => staff.isPercussion)) continue;
+    if (isPercussion(track)) continue;
     track.playbackInfo.program = program;
     for (const beat of track.staves.flatMap((staff) =>
       staff.bars.flatMap((bar) => bar.voices.flatMap((voice) => voice.beats)),

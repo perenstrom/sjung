@@ -222,7 +222,7 @@ export function PlayerScreen({
   attachScore?: (element: HTMLDivElement | null) => void;
 }) {
   const router = useRouter();
-  const inScore = file.engine === "notation";
+  const hasScore = file.engine === "notation";
   const [sheet, setSheet] = useState<PlayerPanel | null>(null);
   const [panel, setPanel] = useState<PlayerPanel | null>(null);
   // The singer's own part in Stämmor, for this visit only.
@@ -331,7 +331,7 @@ export function PlayerScreen({
       </footer>
       <DesktopTransport
         snapshot={snapshot}
-        inScore={inScore}
+        hasScore={hasScore}
         player={player}
         panel={panel}
         onPanel={setPanel}
@@ -359,7 +359,7 @@ export function PlayerScreen({
             {sheet === "repeat" ? (
               <RepeatControls
                 loop={snapshot.loop}
-                score={inScore ? snapshot : null}
+                score={hasScore ? snapshot : null}
                 onMark={() => player?.setLoop(markLoop(snapshot.loop, snapshot.position))}
                 onStop={() => player?.setLoop(null)}
               />

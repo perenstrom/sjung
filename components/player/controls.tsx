@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { PlayerEngine } from "@/lib/file-formats";
 import { applyMix, audibleGain, MIX_PRESETS, presetMix, presetOf, presetOnChoosing } from "@/lib/player/mix";
 import {
+  type BarTimeline,
   barNumberAt,
   formatTime,
   isRepeating,
@@ -64,10 +65,7 @@ export function playheadLabel(position: number, bars: readonly number[], barNumb
 }
 
 /** A passage that repeats, by bar in a score and by time otherwise. */
-export function passageLabel(
-  loop: Loop & { end: number },
-  score: Pick<PlayerSnapshot, "bars" | "barNumbers"> | null,
-): string {
+export function passageLabel(loop: Loop & { end: number }, score: BarTimeline | null): string {
   return score
     ? `takt ${passageBarsLabel(loop, score.bars, score.barNumbers)}`
     : `${formatTime(loop.start)}–${formatTime(loop.end)}`;
@@ -222,7 +220,7 @@ export function RepeatControls({
   onStop,
 }: {
   loop: Loop | null;
-  score?: Pick<PlayerSnapshot, "bars" | "barNumbers"> | null;
+  score?: BarTimeline | null;
   onMark: () => void;
   onStop: () => void;
 }) {
@@ -248,7 +246,7 @@ export function RepeatControls({
 }
 
 /** What the Repetera sheet says about the passage, by bar in a score. */
-function repeatStatus(loop: Loop | null, score: Pick<PlayerSnapshot, "bars" | "barNumbers"> | null): string {
+function repeatStatus(loop: Loop | null, score: BarTimeline | null): string {
   if (isRepeating(loop)) return `Repeterar ${passageLabel(loop, score)}`;
   if (score === null) {
     return loop === null

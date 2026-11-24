@@ -157,11 +157,11 @@ function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
  * The transport row at the bottom: Play, the time, the seek bar, the length,
  * then Tempo, Repetera and, for a file with parts, Stämmor, each opening a
  * popover above its button. `mine` is the singer's own part in Stämmor.
- * With a score (`inScore`), a passage is set and shown by bar.
+ * With a score (`hasScore`), a passage is set and shown by bar.
  */
 export function DesktopTransport({
   snapshot,
-  inScore,
+  hasScore,
   player,
   panel,
   onPanel,
@@ -169,7 +169,7 @@ export function DesktopTransport({
   onMine,
 }: {
   snapshot: PlayerSnapshot;
-  inScore: boolean;
+  hasScore: boolean;
   player: Player | null;
   panel: PlayerPanel | null;
   onPanel: (panel: PlayerPanel | null) => void;
@@ -178,7 +178,7 @@ export function DesktopTransport({
 }) {
   const { loop } = snapshot;
   const bar = barNumberAt(snapshot.bars, snapshot.barNumbers, snapshot.position);
-  const score = inScore ? snapshot : null;
+  const score = hasScore ? snapshot : null;
   const panelProps = (key: PlayerPanel) => ({
     open: panel === key,
     onOpenChange: (open: boolean) => onPanel(open ? key : null),

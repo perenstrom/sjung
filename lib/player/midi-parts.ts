@@ -1,5 +1,7 @@
 import type { BasicMIDI } from "spessasynth_core";
 
+import { partName } from "@/lib/player/player";
+
 /** General MIDI's percussion channel, within each block of 16. */
 export const PERCUSSION_CHANNEL = 9;
 
@@ -24,7 +26,7 @@ export function midiPartsOf(midi: BasicMIDI): MidiPart[] {
       const channels = [...track.channels].sort((a, b) => a - b);
       return {
         id: `track-${index}`,
-        name: track.name.trim() || `Stämma ${place + 1}`,
+        name: partName(track.name, place),
         percussion: channels.every((channel) => channel === PERCUSSION_CHANNEL),
         channels: channels.map((channel) => channel + offset),
       };
