@@ -9,7 +9,7 @@ import { putObject } from "../lib/object-storage";
 import { PLAYER_SOUNDFONT_KEY, trimToPlayerPresets } from "../lib/player/soundfont";
 
 // Builds the player's soundfont (ADR-0010): GeneralUser GS trimmed to
-// PLAYER_PROGRAMS, with its samples compressed to Ogg Vorbis (SF3).
+// PLAYER_PROGRAMS and PLAYER_DRUM_KIT, with its samples compressed to Ogg Vorbis (SF3).
 // Download GeneralUser-GS.sf2 from https://www.schristiancollins.com first.
 // Needs ffmpeg with libvorbis on the PATH. With --upload, the result is also
 // stored at PLAYER_SOUNDFONT_KEY in the R2 bucket named in .env.
@@ -42,7 +42,9 @@ async function main() {
 
   console.log(`Source:  ${formatFileSize(source.byteLength)} (${input})`);
   console.log(`SF3:     ${formatFileSize(sf3.byteLength)} (${sf3.byteLength} bytes, ${output})`);
-  console.log(`Presets: ${bank.presets.map((preset) => `${preset.program} ${preset.name}`).join(", ")}`);
+  console.log(
+    `Presets: ${bank.presets.map((preset) => `${preset.isGMGSDrum ? "drum " : ""}${preset.program} ${preset.name}`).join(", ")}`,
+  );
   console.log(`Samples: ${bank.samples.length}`);
 
   if (values.upload) {

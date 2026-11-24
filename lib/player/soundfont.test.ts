@@ -25,7 +25,7 @@ function bankWith(
 }
 
 describe("trimToPlayerPresets", () => {
-  it("keeps only the GM piano, choir aahs and voice oohs", () => {
+  it("keeps only the GM piano, choir aahs, voice oohs and the Standard drum kit", () => {
     const bank = bankWith([
       { name: "Grand Piano", program: 0 },
       { name: "Bright Grand", program: 1 },
@@ -35,19 +35,36 @@ describe("trimToPlayerPresets", () => {
       { name: "Piano 1w", program: 0, bankMSB: 8 },
       { name: "Choir Aahs 2", program: 52, bankMSB: 8 },
       { name: "Standard", program: 0, isGMGSDrum: true },
+      { name: "Room", program: 8, isGMGSDrum: true },
+      { name: "Jazz", program: 32, isGMGSDrum: true },
+      { name: "Brush", program: 40, isGMGSDrum: true },
+      { name: "XG Standard", program: 0, bankMSB: 127 },
     ]);
 
     trimToPlayerPresets(bank);
 
-    expect(bank.presets.map((preset) => preset.name)).toEqual(["Grand Piano", "Choir Aahs", "Voice Oohs"]);
+    expect(bank.presets.map((preset) => preset.name)).toEqual(["Grand Piano", "Choir Aahs", "Voice Oohs", "Standard"]);
   });
 
-  it("throws when the bank lacks one of them", () => {
-    const bank = bankWith([
-      { name: "Grand Piano", program: 0 },
-      { name: "Choir Aahs", program: 52 },
-    ]);
-
-    expect(() => trimToPlayerPresets(bank)).toThrow(/Voice Oohs/);
+  it.each([
+    {
+      missing: "Voice Oohs",
+      presets: [
+        { name: "Grand Piano", program: 0 },
+        { name: "Choir Aahs", program: 52 },
+        { name: "Standard", program: 0, isGMGSDrum: true },
+      ],
+    },
+    {
+      missing: "Standard",
+      presets: [
+        { name: "Grand Piano", program: 0 },
+        { name: "Choir Aahs", program: 52 },
+        { name: "Voice Oohs", program: 53 },
+        { name: "Room", program: 8, isGMGSDrum: true },
+      ],
+    },
+  ])("throws when the bank has no $missing", ({ missing, presets }) => {
+    expect(() => trimToPlayerPresets(bankWith(presets))).toThrow(missing);
   });
 });
