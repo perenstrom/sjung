@@ -7,8 +7,12 @@ Sjung is choir/ensemble administration and repertoire planning software: it cata
 ### Groups & people
 
 **Group**:
-The organizational unit that owns everything else — its own People catalog, Pieces, and Set lists. Identified by a globally unique, URL-safe slug used for tenant routing (`/app/[groupSlug]/…`).
+The organizational unit that owns everything else — its own People catalog, Pieces, and Set lists. Identified by a globally unique Slug used for tenant routing (`/app/[groupSlug]/…`); unlike other Slugs, a Group's never changes once the Group is created.
 _Avoid_: Choir, Tenant, Organization — "Group" is deliberately ensemble-agnostic; nothing in the model assumes a choir specifically.
+
+**Slug**:
+The readable, URL-safe name a Group, Piece, Set list, Person, File or Announcement goes by in links, made from its name (a File's display name, an Announcement's title) and never typed by hand. Content Slugs are unique within their Group and kind and follow a rename, so a link by an old Slug stops working; an Announcement's is prefixed with its publishing date. See ADR-0011.
+_Avoid_: Handle, Permalink — a Slug is not permanent; the link that always works is the one by id.
 
 **User**:
 A login account. A User can belong to multiple Groups.
