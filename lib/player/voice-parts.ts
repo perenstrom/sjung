@@ -17,7 +17,7 @@ const PART_CHANNELS = Array.from({ length: 16 }, (_, channel) => channel).filter
   (channel) => channel !== PERCUSSION_CHANNEL && channel !== DRAWN_CHANNEL,
 );
 /** The most parts a score can have besides percussion, as each needs its own channel. */
-export const MAX_PARTS = PART_CHANNELS.length;
+const MAX_PARTS = PART_CHANNELS.length;
 
 /**
  * A score whose `parts` are what the mixer mixes, and `drawn` the tracks of
@@ -41,48 +41,44 @@ export type VoiceParts = { score: Score; drawn: number[]; parts: NotationPart[] 
  */
 export function voicePartsOf(at: AlphaTabModule, score: Score, settings: AlphaTab.Settings): VoiceParts {
   const drawn = score.tracks.map(({ index }) => index);
-  let count = score.tracks.filter((track) => !isPercussion(track)).length;
-  const splits = score.tracks.map((track) => {
-    const voices = voicesOf(track);
-    if (voices.length < 2 || count + voices.length - 1 > MAX_PARTS) return null;
-    count += voices.length - 1;
-    return voices;
-  });
-
+  let partCount = score.tracks.filter((track) => !isPercussion(track)).length;
   const parts: NotationPart[] = [];
-  const addPart = (name: string, percussion: boolean, track: number) =>
-    parts.push({ id: `track-${track}`, name: partName(name, parts.length), percussion, track });
-
-  if (splits.every((voices) => voices === null)) {
-    for (const track of score.tracks) addPart(track.name, isPercussion(track), track.index);
-    return { score, drawn, parts };
+  /** The hidden tracks to add, in order after the file's own. */
+  const hiddenTracks: { from: number; voice: number; name: string }[] = [];
+  for (const track of score.tracks) {
+    const voices = voicesOf(track);
+    if (voices.length < 2 || partCount + voices.length - 1 > MAX_PARTS) {
+      parts.push(partOf(track.name, isPercussion(track), track.index, parts.length));
+      continue;
+    }
+    partCount += voices.length - 1;
+    voices.forEach((voice, place) => {
+      const name = track.name.trim() && `${track.name.trim()} ${place + 1}`;
+      hiddenTracks.push({ from: track.index, voice, name });
+      parts.push(partOf(name, false, score.tracks.length + hiddenTracks.length - 1, parts.length));
+    });
   }
+  if (hiddenTracks.length === 0) return { score, drawn, parts };
 
   const json = at.model.JsonConverter.scoreToJsObject(score) as Json;
   const tracks = json.get("tracks") as Json[];
-  score.tracks.forEach((track, index) => {
-    const voices = splits[index];
-    if (!voices) {
-      addPart(track.name, isPercussion(track), index);
-      return;
-    }
-    voices.forEach((voice, place) => {
-      const hidden = tracks.length;
-      const name = track.name.trim() && `${track.name.trim()} ${place + 1}`;
-      tracks.push(voiceTrack(tracks[index], voice, name));
-      addPart(name, false, hidden);
-    });
-  });
+  for (const { from, voice, name } of hiddenTracks) tracks.push(voiceTrack(tracks[from], voice, name));
+  const splitScore = at.model.JsonConverter.jsObjectToScore(json, settings);
 
-  const voiced = at.model.JsonConverter.jsObjectToScore(json, settings);
-  const silenced = new Set(splits.flatMap((voices, index) => (voices ? [index] : [])));
+  const silenced = new Set(hiddenTracks.map(({ from }) => from));
   const channels = [...PART_CHANNELS];
-  for (const track of voiced.tracks) {
+  for (const track of splitScore.tracks) {
     if (isPercussion(track)) continue;
     if (silenced.has(track.index)) silence(at, track);
+    // Never runs out: no more than MAX_PARTS tracks are heard once a staff is split.
     else playOn(track, channels.shift() ?? DRAWN_CHANNEL);
   }
-  return { score: voiced, drawn, parts };
+  return { score: splitScore, drawn, parts };
+}
+
+/** The part a track plays, named as the file names it, or after its `place` among the parts. */
+function partOf(name: string, percussion: boolean, track: number, place: number): NotationPart {
+  return { id: `track-${track}`, name: partName(name, place), percussion, track };
 }
 
 /**
