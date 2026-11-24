@@ -13,7 +13,7 @@ Sjung's player (PER-443) plays MIDI files and notation files: MusicXML, `.mxl`, 
 
 ## Consequences
 
-- alphaTab mixes per track, not per voice. So after import, every staff with two voices gets one hidden track per voice, and the drawn track is muted. The prototype showed that these parts ("Women 1", "Women 2") work with solo, mute, the A–B loop and the cursor. Each heard track needs its own MIDI channel, so a score can have at most 14 parts.
+- alphaTab mixes per track, not per voice. So after import, every staff with two voices gets one hidden track per voice, and the drawn track is muted. The prototype showed that these parts ("Women 1", "Women 2") work with solo, mute, the A–B loop and the cursor. Each heard track needs its own MIDI channel, so a score can have at most 14 parts. Staves are split in order only while the parts fit, and the rest stay one part each. Where a lower voice has nothing in a bar, its part plays the upper voice there, since a unison is often written once.
 - alphaTab's MusicXML import gets parts of real choir scores wrong, so Sjung adjusts each score when loading it:
   - Bars shorter than their time signature are marked as short. MuseScore doesn't mark a counted pickup or a bar split around a repeat, and alphaTab pads such bars with silence.
   - Each note's verses are sorted by number. alphaTab orders verse lines by first appearance, and MuseScore can write verse 1, 3, 2.

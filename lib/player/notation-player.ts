@@ -55,7 +55,7 @@ export type ScoreEngine = {
   destroy(): void;
 };
 
-/** A part of the score to mix: one of its tracks. */
+/** A part of the score to mix: the track that plays it, which may be hidden (`voicePartsOf`). */
 export type NotationPart = Pick<PlayerPart, "id" | "name" | "percussion"> & { track: number };
 
 /**
@@ -66,7 +66,7 @@ const MAX_STALE_REPORTS = 40;
 
 /**
  * The notation engine (ADR-0010): alphaTab, with a score loaded, drawn and
- * timed as these `bars`, its `parts` one per track. alphaTab follows the
+ * timed as these `bars`, its `parts` one per heard track. alphaTab follows the
  * score with its cursor, loops a passage itself, and changes tempo without
  * changing pitch.
  *
