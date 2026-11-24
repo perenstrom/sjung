@@ -2,10 +2,11 @@ import type * as AlphaTab from "@coderline/alphatab";
 
 import { fetchBuffer, playThroughSilentSwitch } from "@/lib/player/loading";
 import { notationBarsOf } from "@/lib/player/notation-bars";
-import { createNotationPlayer, type NotationPart, type TickRange } from "@/lib/player/notation-player";
-import { type AlphaTabModule, isPercussion, playWith, scoreOf } from "@/lib/player/musicxml-score";
-import { IDLE_SNAPSHOT, partName, type Player } from "@/lib/player/player";
+import { createNotationPlayer, type TickRange } from "@/lib/player/notation-player";
+import { type AlphaTabModule, playWith, scoreOf } from "@/lib/player/musicxml-score";
+import { IDLE_SNAPSHOT, type Player } from "@/lib/player/player";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
+import { voicePartsOf } from "@/lib/player/voice-parts";
 
 type Score = AlphaTab.model.Score;
 
@@ -111,21 +112,19 @@ export async function loadNotationPlayer({
   };
 
   try {
-    const score = scoreOf(at, new Uint8Array(file), api.settings);
+    const { score, drawn, parts } = voicePartsOf(at, scoreOf(at, new Uint8Array(file), api.settings), api.settings);
     playWith(at, score, SOUND_PROGRAMS[IDLE_SNAPSHOT.sound]);
     const ready = untilReady(api, signal);
     api.loadSoundFont(new Uint8Array(soundfont), false);
-    // Draws every track (alphaTab draws only the first unless told) and generates the MIDI it plays.
-    api.renderScore(
-      score,
-      score.tracks.map(({ index }) => index),
-    );
+    // Draws the file's own tracks (alphaTab draws only the first unless told, and the
+    // hidden voice tracks never) and generates the MIDI it plays, of every track.
+    api.renderScore(score, drawn);
     await ready;
 
     const lookups = api.tickCache?.masterBars ?? [];
     return createNotationPlayer(scoreEngine(at, api, score), {
       bars: notationBarsOf(lookups, score.tempo),
-      parts: partsOf(score),
+      parts,
     });
   } catch (error) {
     destroy();
@@ -235,20 +234,6 @@ function untilReady(api: AlphaTab.AlphaTabApi, signal: AbortSignal): Promise<voi
       settle();
     }
   });
-}
-
-/**
- * The parts of a score: one per track, named as in the file, or "Stämma n"
- * after its place when it has no name. A track whose staves are all
- * percussion is percussion.
- */
-function partsOf(score: Score): NotationPart[] {
-  return score.tracks.map((track, index) => ({
-    id: `track-${index}`,
-    name: partName(track.name, index),
-    percussion: isPercussion(track),
-    track: index,
-  }));
 }
 
 /** The first beat of bar `first` and the last of bar `last` in the score's first staff, to shade them. */
