@@ -141,19 +141,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** A row found from a URL segment, and the Slug its URL has now. */
 export type SegmentMatch = { id: string; slug: string };
 
-const SLUG_ONLY = { id: true, slug: true } as const;
+const ID_AND_SLUG = { id: true, slug: true } as const;
 
 /** The row of this kind in the Group with this Slug, if any. */
 function findBySlugInGroup(groupId: string, kind: SluggedKind, slug: string): Promise<SegmentMatch | null> {
   switch (kind) {
     case "piece":
-      return prisma.piece.findUnique({ where: { groupId_slug: { groupId, slug } }, select: SLUG_ONLY });
+      return prisma.piece.findUnique({ where: { groupId_slug: { groupId, slug } }, select: ID_AND_SLUG });
     case "setList":
-      return prisma.setList.findUnique({ where: { groupId_slug: { groupId, slug } }, select: SLUG_ONLY });
+      return prisma.setList.findUnique({ where: { groupId_slug: { groupId, slug } }, select: ID_AND_SLUG });
     case "person":
-      return prisma.person.findUnique({ where: { groupId_slug: { groupId, slug } }, select: SLUG_ONLY });
+      return prisma.person.findUnique({ where: { groupId_slug: { groupId, slug } }, select: ID_AND_SLUG });
     case "file":
-      return prisma.file.findFirst({ where: { slug, piece: { groupId } }, select: SLUG_ONLY });
+      return prisma.file.findFirst({ where: { slug, piece: { groupId } }, select: ID_AND_SLUG });
   }
 }
 
@@ -170,12 +170,12 @@ export async function findBySegmentInGroup(
 ): Promise<SegmentMatch | null> {
   const bySlug = await findBySlugInGroup(groupId, kind, segment);
   if (bySlug || !UUID.test(segment)) return bySlug;
-  return findInGroupOrNull(groupId, kind, segment, { select: SLUG_ONLY });
+  return findInGroupOrNull(groupId, kind, segment, { select: ID_AND_SLUG });
 }
 
 /** {@link findBySegmentInGroup} for Announcements, which belong to no Group. */
 export async function findAnnouncementBySegment(segment: string): Promise<SegmentMatch | null> {
-  const bySlug = await prisma.announcement.findUnique({ where: { slug: segment }, select: SLUG_ONLY });
+  const bySlug = await prisma.announcement.findUnique({ where: { slug: segment }, select: ID_AND_SLUG });
   if (bySlug || !UUID.test(segment)) return bySlug;
-  return prisma.announcement.findUnique({ where: { id: segment }, select: SLUG_ONLY });
+  return prisma.announcement.findUnique({ where: { id: segment }, select: ID_AND_SLUG });
 }

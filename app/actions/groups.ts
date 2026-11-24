@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
-import { firstFreeSlug } from "@/lib/slug";
+import { firstFreeSlug, slugsFrom } from "@/lib/slug";
 import { changeMember, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
@@ -23,10 +23,7 @@ import {
   parseMemberUserIdFromFormData,
   parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
-import {
-  revalidateAppAndMyGroupsWithGroupRoute,
-  revalidateGroupMembersRoutes,
-} from "@/lib/revalidate/group-routes";
+import { revalidateAppAndMyGroupsWithGroupRoute, revalidateGroupMembersRoutes } from "@/lib/revalidate/group-routes";
 
 /** The viewer's Groups by name, with what they may do in each. */
 export async function getGroups() {
@@ -58,7 +55,7 @@ export async function createGroup(formData: FormData) {
 
   const slug = await prisma.$transaction(async (tx) => {
     const clashes = await tx.group.findMany({
-      where: { OR: [{ slug: base }, { slug: { startsWith: `${base}-` } }] },
+      where: slugsFrom(base),
       select: { slug: true },
     });
     const taken = new Set(clashes.map((group) => group.slug));

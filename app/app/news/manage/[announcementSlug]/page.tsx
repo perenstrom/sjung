@@ -14,6 +14,7 @@ export default async function EditAnnouncementPage({ params }: { params: Promise
   if (!match) {
     notFound();
   }
+  // A link by id always works and moves to the Slug URL (ADR-0011).
   if (match.slug !== segment) {
     permanentRedirect(editAnnouncementPath(match));
   }

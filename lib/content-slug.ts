@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@/app/generated/prisma/client";
-import { announcementSlug, firstFreeSlug, slugifyName } from "@/lib/slug";
+import { announcementSlug, firstFreeSlug, slugifyName, slugsFrom } from "@/lib/slug";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -17,7 +17,7 @@ const FALLBACK: Record<SluggedKind, string> = {
 /** Every Slug of this kind in the Group that is `base` or numbered from it, except `exceptId`'s own. */
 async function slugsTaken(db: Db, kind: SluggedKind, groupId: string, base: string, exceptId?: string) {
   const where = {
-    OR: [{ slug: base }, { slug: { startsWith: `${base}-` } }],
+    ...slugsFrom(base),
     ...(exceptId ? { NOT: { id: exceptId } } : {}),
   };
   const select = { slug: true } as const;
@@ -86,7 +86,7 @@ export async function freeAnnouncementSlug(
   const base = announcementSlug(title, publishedAt);
   const rows = await db.announcement.findMany({
     where: {
-      OR: [{ slug: base }, { slug: { startsWith: `${base}-` } }],
+      ...slugsFrom(base),
       ...(exceptId ? { NOT: { id: exceptId } } : {}),
     },
     select: { slug: true },

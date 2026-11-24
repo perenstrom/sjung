@@ -13,6 +13,11 @@ export function slugifyName(raw: string, fallback: string): string {
   return candidate.length > 0 ? candidate : fallback;
 }
 
+/** Matches the Slugs `firstFreeSlug` weighs for `base`: `base` itself and those numbered from it. */
+export function slugsFrom(base: string) {
+  return { OR: [{ slug: base }, { slug: { startsWith: `${base}-` } }] };
+}
+
 /** `base`, or on a clash the first of `base-2`, `base-3`, … that isn't taken. */
 export function firstFreeSlug(base: string, isTaken: (slug: string) => boolean): string {
   for (let n = 1; ; n += 1) {
