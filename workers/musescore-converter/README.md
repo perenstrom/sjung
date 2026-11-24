@@ -46,11 +46,18 @@ The server is `server.ts`, run by Node's built-in TypeScript support, so it has 
 
 The worker is one Coolify app shared by `sjung-staging` and `sjung-production`, on the same server.
 
-1. Add a resource from this repository with the **Dockerfile** build pack, base directory `/workers/musescore-converter` and branch `main`.
-2. Give it **no domain** and no published ports, so it can't be reached from the internet. The app reaches it over Coolify's Docker network (`coolify` by default) at `http://<worker host>:8080`. Coolify's container names change with each deploy, so use a hostname that survives a redeploy, and check it in Coolify's network settings for the resource.
-3. Set a memory limit of **512 MB** (Resource Limits). The host has swapped before, and one conversion needs about 260 MB.
-4. Deploy, then check from the app's host that a real score converts over that network: `docker run --rm --network coolify -v "$PWD/score.mscz:/score.mscz:ro" curlimages/curl -s -o /dev/null -w '%{http_code}\n' --data-binary @/score.mscz http://<worker host>:8080/convert` should print `200`.
-5. Set the runtime variable `MUSESCORE_CONVERTER_URL` to `http://<worker host>:8080` on both `sjung-staging` and `sjung-production`. The app starts calling it in PER-478.
+1. Add an Application from this repository, through the same GitHub App source as the Sjung apps, on the default `coolify` destination. Use branch `main`, build pack **Dockerfile**, Base Directory `/workers/musescore-converter` and Dockerfile Location `/Dockerfile`.
+2. Keep it off the internet: delete any domain Coolify generated on the Domains page, leave Port Mappings empty, and set Ports Exposes to `8080` (internal only).
+3. Give it a stable hostname: under General > Network, set Network Aliases to `musescore-converter`. Coolify's generated container names change with each deploy; the alias doesn't. The app then reaches the worker at `http://musescore-converter:8080`.
+4. Under Resource Limits, set Memory limit and Memory and swap limit both to `512m`, so it can't swap. One conversion needs about 260 MB, and the host has swapped before.
+5. Under Advanced > Deployment, set Auto deploy to Manual deployments only, so pushes to `main` don't rebuild it.
+6. Deploy. Then, on the server, check that a real score converts over the Docker network; this should print `200`:
+
+   ```bash
+   docker run --rm --network coolify -v "$PWD/score.mscz:/score.mscz:ro" curlimages/curl -s -o /dev/null -w '%{http_code}\n' --data-binary @/score.mscz http://musescore-converter:8080/convert
+   ```
+
+7. Set the runtime variable `MUSESCORE_CONVERTER_URL` to `http://musescore-converter:8080` on both `sjung-staging` and `sjung-production`. The app starts calling it in PER-478.
 
 Building on the host needs about 1–2 GB of build cache on top of the image, because the build downloads and unpacks a 190 MB AppImage. Redeploy it by hand when this folder changes; it is not part of the app's CI deploys. On stop it finishes the running and waiting conversions first (at most about 2.5 minutes with the defaults), so a shorter stop grace period cuts them off; the app retries a failed conversion (ADR-0009).
 
