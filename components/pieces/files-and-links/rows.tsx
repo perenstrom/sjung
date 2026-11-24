@@ -2,7 +2,9 @@
 
 import { Download, ExternalLink, FileText, Play, Trash2 } from "lucide-react";
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import { type ComponentProps, type ReactNode, useState, useTransition } from "react";
+
+import { retryPieceFileConversion } from "@/app/actions/files";
 
 import { EditPieceLinkPopover } from "@/components/pieces/EditPieceLinkPopover";
 import { noteOpenedFromList } from "@/components/player/closePlayer";
@@ -14,6 +16,7 @@ import { ReplacePieceFilePopover } from "@/components/pieces/ReplacePieceFilePop
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
 import { TruncatedTooltip } from "@/components/TruncatedTooltip";
 import { Button } from "@/components/ui/button";
+import { getThrownMessage } from "@/lib/getThrownMessage";
 import { fileDownloadHref, playerHref } from "@/lib/pieces/href";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +30,8 @@ export type RowContext = {
   setListPieceId: string | undefined;
   layout: "detail" | "inline";
   touch: boolean;
+  /** Whether the viewer has Manage content, in Edit mode or not. */
+  canManage: boolean;
   isEditing: boolean;
   editor: OpenEditor;
   setEditor: (target: EditorTarget, opening: boolean) => void;
@@ -80,7 +85,7 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
 
   if (ctx.layout === "inline") {
     return (
-      <InlineRow touch={ctx.touch} error={error}>
+      <InlineRow touch={ctx.touch} error={error} below={<FileConversionRetry ctx={ctx} file={file} />}>
         <FileIcon file={file} />
         <TruncatedTooltip content={file.displayName}>
           <FileOpenLink
@@ -117,6 +122,7 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
         {opensPlayer(file) ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
         {actions === null ? null : <span className="inline-flex items-center">{actions}</span>}
       </span>
+      <FileConversionRetry ctx={ctx} file={file} />
     </li>
   );
 }
@@ -193,10 +199,22 @@ export function LinkRow({ ctx, item: link, removing, error, onRemove }: RowProps
 }
 
 /** A row in a table cell or touch list: 28px, or 40px for touch, so the first lines up with its neighbours. */
-function InlineRow({ touch, error, children }: { touch: boolean; error: string | undefined; children: ReactNode }) {
+function InlineRow({
+  touch,
+  error,
+  below,
+  children,
+}: {
+  touch: boolean;
+  error: string | undefined;
+  /** Shown on its own line under the row, if it renders anything. */
+  below?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <li className="space-y-1">
       <div className={cn("flex min-w-0 items-center gap-1", touch ? "min-h-10" : "min-h-7")}>{children}</div>
+      {below}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </li>
   );
@@ -229,6 +247,52 @@ function FilePlaybackNote({ file }: { file: PieceFileListItem }) {
   return file.playback === "preparing" ? (
     <span className="shrink-0 text-xs text-muted-foreground">Förbereds…</span>
   ) : null;
+}
+
+/**
+ * Lets someone with Manage content prepare a MuseScore File for the player
+ * again (ADR-0009): one that failed, saying so and suggesting MusicXML
+ * instead, or in Edit mode one still being prepared, which a restart may have
+ * left that way. A singer sees neither: to them a failed File is an ordinary one.
+ */
+function FileConversionRetry({ ctx, file }: { ctx: RowContext; file: PieceFileListItem }) {
+  const [retrying, startRetrying] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  // Edit mode is only ever on for someone with Manage content.
+  const showFailure = file.playback === "failed" && ctx.canManage;
+  if (!showFailure && !(file.playback === "preparing" && ctx.isEditing)) return null;
+
+  function retry() {
+    setError(null);
+    startRetrying(async () => {
+      try {
+        const formData = new FormData();
+        formData.set("groupSlug", ctx.groupSlug);
+        formData.set("fileId", file.id);
+        await retryPieceFileConversion(formData);
+        ctx.onRefresh();
+      } catch (err) {
+        setError(getThrownMessage(err, "Kunde inte försöka igen"));
+      }
+    });
+  }
+
+  const button = (
+    <button
+      type="button"
+      className="text-primary underline-offset-4 hover:underline disabled:opacity-50"
+      disabled={retrying}
+      onClick={retry}
+    >
+      Försök igen
+    </button>
+  );
+  return (
+    <span className={cn("text-xs text-muted-foreground", ctx.layout === "inline" ? "block" : "basis-full")}>
+      {showFailure ? <>Kunde inte förberedas. {button} eller ladda upp den som MusicXML i stället.</> : button}
+      {error ? <span className="block text-destructive">{error}</span> : null}
+    </span>
+  );
 }
 
 /** Whether the File's name opens the player, with a separate download button, rather than downloading it. */

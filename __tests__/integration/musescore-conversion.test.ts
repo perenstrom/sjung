@@ -17,6 +17,7 @@ import {
   deletePieceFile,
   finalizePieceFileReplace,
   finalizePieceFileUpload,
+  retryPieceFileConversion,
 } from "@/app/actions/files";
 import * as fileStore from "@/lib/pieces/file-store";
 import { resetAfterTasks, runAfterTasks, takeAfterTasks } from "../support/after";
@@ -28,6 +29,7 @@ import {
   failConversionsWith,
   holdConversions,
   makeConverterUnreachable,
+  resetFakeMuseScoreConverter,
 } from "../support/fake-musescore-converter";
 import { putStoredObject, storedBody, storedKeys } from "../support/fake-object-storage";
 import { createGroup, createMember, createPiece } from "../support/fixtures";
@@ -190,6 +192,70 @@ describe("replacing a MuseScore File", () => {
       convertedStoragePath: null,
     });
     expect(storedKeys()).toEqual([newPath]);
+  });
+});
+
+describe("retrying a MuseScore File's conversion", () => {
+  function retry(file: File) {
+    return retryPieceFileConversion(formData({ groupSlug: group.slug, fileId: file.id }));
+  }
+
+  it("turns a failed File pending, then ready when the worker succeeds", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    failConversionsWith(422);
+    const file = await uploadFile("Partitur.mscz", "partitur");
+    await runAfterTasks();
+    resetFakeMuseScoreConverter();
+
+    await retry(file);
+
+    expect(await reload(file)).toMatchObject({ conversionState: FileConversionState.PENDING });
+
+    await runAfterTasks();
+
+    const converted = await reload(file);
+    expect(converted.conversionState).toBe(FileConversionState.READY);
+    expect(text(storedBody(converted.convertedStoragePath!))).toBe(`${CONVERTED_PREFIX}partitur`);
+  });
+
+  it("converts a File left pending by a restart", async () => {
+    const file = await uploadFile("Partitur.mscz", "partitur");
+    resetAfterTasks();
+
+    await retry(file);
+    await runAfterTasks();
+
+    expect(await reload(file)).toMatchObject({ conversionState: FileConversionState.READY });
+  });
+
+  it("while the File is being converted, keeps the copy whichever conversion finishes last", async () => {
+    const file = await uploadFile("Partitur.mscz", "partitur");
+    const release = holdConversions();
+    const arrived = conversionArrived();
+    const convertFirst = takeAfterTasks()();
+    await arrived;
+
+    await retry(file);
+    const convertAgain = takeAfterTasks()();
+    release();
+    await Promise.all([convertFirst, convertAgain]);
+
+    const converted = await reload(file);
+    expect(converted.conversionState).toBe(FileConversionState.READY);
+    expect(storedKeys()).toEqual([file.storagePath, converted.convertedStoragePath].sort());
+  });
+
+  it.each([
+    { case: "is ready", file: () => convertedFile() },
+    { case: "is played as uploaded", file: () => uploadFile("Partitur.mxl", "partitur") },
+  ])("leaves a File that $case as it is", async ({ file: make }) => {
+    const file = await make();
+
+    await retry(file);
+    await runAfterTasks();
+
+    expect(await reload(file)).toEqual(file);
+    expect(convertedScores()).toHaveLength(file.conversionState === null ? 0 : 1);
   });
 });
 
