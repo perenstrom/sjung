@@ -2,8 +2,8 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { PlayerEngine } from "@/lib/file-formats";
-import { DEFAULT_GAIN } from "@/lib/player/mix";
-import { IDLE_SNAPSHOT, type Loop, type PlayerPart, type PlayerSnapshot } from "@/lib/player/player";
+import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
+import { part } from "@/lib/testing/player";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
 import { PartsControls, RepeatControls, TempoControls } from "./controls";
@@ -93,10 +93,6 @@ describe("PlayerScreen for a MIDI File", () => {
     expect(html).toMatch(/data-played[^>]*style="width:50%"/);
   });
 });
-
-function part(name: string, change: Partial<PlayerPart> = {}): PlayerPart {
-  return { id: name, name, percussion: false, gain: DEFAULT_GAIN, muted: false, solo: false, ...change };
-}
 
 describe("PlayerScreen with parts", () => {
   const parts = [part("Sopran"), part("Alt")];

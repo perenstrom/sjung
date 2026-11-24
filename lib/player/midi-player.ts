@@ -1,6 +1,6 @@
 import { browserFrames, browserTimer, type FrameScheduler, type Timer } from "@/lib/player/frames";
 import type { MidiPart } from "@/lib/player/midi-parts";
-import { audibleGain, DEFAULT_GAIN } from "@/lib/player/mix";
+import { audibleGain, DEFAULT_GAIN, EQUAL_MIX } from "@/lib/player/mix";
 import {
   clampTempo,
   IDLE_SNAPSHOT,
@@ -59,14 +59,7 @@ export function createMidiPlayer(
     timer = browserTimer,
   }: { bars: readonly number[]; parts: readonly MidiPart[]; frames?: FrameScheduler; timer?: Timer },
 ): Player {
-  const parts: PlayerPart[] = midiParts.map(({ id, name, percussion }) => ({
-    id,
-    name,
-    percussion,
-    gain: DEFAULT_GAIN,
-    muted: false,
-    solo: false,
-  }));
+  const parts: PlayerPart[] = midiParts.map(({ id, name, percussion }) => ({ id, name, percussion, ...EQUAL_MIX }));
   const store = createSnapshotStore({ ...IDLE_SNAPSHOT, status: "ready", duration: sequencer.duration, bars, parts });
   const { update } = store;
   let frame: number | null = null;

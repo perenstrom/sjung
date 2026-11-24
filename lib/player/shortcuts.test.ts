@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_GAIN } from "@/lib/player/mix";
-import { IDLE_SNAPSHOT, type Loop, type PlayerPart, type PlayerSnapshot } from "@/lib/player/player";
+import { EQUAL_MIX } from "@/lib/player/mix";
+import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
+import { part } from "@/lib/testing/player";
 import { type KeyPress, listedShortcuts, shortcutFor, type ShortcutContext } from "@/lib/player/shortcuts";
 
 function context(snapshot: Partial<PlayerSnapshot> = {}, rest: Partial<Omit<ShortcutContext, "snapshot">> = {}) {
@@ -234,20 +235,11 @@ describe("shortcutFor in a file with bars", () => {
 });
 
 describe("shortcutFor in a file with parts", () => {
-  const part = (name: string, change: Partial<PlayerPart> = {}): PlayerPart => ({
-    id: name.toLowerCase(),
-    name,
-    percussion: false,
-    gain: DEFAULT_GAIN,
-    muted: false,
-    solo: false,
-    ...change,
-  });
   const parts = [part("Sopran"), part("Alt", { solo: true }), part("Tenor", { gain: 0.2, muted: true })];
 
   it.each([
-    { key: "1", expected: { action: { type: "part", partId: "sopran", change: { solo: true } }, hud: "Solo: Sopran" } },
-    { key: "2", expected: { action: { type: "part", partId: "alt", change: { solo: false } }, hud: "Solo av: Alt" } },
+    { key: "1", expected: { action: { type: "part", partId: "Sopran", change: { solo: true } }, hud: "Solo: Sopran" } },
+    { key: "2", expected: { action: { type: "part", partId: "Alt", change: { solo: false } }, hud: "Solo av: Alt" } },
   ])("$key toggles solo on part $key", ({ key, expected }) => {
     expect(shortcutFor(press(key), context({ parts }))).toEqual(expected);
   });
@@ -259,10 +251,8 @@ describe("shortcutFor in a file with parts", () => {
   });
 
   it("0 sets all parts equal", () => {
-    const equal = { gain: DEFAULT_GAIN, muted: false, solo: false };
-
     expect(shortcutFor(press("0"), context({ parts }))).toEqual({
-      action: { type: "mix", mix: { sopran: equal, alt: equal, tenor: equal } },
+      action: { type: "mix", mix: { Sopran: EQUAL_MIX, Alt: EQUAL_MIX, Tenor: EQUAL_MIX } },
       hud: "Alla stämmor lika",
     });
   });

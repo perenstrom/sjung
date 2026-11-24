@@ -236,11 +236,6 @@ const SOUNDS: readonly { sound: PlayerSound; label: string }[] = [
   { sound: "piano", label: "Piano" },
 ];
 
-/** Whether the sound or the mix has been changed from the default: piano, all parts equal. */
-export function partsChanged(parts: readonly PlayerPart[], sound: PlayerSound): boolean {
-  return sound !== "piano" || presetOf(parts, null) !== "equal";
-}
-
 /**
  * The Stämmor sheet: the Kör | Piano switch, "Min stämma" with its presets,
  * then a row per part with volume, mute (M) and solo (S). `mine` is the

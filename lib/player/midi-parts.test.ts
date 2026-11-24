@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { midiPartsOf } from "@/lib/player/midi-parts";
+import { midiPartsOf, PERCUSSION_CHANNEL } from "@/lib/player/midi-parts";
 import { midiFile, note, tempo, trackName } from "@/lib/testing/midi";
-
-const PERCUSSION = 9;
 
 describe("midiPartsOf", () => {
   it("makes each track with notes a part, named as in the file, leaving out the tempo track", () => {
@@ -31,7 +29,10 @@ describe("midiPartsOf", () => {
   });
 
   it("marks a track that only plays drums as percussion", () => {
-    const midi = midiFile([trackName("Bas"), ...note(0, 480, 3)], [trackName("Trummor"), ...note(0, 480, PERCUSSION)]);
+    const midi = midiFile(
+      [trackName("Bas"), ...note(0, 480, 3)],
+      [trackName("Trummor"), ...note(0, 480, PERCUSSION_CHANNEL)],
+    );
 
     expect(midiPartsOf(midi).map(({ name, percussion }) => ({ name, percussion }))).toEqual([
       { name: "Bas", percussion: false },

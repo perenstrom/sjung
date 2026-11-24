@@ -16,6 +16,7 @@ import {
   type Player,
   type PlayerSnapshot,
 } from "@/lib/player/player";
+import { mixChanged } from "@/lib/player/mix";
 import { listedShortcuts } from "@/lib/player/shortcuts";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,6 @@ import {
   Kbd,
   NoScoreNote,
   PartsControls,
-  partsChanged,
   passageStyle,
   PlayButton,
   type PlayerPanel,
@@ -224,7 +224,7 @@ export function DesktopTransport({
             {...panelProps("parts")}
             icon={<SlidersHorizontal className="size-4" aria-hidden />}
             label="Stämmor"
-            active={partsChanged(snapshot.parts, snapshot.sound)}
+            active={mixChanged(snapshot.parts, snapshot.sound)}
             title="Stämmor"
             shortcut="1–9 / 0"
             wide

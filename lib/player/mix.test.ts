@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { audibleGain, DEFAULT_GAIN, type MixPreset, presetMix, presetOf, presetOnChoosing } from "@/lib/player/mix";
+import {
+  audibleGain,
+  DEFAULT_GAIN,
+  mixChanged,
+  type MixPreset,
+  presetMix,
+  presetOf,
+  presetOnChoosing,
+} from "@/lib/player/mix";
 import type { PlayerPart } from "@/lib/player/player";
-
-function part(id: string, change: Partial<PlayerPart> = {}): PlayerPart {
-  return { id, name: id, percussion: false, gain: DEFAULT_GAIN, muted: false, solo: false, ...change };
-}
+import { part } from "@/lib/testing/player";
 
 const parts = [part("S"), part("A"), part("T"), part("B")];
 
@@ -111,5 +116,13 @@ describe("presetOnChoosing", () => {
 
   it("sets all parts equal when I let go of my part", () => {
     expect(presetOnChoosing(mixed("without", "A"), "A", null)).toBe("equal");
+  });
+});
+
+describe("mixChanged", () => {
+  it("is false only for piano with all parts equal", () => {
+    expect(mixChanged(parts, "piano")).toBe(false);
+    expect(mixChanged(parts, "choir")).toBe(true);
+    expect(mixChanged(mixed("lift", "A"), "piano")).toBe(true);
   });
 });

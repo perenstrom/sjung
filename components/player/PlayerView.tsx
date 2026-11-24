@@ -17,6 +17,7 @@ import {
   type Player,
   type PlayerSnapshot,
 } from "@/lib/player/player";
+import { mixChanged } from "@/lib/player/mix";
 import { loadWaveform } from "@/lib/player/waveform";
 import type { PlayerData, PlayerFileOption } from "@/lib/pieces/player";
 
@@ -25,7 +26,6 @@ import {
   DockButton,
   NoScoreNote,
   PartsControls,
-  partsChanged,
   PlayButton,
   type PlayerPanel,
   RepeatControls,
@@ -269,7 +269,7 @@ export function PlayerScreen({
             <DockButton
               icon={<SlidersHorizontal className="size-5" aria-hidden />}
               label="Stämmor"
-              active={partsChanged(snapshot.parts, snapshot.sound)}
+              active={mixChanged(snapshot.parts, snapshot.sound)}
               onClick={() => setSheet("parts")}
             />
           ) : null}

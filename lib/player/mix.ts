@@ -1,4 +1,4 @@
-import type { Player, PlayerPart } from "@/lib/player/player";
+import type { Player, PlayerPart, PlayerSound } from "@/lib/player/player";
 
 /** A part's volume, mute and solo: what the mixer changes. */
 export type PartMix = Pick<PlayerPart, "gain" | "muted" | "solo">;
@@ -8,6 +8,9 @@ export const DEFAULT_GAIN = 0.8;
 /** Framhäv min: my part's volume, and every other part's. */
 const LIFTED_GAIN = 1;
 const LOWERED_GAIN = 0.3;
+
+/** Every part's mix until the singer changes it, and after Alla lika. */
+export const EQUAL_MIX: PartMix = { gain: DEFAULT_GAIN, muted: false, solo: false };
 
 /**
  * The mixer's presets, for the singer's own part ("Min stämma"): Alla lika,
@@ -36,16 +39,15 @@ export function presetMix(
 }
 
 function partMix(preset: MixPreset, isMine: boolean): PartMix {
-  const equal = { gain: DEFAULT_GAIN, muted: false, solo: false };
   switch (preset) {
     case "equal":
-      return equal;
+      return EQUAL_MIX;
     case "lift":
-      return { ...equal, gain: isMine ? LIFTED_GAIN : LOWERED_GAIN };
+      return { ...EQUAL_MIX, gain: isMine ? LIFTED_GAIN : LOWERED_GAIN };
     case "without":
-      return { ...equal, muted: isMine };
+      return { ...EQUAL_MIX, muted: isMine };
     case "only":
-      return { ...equal, muted: !isMine };
+      return { ...EQUAL_MIX, muted: !isMine };
   }
 }
 
@@ -63,6 +65,11 @@ export function presetOf(parts: readonly PlayerPart[], mine: string | null): Mix
     });
   };
   return MIX_PRESETS.map(({ preset }) => preset).find(matches) ?? null;
+}
+
+/** Whether the sound or the mix has been changed from the default: piano, all parts equal. */
+export function mixChanged(parts: readonly PlayerPart[], sound: PlayerSound): boolean {
+  return sound !== "piano" || presetOf(parts, null) !== "equal";
 }
 
 /**
