@@ -1,11 +1,6 @@
-import {
-  clampTempo,
-  IDLE_SNAPSHOT,
-  isRepeating,
-  type Loop,
-  type Player,
-  type PlayerSnapshot,
-} from "@/lib/player/player";
+import { browserFrames, type FrameScheduler } from "@/lib/player/frames";
+import { clampTempo, isRepeating, type Loop, type Player } from "@/lib/player/player";
+import { createSnapshotStore } from "@/lib/player/snapshot-store";
 
 /** The parts of an `<audio>` element the audio player uses. */
 export type MediaElement = Pick<
@@ -22,17 +17,6 @@ export type MediaElement = Pick<
   | "removeEventListener"
 >;
 
-/** How the player follows the playhead while playing; animation frames in a browser. */
-export type FrameScheduler = {
-  requestFrame: (callback: () => void) => number;
-  cancelFrame: (handle: number) => void;
-};
-
-const browserFrames: FrameScheduler = {
-  requestFrame: (callback) => requestAnimationFrame(callback),
-  cancelFrame: (handle) => cancelAnimationFrame(handle),
-};
-
 /**
  * The audio engine: one plain `<audio>` element, with
  * `preservesPitch` so the tempo never changes the pitch. No decoding and no
@@ -44,16 +28,9 @@ const browserFrames: FrameScheduler = {
  * stops running frames, as with the screen locked.
  */
 export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = browserFrames): Player {
-  let snapshot: PlayerSnapshot = IDLE_SNAPSHOT;
-  const listeners = new Set<() => void>();
+  const store = createSnapshotStore();
+  const { update } = store;
   let frame: number | null = null;
-
-  function update(change: Partial<PlayerSnapshot>) {
-    const changed = (Object.keys(change) as (keyof PlayerSnapshot)[]).some((key) => change[key] !== snapshot[key]);
-    if (!changed) return;
-    snapshot = { ...snapshot, ...change };
-    for (const listener of listeners) listener();
-  }
 
   function durationOf(): number {
     return Number.isFinite(media.duration) ? media.duration : 0;
@@ -61,7 +38,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
 
   /** Jumps back to the passage's start once playback has reached its end. */
   function followPlayhead() {
-    const { loop } = snapshot;
+    const { loop } = store.get();
     if (isRepeating(loop) && !media.paused && media.currentTime >= loop.end) {
       media.currentTime = loop.start;
     }
@@ -91,7 +68,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
       update({ playing: false, position: media.currentTime });
     },
     ended: () => {
-      const { loop } = snapshot;
+      const { loop } = store.get();
       if (isRepeating(loop)) {
         // A passage that ends with the file: the element has stopped, so start it again.
         media.currentTime = loop.start;
@@ -112,13 +89,10 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
   if (Number.isFinite(media.duration)) events.loadedmetadata();
 
   return {
-    getSnapshot: () => snapshot,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
+    getSnapshot: store.get,
+    subscribe: store.subscribe,
     play() {
-      const { loop } = snapshot;
+      const { loop } = store.get();
       // Pressing play outside a whole passage starts at its beginning.
       if (isRepeating(loop) && (media.currentTime < loop.start || media.currentTime >= loop.end)) {
         media.currentTime = loop.start;
@@ -147,7 +121,7 @@ export function createAudioPlayer(media: MediaElement, frames: FrameScheduler = 
       stopFollowing();
       for (const [type, handler] of Object.entries(events)) media.removeEventListener(type, handler);
       media.pause();
-      listeners.clear();
+      store.clear();
     },
   };
 }
