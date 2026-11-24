@@ -198,7 +198,7 @@ export function RepeatControls({ passage, run }: { passage: PlayerControlsView["
         {passage.markButton === null ? null : (
           <Button
             type="button"
-            onClick={() => run({ type: passage.markButton === "Slut här" ? "markEnd" : "markStart" })}
+            onClick={() => run({ type: passage.marking ? "markEnd" : "markStart" })}
             className="flex-1"
           >
             {passage.markButton}

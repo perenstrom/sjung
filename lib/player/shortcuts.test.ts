@@ -36,8 +36,8 @@ describe("commandFor", () => {
     { key: "+", command: { type: "stepTempo", by: 1 } },
     { key: "=", command: { type: "stepTempo", by: 1 } },
     { key: "?", shiftKey: true, command: { type: "help" } },
-    { key: "1", snapshot: parts, command: { type: "toggleSolo", number: 1 } },
-    { key: "3", snapshot: parts, command: { type: "toggleSolo", number: 3 } },
+    { key: "1", snapshot: parts, command: { type: "toggleSolo", partNumber: 1 } },
+    { key: "3", snapshot: parts, command: { type: "toggleSolo", partNumber: 3 } },
     { key: "0", snapshot: parts, command: { type: "applyPreset", preset: "equal" } },
   ])("$key (Shift: $shiftKey) asks for $command", ({ key, shiftKey = false, snapshot, command }) => {
     expect(commandFor(press(key, { shiftKey }), context(snapshot))).toEqual(command);

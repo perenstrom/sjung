@@ -24,6 +24,10 @@ import {
   type PlayerPart,
   type PlayerSnapshot,
   type PlayerSound,
+  startAt,
+  startAtBar,
+  endAt,
+  endAtBar,
 } from "@/lib/player/player";
 
 /** How far one step of the tempo moves it, in percent: − / + and the slider. */
@@ -44,8 +48,8 @@ export type PlayerCommand =
   | { type: "stopRepeating" }
   | { type: "stepTempo"; by: number }
   | { type: "setTempo"; percent: number }
-  /** Solo on part `number` (counted from 1), or off again. */
-  | { type: "toggleSolo"; number: number }
+  /** Solo on part `partNumber` (counted from 1), or off again. */
+  | { type: "toggleSolo"; partNumber: number }
   | { type: "setPart"; partId: string; change: Partial<PartMix> }
   /** The singer's own part (Min stämma), or `null` to let go of it. */
   | { type: "chooseMine"; partId: string | null }
@@ -190,7 +194,11 @@ function runCommand(
       player.seek(0);
       return "Till början";
     case "markStart":
-      return setMarked(player, startAt(passage, bars.length > 0 ? barStartAt(bars, position) : position), snapshot);
+      return setMarked(
+        player,
+        bars.length > 0 ? startAtBar(passage, barAt(bars, position) ?? 1, bars) : startAt(passage, position),
+        snapshot,
+      );
     case "markEnd": {
       const marked =
         bars.length > 0 ? endAtBar(passage, barAt(bars, position) ?? 1, { bars, duration }) : endAt(passage, position);
@@ -207,7 +215,7 @@ function runCommand(
       return `Tempo ${percent} %`;
     }
     case "toggleSolo": {
-      const part = parts[command.number - 1];
+      const part = parts[command.partNumber - 1];
       if (!part) return null;
       player.setPart(part.id, { solo: !part.solo });
       return `${part.solo ? "Solo av" : "Solo"}: ${part.name}`;
@@ -233,9 +241,7 @@ function runCommand(
 /** Sets `passage` on `player`, and says so, by bar in a file with bars. */
 function setMarked(player: Player, passage: Passage, { bars, barNumbers }: PlayerSnapshot): string {
   player.setPassage(passage);
-  if (isRepeating(passage)) {
-    return `Repeterar ${bars.length > 0 ? `takt ${passageBarsLabel(passage, bars, barNumbers)}` : timeRange(passage)}`;
-  }
+  if (isRepeating(passage)) return `Repeterar ${passageLabel(passage, bars, barNumbers)}`;
   return bars.length > 0
     ? `Repetera från takt ${barNumberAt(bars, barNumbers, passage.start)} – tryck B vid slutet`
     : "Repetera härifrån – tryck B vid slutet";
@@ -249,6 +255,7 @@ export function controlsView(
   const { position, duration, passage, bars, barNumbers, parts, sound } = snapshot;
   const bar = barNumberAt(bars, barNumbers, position);
   const time = formatTime(position);
+  const marking = passage !== null && passage.end === null;
   return {
     status: snapshot.status,
     playing: snapshot.playing,
@@ -267,8 +274,8 @@ export function controlsView(
       label: isRepeating(passage) ? passageLabel(passage, bars, barNumbers) : null,
       status: passageStatus(passage, { bars, barNumbers, scoreTakesTaps }),
       repeating: isRepeating(passage),
-      marking: passage !== null && passage.end === null,
-      markButton: scoreTakesTaps ? null : passage !== null && passage.end === null ? "Slut här" : "Start här",
+      marking,
+      markButton: scoreTakesTaps ? null : marking ? "Slut här" : "Start här",
     },
     parts: {
       shown: parts.length > 0,
@@ -314,44 +321,4 @@ function passageStatus(
   const start =
     bars.length > 0 ? `: takt ${barNumberAt(bars, barNumbers, passage.start)}` : ` ${formatTime(passage.start)}`;
   return `Start${start}. Sätt slutet där avsnittet slutar.`;
-}
-
-/** When the bar `seconds` falls in starts. */
-function barStartAt(bars: readonly number[], seconds: number): number {
-  return bars[(barAt(bars, seconds) ?? 1) - 1];
-}
-
-/** The passage starting at `seconds`, keeping the end of `passage` if that is still after it. */
-export function startAt(passage: Passage | null, seconds: number): Passage {
-  return { start: seconds, end: isRepeating(passage) && passage.end > seconds ? passage.end : null };
-}
-
-/** The passage starting at bar `bar` (counted from 1), keeping a later end of `passage`. */
-export function startAtBar(passage: Passage | null, bar: number, bars: readonly number[]): Passage {
-  return startAt(passage, bars[bar - 1]);
-}
-
-/**
- * The passage ending at `seconds`, from the start of `passage` or of the
- * file, in whichever order they come; `null` for an end at the start.
- */
-export function endAt(passage: Passage | null, seconds: number): Passage | null {
-  const start = passage?.start ?? 0;
-  if (seconds === start) return null;
-  return seconds > start ? { start, end: seconds } : { start: seconds, end: start };
-}
-
-/**
- * The passage over whole bars from the bar `passage` starts in (or the
- * first) to the end of bar `bar` (counted from 1), in whichever order they
- * come. A bar ends where the next starts, or the last at `duration`.
- */
-export function endAtBar(
-  passage: Passage | null,
-  bar: number,
-  { bars, duration }: { bars: readonly number[]; duration: number },
-): Passage {
-  const marked = barAt(bars, passage?.start ?? 0) ?? 1;
-  const [first, last] = marked <= bar ? [marked, bar] : [bar, marked];
-  return { start: bars[first - 1], end: bars[last] ?? duration };
 }

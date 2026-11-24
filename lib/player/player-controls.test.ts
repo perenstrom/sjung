@@ -302,17 +302,17 @@ describe("parts", () => {
   const parts = [part("Sopran"), part("Alt", { solo: true }), part("Tenor", { gain: 0.2, muted: true })];
 
   it.each([
-    { number: 1, message: "Solo: Sopran", solo: { Sopran: true, Alt: true } },
-    { number: 2, message: "Solo av: Alt", solo: { Sopran: false, Alt: false } },
-  ])("toggleSolo $number: $message", ({ number, message, solo }) => {
-    const { message: said, after } = run({ type: "toggleSolo", number }, { parts });
+    { partNumber: 1, message: "Solo: Sopran", solo: { Sopran: true, Alt: true } },
+    { partNumber: 2, message: "Solo av: Alt", solo: { Sopran: false, Alt: false } },
+  ])("toggleSolo $partNumber: $message", ({ partNumber, message, solo }) => {
+    const { message: said, after } = run({ type: "toggleSolo", partNumber }, { parts });
 
     expect(said).toBe(message);
     expect(Object.fromEntries(after.parts.slice(0, 2).map(({ id, solo }) => [id, solo]))).toEqual(solo);
   });
 
   it("does nothing for a part number past the last", () => {
-    expect(run({ type: "toggleSolo", number: 4 }, { parts })).toMatchObject({ message: null, after: { parts } });
+    expect(run({ type: "toggleSolo", partNumber: 4 }, { parts })).toMatchObject({ message: null, after: { parts } });
   });
 
   it("sets every part equal with Alla lika", () => {

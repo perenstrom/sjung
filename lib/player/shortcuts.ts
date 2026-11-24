@@ -90,7 +90,7 @@ export function commandFor(press: KeyPress, { view, layerOpen, sliderFocused }: 
     default: {
       // 1–9: solo on that part, or off again.
       if (!/^[1-9]$/.test(press.key) || Number(press.key) > view.parts.list.length) return null;
-      return { type: "toggleSolo", number: Number(press.key) };
+      return { type: "toggleSolo", partNumber: Number(press.key) };
     }
   }
 }

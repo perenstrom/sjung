@@ -119,6 +119,41 @@ export function playStart(passage: Passage | null, position: number): number | n
   return isRepeating(passage) && (position < passage.start || position >= passage.end) ? passage.start : null;
 }
 
+/** The passage starting at `seconds`, keeping the end of `passage` if that is still after it. */
+export function startAt(passage: Passage | null, seconds: number): Passage {
+  return { start: seconds, end: isRepeating(passage) && passage.end > seconds ? passage.end : null };
+}
+
+/** The passage starting at bar `bar` (counted from 1), keeping a later end of `passage`. */
+export function startAtBar(passage: Passage | null, bar: number, bars: readonly number[]): Passage {
+  return startAt(passage, bars[bar - 1]);
+}
+
+/**
+ * The passage ending at `seconds`, from the start of `passage` or of the
+ * file, in whichever order they come; `null` for an end at the start.
+ */
+export function endAt(passage: Passage | null, seconds: number): Passage | null {
+  const start = passage?.start ?? 0;
+  if (seconds === start) return null;
+  return seconds > start ? { start, end: seconds } : { start: seconds, end: start };
+}
+
+/**
+ * The passage over whole bars from the bar `passage` starts in (or the
+ * first) to the end of bar `bar` (counted from 1), in whichever order they
+ * come. A bar ends where the next starts, or the last at `duration`.
+ */
+export function endAtBar(
+  passage: Passage | null,
+  bar: number,
+  { bars, duration }: { bars: readonly number[]; duration: number },
+): Passage {
+  const marked = barAt(bars, passage?.start ?? 0) ?? 1;
+  const [first, last] = marked <= bar ? [marked, bar] : [bar, marked];
+  return { start: bars[first - 1], end: bars[last] ?? duration };
+}
+
 /** The bar `seconds` falls in, counted from 1; `null` for a file without bars. */
 export function barAt(bars: readonly number[], seconds: number): number | null {
   if (bars.length === 0) return null;

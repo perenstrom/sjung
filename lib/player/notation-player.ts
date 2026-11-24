@@ -3,6 +3,7 @@ import { type NotationBar, secondsAtTick, tickAtSeconds } from "@/lib/player/not
 import {
   barAt,
   clampTempo,
+  endAtBar,
   IDLE_SNAPSHOT,
   isRepeating,
   type Passage,
@@ -10,8 +11,8 @@ import {
   type PlayerPart,
   type PlayerSnapshot,
   playStart,
+  startAtBar,
 } from "@/lib/player/player";
-import { endAtBar, startAtBar } from "@/lib/player/player-controls";
 import { createSnapshotStore } from "@/lib/player/snapshot-store";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
