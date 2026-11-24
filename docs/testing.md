@@ -32,6 +32,7 @@ Put each behaviour in the **lowest** layer that can go red on it, and test it in
 Vitest in Node, no database, co-located as `*.test.ts` next to the code.
 
 - Pure or mostly pure logic: parsing, formatting, sorting, slugs, policy functions (`lib/group-access-policy.ts`), URL and header building.
+- Code that needs a browser API Node lacks, such as `DOMParser` for MusicXML (`lib/player/musicxml-score.test.ts`): mark the file `// @vitest-environment jsdom` rather than faking the API.
 - What a view shows for a given input (an empty state, sort order, which actions appear in edit mode): render with `renderMarkup` / `textOf` from `lib/testing/markup.ts` and assert on the text.
 
 ### Integration (`npm run test:integration`)

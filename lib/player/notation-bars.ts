@@ -1,5 +1,5 @@
 /** A quarter note in alphaTab's MIDI ticks. */
-const TICKS_PER_QUARTER = 960;
+export const TICKS_PER_QUARTER = 960;
 
 /**
  * The parts of alphaTab's `MasterBarTickLookup` the bars are read from: one
