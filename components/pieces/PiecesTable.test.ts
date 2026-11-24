@@ -285,6 +285,21 @@ describe.each([
 
       expect(contentClasses).toEqual(expect.arrayContaining(["min-w-56", "max-w-xs", "whitespace-normal"]));
     });
+
+    it("pads the piece name inside its 32px first line, not above it, so it lines up with the row", () => {
+      const cell = render()
+        .split("<td")
+        .slice(1)
+        .find((td) => td.includes(">Vem kan segla</a>"));
+      // Inside the cell: the <td>'s own padding is the same for every cell in the row.
+      const beforeName = cell?.slice(cell.indexOf(">") + 1, cell.indexOf(">Vem kan segla</a>")) ?? "";
+      const classLists = [...beforeName.matchAll(/class="([^"]*)"/g)].map((match) => match[1].split(" "));
+      const nameClasses = classLists.at(-1);
+      const enclosingClasses = classLists.slice(0, -1).flat();
+
+      expect(nameClasses).toContain("py-1.5");
+      expect(enclosingClasses.filter((name) => /^(p|py|pt|m|my|mt)-/.test(name))).toEqual([]);
+    });
   });
 
   describe("in edit mode", () => {

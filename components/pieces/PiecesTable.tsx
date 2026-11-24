@@ -49,12 +49,17 @@ const LIST_COLUMN_WIDTH_CLASS = "min-w-56 max-w-xs";
 const PIECE_NOTES_OFFSET_CLASS = "pt-1.5";
 
 // A long piece name wraps instead of widening the Namn column: it turns the
-// table cell's nowrap back off and caps the width. The link also needs
-// min-w-0, or as a flex item it won't shrink below an unbroken word. The
-// vertical padding keeps a wrapped name's first line where a one-line name
-// sits in the 32px first line. Set on the piece-name content only, so a
-// spanning Running-order note row keeps its full width.
-const PIECE_NAME_WRAP_CLASS = "max-w-xs py-1.5 whitespace-normal break-words";
+// table cell's nowrap back off and caps the width. Set on the piece-name
+// content only, so a spanning Running-order note row keeps its full width.
+const PIECE_NAME_WRAP_CLASS = "max-w-xs whitespace-normal break-words";
+
+// The name link's vertical padding makes a one-line name exactly the 32px
+// first line (6 + 20 + 6) and keeps a wrapped name's first line in the same
+// place. It sits on the link, inside the first line, so it never pushes the
+// name below the row's other first lines, and in edit mode a one-line name's
+// rename pencil stays centred on it. The link needs min-w-0, or as a flex
+// item it won't shrink below an unbroken word.
+const PIECE_NAME_LINK_CLASS = "min-w-0 py-1.5 underline";
 
 // A row is a piece or, in set list mode, a Running-order note. Set list rows
 // carry the step id, so the same piece can appear in several rows.
@@ -117,7 +122,7 @@ function PieceNameCell({
 }) {
   const href = pieceHref(groupSlug, piece, { fromSetListId: setListId });
   const renderName = (name: string) => (
-    <Link className="min-w-0 underline" href={href}>
+    <Link className={PIECE_NAME_LINK_CLASS} href={href}>
       {name}
     </Link>
   );
