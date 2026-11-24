@@ -2,10 +2,11 @@ import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { PlayerEngine } from "@/lib/file-formats";
-import { IDLE_SNAPSHOT, type Loop, type PlayerSnapshot } from "@/lib/player/player";
+import { DEFAULT_GAIN } from "@/lib/player/mix";
+import { IDLE_SNAPSHOT, type Loop, type PlayerPart, type PlayerSnapshot } from "@/lib/player/player";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
-import { RepeatControls, TempoControls } from "./controls";
+import { PartsControls, RepeatControls, TempoControls } from "./controls";
 import { PlayerScreen } from "./PlayerView";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
@@ -90,6 +91,99 @@ describe("PlayerScreen for a MIDI File", () => {
     expect(html).not.toContain("data-waveform");
     expect(html).toMatch(/data-strip[^>]*>.*?data-passage[^>]*style="left:25%;width:50%"/);
     expect(html).toMatch(/data-played[^>]*style="width:50%"/);
+  });
+});
+
+function part(name: string, change: Partial<PlayerPart> = {}): PlayerPart {
+  return { id: name, name, percussion: false, gain: DEFAULT_GAIN, muted: false, solo: false, ...change };
+}
+
+describe("PlayerScreen with parts", () => {
+  const parts = [part("Sopran"), part("Alt")];
+
+  it("offers Stämmor on the phone and on desktop only for a File with parts", () => {
+    const html = renderScreen({ parts }, null, "midi");
+
+    expect(textOf(html.match(/<footer[^>]*md:hidden[^>]*>.*?<\/footer>/)?.[0] ?? "")).toMatch(/Repetera.*Stämmor/);
+    expect(textOf(desktopTransport(html))).toMatch(/Repetera\s*Stämmor$/);
+    expect(textOf(renderScreen({}, null, "midi"))).not.toContain("Stämmor");
+  });
+});
+
+describe("PartsControls", () => {
+  function renderParts(props: Partial<Parameters<typeof PartsControls>[0]> = {}) {
+    return renderMarkup(
+      createElement(PartsControls, {
+        parts: [part("Sopran"), part("Alt", { muted: true }), part("Trummor", { percussion: true, solo: true })],
+        sound: "piano",
+        mine: null,
+        onMine: () => {},
+        player: null,
+        numbered: false,
+        ...props,
+      }),
+    );
+  }
+  const pressed = (html: string) =>
+    [...html.matchAll(/<button[^>]*aria-pressed="true"[^>]*>(.*?)<\/button>/g)].map(([, label]) => textOf(label));
+  const buttons = (html: string) =>
+    [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/g)].map(([attributes, , label]) => ({
+      label: textOf(label),
+      disabled: /\sdisabled=""/.test(attributes),
+    }));
+
+  it("starts with the Kör | Piano switch, piano chosen", () => {
+    const html = renderParts();
+
+    expect(
+      buttons(html)
+        .slice(0, 2)
+        .map(({ label }) => label),
+    ).toEqual(["Kör", "Piano"]);
+    expect(pressed(html)).toContain("Piano");
+    expect(pressed(renderParts({ sound: "choir" }))).toContain("Kör");
+  });
+
+  it("offers the voices, not percussion, as Min stämma, and the presets only once one is chosen", () => {
+    const labels = (html: string) => buttons(html).slice(2, 8);
+
+    expect(labels(renderParts())).toEqual([
+      { label: "Sopran", disabled: false },
+      { label: "Alt", disabled: false },
+      { label: "Alla lika", disabled: false },
+      { label: "Framhäv min", disabled: true },
+      { label: "Utan min", disabled: true },
+      { label: "Bara min", disabled: true },
+    ]);
+    expect(labels(renderParts({ mine: "Alt" })).every(({ disabled }) => !disabled)).toBe(true);
+  });
+
+  it("marks my part and the preset the mix matches", () => {
+    const equal = [part("Sopran"), part("Alt")];
+
+    expect(pressed(renderParts({ parts: equal, mine: "Alt" }))).toEqual(["Piano", "Alt", "Alla lika"]);
+    expect(pressed(renderParts({ parts: [part("Sopran"), part("Alt", { muted: true })], mine: "Alt" }))).toEqual([
+      "Piano",
+      "Alt",
+      "Utan min",
+      "M",
+    ]);
+  });
+
+  it("has a row per part with volume, M and S, percussion marked slagverk", () => {
+    const html = renderParts();
+
+    expect(html).toMatch(/aria-label="Volym Sopran"/);
+    expect(html).toMatch(/<button(?=[^>]*aria-label="Tysta Alt")[^>]*aria-pressed="true"/);
+    expect(html).toMatch(/<button(?=[^>]*aria-label="Solo Trummor")[^>]*aria-pressed="true"/);
+    expect(textOf(html)).toMatch(/Trummor\s*slagverk/);
+  });
+
+  it("numbers the parts for the keys 1–9 on desktop", () => {
+    const keys = (html: string) => [...html.matchAll(/<kbd[^>]*>(.*?)<\/kbd>/g)].map(([, key]) => key);
+
+    expect(keys(renderParts({ numbered: true }))).toEqual(["1", "2", "3"]);
+    expect(keys(renderParts())).toEqual([]);
   });
 });
 

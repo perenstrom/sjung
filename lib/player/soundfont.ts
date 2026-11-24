@@ -1,5 +1,7 @@
 import type { BasicPreset, BasicSoundBank } from "spessasynth_core";
 
+import type { PlayerSound } from "@/lib/player/player";
+
 /**
  * Where the player's soundfont lives in object storage: GeneralUser GS,
  * trimmed by `scripts/build-soundfont.ts`. Outside `groups/`, so no Group's
@@ -17,6 +19,12 @@ export const PLAYER_PROGRAMS = [
   { program: 52, name: "Choir Aahs" },
   { program: 53, name: "Voice Oohs" },
 ] as const;
+
+/** The program from {@link PLAYER_PROGRAMS} each of the player's sounds plays every part with. */
+export const SOUND_PROGRAMS: Record<PlayerSound, number> = {
+  piano: PLAYER_PROGRAMS[0].program,
+  choir: PLAYER_PROGRAMS[1].program,
+};
 
 /**
  * Trims a General MIDI soundfont, in place, to the player's presets: the plain GM

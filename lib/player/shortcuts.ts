@@ -1,3 +1,4 @@
+import { applyMix, type PartMix, presetMix } from "@/lib/player/mix";
 import {
   barAt,
   clampTempo,
@@ -26,6 +27,8 @@ export type ShortcutAction =
   | { type: "seek"; seconds: number }
   | { type: "loop"; loop: Loop | null }
   | { type: "tempo"; percent: number }
+  | { type: "part"; partId: string; change: Partial<PartMix> }
+  | { type: "mix"; mix: Record<string, PartMix> }
   | { type: "help" };
 
 /** What a key does, and the short message (HUD) saying so; `action` is `null` when the key changes nothing. */
@@ -36,14 +39,16 @@ const STEP_SECONDS_WITHOUT_BARS = 5;
 const TEMPO_STEP = 5;
 
 /**
- * The keys listed under "?", for a file with or without bars. K, I and O also
+ * The keys listed under "?", for a file with or without bars and parts. K, I and O also
  * work, like Space, A and B, for people used to editing software, but
  * nothing in the player mentions them.
  */
 export function listedShortcuts({
   hasBars,
+  hasParts,
 }: {
   hasBars: boolean;
+  hasParts: boolean;
 }): readonly { keys: readonly string[]; what: string }[] {
   return [
     { keys: ["Mellanslag"], what: "Spela / pausa" },
@@ -54,6 +59,12 @@ export function listedShortcuts({
     { keys: ["B"], what: hasBars ? "Repetera till och med den här takten" : "Repetera hit" },
     { keys: ["Esc"], what: "Sluta repetera" },
     { keys: ["−", "+"], what: "Tempo 5 % långsammare / snabbare" },
+    ...(hasParts
+      ? [
+          { keys: ["1–9"], what: "Solo på stämma 1–9 (igen för att släppa)" },
+          { keys: ["0"], what: "Alla stämmor lika" },
+        ]
+      : []),
     { keys: ["?"], what: "Visa kortkommandon" },
   ];
 }
@@ -65,7 +76,7 @@ export function listedShortcuts({
  */
 export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocused }: ShortcutContext): Shortcut | null {
   if (press.metaKey || press.ctrlKey || press.altKey) return null;
-  const { position, duration, loop, playing, tempo, bars } = snapshot;
+  const { position, duration, loop, playing, tempo, bars, parts } = snapshot;
   const hasBars = bars.length > 0;
   const bar = barAt(bars, position) ?? 1;
   const navigating = !layerOpen && !sliderFocused;
@@ -120,9 +131,24 @@ export function shortcutFor(press: KeyPress, { snapshot, layerOpen, sliderFocuse
     }
     case "?":
       return { action: { type: "help" }, hud: null };
+    case "0":
+      if (parts.length === 0) return null;
+      return { action: { type: "mix", mix: presetMix("equal", parts, null) }, hud: "Alla stämmor lika" };
     default:
-      return null;
+      return soloShortcut(press.key, parts);
   }
+}
+
+/** 1–9: solo on part `n`, or off again; `null` for any other key, or a number past the last part. */
+function soloShortcut(key: string, parts: PlayerSnapshot["parts"]): Shortcut | null {
+  if (!/^[1-9]$/.test(key)) return null;
+  const part = parts[Number(key) - 1];
+  if (!part) return null;
+  const solo = !part.solo;
+  return {
+    action: { type: "part", partId: part.id, change: { solo } },
+    hud: `${solo ? "Solo" : "Solo av"}: ${part.name}`,
+  };
 }
 
 /** Does a shortcut's action to the player; "help" is the view's to handle. */
@@ -138,6 +164,10 @@ export function runShortcutAction(player: Player, action: Exclude<ShortcutAction
       return player.setLoop(action.loop);
     case "tempo":
       return player.setTempo(action.percent);
+    case "part":
+      return player.setPart(action.partId, action.change);
+    case "mix":
+      return applyMix(player, action.mix);
   }
 }
 

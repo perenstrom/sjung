@@ -1,6 +1,6 @@
 "use client";
 
-import { Keyboard, Music, Repeat, Timer } from "lucide-react";
+import { Keyboard, Music, Repeat, SlidersHorizontal, Timer } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,7 +20,10 @@ import { listedShortcuts } from "@/lib/player/shortcuts";
 import { cn } from "@/lib/utils";
 
 import {
+  Kbd,
   NoScoreNote,
+  PartsControls,
+  partsChanged,
   passageStyle,
   PlayButton,
   type PlayerPanel,
@@ -151,18 +154,23 @@ function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
 
 /**
  * The transport row at the bottom: Play, the time, the seek bar, the length,
- * then Tempo and Repetera, each opening a popover above its button.
+ * then Tempo, Repetera and, for a file with parts, Stämmor, each opening a
+ * popover above its button. `mine` is the singer's own part in Stämmor.
  */
 export function DesktopTransport({
   snapshot,
   player,
   panel,
   onPanel,
+  mine,
+  onMine,
 }: {
   snapshot: PlayerSnapshot;
   player: Player | null;
   panel: PlayerPanel | null;
   onPanel: (panel: PlayerPanel | null) => void;
+  mine: string | null;
+  onMine: (partId: string | null) => void;
 }) {
   const { loop } = snapshot;
   const bar = barAt(snapshot.bars, snapshot.position);
@@ -211,6 +219,26 @@ export function DesktopTransport({
             onStop={() => player?.setLoop(null)}
           />
         </PanelButton>
+        {snapshot.parts.length > 0 ? (
+          <PanelButton
+            {...panelProps("parts")}
+            icon={<SlidersHorizontal className="size-4" aria-hidden />}
+            label="Stämmor"
+            active={partsChanged(snapshot.parts, snapshot.sound)}
+            title="Stämmor"
+            shortcut="1–9 / 0"
+            wide
+          >
+            <PartsControls
+              parts={snapshot.parts}
+              sound={snapshot.sound}
+              mine={mine}
+              onMine={onMine}
+              player={player}
+              numbered
+            />
+          </PanelButton>
+        ) : null}
       </div>
     </footer>
   );
@@ -225,6 +253,7 @@ function PanelButton({
   active,
   title,
   shortcut,
+  wide = false,
   children,
 }: {
   open: boolean;
@@ -234,6 +263,8 @@ function PanelButton({
   active: boolean;
   title: string;
   shortcut: string;
+  /** Room for a row per part. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -251,7 +282,11 @@ function PanelButton({
           <span className="tabular-nums">{label}</span>
         </button>
       </PopoverTrigger>
-      <PopoverContent side="top" align="end" className="w-80 space-y-3">
+      <PopoverContent
+        side="top"
+        align="end"
+        className={cn("space-y-3", wide ? "max-h-[70dvh] w-[26rem] overflow-y-auto" : "w-80")}
+      >
         <p className="flex items-baseline justify-between text-sm font-medium">
           {title}
           <Kbd>{shortcut}</Kbd>
@@ -267,10 +302,12 @@ export function ShortcutsDialog({
   open,
   onOpenChange,
   hasBars,
+  hasParts,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   hasBars: boolean;
+  hasParts: boolean;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -280,7 +317,7 @@ export function ShortcutsDialog({
         </DialogHeader>
         <table className="w-full text-sm">
           <tbody className="divide-y">
-            {listedShortcuts({ hasBars }).map(({ keys, what }) => (
+            {listedShortcuts({ hasBars, hasParts }).map(({ keys, what }) => (
               <tr key={what}>
                 <td className="py-1.5 pr-4 whitespace-nowrap">
                   {keys.map((key) => (
@@ -307,13 +344,5 @@ export function ShortcutHud({ message }: { message: string | null }) {
         <span className="rounded-full bg-black/80 px-4 py-2 text-sm text-white shadow-lg">{message}</span>
       ) : null}
     </div>
-  );
-}
-
-function Kbd({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <kbd className={cn("rounded border bg-muted px-1 font-mono text-[10px] text-muted-foreground", className)}>
-      {children}
-    </kbd>
   );
 }

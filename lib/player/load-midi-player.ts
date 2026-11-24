@@ -2,17 +2,13 @@ import { BasicMIDI } from "spessasynth_core";
 import { type BasicSynthesizer, Sequencer, WorkletSynthesizer } from "spessasynth_lib";
 
 import { barStartsOf } from "@/lib/player/midi-bars";
+import { midiPartsOf, PERCUSSION_CHANNEL } from "@/lib/player/midi-parts";
 import { createMidiPlayer } from "@/lib/player/midi-player";
-import type { Player } from "@/lib/player/player";
-import { PLAYER_PROGRAMS } from "@/lib/player/soundfont";
+import { IDLE_SNAPSHOT, type Player } from "@/lib/player/player";
+import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
 /** SpessaSynth's AudioWorklet processor, copied to `public` by `scripts/copy-player-assets.mjs`. */
 const MIDI_PROCESSOR_PATH = "/vendor/spessasynth_processor.min.js";
-
-/** The General MIDI program every part is played with until Stämmor offers a choice. */
-const PIANO = PLAYER_PROGRAMS[0].program;
-/** General MIDI's percussion channel, which keeps its own sounds. */
-const PERCUSSION_CHANNEL = 9;
 
 /** An event listener id, unique to the player. */
 const LISTENER = "sjung-player";
@@ -54,7 +50,7 @@ export async function loadMidiPlayer({
     sequencer.loadNewSongList([midi]);
     await loaded;
     signal.throwIfAborted();
-    playOnPiano(synth);
+    playWith(synth, SOUND_PROGRAMS[IDLE_SNAPSHOT.sound]);
 
     const loadedSynth = synth;
     return createMidiPlayer(
@@ -83,13 +79,15 @@ export async function loadMidiPlayer({
           sequencer.play();
         },
         pause: () => sequencer.pause(),
+        setChannelGain: (channel, gain) => loadedSynth.midiChannels[channel]?.setSystemParameter("gain", gain),
+        setProgram: (program) => playWith(loadedSynth, program),
         onEnded: (callback) => sequencer.eventHandler.addEvent("songEnded", LISTENER, callback),
         destroy() {
           loadedSynth.destroy();
           void context.close();
         },
       },
-      { bars: barStartsOf(midi) },
+      { bars: barStartsOf(midi), parts: midiPartsOf(midi) },
     );
   } catch (error) {
     synth?.destroy();
@@ -105,13 +103,15 @@ async function fetchBuffer(url: string, signal: AbortSignal): Promise<ArrayBuffe
 }
 
 /**
- * Locks every melodic channel to piano, so the file's own program changes
- * don't pick sounds the trimmed soundfont doesn't have.
+ * Locks every melodic channel to `program`, so the file's own program
+ * changes don't pick sounds the trimmed soundfont doesn't have. Percussion
+ * keeps its own sounds.
  */
-function playOnPiano(synth: BasicSynthesizer) {
+function playWith(synth: BasicSynthesizer, program: number) {
   synth.midiChannels.forEach((channel, number) => {
     if (number % 16 === PERCUSSION_CHANNEL) return;
-    synth.programChange(number, PIANO);
+    channel.setSystemParameter("presetLock", false);
+    synth.programChange(number, program);
     channel.setSystemParameter("presetLock", true);
   });
 }

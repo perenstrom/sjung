@@ -1,16 +1,19 @@
 "use client";
 
 import { Pause, Play } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { PlayerEngine } from "@/lib/file-formats";
+import { applyMix, audibleGain, MIX_PRESETS, presetMix, presetOf, presetOnChoosing } from "@/lib/player/mix";
 import {
   barAt,
   formatTime,
   type Loop,
   type Player,
+  type PlayerPart,
   type PlayerSnapshot,
+  type PlayerSound,
   TEMPO_MAX,
   TEMPO_MIN,
 } from "@/lib/player/player";
@@ -18,8 +21,8 @@ import { cn } from "@/lib/utils";
 
 const QUICK_TEMPOS = [60, 75, 90, 100] as const;
 
-/** The Tempo and Repetera controls: a bottom sheet each on a phone, a popover each on desktop. */
-export type PlayerPanel = "tempo" | "repeat";
+/** The Tempo, Repetera and Stämmor controls: a bottom sheet each on a phone, a popover each on desktop. */
+export type PlayerPanel = "tempo" | "repeat" | "parts";
 
 /** Play/Pause: pauses while playing, plays otherwise. Does nothing until the engine is ready. */
 export function PlayButton({ playing, player }: { playing: boolean; player: Player | null }) {
@@ -225,5 +228,182 @@ export function RepeatControls({
         )}
       </div>
     </div>
+  );
+}
+
+const SOUNDS: readonly { sound: PlayerSound; label: string }[] = [
+  { sound: "choir", label: "Kör" },
+  { sound: "piano", label: "Piano" },
+];
+
+/** Whether the sound or the mix has been changed from the default: piano, all parts equal. */
+export function partsChanged(parts: readonly PlayerPart[], sound: PlayerSound): boolean {
+  return sound !== "piano" || presetOf(parts, null) !== "equal";
+}
+
+/**
+ * The Stämmor sheet: the Kör | Piano switch, "Min stämma" with its presets,
+ * then a row per part with volume, mute (M) and solo (S). `mine` is the
+ * singer's own part, which the player view keeps; on desktop the parts are
+ * `numbered` for the keys 1–9. Does nothing until the engine is ready.
+ */
+export function PartsControls({
+  parts,
+  sound,
+  mine,
+  onMine,
+  player,
+  numbered,
+}: {
+  parts: readonly PlayerPart[];
+  sound: PlayerSound;
+  mine: string | null;
+  onMine: (partId: string | null) => void;
+  player: Player | null;
+  numbered: boolean;
+}) {
+  const preset = presetOf(parts, mine);
+  const choose = (chosen: string | null) => {
+    onMine(chosen);
+    if (player) applyMix(player, presetMix(presetOnChoosing(parts, mine, chosen), parts, chosen));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex rounded-lg border p-0.5" role="group" aria-label="Ljud">
+        {SOUNDS.map((option) => (
+          <ToggleButton
+            key={option.sound}
+            pressed={sound === option.sound}
+            onClick={() => player?.setSound(option.sound)}
+            className="h-8 flex-1 rounded-md border-0"
+          >
+            {option.label}
+          </ToggleButton>
+        ))}
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">Min stämma</p>
+        <div className="flex flex-wrap gap-1.5">
+          {parts
+            .filter(({ percussion }) => !percussion)
+            .map((part) => (
+              <ToggleButton
+                key={part.id}
+                pressed={mine === part.id}
+                onClick={() => choose(mine === part.id ? null : part.id)}
+                className="min-h-10 min-w-12 rounded-full px-3"
+              >
+                {part.name}
+              </ToggleButton>
+            ))}
+        </div>
+        <div className="flex gap-1">
+          {MIX_PRESETS.map((option) => (
+            <ToggleButton
+              key={option.preset}
+              pressed={preset === option.preset}
+              disabled={mine === null && option.preset !== "equal"}
+              onClick={() => player && applyMix(player, presetMix(option.preset, parts, mine))}
+              className="flex-1 px-1 py-1.5 text-xs"
+            >
+              {option.label}
+            </ToggleButton>
+          ))}
+        </div>
+      </div>
+
+      <div className="divide-y border-t">
+        {parts.map((part, index) => (
+          <PartRow
+            key={part.id}
+            part={part}
+            heard={audibleGain(part, parts) > 0}
+            number={numbered && index < 9 ? index + 1 : null}
+            player={player}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** One part's volume, M and S; dimmed while it isn't heard. */
+function PartRow({
+  part,
+  heard,
+  number,
+  player,
+}: {
+  part: PlayerPart;
+  heard: boolean;
+  number: number | null;
+  player: Player | null;
+}) {
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      {number === null ? null : <Kbd className="w-5 shrink-0 text-center">{number}</Kbd>}
+      <span className={cn("w-20 shrink-0 truncate text-sm", !heard && "text-muted-foreground")}>
+        {part.name}
+        {part.percussion ? <span className="block text-[10px] text-muted-foreground">slagverk</span> : null}
+      </span>
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.05}
+        value={part.gain}
+        onChange={(event) => player?.setPart(part.id, { gain: Number(event.target.value) })}
+        aria-label={`Volym ${part.name}`}
+        className={cn("min-w-0 flex-1 accent-primary", !heard && "opacity-40")}
+      />
+      <ToggleButton
+        pressed={part.muted}
+        onClick={() => player?.setPart(part.id, { muted: !part.muted })}
+        aria-label={`Tysta ${part.name}`}
+        title="Tysta"
+        className="size-9 shrink-0 text-xs font-semibold aria-pressed:border-red-500 aria-pressed:bg-red-500 aria-pressed:text-white"
+      >
+        M
+      </ToggleButton>
+      <ToggleButton
+        pressed={part.solo}
+        onClick={() => player?.setPart(part.id, { solo: !part.solo })}
+        aria-label={`Solo ${part.name}`}
+        title="Solo"
+        className="size-9 shrink-0 text-xs font-semibold aria-pressed:border-amber-500 aria-pressed:bg-amber-400 aria-pressed:text-black"
+      >
+        S
+      </ToggleButton>
+    </div>
+  );
+}
+
+/** A button that stays pressed while its setting is on. */
+function ToggleButton({
+  pressed,
+  className,
+  ...props
+}: Omit<ComponentProps<"button">, "type" | "aria-pressed"> & { pressed: boolean }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      className={cn(
+        "rounded-lg border text-sm disabled:opacity-40 aria-pressed:border-primary aria-pressed:bg-primary/10",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+/** A key on the keyboard, as the desktop layout shows its shortcuts. */
+export function Kbd({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <kbd className={cn("rounded border bg-muted px-1 font-mono text-[10px] text-muted-foreground", className)}>
+      {children}
+    </kbd>
   );
 }
