@@ -98,6 +98,8 @@ Staging and production never print emails: if either variable is missing there, 
 
 Sjung runs as two Coolify apps, `sjung-staging` ([staging.sjung.app](https://staging.sjung.app)) and `sjung-production` ([sjung.app](https://sjung.app)). Coolify's own auto-deploy is off for both; GitHub Actions is the only thing that triggers a deploy. Coolify runs `npx prisma migrate deploy` after each deploy.
 
+The MuseScore converter worker, which both apps use to prepare MuseScore Files for the player, is a third Coolify app that is deployed by hand. Its setup is in [`workers/musescore-converter/README.md`](workers/musescore-converter/README.md).
+
 - **Staging** deploys automatically when a push to `main` passes CI (the `deploy-staging` job in `.github/workflows/ci.yml`). Docs-only pushes don't deploy.
 - **Production** deploys when a release PR is merged (see [Releasing](#releasing)), or when someone runs the "Deploy to production" workflow (`.github/workflows/deploy-production.yml`) by hand. Either way the workflow refuses any ref but `main`, waits until `build`, `Integration Tests` and `e2e` are green on the commit it deploys, moves the `production` branch to that commit, triggers the deploy, waits for Coolify to report it finished and fails unless Coolify deployed that exact commit.
 

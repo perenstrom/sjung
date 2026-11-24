@@ -16,4 +16,4 @@ Sjung plays MuseScore (`.mscz`) Files in its player (PER-443). The browser can't
 - The uploaded `.mscz` stays the File and can still be downloaded. The MusicXML is a derived copy with no name or Category of its own, and it follows its File on replace and delete as ADR-0005 describes.
 - A `.mscz` can't be played until its conversion finishes. A failed conversion leaves an ordinary downloadable File, and someone with Manage content can retry it.
 - The source is always kept, so we can produce other forms (MIDI, for example) later by converting again.
-- Conversion time, memory per score and the image size are not measured yet. A spike measures them before the `.mscz` slice is built.
+- The PER-476 spike measured them with MuseScore 4.7.7: about 0.3 s and 160 MB for a typical choir score, 1.7 s and 260 MB for the largest tested, and an image of about 0.8–0.9 GB. The worker therefore runs one conversion at a time under a 512 MB memory limit (`workers/musescore-converter/README.md`).
