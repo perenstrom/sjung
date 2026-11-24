@@ -108,9 +108,25 @@ export async function deletePieceFile(formData: FormData) {
 }
 
 /**
+ * Prepares a MuseScore File for the player again, after it failed or was left
+ * pending by a restart (ADR-0009). Needs Manage content, like any change to a File.
+ */
+export async function retryPieceFileConversion(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const fileId = parseFileIdFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const file = await findInGroup(groupId, "file", fileId, { select: { id: true, pieceId: true } });
+    convertAfterResponse(await fileStore.retryConversion(file));
+
+    await revalidatePieceRoutes(groupSlug, file.pieceId);
+  });
+}
+
+/**
  * Converts a MuseScore File for the player after the response is sent, so
  * the upload doesn't wait for the worker (ADR-0009). No queue: a File left
- * pending by a restart is retried by hand.
+ * pending by a restart is retried by hand, with `retryPieceFileConversion`.
  */
 function convertAfterResponse(file: fileStore.SavedFile) {
   if (file.pendingConversion) {

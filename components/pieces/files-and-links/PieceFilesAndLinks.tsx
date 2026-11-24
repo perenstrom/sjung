@@ -44,13 +44,14 @@ type PieceFilesAndLinksProps = {
  * open at a time for the Piece. Leaving or entering Edit mode closes any editor.
  */
 export function PieceFilesAndLinks(props: PieceFilesAndLinksProps) {
-  const { isEditing } = useEditMode();
+  const { canEdit, isEditing } = useEditMode();
   // Remount on every toggle so switching Edit mode closes any open editor and
   // discards a half-filled add row.
-  return <Body key={isEditing ? "edit" : "read"} isEditing={isEditing} {...props} />;
+  return <Body key={isEditing ? "edit" : "read"} canManage={canEdit} isEditing={isEditing} {...props} />;
 }
 
 function Body({
+  canManage,
   isEditing,
   groupSlug,
   piece,
@@ -58,7 +59,7 @@ function Body({
   layout,
   touch = false,
   setListPieceId,
-}: PieceFilesAndLinksProps & { isEditing: boolean }) {
+}: PieceFilesAndLinksProps & { canManage: boolean; isEditing: boolean }) {
   const router = useRouter();
   const [editor, setEditorState] = useState<OpenEditor>(null);
   const [removing, setRemoving] = useState<ReadonlySet<string>>(new Set());
@@ -99,6 +100,7 @@ function Body({
     setListPieceId,
     layout,
     touch,
+    canManage,
     isEditing,
     editor,
     setEditor: (target, opening) => setEditorState((open) => nextEditor(open, target, opening)),

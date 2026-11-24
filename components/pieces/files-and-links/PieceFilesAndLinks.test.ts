@@ -12,9 +12,10 @@ import { PieceFilesAndLinks } from "./PieceFilesAndLinks";
 vi.mock("@/app/actions/files", () => ({}));
 vi.mock("@/app/actions/pieces", () => ({}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+let canEdit = false;
 let isEditing = false;
 vi.mock("@/components/EditModeContext", () => ({
-  useEditMode: () => ({ canEdit: isEditing, isEditing, setIsEditing: vi.fn() }),
+  useEditMode: () => ({ canEdit, isEditing, setIsEditing: vi.fn() }),
 }));
 
 const file = (
@@ -39,9 +40,14 @@ function render(
   layout: "detail" | "inline",
   files: PieceFileListItem[],
   links: PieceLink[],
-  { editing = false, setListPieceId }: { editing?: boolean; setListPieceId?: string } = {},
+  {
+    editing = false,
+    canManageContent = editing,
+    setListPieceId,
+  }: { editing?: boolean; canManageContent?: boolean; setListPieceId?: string } = {},
 ): string {
   isEditing = editing;
+  canEdit = canManageContent;
   return renderMarkup(
     createElement(PieceFilesAndLinks, {
       layout,
@@ -151,13 +157,39 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
     },
   );
 
-  it("downloads a MuseScore File that couldn't be prepared, like a File the player can't open", () => {
+  it("shows a singer a MuseScore File that couldn't be prepared as an ordinary File to download, with no error", () => {
     const html = render(layout, [file("Partitur.mscz", null, "failed")], []);
 
     expect(textOf(html)).not.toContain("Förbereds…");
+    expect(textOf(html)).not.toContain("Kunde inte förberedas");
+    expect(textOf(html)).not.toContain("Försök igen");
     expect(html).not.toContain(playerHref("koren", "piece-1", "Partitur.mscz"));
     expect(html).toContain(`href="${fileDownloadHref("koren", "Partitur.mscz")}"`);
   });
+
+  it.each([false, true])(
+    "tells someone with Manage content a MuseScore File couldn't be prepared, offering a retry or MusicXML (Edit mode: %s)",
+    (editing) => {
+      const html = render(layout, [file("Partitur.mscz", null, "failed")], [], { editing, canManageContent: true });
+
+      expect(textOf(html)).toContain("Kunde inte förberedas");
+      expect(html).toMatch(/<button[^>]*>Försök igen<\/button>/);
+      expect(textOf(html)).toContain("MusicXML");
+      expect(html).not.toContain(playerHref("koren", "piece-1", "Partitur.mscz"));
+    },
+  );
+
+  it.each([
+    { editing: false, retry: false },
+    { editing: true, retry: true },
+  ])(
+    "offers someone with Manage content to retry a File still being prepared only in Edit mode ($editing)",
+    ({ editing, retry }) => {
+      const html = render(layout, [file("Partitur.mscz", null, "preparing")], [], { editing, canManageContent: true });
+
+      expect(textOf(html).includes("Försök igen")).toBe(retry);
+    },
+  );
 
   it("on a Set list piece, opens the player for that Set list piece", () => {
     const html = render(layout, [file("Sopran.mp3", null, "ready")], [], { setListPieceId: "slp-1" });
