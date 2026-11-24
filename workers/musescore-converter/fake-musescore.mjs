@@ -17,9 +17,13 @@ if (force !== "-f" || outFlag !== "-o") {
 // The lock holds its owner's pid, so a lock left by a fake the worker killed
 // (which can't clean up after SIGKILL) doesn't count.
 const lock = join(tmpdir(), "fake-musescore.lock");
-if (!takeLock() && !(ownerIsGone() && (rmSync(lock, { force: true }), takeLock()))) {
-  console.error("another MuseScore is already running");
-  process.exit(3);
+if (!takeLock()) {
+  if (ownerIsRunning()) {
+    console.error("another MuseScore is already running");
+    process.exit(3);
+  }
+  rmSync(lock, { force: true });
+  if (!takeLock()) process.exit(3);
 }
 process.on("exit", () => rmSync(lock, { force: true }));
 
@@ -38,13 +42,15 @@ function takeLock() {
   }
 }
 
-function ownerIsGone() {
+function ownerIsRunning() {
   const pid = Number(readFileSync(lock, "utf8"));
+  // kill(0) would signal this fake's own process group, so check the pid first.
+  if (!(pid > 0)) return false;
   try {
-    process.kill(pid, 0);
-    return !(pid > 0);
-  } catch {
+    process.kill(pid, 0); // Signal 0 only checks that the process exists.
     return true;
+  } catch {
+    return false;
   }
 }
 
