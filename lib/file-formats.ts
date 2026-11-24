@@ -11,7 +11,7 @@ type FileFormat = {
 };
 
 /** Which player engine plays a Playable File (ADR-0010). */
-export type PlayerEngine = "audio" | "midi";
+export type PlayerEngine = "audio" | "midi" | "notation";
 
 /** A Playable File's format, as the player needs it. */
 export type PlayableFormat = {
@@ -28,6 +28,10 @@ const audio = (label: string): PlayableFormat => ({ engine: "audio", label });
  * for MIDI. Allowed only for formats that browsers often report so.
  */
 const UNKNOWN_MIME_TYPE = "application/octet-stream";
+
+/** Uncompressed MusicXML's own type, and the generic XML types browsers report it as. */
+const MUSICXML_MIME_TYPE = "application/vnd.recordare.musicxml+xml";
+const XML_MIME_TYPES = ["application/xml", "text/xml"];
 
 const FILE_FORMATS: readonly FileFormat[] = [
   { extensions: [".pdf"], mimeTypes: ["application/pdf"] },
@@ -55,6 +59,26 @@ const FILE_FORMATS: readonly FileFormat[] = [
     extensions: [".mid", ".midi"],
     mimeTypes: ["audio/midi", "audio/x-midi", "audio/mid", "application/x-midi", UNKNOWN_MIME_TYPE],
     playable: { engine: "midi", label: "MIDI" },
+  },
+  {
+    extensions: [".musicxml"],
+    mimeTypes: [MUSICXML_MIME_TYPE, ...XML_MIME_TYPES, UNKNOWN_MIME_TYPE],
+    playable: { engine: "notation", label: "MusicXML" },
+  },
+  {
+    extensions: [".xml"],
+    mimeTypes: [...XML_MIME_TYPES, MUSICXML_MIME_TYPE, UNKNOWN_MIME_TYPE],
+    playable: { engine: "notation", label: "MusicXML" },
+  },
+  {
+    extensions: [".mxl"],
+    mimeTypes: [
+      "application/vnd.recordare.musicxml",
+      "application/zip",
+      "application/x-zip-compressed",
+      UNKNOWN_MIME_TYPE,
+    ],
+    playable: { engine: "notation", label: "MXL" },
   },
 ];
 

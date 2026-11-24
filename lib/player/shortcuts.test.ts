@@ -232,6 +232,16 @@ describe("shortcutFor in a file with bars", () => {
       hud,
     });
   });
+
+  it("names bars by the number the score gives them when a repeat plays them again", () => {
+    // Bars 1–2, repeated, then bar 3: bar 2 the second time round starts at 6 s.
+    const repeated = context({ bars: [0, 2, 4, 6, 8], barNumbers: [1, 2, 1, 2, 3], position: 4.5 });
+
+    expect(shortcutFor(press("ArrowRight"), repeated)).toEqual({ action: { type: "seek", seconds: 6 }, hud: "Takt 2" });
+    expect(
+      shortcutFor(press("b"), { ...repeated, snapshot: { ...repeated.snapshot, loop: { start: 2, end: null } } }),
+    ).toEqual({ action: { type: "loop", loop: { start: 2, end: 6 } }, hud: "Repeterar takt 2–1" });
+  });
 });
 
 describe("shortcutFor in a file with parts", () => {

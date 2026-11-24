@@ -44,19 +44,27 @@ describe("opening the player", () => {
     expect(player?.file.src).toContain(file.storagePath);
   });
 
-  it("opens a MIDI File with the soundfont to play it with, and an audio File without", async () => {
+  it("opens a MIDI or notation File with the soundfont to play it with, and an audio File without", async () => {
     const midi = await createFile(piece, null, {
       displayName: "Alla stämmor",
       fileName: "alla.mid",
       mimeType: "application/octet-stream",
     });
+    const score = await createFile(piece, null, {
+      displayName: "Partitur",
+      fileName: "partitur.mxl",
+      mimeType: "application/vnd.recordare.musicxml",
+    });
     const audio = await audioFile(piece, "Sopran");
 
     const midiPlayer = await getPlayerData(group.slug, piece.id, midi.id);
+    const scorePlayer = await getPlayerData(group.slug, piece.id, score.id);
     const audioPlayer = await getPlayerData(group.slug, piece.id, audio.id);
 
     expect(midiPlayer?.file.format).toEqual({ engine: "midi", label: "MIDI" });
     expect(midiPlayer?.soundfontSrc).toContain(PLAYER_SOUNDFONT_KEY);
+    expect(scorePlayer?.file.format).toEqual({ engine: "notation", label: "MXL" });
+    expect(scorePlayer?.soundfontSrc).toContain(PLAYER_SOUNDFONT_KEY);
     expect(audioPlayer?.soundfontSrc).toBeNull();
   });
 

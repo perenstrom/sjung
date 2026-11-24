@@ -39,6 +39,12 @@ export type PlayerSnapshot = {
    * bars, such as audio.
    */
   bars: readonly number[];
+  /**
+   * The number the score gives each of `bars`, where it differs from the
+   * count in playing order, as it does when a repeat plays bars again. Empty
+   * when they are the same.
+   */
+  barNumbers: readonly number[];
   /** Empty for a file that has no parts to mix, such as audio. */
   parts: readonly PlayerPart[];
   sound: PlayerSound;
@@ -86,6 +92,7 @@ export const IDLE_SNAPSHOT: PlayerSnapshot = {
   tempo: DEFAULT_TEMPO,
   loop: null,
   bars: [],
+  barNumbers: [],
   parts: [],
   sound: "piano",
 };
@@ -120,6 +127,33 @@ export function barAt(bars: readonly number[], seconds: number): number | null {
   if (bars.length === 0) return null;
   const next = bars.findIndex((start) => start > seconds);
   return next === -1 ? bars.length : Math.max(1, next);
+}
+
+/** The number the score gives `bar`, counted from 1 in playing order (see `PlayerSnapshot.barNumbers`). */
+export function barNumber(barNumbers: readonly number[], bar: number): number {
+  return barNumbers[bar - 1] ?? bar;
+}
+
+/** The number the score gives the bar `seconds` falls in; `null` for a file without bars. */
+export function barNumberAt(bars: readonly number[], barNumbers: readonly number[], seconds: number): number | null {
+  const bar = barAt(bars, seconds);
+  return bar === null ? null : barNumber(barNumbers, bar);
+}
+
+/**
+ * The bars a repeating passage runs over, as the score numbers them: "16–19",
+ * or "16" for one bar. It ends in the bar before the one starting where it ends.
+ */
+export function passageBarsLabel(
+  loop: { start: number; end: number },
+  bars: readonly number[],
+  barNumbers: readonly number[],
+): string {
+  const first = barAt(bars, loop.start) ?? 1;
+  const last = barAt(bars, bars.findLast((start) => start < loop.end) ?? loop.end) ?? first;
+  return first === last
+    ? `${barNumber(barNumbers, first)}`
+    : `${barNumber(barNumbers, first)}–${barNumber(barNumbers, last)}`;
 }
 
 /** Seconds as m:ss. */

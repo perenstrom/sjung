@@ -5,9 +5,8 @@ import type { MouseEvent, ReactNode } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { PlayerEngine } from "@/lib/file-formats";
 import {
-  barAt,
+  barNumberAt,
   DEFAULT_TEMPO,
   formatTime,
   isRepeating,
@@ -22,8 +21,10 @@ import { cn } from "@/lib/utils";
 
 import {
   Kbd,
+  type NoScoreEngine,
   NoScoreNote,
   PartsControls,
+  passageLabel,
   passageStyle,
   PlayButton,
   type PlayerPanel,
@@ -67,7 +68,7 @@ export function NoScoreStrip({
   onSeek,
 }: {
   name: string;
-  engine: PlayerEngine;
+  engine: NoScoreEngine;
   snapshot: PlayerSnapshot;
   peaks: readonly number[] | null;
   onSeek: (seconds: number) => void;
@@ -156,9 +157,11 @@ function PlainStrip({ position, duration, loop, onSeek }: StripProps) {
  * The transport row at the bottom: Play, the time, the seek bar, the length,
  * then Tempo, Repetera and, for a file with parts, Stämmor, each opening a
  * popover above its button. `mine` is the singer's own part in Stämmor.
+ * With a score (`inScore`), a passage is set and shown by bar.
  */
 export function DesktopTransport({
   snapshot,
+  inScore,
   player,
   panel,
   onPanel,
@@ -166,6 +169,7 @@ export function DesktopTransport({
   onMine,
 }: {
   snapshot: PlayerSnapshot;
+  inScore: boolean;
   player: Player | null;
   panel: PlayerPanel | null;
   onPanel: (panel: PlayerPanel | null) => void;
@@ -173,7 +177,8 @@ export function DesktopTransport({
   onMine: (partId: string | null) => void;
 }) {
   const { loop } = snapshot;
-  const bar = barAt(snapshot.bars, snapshot.position);
+  const bar = barNumberAt(snapshot.bars, snapshot.barNumbers, snapshot.position);
+  const score = inScore ? snapshot : null;
   const panelProps = (key: PlayerPanel) => ({
     open: panel === key,
     onOpenChange: (open: boolean) => onPanel(open ? key : null),
@@ -208,13 +213,14 @@ export function DesktopTransport({
         <PanelButton
           {...panelProps("repeat")}
           icon={<Repeat className="size-4" aria-hidden />}
-          label={isRepeating(loop) ? `${formatTime(loop.start)}–${formatTime(loop.end)}` : "Repetera"}
+          label={isRepeating(loop) ? passageLabel(loop, score) : "Repetera"}
           active={isRepeating(loop)}
           title="Repetera"
           shortcut="A / B / Esc"
         >
           <RepeatControls
             loop={loop}
+            score={score}
             onMark={() => player?.setLoop(markLoop(loop, snapshot.position))}
             onStop={() => player?.setLoop(null)}
           />
