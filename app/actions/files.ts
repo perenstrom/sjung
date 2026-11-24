@@ -2,10 +2,9 @@
 
 import { after } from "next/server";
 
-import { freeContentSlug } from "@/lib/content-slug";
+import { saveWithFreeSlug } from "@/lib/content-slug";
 import { findInGroup } from "@/lib/find-in-group";
 import * as fileStore from "@/lib/pieces/file-store";
-import prisma from "@/lib/prisma";
 import { resolveCategoryInGroup } from "@/lib/pieces/queries";
 import { parseCategoryFromFormData } from "@/lib/schemas/categories";
 import { parseWritableGroupSlugFromFormData } from "@/lib/schemas/people";
@@ -83,15 +82,18 @@ export async function updatePieceFileDisplayName(formData: FormData) {
     const file = await findInGroup(groupId, "file", fileId, {
       select: { id: true, pieceId: true },
     });
-    await prisma.file.update({
-      where: { id: file.id },
-      data: {
-        displayName,
-        slug: await freeContentSlug(prisma, "file", groupId, displayName, file.id),
-        category: await resolveCategoryInGroup(groupId, typedCategory),
-        updatedById: userId,
-      },
-    });
+    const category = await resolveCategoryInGroup(groupId, typedCategory);
+    await saveWithFreeSlug(
+      "file",
+      groupId,
+      displayName,
+      (tx, slug) =>
+        tx.file.update({
+          where: { id: file.id },
+          data: { displayName, slug, category, updatedById: userId },
+        }),
+      { exceptId: file.id },
+    );
 
     await revalidatePieceRoutes(groupSlug, file.pieceId);
   });

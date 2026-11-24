@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@/app/generated/prisma/client";
+import prisma from "@/lib/prisma";
 import { announcementSlug, firstFreeSlug, slugifyName, slugsFrom } from "@/lib/slug";
 
 type Db = PrismaClient | Prisma.TransactionClient;
@@ -93,4 +94,44 @@ export async function freeAnnouncementSlug(
   });
   const taken = new Set(rows.map((row) => row.slug));
   return firstFreeSlug(base, (candidate) => taken.has(candidate));
+}
+
+/**
+ * Holds, until `tx` ends, the lock every save that hands out Slugs among
+ * these rows takes first, so two saves at once can't both pick the same
+ * free Slug. Files have no database check on their Slugs, so this is what
+ * keeps theirs unique (ADR-0011).
+ */
+export async function lockSlugs(tx: Prisma.TransactionClient, scope: SluggedKind | "announcement", groupId = "") {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`slugs:${scope}:${groupId}`}))`;
+}
+
+/**
+ * Saves a row with a free Slug for `name` in the Group: under {@link lockSlugs},
+ * picks the Slug and hands it to `write`, all in one transaction.
+ */
+export async function saveWithFreeSlug<T>(
+  kind: SluggedKind,
+  groupId: string,
+  name: string,
+  write: (tx: Prisma.TransactionClient, slug: string) => Promise<T>,
+  { exceptId }: { exceptId?: string } = {},
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await lockSlugs(tx, kind, groupId);
+    return write(tx, await freeContentSlug(tx, kind, groupId, name, exceptId));
+  });
+}
+
+/** {@link saveWithFreeSlug} for an Announcement published at `publishedAt`. */
+export async function saveWithFreeAnnouncementSlug<T>(
+  title: string,
+  publishedAt: Date,
+  write: (tx: Prisma.TransactionClient, slug: string) => Promise<T>,
+  { exceptId }: { exceptId?: string } = {},
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    await lockSlugs(tx, "announcement");
+    return write(tx, await freeAnnouncementSlug(tx, title, publishedAt, exceptId));
+  });
 }

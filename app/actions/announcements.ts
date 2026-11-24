@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import * as announcementStore from "@/lib/announcements/announcements";
 import type { AnnouncementDetail, AnnouncementListItem, ManagedAnnouncement } from "@/lib/announcements/announcements";
-import { freeAnnouncementSlug } from "@/lib/content-slug";
+import { saveWithFreeAnnouncementSlug } from "@/lib/content-slug";
 import { isOperator } from "@/lib/operators/operators";
 import { requireOperator, requireOperatorPage } from "@/lib/operators/require-operator";
 import { MANAGE_ANNOUNCEMENTS_PATH } from "@/lib/announcements/routes";
@@ -107,17 +107,19 @@ export async function createAnnouncement(
 ): Promise<AnnouncementFormState> {
   return saveAnnouncement(formData, async (operator, form) => {
     const publishedAt = new Date();
-    await prisma.announcement.create({
-      // The author has read what they wrote, so it doesn't show as unread to them.
-      data: {
-        ...form,
-        publishedAt,
-        slug: await freeAnnouncementSlug(prisma, form.title, publishedAt),
-        createdById: operator.id,
-        updatedById: operator.id,
-        reads: { create: { userId: operator.id } },
-      },
-    });
+    await saveWithFreeAnnouncementSlug(form.title, publishedAt, (tx, slug) =>
+      tx.announcement.create({
+        // The author has read what they wrote, so it doesn't show as unread to them.
+        data: {
+          ...form,
+          publishedAt,
+          slug,
+          createdById: operator.id,
+          updatedById: operator.id,
+          reads: { create: { userId: operator.id } },
+        },
+      }),
+    );
     return null;
   });
 }
@@ -136,11 +138,16 @@ export async function updateAnnouncement(
     });
     if (!announcement) return GONE;
     // The Slug follows the title but keeps the date it was published on (ADR-0011).
-    const slug = await freeAnnouncementSlug(prisma, form.title, announcement.publishedAt, announcement.id);
-    const { count } = await prisma.announcement.updateMany({
-      where: { id: announcement.id },
-      data: { ...form, slug, updatedById: operator.id },
-    });
+    const { count } = await saveWithFreeAnnouncementSlug(
+      form.title,
+      announcement.publishedAt,
+      (tx, slug) =>
+        tx.announcement.updateMany({
+          where: { id: announcement.id },
+          data: { ...form, slug, updatedById: operator.id },
+        }),
+      { exceptId: announcement.id },
+    );
     return count === 0 ? GONE : null;
   });
 }

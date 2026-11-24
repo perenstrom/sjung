@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { Prisma } from "@/app/generated/prisma/client";
 import { FileConversionState } from "@/app/generated/prisma/enums";
 import { attachmentDisposition, inlineDisposition } from "@/lib/content-disposition";
-import { freeContentSlug } from "@/lib/content-slug";
+import { saveWithFreeSlug } from "@/lib/content-slug";
 import { needsConversion } from "@/lib/file-formats";
 import { convertMuseScore, MXL_MIME_TYPE } from "@/lib/musescore-converter";
 import {
@@ -104,25 +104,26 @@ export async function addFile(
   { displayName, category, userId }: { displayName: string; category: string | null; userId: string },
 ): Promise<SavedFile> {
   const stored = await verifyUpload(piece, upload);
-  const slug = await freeContentSlug(prisma, "file", piece.groupId, displayName);
 
   const file = await rejectingReusedPath(() =>
-    prisma.file.create({
-      data: {
-        pieceId: piece.id,
-        displayName,
-        slug,
-        category,
-        fileName: upload.fileName,
-        storagePath: upload.storagePath,
-        mimeType: stored.contentType,
-        size: stored.size,
-        conversionState: initialConversionState(upload),
-        createdById: userId,
-        updatedById: userId,
-      },
-      select: { id: true, conversionState: true },
-    }),
+    saveWithFreeSlug("file", piece.groupId, displayName, (tx, slug) =>
+      tx.file.create({
+        data: {
+          pieceId: piece.id,
+          displayName,
+          slug,
+          category,
+          fileName: upload.fileName,
+          storagePath: upload.storagePath,
+          mimeType: stored.contentType,
+          size: stored.size,
+          conversionState: initialConversionState(upload),
+          createdById: userId,
+          updatedById: userId,
+        },
+        select: { id: true, conversionState: true },
+      }),
+    ),
   );
   return savedFile(file);
 }

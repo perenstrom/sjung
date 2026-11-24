@@ -115,6 +115,12 @@ describe.each(Object.entries(KINDS))("a %s's Slug", (_, kind) => {
     expect(await slugs(otherGroup)).toEqual(["ave-maria"]);
   });
 
+  it("stays unique when two with the same name are saved at once", async () => {
+    await Promise.all([kind.add(group, "Ave Maria"), kind.add(group, "Ave Maria")]);
+
+    expect((await slugs()).sort()).toEqual(["ave-maria", "ave-maria-2"]);
+  });
+
   it("is made again from the new name on a rename, and kept when the name makes the same Slug", async () => {
     await kind.add(group, "Ave Maria");
     await kind.add(group, "Ave Maria");

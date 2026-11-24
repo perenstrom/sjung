@@ -1,6 +1,6 @@
 "use server";
 
-import { freeContentSlug } from "@/lib/content-slug";
+import { saveWithFreeSlug } from "@/lib/content-slug";
 import { findInGroup } from "@/lib/find-in-group";
 import prisma from "@/lib/prisma";
 import { parsePieceIdFromFormData } from "@/lib/schemas/pieces";
@@ -98,17 +98,11 @@ export async function createSetList(formData: FormData) {
   const current = parseSetListCurrentFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    await prisma.setList.create({
-      data: {
-        name,
-        slug: await freeContentSlug(prisma, "setList", groupId, name),
-        date,
-        current,
-        groupId,
-        createdById: userId,
-        updatedById: userId,
-      },
-    });
+    await saveWithFreeSlug("setList", groupId, name, (tx, slug) =>
+      tx.setList.create({
+        data: { name, slug, date, current, groupId, createdById: userId, updatedById: userId },
+      }),
+    );
 
     revalidateGroupSetListsRoutes(groupSlug);
   });
@@ -123,16 +117,17 @@ export async function updateSetList(formData: FormData) {
 
   await runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const existing = await findInGroup(groupId, "setList", setListId);
-    await prisma.setList.update({
-      where: { id: existing.id },
-      data: {
-        name,
-        slug: await freeContentSlug(prisma, "setList", groupId, name, existing.id),
-        date,
-        current,
-        updatedById: userId,
-      },
-    });
+    await saveWithFreeSlug(
+      "setList",
+      groupId,
+      name,
+      (tx, slug) =>
+        tx.setList.update({
+          where: { id: existing.id },
+          data: { name, slug, date, current, updatedById: userId },
+        }),
+      { exceptId: existing.id },
+    );
 
     revalidateGroupSetListsRoutes(groupSlug);
   });

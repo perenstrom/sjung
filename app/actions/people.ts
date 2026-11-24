@@ -9,7 +9,7 @@ import {
   type PersonDetail,
   type PersonWithPieceCount,
 } from "@/lib/people/queries";
-import { freeContentSlug } from "@/lib/content-slug";
+import { saveWithFreeSlug } from "@/lib/content-slug";
 import { findInGroup } from "@/lib/find-in-group";
 import { groupPeoplePath } from "@/lib/groups/routes";
 import prisma from "@/lib/prisma";
@@ -45,16 +45,12 @@ export async function createPerson(formData: FormData) {
   const name = parsePersonNameFromFormData(formData);
 
   return runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const person = await prisma.person.create({
-      data: {
-        name,
-        slug: await freeContentSlug(prisma, "person", groupId, name),
-        groupId,
-        createdById: userId,
-        updatedById: userId,
-      },
-      select: { id: true, name: true },
-    });
+    const person = await saveWithFreeSlug("person", groupId, name, (tx, slug) =>
+      tx.person.create({
+        data: { name, slug, groupId, createdById: userId, updatedById: userId },
+        select: { id: true, name: true },
+      }),
+    );
 
     revalidateGroupPeopleRoutes(groupSlug);
     return person;
@@ -72,11 +68,18 @@ export async function renamePerson(formData: FormData) {
 
   return runContentMutation(groupSlug, async ({ userId, groupId }) => {
     const person = await findInGroup(groupId, "person", personId);
-    const renamed = await prisma.person.update({
-      where: { id: person.id },
-      data: { name, slug: await freeContentSlug(prisma, "person", groupId, name, person.id), updatedById: userId },
-      select: { slug: true },
-    });
+    const renamed = await saveWithFreeSlug(
+      "person",
+      groupId,
+      name,
+      (tx, slug) =>
+        tx.person.update({
+          where: { id: person.id },
+          data: { name, slug, updatedById: userId },
+          select: { slug: true },
+        }),
+      { exceptId: person.id },
+    );
 
     revalidateGroupPersonRoutes(groupSlug, renamed.slug);
     return renamed;
