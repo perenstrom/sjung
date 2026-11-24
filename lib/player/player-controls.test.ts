@@ -246,6 +246,24 @@ describe("the passage as the controls show it", () => {
   ])("in a score that takes taps, passage $passage reads $status, with no button", ({ passage, label, status }) => {
     expect(passageOf({ bars: [0, 2, 4, 6], passage }, true)).toMatchObject({ label, status, markButton: null });
   });
+
+  it.each<{ passage: Passage | null; label: string | null; status: string; markButton: string }>([
+    {
+      passage: null,
+      label: null,
+      status: "Sätt start och slut för att repetera ett avsnitt.",
+      markButton: "Start här",
+    },
+    {
+      passage: { start: 2, end: null },
+      label: null,
+      status: "Start: takt 2. Sätt slutet där avsnittet slutar.",
+      markButton: "Slut här",
+    },
+    { passage: { start: 2, end: 6 }, label: "takt 2–3", status: "Repeterar takt 2–3", markButton: "Start här" },
+  ])("with bars but no score to tap, passage $passage reads $status", ({ passage, label, status, markButton }) => {
+    expect(passageOf({ bars: [0, 2, 4, 6], passage })).toMatchObject({ label, status, markButton });
+  });
 });
 
 describe("the playhead and tempo as the controls show them", () => {

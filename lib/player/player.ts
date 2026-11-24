@@ -119,17 +119,6 @@ export function playStart(passage: Passage | null, position: number): number | n
   return isRepeating(passage) && (position < passage.start || position >= passage.end) ? passage.start : null;
 }
 
-/**
- * "Start här" / "Slut här" at the playhead: starts a passage, or ends the one
- * being marked. An end before the start swaps them; an end at the start keeps
- * marking.
- */
-export function markPassage(passage: Passage | null, position: number): Passage {
-  if (passage === null || passage.end !== null) return { start: position, end: null };
-  if (position === passage.start) return passage;
-  return position > passage.start ? { start: passage.start, end: position } : { start: position, end: passage.start };
-}
-
 /** The bar `seconds` falls in, counted from 1; `null` for a file without bars. */
 export function barAt(bars: readonly number[], seconds: number): number | null {
   if (bars.length === 0) return null;

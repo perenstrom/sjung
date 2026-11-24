@@ -19,7 +19,6 @@ import {
   IDLE_SNAPSHOT,
   isRepeating,
   type Passage,
-  markPassage,
   passageBarsLabel,
   type Player,
   type PlayerPart,
@@ -40,8 +39,6 @@ export type PlayerCommand =
   | { type: "seek"; seconds: number }
   /** To the start of the passage that repeats, or of the file. */
   | { type: "rewind" }
-  /** "Start här" at the playhead, or "Slut här" while a passage is being marked. */
-  | { type: "mark" }
   | { type: "markStart" }
   | { type: "markEnd" }
   | { type: "stopRepeating" }
@@ -192,9 +189,6 @@ function runCommand(
       }
       player.seek(0);
       return "Till början";
-    case "mark":
-      player.setPassage(markPassage(passage, position));
-      return null;
     case "markStart":
       return setMarked(player, startAt(passage, bars.length > 0 ? barStartAt(bars, position) : position), snapshot);
     case "markEnd": {
@@ -255,7 +249,6 @@ export function controlsView(
   const { position, duration, passage, bars, barNumbers, parts, sound } = snapshot;
   const bar = barNumberAt(bars, barNumbers, position);
   const time = formatTime(position);
-  const labelBars = scoreTakesTaps ? bars : [];
   return {
     status: snapshot.status,
     playing: snapshot.playing,
@@ -271,8 +264,8 @@ export function controlsView(
     tempo: { percent: snapshot.tempo, changed: snapshot.tempo !== DEFAULT_TEMPO },
     passage: {
       range: passage,
-      label: isRepeating(passage) ? passageLabel(passage, labelBars, barNumbers) : null,
-      status: passageStatus(passage, { bars: labelBars, barNumbers, scoreTakesTaps }),
+      label: isRepeating(passage) ? passageLabel(passage, bars, barNumbers) : null,
+      status: passageStatus(passage, { bars, barNumbers, scoreTakesTaps }),
       repeating: isRepeating(passage),
       marking: passage !== null && passage.end === null,
       markButton: scoreTakesTaps ? null : passage !== null && passage.end === null ? "Slut här" : "Start här",

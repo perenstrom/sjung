@@ -187,7 +187,8 @@ export function TempoControls({ tempo, onTempo }: { tempo: number; onTempo: (per
 /**
  * The Repetera sheet. Where the score takes taps, a tap on a bar starts the
  * passage and a tap on another ends it. Otherwise "Start här" and "Slut här"
- * mark it at the playhead. Either way it then repeats until stopped.
+ * mark it at the playhead as A and B do: by whole bars in a file with bars.
+ * Either way it then repeats until stopped.
  */
 export function RepeatControls({ passage, run }: { passage: PlayerControlsView["passage"]; run: RunCommand }) {
   return (
@@ -195,7 +196,11 @@ export function RepeatControls({ passage, run }: { passage: PlayerControlsView["
       <p className="text-sm">{passage.status}</p>
       <div className="flex gap-2">
         {passage.markButton === null ? null : (
-          <Button type="button" onClick={() => run({ type: "mark" })} className="flex-1">
+          <Button
+            type="button"
+            onClick={() => run({ type: passage.markButton === "Slut här" ? "markEnd" : "markStart" })}
+            className="flex-1"
+          >
             {passage.markButton}
           </Button>
         )}
