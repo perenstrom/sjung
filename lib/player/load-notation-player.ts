@@ -3,11 +3,10 @@ import type * as AlphaTab from "@coderline/alphatab";
 import { fetchBuffer, playThroughSilentSwitch } from "@/lib/player/loading";
 import { notationBarsOf } from "@/lib/player/notation-bars";
 import { createNotationPlayer, type NotationPart, type TickRange } from "@/lib/player/notation-player";
-import { isPercussion, playWith } from "@/lib/player/musicxml-score";
+import { type AlphaTabModule, isPercussion, playWith, scoreOf } from "@/lib/player/musicxml-score";
 import { IDLE_SNAPSHOT, partName, type Player } from "@/lib/player/player";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
-type AlphaTabModule = typeof AlphaTab;
 type Score = AlphaTab.model.Score;
 
 /**
@@ -48,7 +47,8 @@ function importAlphaTab(): Promise<AlphaTabModule> {
 }
 
 /**
- * Loads the MusicXML or `.mxl` file at `src` into alphaTab, draws it in
+ * Loads the MusicXML or `.mxl` file at `src` into alphaTab, fixed up where
+ * alphaTab reads choir scores wrongly (`scoreOf`), draws it in
  * `element` (scrolled with the cursor in `scrollElement`), played with the
  * player's soundfont at `soundfontSrc`, and returns its player. Only ever
  * imported dynamically, so alphaTab is downloaded only when a notation File
@@ -111,7 +111,7 @@ export async function loadNotationPlayer({
   };
 
   try {
-    const score = at.importer.ScoreLoader.loadScoreFromBytes(new Uint8Array(file), api.settings);
+    const score = scoreOf(at, new Uint8Array(file), api.settings);
     playWith(at, score, SOUND_PROGRAMS[IDLE_SNAPSHOT.sound]);
     const ready = untilReady(api, signal);
     api.loadSoundFont(new Uint8Array(soundfont), false);
