@@ -4,6 +4,7 @@ import { groupSetListPath } from "@/lib/groups/routes";
 import { inCategoryOrder } from "@/lib/pieces/categories";
 import * as fileStore from "@/lib/pieces/file-store";
 import { pieceHref, playerHref } from "@/lib/pieces/href";
+import { playbackOf } from "@/lib/pieces/playback";
 import prisma from "@/lib/prisma";
 
 /** A Playable File the player can switch to, opened from the same place. */
@@ -23,8 +24,8 @@ export type PlayerData = {
 
 /**
  * The player for one of a Piece's Playable Files (see CONTEXT.md), or `null`
- * when the File isn't one, isn't on that Piece, or the User can't see the
- * Group. Any Member may play: playing changes nothing, so it needs no Claim.
+ * when the File isn't one, can't be played yet, isn't on that Piece, or the
+ * User can't see the Group. Any Member may play: playing changes nothing, so it needs no Claim.
  *
  * Opened from a Set list piece (`fromSetListPieceId`), it offers the Playable
  * Files shown there and closes to its Set list; `null` when that Set list
@@ -54,17 +55,27 @@ export async function getPlayerData(
     select: {
       name: true,
       files: {
-        select: { id: true, displayName: true, fileName: true, category: true, storagePath: true, mimeType: true },
+        select: {
+          id: true,
+          displayName: true,
+          fileName: true,
+          category: true,
+          storagePath: true,
+          mimeType: true,
+          conversionState: true,
+          convertedStoragePath: true,
+        },
       },
     },
   });
   if (!piece) return null;
 
   // Every File shows on a Set list piece until Hidden ones exist (PER-137);
-  // the player must then leave those out too.
+  // the player must then leave those out too. A MuseScore File not yet
+  // converted can't be played, so it isn't offered either.
   const playable = piece.files.flatMap((file) => {
     const format = playableFormatOf(file);
-    return format ? [{ ...file, format }] : [];
+    return format && playbackOf(file) === "ready" ? [{ ...file, format }] : [];
   });
   const file = playable.find((candidate) => candidate.id === fileId);
   if (!file) return null;

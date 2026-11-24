@@ -36,6 +36,7 @@ Required variables (from `.env.example`):
 - `APP_BASE_URL` (origin for links in emails, e.g. `https://www.sjung.app`; `http://localhost:3000` locally; required to send any email)
 - `APP_ENV` (optional; leave empty locally — set per deployed app, see "Deploying" below)
 - `APP_COMMIT` (optional; leave empty locally — set on staging only, see "Deploying" below)
+- `MUSESCORE_CONVERTER_URL` (the MuseScore converter worker that prepares MuseScore Files for the player, e.g. `http://localhost:8080` with it running in Docker; optional locally, where MuseScore Files then fail to be prepared — see [`workers/musescore-converter/README.md`](workers/musescore-converter/README.md))
 
 Each R2 bucket needs a CORS rule for the app's origin (`http://localhost:3000` locally) that allows `PUT`, because the browser uploads Files straight to the bucket, and `GET`, because the player downloads a MIDI File and its soundfont to play them, and on desktop an audio File to draw its waveform. Without `GET` a MIDI File can't be played and the waveform strip stays flat; audio still plays.
 

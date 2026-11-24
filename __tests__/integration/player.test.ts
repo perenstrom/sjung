@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
 import type { Group, Piece } from "@/app/generated/prisma/client";
+import { FileConversionState } from "@/app/generated/prisma/enums";
 import { groupSetListPath } from "@/lib/groups/routes";
 import { pieceHref, playerHref } from "@/lib/pieces/href";
 import { getPlayerData } from "@/lib/pieces/player";
@@ -67,6 +68,36 @@ describe("opening the player", () => {
     expect(scorePlayer?.soundfontSrc).toContain(PLAYER_SOUNDFONT_KEY);
     expect(audioPlayer?.soundfontSrc).toBeNull();
   });
+
+  it("plays a converted MuseScore File from its copy, as a score", async () => {
+    const score = await createFile(piece, null, {
+      displayName: "Partitur",
+      fileName: "partitur.mscz",
+      mimeType: "application/octet-stream",
+      conversionState: FileConversionState.READY,
+    });
+
+    const player = await getPlayerData(group.slug, piece.id, score.id);
+
+    expect(player?.file.format).toEqual({ engine: "notation", label: "MuseScore" });
+    expect(player?.file.src).toContain(score.convertedStoragePath);
+    expect(player?.files.map(({ id }) => id)).toEqual([score.id]);
+  });
+
+  it.each([FileConversionState.PENDING, FileConversionState.FAILED])(
+    "neither opens nor offers a MuseScore File whose conversion is %s",
+    async (conversionState) => {
+      const score = await createFile(piece, null, {
+        fileName: "partitur.mscz",
+        mimeType: "application/octet-stream",
+        conversionState,
+      });
+      const sopran = await audioFile(piece, "Sopran");
+
+      expect(await getPlayerData(group.slug, piece.id, score.id)).toBeNull();
+      expect((await getPlayerData(group.slug, piece.id, sopran.id))?.files.map(({ id }) => id)).toEqual([sopran.id]);
+    },
+  );
 
   it("offers the Piece's other Playable Files in the order the Piece lists them, and no other Files", async () => {
     const sopran = await audioFile(piece, "Sopran", "Övningsfiler");

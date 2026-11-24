@@ -92,7 +92,8 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
             <MiddleTruncatedText text={file.displayName} />
           </FileOpenLink>
         </TruncatedTooltip>
-        {file.playable ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
+        <FilePlaybackNote file={file} />
+        {file.playback === "ready" ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
         {actions}
       </InlineRow>
     );
@@ -111,8 +112,9 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
       </span>
       {/* Metadata and actions wrap onto the next line together. */}
       <span className="inline-flex items-center gap-2">
+        <FilePlaybackNote file={file} />
         <span className="text-xs text-muted-foreground">{metadataForFile(file)}</span>
-        {file.playable ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
+        {file.playback === "ready" ? <FileDownloadButton ctx={ctx} file={file} dimmed={removing} /> : null}
         {actions === null ? null : <span className="inline-flex items-center">{actions}</span>}
       </span>
     </li>
@@ -217,15 +219,23 @@ function RemoveButton({ label, disabled, onClick }: { label: string; disabled: b
 }
 
 function FileIcon({ file }: { file: PieceFileListItem }) {
-  const Icon = file.playable ? Play : FileText;
+  // A File that couldn't be prepared shows as an ordinary File (PER-479).
+  const Icon = file.playback === "ready" || file.playback === "preparing" ? Play : FileText;
   return <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />;
+}
+
+/** Says a MuseScore File is still being prepared for the player (ADR-0009). */
+function FilePlaybackNote({ file }: { file: PieceFileListItem }) {
+  return file.playback === "preparing" ? (
+    <span className="shrink-0 text-xs text-muted-foreground">Förbereds…</span>
+  ) : null;
 }
 
 const DIMMED = "pointer-events-none opacity-50";
 
 /**
- * Opens a File: a Playable File in the player (see CONTEXT.md), any other
- * through `FileDownloadLink`. While the File is being removed it dims and
+ * Opens a File: a Playable File ready to play in the player (see CONTEXT.md),
+ * any other through `FileDownloadLink`. While the File is being removed it dims and
  * stops opening.
  */
 function FileOpenLink({
@@ -242,7 +252,7 @@ function FileOpenLink({
   children: ReactNode;
 }) {
   const classes = cn("text-left text-primary underline-offset-4 hover:underline", dimmed && DIMMED, className);
-  if (!file.playable) {
+  if (file.playback !== "ready") {
     return (
       <FileDownloadLink ctx={ctx} file={file} dimmed={dimmed} className={classes}>
         {children}

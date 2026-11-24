@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { type EditorTarget, isBlocked, isOpen, nextEditor, type OpenEditor } from "./editor";
 import { FileRow, LinkRow, type RowContext } from "./rows";
 import type { PieceFilesAndLinksData } from "./toPieceFilesAndLinks";
+import { useRefreshWhilePreparing } from "./useRefreshWhilePreparing";
 
 type PieceFilesAndLinksProps = {
   groupSlug: string;
@@ -62,6 +63,7 @@ function Body({
   const [editor, setEditorState] = useState<OpenEditor>(null);
   const [removing, setRemoving] = useState<ReadonlySet<string>>(new Set());
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  useRefreshWhilePreparing(filesAndLinks.files, router);
 
   async function remove(kind: "file" | "link", id: string) {
     const key = `${kind}:${id}`;

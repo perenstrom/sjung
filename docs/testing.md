@@ -9,18 +9,20 @@ A test earns its place by going **red** when a user-visible or caller-visible be
 - a returned value or a thrown error and its Swedish message
 - rows in the test database after a server action
 - the text a view renders
-- what `sentEmails()` and `storedKeys()` report from the fakes
+- what `sentEmails()`, `storedKeys()` and `convertedScores()` report from the fakes
 
 Mock only at a **boundary** Sjung does not own, and only with the seams that already exist:
 
-| Boundary                                          | Seam                                                                                         |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Session (`@/auth`)                                | `actAs` / `actAsAnonymous` in `__tests__/support/session.ts`                                 |
-| Email (`@/lib/email`)                             | the fake in `__tests__/support/fake-email.ts`, installed for every integration test          |
-| Object storage (`@/lib/object-storage`)           | the fake in `__tests__/support/fake-object-storage.ts`, installed for every integration test |
-| Next runtime (`next/cache`, `next/navigation`)    | `vi.mock` per file                                                                           |
-| Server actions imported by a view under unit test | `vi.mock` of the actions module per file, since it reaches the database                      |
-| MuseScore CLI (the converter worker)              | `MUSESCORE_COMMAND` pointed at `workers/musescore-converter/fake-musescore.mjs`              |
+| Boundary                                           | Seam                                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Session (`@/auth`)                                 | `actAs` / `actAsAnonymous` in `__tests__/support/session.ts`                                         |
+| Email (`@/lib/email`)                              | the fake in `__tests__/support/fake-email.ts`, installed for every integration test                  |
+| Object storage (`@/lib/object-storage`)            | the fake in `__tests__/support/fake-object-storage.ts`, installed for every integration test         |
+| Next runtime (`next/cache`, `next/navigation`)     | `vi.mock` per file                                                                                   |
+| Server actions imported by a view under unit test  | `vi.mock` of the actions module per file, since it reaches the database                              |
+| MuseScore CLI (the converter worker)               | `MUSESCORE_COMMAND` pointed at `workers/musescore-converter/fake-musescore.mjs`                      |
+| The converter worker (`@/lib/musescore-converter`) | the HTTP fake in `__tests__/support/fake-musescore-converter.ts`, started for every integration test |
+| `after` from `next/server`                         | `vi.mock` per file with `__tests__/support/after.ts`, then `runAfterTasks()`                         |
 
 Sjung's own code (`lib/*`, server actions, Prisma) runs for real. A test that mocks the module it tests, or whose main assertion is `toHaveBeenCalledWith` on Sjung's own function, tests the mock, so rewrite it to assert the outcome instead. A call assertion is right only at a boundary whose effect cannot be observed otherwise, for example `revalidatePath`, and even then fakes like `sentEmails()` come first.
 

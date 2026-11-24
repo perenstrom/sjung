@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
 import { fileDownloadHref, playerHref } from "@/lib/pieces/href";
+import type { Playback } from "@/lib/pieces/playback";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
 import { PieceFilesAndLinks } from "./PieceFilesAndLinks";
@@ -16,12 +17,16 @@ vi.mock("@/components/EditModeContext", () => ({
   useEditMode: () => ({ canEdit: isEditing, isEditing, setIsEditing: vi.fn() }),
 }));
 
-const file = (displayName: string, category: string | null = null, playable = false): PieceFileListItem => ({
+const file = (
+  displayName: string,
+  category: string | null = null,
+  playback: Playback | null = null,
+): PieceFileListItem => ({
   id: displayName,
   displayName,
   size: 1024,
   category,
-  playable,
+  playback,
 });
 const link = (label: string, category: string | null = null): PieceLink => ({
   id: label,
@@ -120,7 +125,7 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
   it.each([false, true])(
     "opens a Playable File in the player, with a small button to download it (Edit mode: %s)",
     (editing) => {
-      const html = render(layout, [file("Sopran.mp3", null, true)], [], { editing });
+      const html = render(layout, [file("Sopran.mp3", null, "ready")], [], { editing });
       const anchors = [...html.matchAll(/<a[^>]*>/g)].map(([tag]) => tag);
       const open = anchors.find((tag) => tag.includes(`href="${playerHref("koren", "piece-1", "Sopran.mp3")}"`));
       const download = anchors.find((tag) => tag.includes(`href="${fileDownloadHref("koren", "Sopran.mp3")}"`));
@@ -132,8 +137,30 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
     },
   );
 
+  it.each([false, true])(
+    "says a MuseScore File is being prepared, and downloads it instead of opening the player (Edit mode: %s)",
+    (editing) => {
+      const html = render(layout, [file("Partitur.mscz", null, "preparing")], [], { editing });
+      const anchors = [...html.matchAll(/<a[^>]*>/g)].map(([tag]) => tag);
+
+      expect(textOf(html)).toContain("Förbereds…");
+      expect(html).not.toContain(playerHref("koren", "piece-1", "Partitur.mscz"));
+      expect(anchors.filter((tag) => tag.includes(`href="${fileDownloadHref("koren", "Partitur.mscz")}"`))).toEqual([
+        expect.not.stringContaining("aria-label"),
+      ]);
+    },
+  );
+
+  it("downloads a MuseScore File that couldn't be prepared, like a File the player can't open", () => {
+    const html = render(layout, [file("Partitur.mscz", null, "failed")], []);
+
+    expect(textOf(html)).not.toContain("Förbereds…");
+    expect(html).not.toContain(playerHref("koren", "piece-1", "Partitur.mscz"));
+    expect(html).toContain(`href="${fileDownloadHref("koren", "Partitur.mscz")}"`);
+  });
+
   it("on a Set list piece, opens the player for that Set list piece", () => {
-    const html = render(layout, [file("Sopran.mp3", null, true)], [], { setListPieceId: "slp-1" });
+    const html = render(layout, [file("Sopran.mp3", null, "ready")], [], { setListPieceId: "slp-1" });
     const href = playerHref("koren", "piece-1", "Sopran.mp3", { fromSetListPieceId: "slp-1" });
 
     expect(html).toContain(`href="${href}"`);

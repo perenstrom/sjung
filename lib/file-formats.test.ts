@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { FILE_INPUT_ACCEPT, isAllowedFile, playableFormatOf, uploadMimeType } from "@/lib/file-formats";
+import {
+  FILE_INPUT_ACCEPT,
+  isAllowedFile,
+  needsConversion,
+  playableFormatOf,
+  uploadMimeType,
+} from "@/lib/file-formats";
 
 describe("isAllowedFile", () => {
   it.each([
@@ -32,6 +38,9 @@ describe("isAllowedFile", () => {
     ["Alla.mxl", "application/vnd.recordare.musicxml"],
     ["Alla.mxl", "application/zip"],
     ["Alla.MXL", "application/octet-stream"],
+    ["Alla.mscz", "application/x-musescore"],
+    ["Alla.mscz", "application/zip"],
+    ["Alla.MSCZ", "application/octet-stream"],
   ])("accepts %s as %s", (fileName, mimeType) => {
     expect(isAllowedFile({ fileName, mimeType })).toBe(true);
   });
@@ -67,6 +76,7 @@ describe("playableFormatOf", () => {
     ["Alla.musicxml", "MusicXML"],
     ["Alla.xml", "MusicXML"],
     ["Alla.mxl", "MXL"],
+    ["Alla.mscz", "MuseScore"],
   ])("draws and plays %s as notation, labelled %s", (fileName, label) => {
     expect(playableFormatOf({ fileName })).toEqual({ engine: "notation", label });
   });
@@ -76,10 +86,22 @@ describe("playableFormatOf", () => {
   });
 });
 
+describe("needsConversion", () => {
+  it.each([
+    ["Alla.mscz", true],
+    ["Alla.MSCZ", true],
+    ["Alla.mxl", false],
+    ["Sopran.mp3", false],
+    ["Noter.pdf", false],
+  ])("for %s is %s", (fileName, expected) => {
+    expect(needsConversion({ fileName })).toBe(expected);
+  });
+});
+
 describe("FILE_INPUT_ACCEPT", () => {
   it("lists every accepted extension", () => {
     expect(FILE_INPUT_ACCEPT).toBe(
-      ".pdf,.jpg,.jpeg,.png,.webp,.gif,.mp3,.m4a,.aac,.wav,.mid,.midi,.musicxml,.xml,.mxl",
+      ".pdf,.jpg,.jpeg,.png,.webp,.gif,.mp3,.m4a,.aac,.wav,.mid,.midi,.musicxml,.xml,.mxl,.mscz",
     );
   });
 });
