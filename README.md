@@ -58,6 +58,12 @@ npm run dev
 
 App runs at `http://localhost:3000`.
 
+Once per clone, make `git blame` skip the commits that only reformatted code:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs
+```
+
 ### Emails in local development
 
 With `npm run dev` and no `RESEND_API_KEY`, emails aren't sent. Each one is printed to the terminal running the dev server instead: sender, recipient, subject and the email as plain text, so links such as the verification link can be opened from there. `EMAIL_FROM` and `FEEDBACK_EMAIL_TO` can be left empty too.
@@ -72,6 +78,8 @@ Staging and production never print emails: if either variable is missing there, 
 - `npm run build` - production build
 - `npm run start` - run production server
 - `npm run lint` - run linting
+- `npm run format` - format every TS/JS, JSON, CSS and Markdown file with Prettier
+- `npm run format:check` - list files Prettier would change and fail if there are any (CI runs this)
 - `npm run typecheck` - type-check the project with `tsc --noEmit`
 - `npm run test:unit` - run unit tests once
 - `npm run test:unit:watch` - run unit tests in watch mode

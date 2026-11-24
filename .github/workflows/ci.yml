@@ -71,6 +71,10 @@ jobs:
         if: needs.changes.outputs.code == 'true'
         run: npm run lint
 
+      - name: Check formatting
+        if: needs.changes.outputs.code == 'true'
+        run: npm run format:check
+
       - name: Typecheck
         if: needs.changes.outputs.code == 'true'
         run: npm run typecheck
