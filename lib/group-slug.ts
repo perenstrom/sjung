@@ -1,4 +1,4 @@
-import slugify from "@sindresorhus/slugify";
+import { slugifyName } from "@/lib/slug";
 
 /**
  * URL segments directly under `/app` that belong to the app rather than to a
@@ -48,12 +48,7 @@ export const RESERVED_GROUP_SLUGS: ReadonlySet<string> = new Set([
 
 /** URL-safe base slug from display name (ASCII, lowercase, hyphenated). */
 export function slugifyGroupName(raw: string): string {
-  const candidate = slugify(raw.trim(), {
-    separator: "-",
-    lowercase: true,
-    locale: "sv",
-  });
-  return candidate.length > 0 ? candidate : "grupp";
+  return slugifyName(raw, "grupp");
 }
 
 export function isReservedGroupSlug(slug: string): boolean {

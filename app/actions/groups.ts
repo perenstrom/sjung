@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
+import { firstFreeSlug } from "@/lib/slug";
 import { changeMember, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
@@ -23,7 +24,6 @@ import {
   parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
 import {
-  revalidateAppAndMyGroupsRoutes,
   revalidateAppAndMyGroupsWithGroupRoute,
   revalidateGroupMembersRoutes,
 } from "@/lib/revalidate/group-routes";
@@ -56,49 +56,32 @@ export async function createGroup(formData: FormData) {
     throw new Error("Det namnet ger en förbjuden adress. Välj ett annat gruppnamn.");
   }
 
-  let assignedSlug: string | null = null;
+  const slug = await prisma.$transaction(async (tx) => {
+    const clashes = await tx.group.findMany({
+      where: { OR: [{ slug: base }, { slug: { startsWith: `${base}-` } }] },
+      select: { slug: true },
+    });
+    const taken = new Set(clashes.map((group) => group.slug));
+    const free = firstFreeSlug(base, (candidate) => isReservedGroupSlug(candidate) || taken.has(candidate));
 
-  await prisma.$transaction(async (tx) => {
-    let n = 0;
-    while (true) {
-      const slug = n === 0 ? base : `${base}-${n + 1}`;
-      if (isReservedGroupSlug(slug)) {
-        n += 1;
-        continue;
-      }
-      const clash = await tx.group.findUnique({
-        where: { slug },
-        select: { id: true },
-      });
-      if (clash) {
-        n += 1;
-        continue;
-      }
-
-      const group = await tx.group.create({
-        data: {
-          name: trimmed,
-          slug,
-          createdById: user.id,
-          updatedById: user.id,
-        },
-      });
-      await tx.usersToGroups.create({
-        data: {
-          userId: user.id,
-          groupId: group.id,
-        },
-      });
-      assignedSlug = slug;
-      break;
-    }
+    const group = await tx.group.create({
+      data: {
+        name: trimmed,
+        slug: free,
+        createdById: user.id,
+        updatedById: user.id,
+      },
+    });
+    await tx.usersToGroups.create({
+      data: {
+        userId: user.id,
+        groupId: group.id,
+      },
+    });
+    return free;
   });
 
-  if (assignedSlug) {
-    revalidateAppAndMyGroupsWithGroupRoute(assignedSlug);
-    return;
-  }
-  revalidateAppAndMyGroupsRoutes();
+  revalidateAppAndMyGroupsWithGroupRoute(slug);
 }
 
 export async function updateGroup(formData: FormData) {
