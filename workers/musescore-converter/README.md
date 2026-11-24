@@ -4,13 +4,13 @@ A stateless HTTP service that turns a MuseScore score (`.mscz`) into compressed 
 
 ## API
 
-| Request         | Answer                                                                                                                                    |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /convert` | The score's bytes as the body. `200` with the `.mxl` bytes (`application/vnd.recordare.musicxml`).                                        |
-|                 | `400` empty body, `413` body over `MAX_SCORE_BYTES`, `422` MuseScore couldn't convert it, `504` it took longer than `CONVERT_TIMEOUT_MS`. |
-| `GET /health`   | `200 ok`. The image's `HEALTHCHECK` uses it.                                                                                              |
+| Request         | Answer                                                                                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /convert` | The score's bytes as the body. `200` with the `.mxl` bytes (`application/vnd.recordare.musicxml`).                                                                                    |
+|                 | `400` empty body, `413` body over `MAX_SCORE_BYTES`, `422` MuseScore couldn't convert it, `503` `MAX_WAITING` scores already waiting, `504` it took longer than `CONVERT_TIMEOUT_MS`. |
+| `GET /health`   | `200 ok`. The image's `HEALTHCHECK` uses it.                                                                                                                                          |
 
-Error answers are plain text; a `422` or `504` includes what MuseScore printed. The worker runs one conversion at a time and queues the rest, since one MuseScore process needs up to about 260 MB. A typical choir score takes about 0.3–1 s; the largest tested, a complete mass, about 2.5 s.
+Error answers are plain text; a `422` or `504` includes what MuseScore printed. The worker runs one conversion at a time, since one MuseScore process needs up to about 260 MB, and queues up to `MAX_WAITING` more. In the spike a typical choir score took about 0.3 s on arm64 and the largest tested, a complete mass, 1.7 s; through this worker on a Mac they took about 0.4–1 s and 2.6 s.
 
 ```bash
 curl --data-binary @score.mscz -o score.mxl http://localhost:8080/convert
@@ -18,12 +18,13 @@ curl --data-binary @score.mscz -o score.mxl http://localhost:8080/convert
 
 ## Configuration
 
-| Variable             | Default                 | Meaning                                         |
-| -------------------- | ----------------------- | ----------------------------------------------- |
-| `PORT`               | `8080`                  | Port the server listens on                      |
-| `CONVERT_TIMEOUT_MS` | `30000`                 | Time limit per conversion; MuseScore is killed  |
-| `MAX_SCORE_BYTES`    | `20971520` (20 MB)      | Largest score accepted                          |
-| `MUSESCORE_COMMAND`  | `/opt/musescore/AppRun` | The MuseScore CLI; the tests point it at a fake |
+| Variable             | Default                 | Meaning                                          |
+| -------------------- | ----------------------- | ------------------------------------------------ |
+| `PORT`               | `8080`                  | Port the server listens on                       |
+| `CONVERT_TIMEOUT_MS` | `30000`                 | Time limit per conversion; MuseScore is killed   |
+| `MAX_SCORE_BYTES`    | `20971520` (20 MB)      | Largest score accepted                           |
+| `MAX_WAITING`        | `4`                     | Conversions that may wait behind the running one |
+| `MUSESCORE_COMMAND`  | `/opt/musescore/AppRun` | The MuseScore CLI; the tests point it at a fake  |
 
 The MuseScore version is pinned by the build arguments `MUSESCORE_VERSION` and `MUSESCORE_BUILD` in the `Dockerfile`; both come from the AppImage's file name on [MuseScore's releases page](https://github.com/musescore/MuseScore/releases). MuseScore always runs with `-f`, or it refuses some real files as corrupted.
 
@@ -46,12 +47,12 @@ The server is `server.ts`, run by Node's built-in TypeScript support, so it has 
 The worker is one Coolify app shared by `sjung-staging` and `sjung-production`, on the same server.
 
 1. Add a resource from this repository with the **Dockerfile** build pack, base directory `/workers/musescore-converter` and branch `main`.
-2. Give it **no domain** and no published ports, so it can't be reached from the internet. The app reaches it over Coolify's Docker network at `http://<container name>:8080`.
+2. Give it **no domain** and no published ports, so it can't be reached from the internet. The app reaches it over Coolify's Docker network (`coolify` by default) at `http://<worker host>:8080`. Coolify's container names change with each deploy, so use a hostname that survives a redeploy, and check it in Coolify's network settings for the resource.
 3. Set a memory limit of **512 MB** (Resource Limits). The host has swapped before, and one conversion needs about 260 MB.
-4. Deploy, then check from the app host that a real score converts, for example `docker exec <sjung app container> curl -s -o /dev/null -w '%{http_code}' --data-binary @score.mscz http://<container name>:8080/convert` after copying a score into the container.
-5. Give the app the worker's URL as config, so it can call it. The app side is PER-478.
+4. Deploy, then check from the app's host that a real score converts over that network: `docker run --rm --network coolify -v "$PWD/score.mscz:/score.mscz:ro" curlimages/curl -s -o /dev/null -w '%{http_code}\n' --data-binary @/score.mscz http://<worker host>:8080/convert` should print `200`.
+5. Set the runtime variable `MUSESCORE_CONVERTER_URL` to `http://<worker host>:8080` on both `sjung-staging` and `sjung-production`. The app starts calling it in PER-478.
 
-Building on the host needs about 1–2 GB of build cache on top of the image, because the build downloads and unpacks a 190 MB AppImage. Redeploy it by hand when this folder changes; it is not part of the app's CI deploys.
+Building on the host needs about 1–2 GB of build cache on top of the image, because the build downloads and unpacks a 190 MB AppImage. Redeploy it by hand when this folder changes; it is not part of the app's CI deploys. On stop it finishes the running and waiting conversions first (at most about 2.5 minutes with the defaults), so a shorter stop grace period cuts them off; the app retries a failed conversion (ADR-0009).
 
 ## Licence
 

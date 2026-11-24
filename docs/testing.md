@@ -20,6 +20,7 @@ Mock only at a **boundary** Sjung does not own, and only with the seams that alr
 | Object storage (`@/lib/object-storage`)           | the fake in `__tests__/support/fake-object-storage.ts`, installed for every integration test |
 | Next runtime (`next/cache`, `next/navigation`)    | `vi.mock` per file                                                                           |
 | Server actions imported by a view under unit test | `vi.mock` of the actions module per file, since it reaches the database                      |
+| MuseScore CLI (the converter worker)              | `MUSESCORE_COMMAND` pointed at `workers/musescore-converter/fake-musescore.mjs`              |
 
 Sjung's own code (`lib/*`, server actions, Prisma) runs for real. A test that mocks the module it tests, or whose main assertion is `toHaveBeenCalledWith` on Sjung's own function, tests the mock, so rewrite it to assert the outcome instead. A call assertion is right only at a boundary whose effect cannot be observed otherwise, for example `revalidatePath`, and even then fakes like `sentEmails()` come first.
 
