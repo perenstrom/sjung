@@ -57,6 +57,21 @@ export async function signGet(
   return getSignedUrl(getClient(), command, { expiresIn: expiresInSeconds });
 }
 
+/** Stores `body` at `key` from the server, for objects no browser uploads. */
+export async function putObject(
+  key: string,
+  body: Uint8Array,
+  { contentType }: { contentType: string }
+): Promise<void> {
+  const command = new PutObjectCommand({
+    Bucket: getBucket(),
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  });
+  await getClient().send(command);
+}
+
 /** The object's size and type, or `null` when there is no object at `key`. */
 export async function headObject(key: string): Promise<StoredObject | null> {
   try {
