@@ -79,22 +79,28 @@ function Body({
   const [revealed, setRevealed] = useState(false);
   useRefreshWhilePreparing(filesAndLinks.files, router);
 
-  async function setHidden(kind: "file" | "link", id: string, hidden: boolean) {
-    if (!setListPiece) return;
-    const key = `${kind}:${id}`;
-    setTogglingHidden((prev) => new Set(prev).add(key));
+  /**
+   * Runs a row's server action for one File or Link (`kind:id`): marks it
+   * pending in `setPending` meanwhile, clears its last error, refreshes on
+   * success and keeps the error message, or `fallback`, on failure.
+   */
+  async function runRowAction(
+    key: string,
+    setPending: (update: (prev: ReadonlySet<string>) => ReadonlySet<string>) => void,
+    fallback: string,
+    action: (formData: FormData) => Promise<unknown>,
+  ) {
+    setPending((prev) => new Set(prev).add(key));
     setErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key)));
     try {
       const formData = new FormData();
       formData.set("groupSlug", groupSlug);
-      formData.set("setListPieceId", setListPiece.id);
-      formData.set(kind === "file" ? "fileId" : "linkId", id);
-      await (hidden ? hideOnSetListPiece : unhideOnSetListPiece)(formData);
+      await action(formData);
       router.refresh();
     } catch (err) {
-      setErrors((prev) => ({ ...prev, [key]: getThrownMessage(err, hidden ? "Kunde inte dölja" : "Kunde inte visa") }));
+      setErrors((prev) => ({ ...prev, [key]: getThrownMessage(err, fallback) }));
     } finally {
-      setTogglingHidden((prev) => {
+      setPending((prev) => {
         const next = new Set(prev);
         next.delete(key);
         return next;
@@ -102,31 +108,22 @@ function Body({
     }
   }
 
-  async function remove(kind: "file" | "link", id: string) {
-    const key = `${kind}:${id}`;
-    setRemoving((prev) => new Set(prev).add(key));
-    setErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key)));
-    try {
-      const formData = new FormData();
-      formData.set("groupSlug", groupSlug);
-      if (kind === "file") {
-        formData.set("fileId", id);
-        await deletePieceFile(formData);
-      } else {
-        formData.set("linkId", id);
-        await removeLink(formData);
-      }
-      router.refresh();
-    } catch (err) {
-      const fallback = kind === "file" ? "Kunde inte ta bort fil" : "Kunde inte ta bort länk";
-      setErrors((prev) => ({ ...prev, [key]: getThrownMessage(err, fallback) }));
-    } finally {
-      setRemoving((prev) => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
-    }
+  function setHidden(kind: "file" | "link", id: string, hidden: boolean) {
+    if (!setListPiece) return;
+    const fallback = hidden ? "Kunde inte dölja" : "Kunde inte visa";
+    void runRowAction(`${kind}:${id}`, setTogglingHidden, fallback, (formData) => {
+      formData.set("setListPieceId", setListPiece.id);
+      formData.set(kind === "file" ? "fileId" : "linkId", id);
+      return (hidden ? hideOnSetListPiece : unhideOnSetListPiece)(formData);
+    });
+  }
+
+  function remove(kind: "file" | "link", id: string) {
+    const fallback = kind === "file" ? "Kunde inte ta bort fil" : "Kunde inte ta bort länk";
+    void runRowAction(`${kind}:${id}`, setRemoving, fallback, (formData) => {
+      formData.set(kind === "file" ? "fileId" : "linkId", id);
+      return kind === "file" ? deletePieceFile(formData) : removeLink(formData);
+    });
   }
 
   const ctx: RowContext = {
@@ -154,14 +151,14 @@ function Body({
     ctx,
     removing: removing.has(`${kind}:${id}`),
     error: layout === "inline" ? errors[`${kind}:${id}`] : undefined,
-    onRemove: () => void remove(kind, id),
+    onRemove: () => remove(kind, id),
     hidden,
     hideToggle:
       setListPiece && isEditing
         ? {
             place: hiddenPlace(setListPiece.setListName),
             pending: togglingHidden.has(`${kind}:${id}`),
-            onToggle: () => void setHidden(kind, id, !hidden),
+            onToggle: () => setHidden(kind, id, !hidden),
           }
         : undefined,
   });
