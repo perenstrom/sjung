@@ -1,5 +1,6 @@
 import type { FileConversionState } from "@/app/generated/prisma/enums";
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
+import { playableFormatOf } from "@/lib/file-formats";
 import { playbackOf } from "@/lib/pieces/playback";
 
 export type PieceFilesAndLinksData = {
@@ -13,7 +14,7 @@ export type PieceFilesAndLinksData = {
  * so a File's storage key and audit columns must not come along.
  */
 export function toPieceFilesAndLinks(piece: {
-  files: readonly (Omit<PieceFileListItem, "playback"> & {
+  files: readonly (Omit<PieceFileListItem, "playback" | "engine"> & {
     fileName: string;
     conversionState?: FileConversionState | null;
   })[];
@@ -28,6 +29,7 @@ export function toPieceFilesAndLinks(piece: {
       category: file.category,
       createdAt: file.createdAt,
       playback: playbackOf(file),
+      engine: playableFormatOf(file)?.engine ?? null,
     })),
     links: piece.links.map((link) => ({
       id: link.id,

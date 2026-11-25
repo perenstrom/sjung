@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ExternalLink, FileText, Play, Trash2 } from "lucide-react";
+import { ClefTreble, Download, ExternalLink, FileText, Play, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { type ComponentProps, type ReactNode, useState, useTransition } from "react";
 
@@ -237,10 +237,13 @@ function RemoveButton({ label, disabled, onClick }: { label: string; disabled: b
   );
 }
 
+const FILE_ICON = "size-3.5 shrink-0 text-muted-foreground";
+
 function FileIcon({ file }: { file: PieceFileListItem }) {
   // A File that couldn't be prepared shows as an ordinary File (PER-479).
-  const Icon = opensPlayer(file) || file.playback === "preparing" ? Play : FileText;
-  return <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />;
+  if (!opensPlayer(file) && file.playback !== "preparing") return <FileText className={FILE_ICON} aria-hidden />;
+  if (file.engine === "notation") return <ClefTreble className={FILE_ICON} aria-hidden />;
+  return <Play className={FILE_ICON} aria-hidden />;
 }
 
 /** Says a MuseScore File is still being prepared for the player (ADR-0009). */
