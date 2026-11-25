@@ -5,7 +5,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-import type { GroupClaim } from "@/app/generated/prisma/client";
+import { GroupClaim } from "@/app/generated/prisma/enums";
 import { testPrisma } from "../support/db";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
@@ -301,10 +301,9 @@ describe("setMemberClaims", () => {
     const { group, creator, other } = await createManagerScenario();
     actAs(creator.id);
 
-    await setMemberClaims(
-      claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT", "REORDER_SET_LISTS"]),
-    );
-    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_MEMBERS", "MANAGE_CONTENT", "REORDER_SET_LISTS"]);
+    const everyClaim = Object.values(GroupClaim);
+    await setMemberClaims(claimsFormData(group.slug, other.id, everyClaim));
+    expect(await claimsOf(other.id, group.id)).toEqual(everyClaim);
 
     await setMemberClaims(claimsFormData(group.slug, other.id, []));
     expect(await claimsOf(other.id, group.id)).toEqual([]);
@@ -320,7 +319,7 @@ describe("setMemberClaims", () => {
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
   });
 
-  it.each<GroupClaim>(["MANAGE_CONTENT", "REORDER_SET_LISTS"])(
+  it.each<GroupClaim>(["MANAGE_CONTENT", "REORDER_SET_LISTS", "MANAGE_RUNNING_ORDER_NOTES"])(
     "lets a MANAGE_MEMBERS-only holder grant %s they don't hold, and revoke it",
     async (claim) => {
       const { group, manager, other } = await createManagerScenario(["MANAGE_MEMBERS"]);

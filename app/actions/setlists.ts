@@ -20,7 +20,7 @@ import {
   revalidateGroupSetListDetailRoutes,
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
-import { getWritableGroupIdForSlug, runContentMutation, runGroupMutation } from "@/lib/tenant-group";
+import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 import { SetListSequence } from "@/lib/setlists/sequence";
 import { PIECE_ALIAS_ORDER } from "@/lib/pieces/types";
 import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
@@ -207,33 +207,36 @@ export async function reorderSetListSteps(formData: FormData) {
   const setListId = parseSetListIdFromFormData(formData);
   const orderedSetListStepIds = parseOrderedSetListStepIdsFromFormData(formData);
 
-  await runGroupMutation(
+  await runContentMutation(
     groupSlug,
-    async ({ access }) => {
-      if (!access.can("manageContent")) {
-        access.require("reorderSetLists");
-      }
-    },
     async ({ userId, groupId }) => {
       const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
       await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
 
       revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
     },
+    { alsoAllowedBy: "reorderSetLists" },
   );
 }
+
+/** What a Running-order note action also accepts besides `manageContent` (ADR-0012), in any of the Group's Set lists. */
+const ALSO_ALLOWED_BY_NOTES_CLAIM = { alsoAllowedBy: "manageRunningOrderNotes" } as const;
 
 export async function appendSetListNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListId = parseSetListIdFromFormData(formData);
   const content = parseSetListNoteContentFromFormData(formData);
 
-  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
-    await SetListSequence.append(setList.id, { kind: "note", content }, userId);
+  await runContentMutation(
+    groupSlug,
+    async ({ userId, groupId }) => {
+      const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
+      await SetListSequence.append(setList.id, { kind: "note", content }, userId);
 
-    revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
-  });
+      revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
+    },
+    ALSO_ALLOWED_BY_NOTES_CLAIM,
+  );
 }
 
 /** Changes only the text: the note keeps its place in the running order. */
@@ -242,31 +245,39 @@ export async function updateSetListNote(formData: FormData) {
   const setListNoteId = parseSetListNoteIdFromFormData(formData);
   const content = parseSetListNoteContentFromFormData(formData);
 
-  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const note = await findInGroup(groupId, "setListNote", setListNoteId, {
-      select: { id: true, setList: { select: { slug: true } } },
-    });
-    await prisma.setListNote.update({
-      where: { id: note.id },
-      data: { content, updatedById: userId },
-    });
+  await runContentMutation(
+    groupSlug,
+    async ({ userId, groupId }) => {
+      const note = await findInGroup(groupId, "setListNote", setListNoteId, {
+        select: { id: true, setList: { select: { slug: true } } },
+      });
+      await prisma.setListNote.update({
+        where: { id: note.id },
+        data: { content, updatedById: userId },
+      });
 
-    revalidateGroupSetListDetailRoutes(groupSlug, note.setList.slug);
-  });
+      revalidateGroupSetListDetailRoutes(groupSlug, note.setList.slug);
+    },
+    ALSO_ALLOWED_BY_NOTES_CLAIM,
+  );
 }
 
 export async function deleteSetListNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListNoteId = parseSetListNoteIdFromFormData(formData);
 
-  await runContentMutation(groupSlug, async ({ groupId }) => {
-    const note = await findInGroup(groupId, "setListNote", setListNoteId, {
-      select: { id: true, setList: { select: { slug: true } } },
-    });
-    await prisma.setListNote.delete({
-      where: { id: note.id },
-    });
+  await runContentMutation(
+    groupSlug,
+    async ({ groupId }) => {
+      const note = await findInGroup(groupId, "setListNote", setListNoteId, {
+        select: { id: true, setList: { select: { slug: true } } },
+      });
+      await prisma.setListNote.delete({
+        where: { id: note.id },
+      });
 
-    revalidateGroupSetListDetailRoutes(groupSlug, note.setList.slug);
-  });
+      revalidateGroupSetListDetailRoutes(groupSlug, note.setList.slug);
+    },
+    ALSO_ALLOWED_BY_NOTES_CLAIM,
+  );
 }

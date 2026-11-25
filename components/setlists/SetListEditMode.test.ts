@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { PageHeader } from "@/components/PageHeader";
 import { PiecesTable } from "@/components/pieces/PiecesTable";
+import { AddRunningOrderNoteSection } from "@/components/setlists/AddRunningOrderNoteSection";
 import type { EditCapability } from "@/lib/edit-mode";
 import type { PieceWithRelations } from "@/lib/pieces/types";
 import type { SetListStep } from "@/lib/setlists/types";
@@ -15,6 +16,7 @@ vi.mock("@/app/actions/files", () => ({}));
 vi.mock("@/app/actions/people", () => ({}));
 vi.mock("@/app/actions/pieces", () => ({}));
 vi.mock("@/app/actions/setlists", () => ({
+  appendSetListNote: vi.fn(),
   deleteSetListNote: vi.fn(),
   reorderSetListSteps: vi.fn(),
   removePieceFromSetList: vi.fn(),
@@ -42,7 +44,7 @@ const steps = [
 // content-manager tests show only the note.
 const noteOnly = steps.filter((step) => step.kind === "note");
 
-/** The Set list page's edit surface: header with toggle, the running order and an edit-only form. */
+/** The Set list page's edit surface: header with toggle, the running order and the edit-only forms. */
 function setListPage(capabilities: EditCapability[], shownSteps: SetListStep[]) {
   return createElement(
     EditModeProvider,
@@ -54,7 +56,8 @@ function setListPage(capabilities: EditCapability[], shownSteps: SetListStep[]) 
       groupSlug: "koren",
       setList: { id: "sl-1", steps: shownSteps },
     }),
-    createElement(EditOnly, null, "Lägg till anteckning"),
+    createElement(EditOnly, null, "Lägg till stycke"),
+    createElement(AddRunningOrderNoteSection, { groupSlug: "koren", setListId: "sl-1" }),
   );
 }
 
@@ -93,7 +96,7 @@ function buttonsNamed(name: string): HTMLButtonElement[] {
 }
 
 function noteEditors(): HTMLTextAreaElement[] {
-  return [...container.querySelectorAll("textarea")];
+  return [...container.querySelectorAll<HTMLTextAreaElement>('textarea[aria-label="Anteckning"]')];
 }
 
 function typeInto(textarea: HTMLTextAreaElement, value: string) {
@@ -114,9 +117,38 @@ describe("Edit mode on a Set list", () => {
     expect(text).toContain("Flytta ner");
     expect(text).not.toContain("Ta bort");
     expect(buttonsNamed(EDIT_NOTE)).toEqual([]);
+    expect(text).not.toContain("Lägg till stycke");
     expect(text).not.toContain("Lägg till anteckning");
     expect(container.querySelector('[aria-label="Lägg till upphovsperson"]')).toBeNull();
     expect(container.querySelector('[aria-label^="Byt namn"]')).toBeNull();
+  });
+
+  it("lets a Member who manages only Running-order notes add, edit and delete them, and nothing else", () => {
+    render(["manageRunningOrderNotes"]);
+    turnOnEditMode();
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("Lägg till anteckning");
+    expect(buttonsNamed("Ta bort")).not.toEqual([]);
+    expect(text).not.toContain("Ta bort från repertoaren");
+    expect(text).not.toContain("Flytta upp");
+    expect(text).not.toContain("Lägg till stycke");
+    expect(container.querySelector('[aria-label="Lägg till upphovsperson"]')).toBeNull();
+
+    act(() => buttonsNamed(EDIT_NOTE)[0].click());
+    expect(noteEditors()[0].value).toBe("Paus");
+  });
+
+  it("gives a Member holding both fine-grained Claims the move buttons and the note controls", () => {
+    render(["reorderSetLists", "manageRunningOrderNotes"]);
+    turnOnEditMode();
+
+    const text = container.textContent ?? "";
+    expect(text).toContain("Flytta upp");
+    expect(buttonsNamed(EDIT_NOTE)).not.toEqual([]);
+    expect(buttonsNamed("Ta bort")).not.toEqual([]);
+    expect(text).not.toContain("Ta bort från repertoaren");
+    expect(text).not.toContain("Lägg till stycke");
   });
 
   it("offers no Edit toggle to a Member with no capability that matters on the page", () => {

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { findGroupAccess, requireGroupAccess, type GroupAccess } from "@/lib/group-access";
+import { findGroupAccess, requireGroupAccess, type GroupAccess, type GroupCapability } from "@/lib/group-access";
 
 export type TenantGroupContext = {
   userId: string;
@@ -57,17 +57,26 @@ export async function runGroupMutation<TGuard, TResult>(
  * The one entry point for changing a Group's content (Pieces, Set lists,
  * People and everything under them): resolve the User's Group access, require
  * `manageContent` once, then run the mutation. The mutation looks up the rows
- * it touches with `findInGroup`, and revalidates as its last step. A change
- * that a fine-grained Claim also allows (ADR-0012) uses {@link runGroupMutation}
- * with a guard that accepts either.
+ * it touches with `findInGroup`, and revalidates as its last step.
+ *
+ * A change that a fine-grained Claim also allows (ADR-0012) names its
+ * capability in `alsoAllowedBy`: either it or `manageContent` lets the change
+ * through, and a Member holding neither is told about the narrower one.
  */
 export async function runContentMutation<TResult>(
   groupSlug: string,
   mutation: (ctx: GroupMutationContext) => Promise<TResult>,
+  { alsoAllowedBy }: { alsoAllowedBy?: GroupCapability } = {},
 ): Promise<TResult> {
   return runGroupMutation(
     groupSlug,
-    async ({ access }) => access.require("manageContent"),
+    async ({ access }) => {
+      if (alsoAllowedBy && !access.can("manageContent")) {
+        access.require(alsoAllowedBy);
+      } else {
+        access.require("manageContent");
+      }
+    },
     (ctx) => mutation(ctx),
   );
 }

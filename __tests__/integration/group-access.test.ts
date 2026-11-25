@@ -29,6 +29,7 @@ async function createViewer(kind: MemberKind) {
 type Expected = {
   manageContent: boolean;
   reorderSetLists: boolean;
+  manageRunningOrderNotes: boolean;
   manageMembers: boolean;
   manageGroup: boolean;
   changeOtherMember: boolean;
@@ -39,6 +40,7 @@ type Expected = {
 const NOTHING: Expected = {
   manageContent: false,
   reorderSetLists: false,
+  manageRunningOrderNotes: false,
   manageMembers: false,
   manageGroup: false,
   changeOtherMember: false,
@@ -53,12 +55,14 @@ describe("Group access by Member kind", () => {
     ["MANAGE_CONTENT", { ...NOTHING, manageContent: true }],
     ["MANAGE_MEMBERS", { ...NOTHING, manageMembers: true, changeOtherMember: true }],
     ["REORDER_SET_LISTS", { ...NOTHING, reorderSetLists: true }],
+    ["MANAGE_RUNNING_ORDER_NOTES", { ...NOTHING, manageRunningOrderNotes: true }],
     [
       "Creator",
       {
         ...NOTHING,
         manageContent: true,
         reorderSetLists: true,
+        manageRunningOrderNotes: true,
         manageMembers: true,
         manageGroup: true,
         changeOtherMember: true,
@@ -79,6 +83,7 @@ describe("Group access by Member kind", () => {
       expect({
         manageContent: can("manageContent"),
         reorderSetLists: can("reorderSetLists"),
+        manageRunningOrderNotes: can("manageRunningOrderNotes"),
         manageMembers: can("manageMembers"),
         manageGroup: can("manageGroup"),
         changeOtherMember: can(changeMember(target.id)),

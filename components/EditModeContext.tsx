@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useMemo, useState } from "react";
 
-import type { EditCapability } from "@/lib/edit-mode";
+import { MANAGE_CONTENT_CAPABILITIES, type EditCapability } from "@/lib/edit-mode";
 
 type EditModeContextValue = {
   /** The capabilities that matter on the page and that the Member holds. */
@@ -13,9 +13,6 @@ type EditModeContextValue = {
 };
 
 const EditModeContext = createContext<EditModeContextValue | null>(null);
-
-/** What an edit control needs unless it says otherwise. */
-const MANAGE_CONTENT: readonly EditCapability[] = ["manageContent"];
 
 /**
  * Per-page edit mode. Lives only in component state, so every page opens
@@ -54,7 +51,7 @@ function useEditModeContext() {
  * `manageContent`): `canEdit` when the Member holds one, and `isEditing` only
  * while Edit mode is on and they do.
  */
-export function useEditMode(anyOf: readonly EditCapability[] = MANAGE_CONTENT) {
+export function useEditMode(anyOf: readonly EditCapability[] = MANAGE_CONTENT_CAPABILITIES) {
   const { capabilities, isEditing, setIsEditing } = useEditModeContext();
   const canEdit = anyOf.some((capability) => capabilities.includes(capability));
   return { canEdit, isEditing: canEdit && isEditing, setIsEditing };

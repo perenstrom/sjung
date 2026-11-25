@@ -20,6 +20,12 @@ export type GroupCapability =
    * action that allows reordering accepts either.
    */
   | "reorderSetLists"
+  /**
+   * Add, edit and delete the Running-order notes in any of the Group's Set
+   * lists (ADR-0012): the Creator or `MANAGE_RUNNING_ORDER_NOTES`. Not implied
+   * by `manageContent`; an action on a Running-order note accepts either.
+   */
+  | "manageRunningOrderNotes"
   /** Rename or delete the Group: the Creator only. */
   | "manageGroup"
   /** Change or remove one Member: `manageMembers`, and the target is neither the Creator nor the viewer. */
@@ -37,6 +43,7 @@ export type GroupAccessDenial =
   | "lacksManageGroup"
   | "lacksManageContent"
   | "lacksReorderSetLists"
+  | "lacksManageRunningOrderNotes"
   | "targetIsSelf"
   | "targetIsCreator";
 
@@ -60,6 +67,11 @@ export function groupAccessDenial(facts: GroupAccessFacts, capability: GroupCapa
   }
   if (capability === "reorderSetLists") {
     return isCreator || facts.claims.includes(GroupClaim.REORDER_SET_LISTS) ? null : "lacksReorderSetLists";
+  }
+  if (capability === "manageRunningOrderNotes") {
+    return isCreator || facts.claims.includes(GroupClaim.MANAGE_RUNNING_ORDER_NOTES)
+      ? null
+      : "lacksManageRunningOrderNotes";
   }
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";

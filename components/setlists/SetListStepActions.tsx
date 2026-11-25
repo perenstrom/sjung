@@ -8,6 +8,11 @@ import { useEditMode } from "@/components/EditModeContext";
 import { EditRunningOrderNoteButton } from "@/components/setlists/RunningOrderNote";
 import { buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  MANAGE_CONTENT_CAPABILITIES,
+  REORDER_SET_LIST_CAPABILITIES,
+  RUNNING_ORDER_NOTE_CAPABILITIES,
+} from "@/lib/edit-mode";
 import type { SetListStep } from "@/lib/setlists/types";
 import { cn } from "@/lib/utils";
 
@@ -64,8 +69,10 @@ function MoveStepButton({
 
 /**
  * Move up, move down and remove controls for one step of a set list, and an
- * edit control for a Running-order note. Shown to a Member who may reorder;
- * the edit and remove controls only with `manageContent`.
+ * edit control for a Running-order note. Each shows only with the capability
+ * it needs: moving with `reorderSetLists`, a note's edit and remove with
+ * `manageRunningOrderNotes`, removing a piece with `manageContent`, which
+ * allows all of them.
  */
 export function SetListStepActions({
   step,
@@ -80,29 +87,36 @@ export function SetListStepActions({
   groupSlug: string;
   setListId: string;
 }) {
-  const { isEditing: showsContentActions } = useEditMode();
   const isNote = step.kind === "note";
+  const { isEditing: showsMoves } = useEditMode(REORDER_SET_LIST_CAPABILITIES);
+  const { isEditing: showsEditAndRemove } = useEditMode(
+    isNote ? RUNNING_ORDER_NOTE_CAPABILITIES : MANAGE_CONTENT_CAPABILITIES,
+  );
   const removeLabel = isNote ? "Ta bort" : "Ta bort från repertoaren";
 
   return (
     <>
-      <MoveStepButton
-        label="Flytta upp"
-        icon={<ChevronUp className="size-4" aria-hidden="true" />}
-        orderedSetListStepIds={moveStepIds(orderedStepIds, stepIndex, "up")}
-        disabled={stepIndex === 0}
-        groupSlug={groupSlug}
-        setListId={setListId}
-      />
-      <MoveStepButton
-        label="Flytta ner"
-        icon={<ChevronDown className="size-4" aria-hidden="true" />}
-        orderedSetListStepIds={moveStepIds(orderedStepIds, stepIndex, "down")}
-        disabled={stepIndex === orderedStepIds.length - 1}
-        groupSlug={groupSlug}
-        setListId={setListId}
-      />
-      {showsContentActions ? (
+      {showsMoves ? (
+        <>
+          <MoveStepButton
+            label="Flytta upp"
+            icon={<ChevronUp className="size-4" aria-hidden="true" />}
+            orderedSetListStepIds={moveStepIds(orderedStepIds, stepIndex, "up")}
+            disabled={stepIndex === 0}
+            groupSlug={groupSlug}
+            setListId={setListId}
+          />
+          <MoveStepButton
+            label="Flytta ner"
+            icon={<ChevronDown className="size-4" aria-hidden="true" />}
+            orderedSetListStepIds={moveStepIds(orderedStepIds, stepIndex, "down")}
+            disabled={stepIndex === orderedStepIds.length - 1}
+            groupSlug={groupSlug}
+            setListId={setListId}
+          />
+        </>
+      ) : null}
+      {showsEditAndRemove ? (
         <>
           {isNote ? <EditRunningOrderNoteButton noteId={step.id} className={ICON_BUTTON_CLASS} /> : null}
           <Tooltip>

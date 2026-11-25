@@ -20,7 +20,7 @@ import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
 import { RunningOrderNoteEditingProvider, RunningOrderNoteText } from "@/components/setlists/RunningOrderNote";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { compareCaseInsensitive } from "@/lib/data-table/sorting";
-import { REORDER_SET_LIST_CAPABILITIES } from "@/lib/edit-mode";
+import { SET_LIST_STEP_CAPABILITIES } from "@/lib/edit-mode";
 import { CREDITS_HEADING } from "@/lib/pieces/credits";
 import { pieceHref } from "@/lib/pieces/href";
 import { letterDividerBefore } from "@/lib/pieces/letterGroups";
@@ -179,7 +179,7 @@ export function PiecesTable({
   | { pieces?: undefined; search?: undefined; setList: { id: string; steps: SetListStep[] } }
 )) {
   const { isEditing } = useEditMode();
-  const { isEditing: isReordering } = useEditMode(REORDER_SET_LIST_CAPABILITIES);
+  const { isEditing: showsStepActions } = useEditMode(SET_LIST_STEP_CAPABILITIES);
   const { setList, search = "" } = props;
   const setListId = setList?.id;
   // The database's order may not be Swedish, so Alla noter sorts on the client:
@@ -314,8 +314,9 @@ export function PiecesTable({
         }),
       },
       // Read mode has no actions, so it has no Åtgärder column either. In a Set
-      // list it holds the step actions, which a reorder-only Member gets too.
-      ...((setListId ? isReordering : isEditing)
+      // list it holds the step actions, which a Member holding only a
+      // fine-grained Claim gets too.
+      ...((setListId ? showsStepActions : isEditing)
         ? [
             {
               id: "actions",
@@ -343,7 +344,7 @@ export function PiecesTable({
           ]
         : []),
     ],
-    [groupSlug, isEditing, isReordering, setListId],
+    [groupSlug, isEditing, showsStepActions, setListId],
   );
 
   return (
@@ -355,7 +356,7 @@ export function PiecesTable({
           creditRoles={creditRoles}
           groupSlug={groupSlug}
           isEditing={isEditing}
-          isReordering={isReordering}
+          showsStepActions={showsStepActions}
           emptyMessage={emptyMessage}
         />
         <DataTable
