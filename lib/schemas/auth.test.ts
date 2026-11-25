@@ -149,19 +149,6 @@ describe("signupCredentialsSchema", () => {
     });
   });
 
-  it("allows empty name after trim", () => {
-    const result = signupCredentialsSchema.safeParse({
-      name: "   ",
-      email: "a@b.com",
-      password: "1234567890123456",
-      passwordConfirmation: "1234567890123456",
-    });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.name).toBe("");
-    }
-  });
-
   it("rejects short password without trimming for length", () => {
     const result = signupCredentialsSchema.safeParse({
       name: "x",
@@ -215,6 +202,19 @@ describe("parseSignupFormData", () => {
     );
 
     expect(result).toMatchObject({ ok: false, values: { name: "Anna", email: "anna@example.com" } });
+  });
+
+  it("asks for a name when it is blank, keeping the email", () => {
+    const result = parseSignupFormData(
+      createFormData({
+        name: "   ",
+        email: " ada@example.com ",
+        password: "123456789012",
+        passwordConfirmation: "123456789012",
+      }),
+    );
+
+    expect(result).toEqual({ ok: false, error: "Namn krävs", values: { name: "", email: "ada@example.com" } });
   });
 
   it("maps short password to Swedish min-length message", () => {
@@ -317,9 +317,9 @@ describe("parseSignupFormData", () => {
     }
   });
 
-  it("returns ok with redirectTo for valid payload", () => {
+  it("returns ok with redirectTo for valid payload, a single-word name included", () => {
     const fd = createFormData({
-      name: "",
+      name: "Anna",
       email: "u@u.com",
       password: "123456789012",
       passwordConfirmation: "123456789012",
@@ -330,6 +330,7 @@ describe("parseSignupFormData", () => {
     if (result.ok) {
       expect(result.data.redirectTo).toBe("/app");
       expect(result.data.email).toBe("u@u.com");
+      expect(result.data.name).toBe("Anna");
     }
   });
 });

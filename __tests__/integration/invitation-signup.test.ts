@@ -76,14 +76,15 @@ describe("signUpFromInvitationForm", () => {
     expect(await testPrisma.user.count({ where: { email: "bertil@example.com" } })).toBe(0);
   });
 
-  it("validates the passwords like normal signup", async () => {
+  it.each([
+    { field: "passwordConfirmation", value: "något helt annat", error: "Lösenorden matchar inte", echoedName: "Anna" },
+    { field: "name", value: "   ", error: "Namn krävs", echoedName: "" },
+  ])("validates the form like normal signup: $error", async ({ field, value, error, echoedName }) => {
     const { token } = await inviteToNewGroup("anna@example.com");
 
-    await expect(
-      signUpFromInvitationForm(null, signupForm(token, { passwordConfirmation: "något helt annat" })),
-    ).resolves.toEqual({
-      error: "Lösenorden matchar inte",
-      values: { name: "Anna", email: "anna@example.com" },
+    await expect(signUpFromInvitationForm(null, signupForm(token, { [field]: value }))).resolves.toEqual({
+      error,
+      values: { name: echoedName, email: "anna@example.com" },
     });
     expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(0);
   });
