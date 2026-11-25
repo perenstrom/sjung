@@ -81,11 +81,11 @@ export type NewPasswordParseError =
   "Ogiltiga formulärdata" | "Lösenordet måste vara minst 12 tecken" | "Lösenorden matchar inte";
 
 /** Signup's errors: the new-password ones plus a missing name, which Password reset never asks for. */
-export type SignupParseError = NewPasswordParseError | "Ange ditt namn";
+export type SignupParseError = NewPasswordParseError | "Namn krävs";
 
 function mapSignupSchemaFailure(error: z.ZodError): SignupParseError {
   if (error.issues.some((issue) => issue.path[0] === "name")) {
-    return "Ange ditt namn";
+    return "Namn krävs";
   }
   return mapNewPasswordSchemaFailure(error);
 }

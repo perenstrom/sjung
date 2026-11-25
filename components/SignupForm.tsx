@@ -55,18 +55,7 @@ export function SignupForm({ nextPath, invitation }: SignupFormProps) {
       {/* React resets the form after each submit, to defaultValue: name and email survive, the passwords don't. */}
       <div className="space-y-2">
         <Label htmlFor="name">För- och efternamn</Label>
-        <Input
-          id="name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          defaultValue={state?.values.name}
-          required
-          aria-describedby="name-hint"
-        />
-        <p id="name-hint" className="text-sm text-muted-foreground">
-          Så ser de andra i gruppen dig.
-        </p>
+        <Input id="name" name="name" type="text" autoComplete="name" defaultValue={state?.values.name} required />
       </div>
 
       <div className="space-y-2">

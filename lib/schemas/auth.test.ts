@@ -214,7 +214,7 @@ describe("parseSignupFormData", () => {
       }),
     );
 
-    expect(result).toEqual({ ok: false, error: "Ange ditt namn", values: { name: "", email: "ada@example.com" } });
+    expect(result).toEqual({ ok: false, error: "Namn krävs", values: { name: "", email: "ada@example.com" } });
   });
 
   it("maps short password to Swedish min-length message", () => {

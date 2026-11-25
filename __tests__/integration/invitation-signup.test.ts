@@ -78,7 +78,7 @@ describe("signUpFromInvitationForm", () => {
 
   it.each([
     { field: "passwordConfirmation", value: "något helt annat", error: "Lösenorden matchar inte", echoedName: "Anna" },
-    { field: "name", value: "   ", error: "Ange ditt namn", echoedName: "" },
+    { field: "name", value: "   ", error: "Namn krävs", echoedName: "" },
   ])("validates the form like normal signup: $error", async ({ field, value, error, echoedName }) => {
     const { token } = await inviteToNewGroup("anna@example.com");
 
