@@ -51,11 +51,11 @@ The single User who created a Group. Structurally special, not a Claim: the only
 _Avoid_: Admin, Owner, Role.
 
 **Claim**:
-A specific elevated capability a Member can hold within a Group, independent of Creator status. Today: `MANAGE_MEMBERS` (invite/remove members, grant/revoke Claims on other members), `MANAGE_CONTENT` (create, edit and delete the Group's content; who created a piece of content never matters) and `REORDER_SET_LISTS` (change the order of the Set list steps in any of the Group's Set lists, but not add, remove or edit them). A Member may hold any combination; no Claim implies or requires another. A Member holding none can only read content, and cannot change any of it, not even content they created. `MANAGE_CONTENT` is being split into narrower Claims like `REORDER_SET_LISTS` and will eventually go away. See ADR-0002, ADR-0012. Swedish UI: _Behörighet_ / _Behörigheter_ — _Hantera medlemmar_ (`MANAGE_MEMBERS`), _Hantera innehåll_ (`MANAGE_CONTENT`), _Ändra ordning i repertoarer_ (`REORDER_SET_LISTS`).
+A specific elevated capability a Member can hold within a Group, independent of Creator status. Today: `MANAGE_MEMBERS` (invite/remove members, grant/revoke Claims on other members), `MANAGE_CONTENT` (create, edit and delete the Group's content; who created a piece of content never matters) `REORDER_SET_LISTS` (change the order of the Set list steps in any of the Group's Set lists, but not add, remove or edit them) and `MANAGE_RUNNING_ORDER_NOTES` (add, edit and delete Running-order notes in any of the Group's Set lists, but not Set list pieces or Performance notes). A Member may hold any combination; no Claim implies or requires another. A Member holding none can only read content, and cannot change any of it, not even content they created. `MANAGE_CONTENT` is being split into narrower Claims like `REORDER_SET_LISTS` and will eventually go away. See ADR-0002, ADR-0012. Swedish UI: _Behörighet_ / _Behörigheter_ — _Hantera medlemmar_ (`MANAGE_MEMBERS`), _Hantera innehåll_ (`MANAGE_CONTENT`), _Ändra ordning i repertoarer_ (`REORDER_SET_LISTS`), _Hantera anteckningar i repertoarer_ (`MANAGE_RUNNING_ORDER_NOTES`).
 _Avoid_: Role, Permission, Admin — "Claim" is this model's term.
 
 **Group access**:
-What one User may do in one Group: whether they are a Member at all, and which capabilities they have there (manage members, rename or delete the Group, change a given Member, change the Group's content, reorder its Set lists). Derived from membership, Creator status and Claims — never stored.
+What one User may do in one Group: whether they are a Member at all, and which capabilities they have there (manage members, rename or delete the Group, change a given Member, change the Group's content, reorder its Set lists, manage their Running-order notes). Derived from membership, Creator status and Claims — never stored.
 _Avoid_: Permissions, Role, Rights.
 
 **Edit mode**:
@@ -138,7 +138,7 @@ _Avoid_: Note, Comment — always qualify which of the three note types (see Per
 A note scoped to one Set list piece — one specific appearance of a Piece within one Set list (e.g. "watch the key change here for the Nov concert"). Does not affect that Piece's Piece note, or its appearances in other Set lists.
 
 **Running-order note**:
-A freestanding entry in a Set list's ordered sequence that isn't tied to any Piece at all (e.g. a pause or an announcement slot) — ordered via the same position sequence as Set list pieces. Its text can be changed without moving it, but never emptied; removing it is always a deletion of its own.
+A freestanding entry in a Set list's ordered sequence that isn't tied to any Piece at all (e.g. a pause or an announcement slot) — ordered via the same position sequence as Set list pieces. Its text can be changed without moving it, but never emptied; removing it is always a deletion of its own. Swedish UI: _Anteckning_ (on the Set list page, where it is the only kind of note shown).
 
 ### About Sjung itself
 
