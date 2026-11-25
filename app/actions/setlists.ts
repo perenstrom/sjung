@@ -24,6 +24,7 @@ import {
 import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 import { HIDDEN_SELECT, hiddenIdsOf } from "@/lib/setlists/hidden";
 import { SetListSequence } from "@/lib/setlists/sequence";
+import { compareSetListsByDefault } from "@/lib/setlists/sorting";
 import { PIECE_ALIAS_ORDER } from "@/lib/pieces/types";
 import type { SetListDetail, SetListPieceContext, SetListPieceOption } from "@/lib/setlists/types";
 
@@ -51,6 +52,27 @@ export async function getSetLists(groupSlug: string): Promise<SetListRow[]> {
       updatedAt: true,
     },
   });
+}
+
+export type CurrentSetList = {
+  id: string;
+  slug: string;
+  name: string;
+  date: Date | null;
+  pieceCount: number;
+};
+
+/** The Group's Current Set lists for Home, in the Repertoarer list's default order. */
+export async function getCurrentSetLists(groupSlug: string): Promise<CurrentSetList[]> {
+  const slug = parseWritableGroupSlugParam(groupSlug);
+  const { groupId } = await getWritableGroupIdForSlug(slug);
+  const setLists = await prisma.setList.findMany({
+    where: { groupId, current: true },
+    select: { id: true, slug: true, name: true, date: true, current: true, _count: { select: { pieces: true } } },
+  });
+  return setLists
+    .sort(compareSetListsByDefault)
+    .map(({ id, slug, name, date, _count }) => ({ id, slug, name, date, pieceCount: _count.pieces }));
 }
 
 export async function getSetListDetail(groupSlug: string, setListId: string): Promise<SetListDetail | null> {

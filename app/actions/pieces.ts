@@ -47,6 +47,7 @@ import {
   type ImportPreview,
 } from "@/lib/pieces/import";
 import {
+  revalidateDeletedPiecePages,
   revalidateGroupPeopleRoutes,
   revalidatePiecePages,
   revalidatePieceRoutes,
@@ -462,6 +463,6 @@ export async function deletePiece(formData: FormData) {
     });
     await deletePieceFiles(piece);
 
-    revalidatePiecePages(groupSlug, pages);
+    revalidateDeletedPiecePages(groupSlug, pages);
   });
 }

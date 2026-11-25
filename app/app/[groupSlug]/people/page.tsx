@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
 import { groupPersonPath } from "@/lib/groups/routes";
-import { formatPieceCount } from "@/lib/people/piece-count";
+import { formatPieceCount } from "@/lib/pieces/count";
 
 type PageProps = {
   params: Promise<{ groupSlug: string }>;

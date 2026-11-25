@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPieceCount } from "@/lib/people/piece-count";
+import { formatPieceCount } from "@/lib/pieces/count";
 
 describe("formatPieceCount", () => {
   it.each([

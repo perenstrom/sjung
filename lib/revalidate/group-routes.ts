@@ -4,6 +4,7 @@ import { getPiecePages, type PiecePages } from "@/lib/pieces/queries";
 import {
   MY_GROUPS_PATH,
   groupMembersPath,
+  groupPath,
   groupPeoplePath,
   groupPersonPath,
   groupPiecesPath,
@@ -28,9 +29,16 @@ export function revalidateGroupPersonRoutes(groupSlug: string, personSlug: strin
   revalidatePath(groupPersonPath(groupSlug, { slug: personSlug }));
 }
 
+/** Home, at the Group's own address. It lists the Current Set lists with their Piece counts. */
+export function revalidateGroupHomeRoute(groupSlug: string) {
+  revalidatePath(groupPath(groupSlug));
+}
+
+/** Also refreshes Home, as any Set list change may change what it shows. */
 export function revalidateGroupSetListsRoutes(groupSlug: string) {
   revalidateGroupPiecesRoute(groupSlug);
   revalidatePath(groupSetListsPath(groupSlug));
+  revalidateGroupHomeRoute(groupSlug);
 }
 
 export function revalidateGroupSetListDetailRoutes(groupSlug: string, setListSlug: string) {
@@ -70,13 +78,25 @@ export function revalidatePiecePages(groupSlug: string, { pieceSlug, setListSlug
   }
 }
 
+/**
+ * {@link revalidatePiecePages} after the Piece is deleted: the cascade also
+ * changed the Piece counts of the Set lists it was in, which Home shows.
+ */
+export function revalidateDeletedPiecePages(groupSlug: string, pages: PiecePages) {
+  revalidatePiecePages(groupSlug, pages);
+  if (pages.setListSlugs.length > 0) {
+    revalidateGroupHomeRoute(groupSlug);
+  }
+}
+
 export function revalidateAppAndMyGroupsRoutes() {
   revalidatePath("/app");
   revalidatePath(MY_GROUPS_PATH);
 }
 
-/** Also refreshes the Group's start page, Repertoarer, where its address leads. */
+/** Also refreshes the Group's Home and Repertoarer, which show its name. */
 export function revalidateAppAndMyGroupsWithGroupRoute(groupSlug: string) {
   revalidateAppAndMyGroupsRoutes();
+  revalidateGroupHomeRoute(groupSlug);
   revalidatePath(groupSetListsPath(groupSlug));
 }

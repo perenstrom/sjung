@@ -43,8 +43,12 @@ A pending offer for one email address to become a Member of one Group, made by a
 _Avoid_: Invite (as a noun), Pending member — an Invitation is not a membership yet. Group manager — there is no such role; any Member holding `MANAGE_MEMBERS` can invite.
 
 **Default group**:
-The Group a User lands in when opening the app, on its Repertoarer page — whichever Group they last switched to. Belongs to the User, not to the browser or the login session, so it survives logging out.
+The Group a User lands in when opening the app, on its Home — whichever Group they last switched to. Belongs to the User, not to the browser or the login session, so it survives logging out.
 _Avoid_: Active group, Current group.
+
+**Home**:
+A Group's start page: what every Member sees first when they open that Group, pointing them at the Group's Current Set lists. The same for every Member. Swedish UI: _Hem_.
+_Avoid_: Dashboard, Overview — both read as the Operators' Group overview; Start page.
 
 **Creator**:
 The single User who created a Group. Structurally special, not a Claim: the only privilege that can never be granted or revoked by anyone, including the holder — determined by matching the Group's stored creator id, not by a membership record. Creator implicitly holds every Claim and is the only member who can rename or delete the Group itself. See ADR-0001 (superseded), ADR-0002. Swedish UI: _Administratör_ — a UI label only; in English and in code it stays Creator.
@@ -116,7 +120,7 @@ An ordered rehearsal/performance program for a Group: an interleaved sequence of
 _Avoid_: Repertoire (English) — keep "Set list" as the English name even though the Swedish UI says _Repertoar_; Program.
 
 **Current**:
-A Set list the Group is working on right now. Any number of a Group's Set lists can be Current at once. Only a Member who can manage content marks or unmarks it, and it never ends on its own: a Set list stays Current until someone unmarks it, even after its date has passed. Current Set lists come first in the Set lists list's default order. Swedish UI: _Aktuell_.
+A Set list the Group is working on right now. Any number of a Group's Set lists can be Current at once. Only a Member who can manage content marks or unmarks it, and it never ends on its own: a Set list stays Current until someone unmarks it, even after its date has passed. Current Set lists come first in the Set lists list's default order, and are the ones the Group's Home lists. Swedish UI: _Aktuell_.
 _Avoid_: Active, Featured, Pinned.
 
 **Set list step**:
