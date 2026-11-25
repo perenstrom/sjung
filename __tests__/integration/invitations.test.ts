@@ -273,15 +273,6 @@ describe("signUpFromInvitation", () => {
     expect(await testPrisma.invitationToken.count({ where: { usedAt: now } })).toBe(1);
   });
 
-  it("uses the address for a name left blank", async () => {
-    const { token } = await inviteToNewGroup("anna@example.com");
-
-    await signUpFromInvitation(token, { name: "", passwordHash: "hashed" });
-
-    const anna = await testPrisma.user.findUniqueOrThrow({ where: { email: "anna@example.com" } });
-    expect(anna.name).toBe("anna@example.com");
-  });
-
   it("sends no email", async () => {
     const { token } = await inviteToNewGroup("anna@example.com");
     const sentBefore = sentEmails().length;

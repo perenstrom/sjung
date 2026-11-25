@@ -93,7 +93,7 @@ export async function signUp(_prevState: SignupFormState, formData: FormData): P
   const passwordHash = await argon2.hash(password);
   const user = await prisma.user.create({
     data: {
-      name: name || normalizedEmail,
+      name,
       email: normalizedEmail,
       passwordHash,
     },

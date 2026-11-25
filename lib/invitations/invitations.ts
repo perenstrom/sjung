@@ -317,7 +317,7 @@ export async function signUpFromInvitation(
       });
       await tx.user.create({
         data: {
-          name: name || email,
+          name,
           email,
           passwordHash,
           emailVerifiedAt: now,
