@@ -62,13 +62,12 @@ function passwordsMatch(data: { password: string; passwordConfirmation: string }
 
 const passwordMismatch = { path: ["passwordConfirmation"] };
 
-/** A User's name when they change it on Mitt konto. Unlike signup, blank is not allowed: there is no email fallback. */
+/** A User's name, at signup or when they change it on Mitt konto: trimmed, never blank. */
 export const userNameSchema = z.string().trim().min(1, { error: "Namn krävs" });
 
 export const signupCredentialsSchema = z
   .object({
-    // Optional at signup: a blank name is replaced by the email address.
-    name: z.string().trim(),
+    name: userNameSchema,
     email: emailSchema,
     ...newPasswordFields,
   })
@@ -80,6 +79,16 @@ export type SignupCredentials = z.output<typeof signupCredentialsSchema>;
 
 export type NewPasswordParseError =
   "Ogiltiga formulärdata" | "Lösenordet måste vara minst 12 tecken" | "Lösenorden matchar inte";
+
+/** Signup's errors: the new-password ones plus a missing name, which Password reset never asks for. */
+export type SignupParseError = NewPasswordParseError | "Ange ditt namn";
+
+function mapSignupSchemaFailure(error: z.ZodError): SignupParseError {
+  if (error.issues.some((issue) => issue.path[0] === "name")) {
+    return "Ange ditt namn";
+  }
+  return mapNewPasswordSchemaFailure(error);
+}
 
 function mapNewPasswordSchemaFailure(error: z.ZodError): NewPasswordParseError {
   for (const issue of error.issues) {
@@ -100,7 +109,7 @@ export type SignupFormValues = { name: string; email: string };
 
 export type SignupFormParseResult =
   | { ok: true; data: SignupCredentials & { redirectTo: string } }
-  | { ok: false; error: NewPasswordParseError; values: SignupFormValues };
+  | { ok: false; error: SignupParseError; values: SignupFormValues };
 
 /**
  * The signup form. Signing up from an Invitation passes `invitedEmail`, which
@@ -135,7 +144,7 @@ export function parseSignupFormData(
     passwordConfirmation: passwordConfirmationRaw,
   });
   if (!parsed.success) {
-    return { ok: false, error: mapNewPasswordSchemaFailure(parsed.error), values };
+    return { ok: false, error: mapSignupSchemaFailure(parsed.error), values };
   }
   return { ok: true, data: { ...parsed.data, redirectTo } };
 }

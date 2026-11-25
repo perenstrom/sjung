@@ -29,6 +29,7 @@ import {
   type LoginFormValues,
   type NewPasswordParseError,
   type SignupFormValues,
+  type SignupParseError,
 } from "@/lib/schemas/auth";
 import { groupPath } from "@/lib/groups/routes";
 
@@ -40,7 +41,7 @@ export type LoginFormState = {
 
 /** `useActionState` state for the signup form: `null` until a submit fails. */
 export type SignupFormState = {
-  error: NewPasswordParseError | "E-postadressen används redan" | "Det finns redan ett konto med den e-postadressen";
+  error: SignupParseError | "E-postadressen används redan" | "Det finns redan ett konto med den e-postadressen";
   values: SignupFormValues;
 } | null;
 
