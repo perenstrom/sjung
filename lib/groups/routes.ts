@@ -1,10 +1,7 @@
 /** My groups: where a User lists, creates, renames and deletes their Groups. */
 export const MY_GROUPS_PATH = "/app/me/groups";
 
-/**
- * A Group's own address. It redirects to the Group's start page, so links
- * that take a User "into a Group" point here.
- */
+/** A Group's own address, where its Home is, so links that take a User "into a Group" point here. */
 export function groupPath(groupSlug: string): string {
   return `/app/${groupSlug}`;
 }
@@ -24,7 +21,7 @@ export function groupPersonPath(groupSlug: string, person: { slug: string }): st
   return `${groupPeoplePath(groupSlug)}/${person.slug}`;
 }
 
-/** Repertoarer: the Group's Set lists, and its start page. */
+/** Repertoarer: the Group's Set lists. */
 export function groupSetListsPath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/setlists`;
 }

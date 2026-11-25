@@ -29,7 +29,7 @@ export function revalidateGroupPersonRoutes(groupSlug: string, personSlug: strin
   revalidatePath(groupPersonPath(groupSlug, { slug: personSlug }));
 }
 
-/** Home: the Group's start page, at its own address. It lists the Current Set lists with their Piece counts. */
+/** Home, at the Group's own address. It lists the Current Set lists with their Piece counts. */
 export function revalidateGroupHomeRoute(groupSlug: string) {
   revalidatePath(groupPath(groupSlug));
 }
@@ -78,12 +78,23 @@ export function revalidatePiecePages(groupSlug: string, { pieceSlug, setListSlug
   }
 }
 
+/**
+ * {@link revalidatePiecePages} after the Piece is deleted: the cascade also
+ * changed the Piece counts of the Set lists it was in, which Home shows.
+ */
+export function revalidateDeletedPiecePages(groupSlug: string, pages: PiecePages) {
+  revalidatePiecePages(groupSlug, pages);
+  if (pages.setListSlugs.length > 0) {
+    revalidateGroupHomeRoute(groupSlug);
+  }
+}
+
 export function revalidateAppAndMyGroupsRoutes() {
   revalidatePath("/app");
   revalidatePath(MY_GROUPS_PATH);
 }
 
-/** Also refreshes the Group's start page, Home. */
+/** Also refreshes the Group's Home. */
 export function revalidateAppAndMyGroupsWithGroupRoute(groupSlug: string) {
   revalidateAppAndMyGroupsRoutes();
   revalidateGroupHomeRoute(groupSlug);

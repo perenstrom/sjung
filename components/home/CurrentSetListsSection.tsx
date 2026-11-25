@@ -16,8 +16,8 @@ export type CurrentSetListRow = {
 
 /**
  * Home's Current Set lists, in the order given: one row each, opening the Set
- * list. Unlike most sections it never hides: with nothing Current it says so,
- * and it always ends with a way to Repertoarer.
+ * list. It never hides: with nothing Current it says so, and it always ends
+ * with a way to Repertoarer.
  */
 export function CurrentSetListsSection({ groupSlug, setLists }: { groupSlug: string; setLists: CurrentSetListRow[] }) {
   return (

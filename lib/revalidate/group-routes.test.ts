@@ -14,7 +14,8 @@ beforeEach(() => {
 });
 
 // Home lists the Current Set lists with their name, date and Piece count, so
-// every Set list change, and every refresh of the Group's start page, reaches it.
+// every Set list change reaches it, as does every refresh after joining,
+// creating or renaming the Group.
 describe("refreshing a Group's Home", () => {
   it.each([
     ["a change to the Group's Set lists", () => revalidateGroupSetListsRoutes("kor")],

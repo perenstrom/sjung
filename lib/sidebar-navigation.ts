@@ -9,9 +9,8 @@ export type GroupNavItem = {
 };
 
 /**
- * The sidebar's links into the active group, in order. Hem comes first, as
- * it's the group's start page; Medlemmar only shows to those who can open the
- * members page.
+ * The sidebar's links into the active group, in order. Hem, the group's Home,
+ * comes first; Medlemmar only shows to those who can open the members page.
  */
 export function groupNavItems({
   groupSlug,

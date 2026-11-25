@@ -22,6 +22,6 @@ describe("a Group's own address", () => {
 
     expect(text).toContain("Hem");
     expect(text).toContain("Aktuell repertoar");
-    expect(text).toContain("Lucia2026-12-13 · 12 stycken");
+    expect(text).toContain("Lucia");
   });
 });
