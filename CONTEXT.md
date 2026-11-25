@@ -138,7 +138,7 @@ _Avoid_: Note, Comment — always qualify which of the three note types (see Per
 A note scoped to one Set list piece — one specific appearance of a Piece within one Set list (e.g. "watch the key change here for the Nov concert"). Does not affect that Piece's Piece note, or its appearances in other Set lists.
 
 **Running-order note**:
-A freestanding entry in a Set list's ordered sequence that isn't tied to any Piece at all (e.g. a pause or an announcement slot) — ordered via the same position sequence as Set list pieces.
+A freestanding entry in a Set list's ordered sequence that isn't tied to any Piece at all (e.g. a pause or an announcement slot) — ordered via the same position sequence as Set list pieces. Its text can be changed without moving it, but never emptied; removing it is always a deletion of its own.
 
 ### About Sjung itself
 
