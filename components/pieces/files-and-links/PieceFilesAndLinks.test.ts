@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
 import { fileDownloadHref, playerHref } from "@/lib/pieces/href";
+import type { PlayerEngine } from "@/lib/file-formats";
 import type { Playback } from "@/lib/pieces/playback";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
@@ -22,6 +23,7 @@ const file = (
   displayName: string,
   category: string | null = null,
   playback: Playback | null = null,
+  engine: PlayerEngine | null = null,
 ): PieceFileListItem => ({
   id: displayName,
   slug: displayName,
@@ -29,6 +31,7 @@ const file = (
   size: 1024,
   category,
   playback,
+  engine,
 });
 const link = (label: string, category: string | null = null): PieceLink => ({
   id: label,
@@ -161,6 +164,28 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
       ).toEqual([expect.not.stringContaining("aria-label")]);
     },
   );
+
+  it.each([
+    { case: "a MusicXML File", item: file("Partitur.mxl", null, "ready", "notation"), icon: "clef-treble" },
+    {
+      case: "a MuseScore File being prepared",
+      item: file("Partitur.mscz", null, "preparing", "notation"),
+      icon: "clef-treble",
+    },
+    {
+      case: "a MuseScore File that couldn't be prepared",
+      item: file("Partitur.mscz", null, "failed", "notation"),
+      icon: "file-text",
+    },
+    { case: "an audio File", item: file("Sopran.mp3", null, "ready", "audio"), icon: "play" },
+    { case: "a File that isn't a Playable File", item: file("Noter.pdf"), icon: "file-text" },
+  ])("marks $case with the $icon icon", ({ item, icon }) => {
+    const shown = [...render(layout, [item], []).matchAll(/lucide-(clef-treble|play|file-text)\b/g)].map(
+      ([, name]) => name,
+    );
+
+    expect(shown).toEqual([icon]);
+  });
 
   it("shows a singer a MuseScore File that couldn't be prepared as an ordinary File to download, with no error", () => {
     const html = render(layout, [file("Partitur.mscz", null, "failed")], []);

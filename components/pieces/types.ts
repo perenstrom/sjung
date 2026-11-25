@@ -1,3 +1,4 @@
+import type { PlayerEngine } from "@/lib/file-formats";
 import type { Playback } from "@/lib/pieces/playback";
 
 export type PieceLink = {
@@ -22,4 +23,6 @@ export type PieceFileListItem = {
    * `ready` one opens the player instead of downloading. `null` for any other File.
    */
   playback: Playback | null;
+  /** Which player engine plays it if it is a Playable File (ADR-0010); `null` for any other File. */
+  engine: PlayerEngine | null;
 };
