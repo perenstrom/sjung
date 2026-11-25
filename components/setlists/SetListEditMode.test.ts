@@ -139,6 +139,21 @@ describe("Edit mode on a Set list", () => {
     expect(noteEditors()[0].value).toBe("Paus");
   });
 
+  it("names the add-a-Running-order-note form once and explains what such a note is", () => {
+    render(["manageRunningOrderNotes"]);
+    turnOnEditMode();
+
+    const content = container.querySelector<HTMLTextAreaElement>('textarea[name="content"]')!;
+    const section = content.closest("section")!;
+    expect(section.textContent?.match(/Lägg till anteckning/g)).toHaveLength(1);
+    expect(section.textContent).toContain(
+      "En anteckning hör inte till något stycke, till exempel en paus eller en presentation. Den hamnar sist i ordningen.",
+    );
+    const labelledBy = content.getAttribute("aria-labelledby");
+    expect(labelledBy && document.getElementById(labelledBy)?.textContent).toBe("Lägg till anteckning");
+    expect(section.querySelector('button[type="submit"]')?.textContent).toBe("Lägg till");
+  });
+
   it("gives a Member holding both fine-grained Claims the move buttons and the note controls", () => {
     render(["reorderSetLists", "manageRunningOrderNotes"]);
     turnOnEditMode();
