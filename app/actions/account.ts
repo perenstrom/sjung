@@ -1,10 +1,37 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { signOut } from "@/auth";
 import { deleteAccount, findCreatorGroups } from "@/lib/account/account-deletion";
-import { ACCOUNT_DELETED_PATH } from "@/lib/account/routes";
+import { ACCOUNT_DELETED_PATH, ACCOUNT_PATH } from "@/lib/account/routes";
 import { requireUser } from "@/lib/auth/require-user";
+import prisma from "@/lib/prisma";
+import { userNameSchema } from "@/lib/schemas/auth";
 import { formDataString } from "@/lib/schemas/form-data";
+
+/** `useActionState` state for the "Namn" form: `null` until submitted. */
+export type ChangeNameState = { status: "saved" } | { status: "error"; error: string } | null;
+
+/**
+ * Changes the signed-in User's name. Always their own: the User comes from the
+ * session, and any id in the form is ignored. Everyone who sees the name reads
+ * it fresh from the database, so it shows everywhere on the next page load.
+ */
+export async function changeOwnName(_prevState: ChangeNameState, formData: FormData): Promise<ChangeNameState> {
+  const user = await requireUser();
+
+  const parsed = userNameSchema.safeParse(formDataString(formData, "name"));
+  if (!parsed.success) {
+    return { status: "error", error: parsed.error.issues[0]?.message ?? "Namn krävs" };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { name: parsed.data, updatedById: user.id },
+  });
+  revalidatePath(ACCOUNT_PATH);
+  return { status: "saved" };
+}
 
 /** What "Ta bort konto" would do to the viewer's Creator Groups. */
 export async function getAccountDeletionPlan() {

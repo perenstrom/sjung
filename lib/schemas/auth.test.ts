@@ -8,6 +8,7 @@ import {
   parseRedirectPathFromValue,
   parseSignupFormData,
   signupCredentialsSchema,
+  userNameSchema,
 } from "@/lib/schemas/auth";
 
 function createFormData(values: Record<string, string>): FormData {
@@ -371,5 +372,18 @@ describe("parseNewPasswordFormData", () => {
       ok: false,
       error: "Ogiltiga formulärdata",
     });
+  });
+});
+
+describe("userNameSchema", () => {
+  it("trims the name", () => {
+    expect(userNameSchema.parse("  Ada Lovelace  ")).toBe("Ada Lovelace");
+  });
+
+  it.each(["", "   "])("rejects %j with a Swedish message", (name) => {
+    const result = userNameSchema.safeParse(name);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe("Namn krävs");
   });
 });

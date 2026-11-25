@@ -62,8 +62,12 @@ function passwordsMatch(data: { password: string; passwordConfirmation: string }
 
 const passwordMismatch = { path: ["passwordConfirmation"] };
 
+/** A User's name when they change it on Mitt konto. Unlike signup, blank is not allowed: there is no email fallback. */
+export const userNameSchema = z.string().trim().min(1, { error: "Namn krävs" });
+
 export const signupCredentialsSchema = z
   .object({
+    // Optional at signup: a blank name is replaced by the email address.
     name: z.string().trim(),
     email: emailSchema,
     ...newPasswordFields,

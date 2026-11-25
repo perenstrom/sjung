@@ -15,7 +15,7 @@ The readable, URL-safe name a Group, Piece, Set list, Person, File or Announceme
 _Avoid_: Handle, Permalink — a Slug is not permanent; the link that always works is the one by id.
 
 **User**:
-A login account. A User can belong to multiple Groups.
+A login account. A User can belong to multiple Groups. A User has a name, shown to the Members of their Groups, which they can change themselves on Mitt konto.
 _Avoid_: Member (a User's relationship to one specific Group), Person (a different concept entirely — see below).
 
 **Verified user**:
