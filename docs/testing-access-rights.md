@@ -36,8 +36,10 @@ Use this scope as the baseline coverage matrix:
    - `reorderSetLists` (change the order of any of the Group's Set lists' steps): allow the Creator, or a Member holding `REORDER_SET_LISTS` in that Group; `reorderSetListSteps` also allows `manageContent`. A Member holding only `REORDER_SET_LISTS` is refused every other content action (ADR-0012). Covered in the same sweep.
    - `manageRunningOrderNotes` (add, edit and delete the Running-order notes in any of the Group's Set lists): allow the Creator, or a Member holding `MANAGE_RUNNING_ORDER_NOTES` in that Group; the three note actions also allow `manageContent`. A Member holding only `MANAGE_RUNNING_ORDER_NOTES` is refused every other content action, reordering included (ADR-0012). Covered in the same sweep.
    - `manageGroup` (rename and delete the Group): allow the Creator only; deny a Member even when holding Claims.
-   - `manageMembers` (list/invite/remove members, grant/revoke Claims): allow the Creator, or a Member holding `MANAGE_MEMBERS` in that Group; deny a Member holding no Claim or only `MANAGE_CONTENT`.
-   - `changeMember(target)`: `manageMembers`, and the target is neither the Creator nor the viewer, so the Creator can never be removed or have Claims granted/revoked.
+   - `viewMembers` (open the members page and list Members with their Claims): allow the Creator, or a Member holding `MANAGE_MEMBERS` or `MANAGE_MEMBER_AUTHORIZATION` in that Group (ADR-0013).
+   - `manageMembers` (invite, list/revoke/resend Invitations): allow the Creator, or a Member holding `MANAGE_MEMBERS` in that Group; deny a Member holding no Claim, only `MANAGE_CONTENT` or only `MANAGE_MEMBER_AUTHORIZATION`.
+   - `removeMember(target)`: `MANAGE_MEMBERS` (or the Creator), and the target is neither the Creator nor the viewer.
+   - `changeMemberClaims(target)` (grant/revoke any Claim): `MANAGE_MEMBER_AUTHORIZATION` (or the Creator), and the target is neither the Creator nor the viewer, so the Creator never has Claims granted/revoked. A Member holding only `MANAGE_MEMBERS` is refused (ADR-0013).
 5. Representative server-action surfaces (`app/actions/*`)
    - Allow: valid member/creator calls succeed and mutate/read as expected.
    - Deny: cross-tenant or under-privileged calls fail before writes.

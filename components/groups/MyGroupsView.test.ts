@@ -48,7 +48,7 @@ describe("MyGroupsView", () => {
 
   describe("with groups", () => {
     const html = render([
-      { id: "g1", name: "Kammarkören", slug: "kammarkoren", canManageMembers: true, canManageGroup: true },
+      { id: "g1", name: "Kammarkören", slug: "kammarkoren", canViewMembers: true, canManageGroup: true },
     ]);
 
     it("lists the groups without the empty state", () => {

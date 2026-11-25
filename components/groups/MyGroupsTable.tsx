@@ -20,7 +20,7 @@ export type MyGroupsTableRow = {
   id: string;
   name: string;
   slug: string;
-  canManageMembers: boolean;
+  canViewMembers: boolean;
   canManageGroup: boolean;
 };
 
@@ -29,7 +29,7 @@ type MyGroupAction = "members" | "edit" | "delete";
 /** The row's actions in display order, from what the viewer may do in the Group. */
 function myGroupActions(group: MyGroupsTableRow): MyGroupAction[] {
   return [
-    ...(group.canManageMembers ? (["members"] as const) : []),
+    ...(group.canViewMembers ? (["members"] as const) : []),
     ...(group.canManageGroup ? (["edit", "delete"] as const) : []),
   ];
 }

@@ -11,14 +11,14 @@ export type GroupNavItem = {
 /**
  * The sidebar's links into the active group, in order. Repertoarer comes
  * first, as it's the group's start page; Medlemmar only shows to those who
- * can manage members.
+ * can open the members page.
  */
 export function groupNavItems({
   groupSlug,
-  canManageMembers,
+  canViewMembers,
 }: {
   groupSlug: string | null;
-  canManageMembers: boolean;
+  canViewMembers: boolean;
 }): GroupNavItem[] {
   const href = (path: (slug: string) => string) => (groupSlug ? path(groupSlug) : null);
   const items: GroupNavItem[] = [
@@ -26,7 +26,7 @@ export function groupNavItems({
     { key: "pieces", label: "Alla noter", href: href(groupPiecesPath) },
     { key: "people", label: "Upphovspersoner", href: href(groupPeoplePath) },
   ];
-  if (groupSlug && canManageMembers) {
+  if (groupSlug && canViewMembers) {
     items.push({ key: "members", label: "Medlemmar", href: groupMembersPath(groupSlug) });
   }
   return items;

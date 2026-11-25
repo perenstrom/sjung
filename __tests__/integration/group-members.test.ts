@@ -27,6 +27,7 @@ import {
 } from "@/app/actions/groups";
 
 const FORBIDDEN = "Du har inte behörighet att hantera medlemmar i gruppen";
+const FORBIDDEN_CLAIMS = "Du har inte behörighet att ändra behörigheter i gruppen";
 
 /** Access scenario plus a second plain member, and a manager holding the given Claims. */
 async function createManagerScenario(managerClaims: GroupClaim[] = ["MANAGE_MEMBERS"]) {
@@ -179,11 +180,11 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
   });
 });
 
-describe("membership management by a member without MANAGE_MEMBERS", () => {
+describe("membership management by a member holding neither member Claim", () => {
   it.each<[string, GroupClaim[]]>([
     ["no Claim", []],
     ["only MANAGE_CONTENT", ["MANAGE_CONTENT"]],
-  ])("is forbidden for a member holding %s", async (_label, claims) => {
+  ])("is forbidden, members list included, for a member holding %s", async (_label, claims) => {
     const { group, member, nonMember, creator } = await createAccessScenario();
     await grantClaims(member.id, group.id, claims);
     actAs(member.id);
@@ -198,6 +199,52 @@ describe("membership management by a member without MANAGE_MEMBERS", () => {
 
     expect(await isMember(nonMember.id, group.id)).toBe(false);
     expect(sentEmails()).toHaveLength(0);
+  });
+});
+
+describe("membership management by a MANAGE_MEMBER_AUTHORIZATION-only holder", () => {
+  it("lists the Members but refuses inviting and removing", async () => {
+    const { group, creator, manager, other, nonMember } = await createManagerScenario(["MANAGE_MEMBER_AUTHORIZATION"]);
+    actAs(manager.id);
+
+    const members = await listGroupMembers(group.slug);
+    expect(members.map((m) => m.id).sort()).toEqual([creator.id, manager.id, other.id].sort());
+
+    await expect(
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email })),
+    ).rejects.toThrow(FORBIDDEN);
+    await expect(removeMemberFromGroup(formData({ groupSlug: group.slug, memberUserId: other.id }))).rejects.toThrow(
+      FORBIDDEN,
+    );
+
+    expect(await isMember(other.id, group.id)).toBe(true);
+    expect(await testPrisma.invitation.count()).toBe(0);
+    expect(sentEmails()).toHaveLength(0);
+  });
+});
+
+describe("listGroupMembers", () => {
+  it.each<[string, GroupClaim[] | "creator", { canRemove: boolean; canChangeClaims: boolean }]>([
+    ["MANAGE_MEMBERS", ["MANAGE_MEMBERS"], { canRemove: true, canChangeClaims: false }],
+    ["MANAGE_MEMBER_AUTHORIZATION", ["MANAGE_MEMBER_AUTHORIZATION"], { canRemove: false, canChangeClaims: true }],
+    [
+      "both member Claims",
+      ["MANAGE_MEMBERS", "MANAGE_MEMBER_AUTHORIZATION"],
+      { canRemove: true, canChangeClaims: true },
+    ],
+    ["the Creator", "creator", { canRemove: true, canChangeClaims: true }],
+  ])("flags what a viewer holding %s may do to each Member", async (_label, viewerKind, onOther) => {
+    const scenario = await createManagerScenario(viewerKind === "creator" ? [] : viewerKind);
+    const viewer = viewerKind === "creator" ? scenario.creator : scenario.manager;
+    actAs(viewer.id);
+
+    const members = await listGroupMembers(scenario.group.slug);
+    const byId = new Map(members.map((m) => [m.id, m]));
+
+    const never = { canRemove: false, canChangeClaims: false };
+    expect(byId.get(scenario.other.id)).toMatchObject(onOther);
+    expect(byId.get(viewer.id)).toMatchObject(never);
+    expect(byId.get(scenario.creator.id)).toMatchObject(never);
   });
 });
 
@@ -237,9 +284,10 @@ describe("removing a member who holds Claims", () => {
 describe("getGroups", () => {
   it.each<[string, GroupClaim[], boolean]>([
     ["MANAGE_MEMBERS", ["MANAGE_MEMBERS"], true],
+    ["MANAGE_MEMBER_AUTHORIZATION", ["MANAGE_MEMBER_AUTHORIZATION"], true],
     ["only MANAGE_CONTENT", ["MANAGE_CONTENT"], false],
     ["no Claim", [], false],
-  ])("flags canManageMembers for a member holding %s", async (_label, claims, expected) => {
+  ])("flags canViewMembers for a member holding %s", async (_label, claims, expected) => {
     const { group, member } = await createAccessScenario();
     await grantClaims(member.id, group.id, claims);
     actAs(member.id);
@@ -248,11 +296,11 @@ describe("getGroups", () => {
 
     expect(groups.find((g) => g.id === group.id)).toMatchObject({
       canManageGroup: false,
-      canManageMembers: expected,
+      canViewMembers: expected,
     });
   });
 
-  it("flags the Creator as able to manage members", async () => {
+  it("flags the Creator as able to open the members page", async () => {
     const { group, creator } = await createAccessScenario();
     actAs(creator.id);
 
@@ -260,7 +308,7 @@ describe("getGroups", () => {
 
     expect(groups.find((g) => g.id === group.id)).toMatchObject({
       canManageGroup: true,
-      canManageMembers: true,
+      canViewMembers: true,
     });
   });
 
@@ -274,7 +322,7 @@ describe("getGroups", () => {
     const groups = await getGroups();
 
     expect(groups.find((g) => g.id === otherGroup.id)).toMatchObject({
-      canManageMembers: false,
+      canViewMembers: false,
     });
   });
 });
@@ -319,10 +367,10 @@ describe("setMemberClaims", () => {
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
   });
 
-  it.each<GroupClaim>(["MANAGE_CONTENT", "REORDER_SET_LISTS", "MANAGE_RUNNING_ORDER_NOTES"])(
-    "lets a MANAGE_MEMBERS-only holder grant %s they don't hold, and revoke it",
+  it.each<GroupClaim>(Object.values(GroupClaim).filter((claim) => claim !== "MANAGE_MEMBER_AUTHORIZATION"))(
+    "lets a MANAGE_MEMBER_AUTHORIZATION-only holder grant %s they don't hold, and revoke it",
     async (claim) => {
-      const { group, manager, other } = await createManagerScenario(["MANAGE_MEMBERS"]);
+      const { group, manager, other } = await createManagerScenario(["MANAGE_MEMBER_AUTHORIZATION"]);
       actAs(manager.id);
 
       await setMemberClaims(claimsFormData(group.slug, other.id, [claim]));
@@ -333,18 +381,20 @@ describe("setMemberClaims", () => {
     },
   );
 
-  it("lets a MANAGE_MEMBERS holder revoke another member's MANAGE_MEMBERS", async () => {
-    const { group, manager, other } = await createManagerScenario();
-    await grantClaims(other.id, group.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
+  it("lets a MANAGE_MEMBER_AUTHORIZATION holder grant and revoke another member's MANAGE_MEMBER_AUTHORIZATION", async () => {
+    const { group, manager, other } = await createManagerScenario(["MANAGE_MEMBER_AUTHORIZATION"]);
+    await grantClaims(other.id, group.id, ["MANAGE_CONTENT"]);
     actAs(manager.id);
 
-    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"]));
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT", "MANAGE_MEMBER_AUTHORIZATION"]));
+    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT", "MANAGE_MEMBER_AUTHORIZATION"]);
 
+    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"]));
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
   });
 
   it("lets the last of two managers' saves win", async () => {
-    const { group, creator, manager, other } = await createManagerScenario();
+    const { group, creator, manager, other } = await createManagerScenario(["MANAGE_MEMBER_AUTHORIZATION"]);
 
     actAs(manager.id);
     await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]));
@@ -369,16 +419,23 @@ describe("setMemberClaims", () => {
     }
   });
 
-  it("is forbidden for a member holding only MANAGE_CONTENT", async () => {
-    const { group, manager, other } = await createManagerScenario(["MANAGE_CONTENT"]);
+  it.each<[string, GroupClaim[]]>([
+    ["no Claim", []],
+    ["only MANAGE_CONTENT", ["MANAGE_CONTENT"]],
+    // Granting Claims split off from MANAGE_MEMBERS (ADR-0013).
+    ["only MANAGE_MEMBERS", ["MANAGE_MEMBERS"]],
+  ])("is forbidden for a member holding %s", async (_label, claims) => {
+    const { group, manager, other } = await createManagerScenario(claims);
     actAs(manager.id);
 
-    await expect(setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]))).rejects.toThrow(FORBIDDEN);
+    await expect(setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS"]))).rejects.toThrow(
+      FORBIDDEN_CLAIMS,
+    );
     expect(await claimsOf(other.id, group.id)).toEqual([]);
   });
 
   it("rejects setting Claims on the Creator", async () => {
-    const { group, creator, manager } = await createManagerScenario();
+    const { group, creator, manager } = await createManagerScenario(["MANAGE_MEMBER_AUTHORIZATION"]);
     actAs(manager.id);
 
     await expect(setMemberClaims(claimsFormData(group.slug, creator.id, ["MANAGE_MEMBERS"]))).rejects.toThrow(
@@ -388,13 +445,13 @@ describe("setMemberClaims", () => {
   });
 
   it("rejects a caller targeting their own Claims", async () => {
-    const { group, manager } = await createManagerScenario();
+    const { group, manager } = await createManagerScenario(["MANAGE_MEMBER_AUTHORIZATION"]);
     actAs(manager.id);
 
     await expect(setMemberClaims(claimsFormData(group.slug, manager.id, []))).rejects.toThrow(
       "Du kan inte ändra dina egna behörigheter",
     );
-    expect(await claimsOf(manager.id, group.id)).toEqual(["MANAGE_MEMBERS"]);
+    expect(await claimsOf(manager.id, group.id)).toEqual(["MANAGE_MEMBER_AUTHORIZATION"]);
   });
 
   it("rejects a target who is not a member of the group", async () => {
@@ -511,6 +568,7 @@ describe("the Group's Invitations", () => {
   it.each<[string, GroupClaim[]]>([
     ["no Claim", []],
     ["only MANAGE_CONTENT", ["MANAGE_CONTENT"]],
+    ["only MANAGE_MEMBER_AUTHORIZATION", ["MANAGE_MEMBER_AUTHORIZATION"]],
   ])("are hidden from, and can't be changed by, a member holding %s", async (_label, claims) => {
     const { group, other, invitationForm } = await createInvitationScenario();
     await grantClaims(other.id, group.id, claims);

@@ -15,11 +15,17 @@ export default async function GroupMembersPage({ params }: PageProps) {
   const { groupSlug } = await params;
   // Loaded once per request: the list actions below reuse it.
   const access = await findGroupAccess(groupSlug);
-  if (!access?.can("manageMembers")) {
+  if (!access?.can("viewMembers")) {
     notFound();
   }
+  // Inviting and Invitations need MANAGE_MEMBERS; a MANAGE_MEMBER_AUTHORIZATION-only
+  // viewer sees just the member list (ADR-0013).
+  const managesMembers = access.can("manageMembers");
 
-  const [members, invitations] = await Promise.all([listGroupMembers(groupSlug), listGroupInvitations(groupSlug)]);
+  const [members, invitations] = await Promise.all([
+    listGroupMembers(groupSlug),
+    managesMembers ? listGroupInvitations(groupSlug) : null,
+  ]);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -32,16 +38,18 @@ export default async function GroupMembersPage({ params }: PageProps) {
       />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold">Medlemmar</h1>
-        <p className="text-sm text-muted-foreground">
-          Bjud in någon med sin e-postadress. De blir medlemmar när de har tackat ja via länken i mejlet.
-        </p>
+        {managesMembers ? (
+          <p className="text-sm text-muted-foreground">
+            Bjud in någon med sin e-postadress. De blir medlemmar när de har tackat ja via länken i mejlet.
+          </p>
+        ) : null}
       </div>
 
-      <InviteGroupMemberForm groupSlug={groupSlug} />
+      {managesMembers ? <InviteGroupMemberForm groupSlug={groupSlug} /> : null}
 
       <GroupMembersTable groupSlug={groupSlug} members={members} />
 
-      <GroupInvitationsTable groupSlug={groupSlug} invitations={invitations} />
+      {invitations ? <GroupInvitationsTable groupSlug={groupSlug} invitations={invitations} /> : null}
     </div>
   );
 }
