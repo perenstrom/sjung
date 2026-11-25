@@ -102,28 +102,28 @@ export function SetListStepActions({
         groupSlug={groupSlug}
         setListId={setListId}
       />
-      {showsContentActions && isNote ? (
-        <EditRunningOrderNoteButton noteId={step.id} className={ICON_BUTTON_CLASS} />
-      ) : null}
       {showsContentActions ? (
-        <Tooltip>
-          <form action={isNote ? deleteSetListNote : removePieceFromSetList}>
-            <input type="hidden" name="groupSlug" value={groupSlug} />
-            <input type="hidden" name={isNote ? "setListNoteId" : "setListPieceId"} value={step.id} />
-            <TooltipTrigger
-              type="submit"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                ICON_BUTTON_CLASS,
-                "text-destructive hover:text-destructive",
-              )}
-            >
-              <Trash2 className="size-4" aria-hidden="true" />
-              <span className="sr-only">{removeLabel}</span>
-            </TooltipTrigger>
-          </form>
-          <TooltipContent side="top">{removeLabel}</TooltipContent>
-        </Tooltip>
+        <>
+          {isNote ? <EditRunningOrderNoteButton noteId={step.id} className={ICON_BUTTON_CLASS} /> : null}
+          <Tooltip>
+            <form action={isNote ? deleteSetListNote : removePieceFromSetList}>
+              <input type="hidden" name="groupSlug" value={groupSlug} />
+              <input type="hidden" name={isNote ? "setListNoteId" : "setListPieceId"} value={step.id} />
+              <TooltipTrigger
+                type="submit"
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  ICON_BUTTON_CLASS,
+                  "text-destructive hover:text-destructive",
+                )}
+              >
+                <Trash2 className="size-4" aria-hidden="true" />
+                <span className="sr-only">{removeLabel}</span>
+              </TooltipTrigger>
+            </form>
+            <TooltipContent side="top">{removeLabel}</TooltipContent>
+          </Tooltip>
+        </>
       ) : null}
     </>
   );
