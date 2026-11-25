@@ -236,6 +236,25 @@ export async function appendSetListNote(formData: FormData) {
   });
 }
 
+/** Changes only the text: the note keeps its place in the running order. */
+export async function updateSetListNote(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListNoteId = parseSetListNoteIdFromFormData(formData);
+  const content = parseSetListNoteContentFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const note = await findInGroup(groupId, "setListNote", setListNoteId, {
+      select: { id: true, setList: { select: { slug: true } } },
+    });
+    await prisma.setListNote.update({
+      where: { id: note.id },
+      data: { content, updatedById: userId },
+    });
+
+    revalidateGroupSetListDetailRoutes(groupSlug, note.setList.slug);
+  });
+}
+
 export async function deleteSetListNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListNoteId = parseSetListNoteIdFromFormData(formData);

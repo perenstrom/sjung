@@ -18,6 +18,7 @@ vi.mock("@/app/actions/setlists", () => ({
   deleteSetListNote: vi.fn(),
   reorderSetListSteps: vi.fn(),
   removePieceFromSetList: vi.fn(),
+  updateSetListNote: vi.fn(async () => {}),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
@@ -37,13 +38,22 @@ const steps = [
   { kind: "note", id: "step-2", position: 1, content: "Paus" },
 ] as unknown as SetListStep[];
 
+// A piece row's content controls need `matchMedia`, which jsdom lacks, so the
+// content-manager tests show only the note.
+const noteOnly = steps.filter((step) => step.kind === "note");
+
 /** The Set list page's edit surface: header with toggle, the running order and an edit-only form. */
-function setListPage(capabilities: EditCapability[]) {
+function setListPage(capabilities: EditCapability[], shownSteps: SetListStep[]) {
   return createElement(
     EditModeProvider,
     { capabilities },
     createElement(PageHeader, { title: "Julkonsert" }),
-    createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", setList: { id: "sl-1", steps } }),
+    createElement(PiecesTable, {
+      people: [],
+      creditRoles: [],
+      groupSlug: "koren",
+      setList: { id: "sl-1", steps: shownSteps },
+    }),
     createElement(EditOnly, null, "Lägg till anteckning"),
   );
 }
@@ -63,8 +73,8 @@ afterEach(() => {
   container.remove();
 });
 
-function render(capabilities: EditCapability[]) {
-  act(() => root.render(setListPage(capabilities)));
+function render(capabilities: EditCapability[], shownSteps = steps) {
+  act(() => root.render(setListPage(capabilities, shownSteps)));
 }
 
 function toggle(): HTMLButtonElement | null {
@@ -73,6 +83,25 @@ function toggle(): HTMLButtonElement | null {
 
 function turnOnEditMode() {
   act(() => toggle()!.click());
+}
+
+const EDIT_NOTE = "Redigera anteckning";
+
+/** The table and the phone list both render the running order, so each control is there twice. */
+function buttonsNamed(name: string): HTMLButtonElement[] {
+  return [...container.querySelectorAll("button")].filter((button) => button.textContent?.trim() === name);
+}
+
+function noteEditors(): HTMLTextAreaElement[] {
+  return [...container.querySelectorAll("textarea")];
+}
+
+function typeInto(textarea: HTMLTextAreaElement, value: string) {
+  const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+  act(() => {
+    setValue.call(textarea, value);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  });
 }
 
 describe("Edit mode on a Set list", () => {
@@ -84,6 +113,7 @@ describe("Edit mode on a Set list", () => {
     expect(text).toContain("Flytta upp");
     expect(text).toContain("Flytta ner");
     expect(text).not.toContain("Ta bort");
+    expect(buttonsNamed(EDIT_NOTE)).toEqual([]);
     expect(text).not.toContain("Lägg till anteckning");
     expect(container.querySelector('[aria-label="Lägg till upphovsperson"]')).toBeNull();
     expect(container.querySelector('[aria-label^="Byt namn"]')).toBeNull();
@@ -93,5 +123,45 @@ describe("Edit mode on a Set list", () => {
     render([]);
 
     expect(toggle()).toBeNull();
+  });
+
+  it("lets a content manager edit a Running-order note's text, and Avbryt keeps the old text", () => {
+    render(["manageContent"], noteOnly);
+    turnOnEditMode();
+
+    act(() => buttonsNamed(EDIT_NOTE)[0].click());
+    const [editor] = noteEditors();
+    expect(editor.value).toBe("Paus");
+
+    typeInto(editor, "Paus, tio minuter");
+    act(() => buttonsNamed("Avbryt")[0].click());
+
+    expect(noteEditors()).toEqual([]);
+    expect(container.textContent).toContain("Paus");
+    expect(container.textContent).not.toContain("tio minuter");
+  });
+
+  it("shows a Running-order note's new text after Spara", async () => {
+    render(["manageContent"], noteOnly);
+    turnOnEditMode();
+
+    act(() => buttonsNamed(EDIT_NOTE)[0].click());
+    typeInto(noteEditors()[0], "Paus, tio minuter");
+    await act(async () => buttonsNamed("Spara")[0].click());
+
+    expect(noteEditors()).toEqual([]);
+    expect(container.textContent).toContain("Paus, tio minuter");
+  });
+
+  it("closes a Running-order note's editor when Edit mode is turned off", () => {
+    render(["manageContent"], noteOnly);
+    turnOnEditMode();
+    act(() => buttonsNamed(EDIT_NOTE)[0].click());
+
+    act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Klar"]')!.click());
+    expect(noteEditors()).toEqual([]);
+
+    turnOnEditMode();
+    expect(noteEditors()).toEqual([]);
   });
 });
