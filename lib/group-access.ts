@@ -9,7 +9,7 @@ import {
   type GroupCapability,
 } from "@/lib/group-access-policy";
 
-export { changeMember, type GroupCapability } from "@/lib/group-access-policy";
+export { changeMemberClaims, removeMember, type GroupCapability } from "@/lib/group-access-policy";
 export type { GroupAccessDenial } from "@/lib/group-access-policy";
 
 /** Per-refusal wording that replaces the default message from `require`. */
@@ -28,6 +28,7 @@ const NOT_A_MEMBER = "Ogiltig grupp eller saknad behörighet";
 
 const DEFAULT_MESSAGES: Record<GroupAccessDenial, string> = {
   lacksManageMembers: "Du har inte behörighet att hantera medlemmar i gruppen",
+  lacksManageMemberAuthorization: "Du har inte behörighet att ändra behörigheter i gruppen",
   lacksManageGroup: "Du har inte behörighet att hantera gruppen",
   lacksManageContent: "Du har inte behörighet att ändra innehåll i gruppen",
   lacksReorderSetLists: "Du har inte behörighet att ändra ordning i gruppens repertoarer",

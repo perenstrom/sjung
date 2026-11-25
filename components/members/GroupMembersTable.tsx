@@ -10,8 +10,10 @@ export type GroupMembersTableRow = {
   name: string;
   email: string;
   isCreator: boolean;
-  /** Whether the viewer may change this Member's Claims or remove them. */
-  canChange: boolean;
+  /** Whether the viewer may remove this Member from the Group. */
+  canRemove: boolean;
+  /** Whether the viewer may grant or revoke this Member's Claims. */
+  canChangeClaims: boolean;
   claims: GroupClaim[];
 };
 
@@ -30,7 +32,7 @@ export function GroupMembersTable({ groupSlug, members }: { groupSlug: string; m
               key={member.id}
               primary={member.name}
               secondary={member.email}
-              trailing={member.canChange ? <MemberActions groupSlug={groupSlug} member={member} /> : null}
+              trailing={hasActions(member) ? <MemberActions groupSlug={groupSlug} member={member} /> : null}
             >
               <GroupMemberClaimBadges member={member} empty={null} className="mt-1.5" />
             </MobileListRow>
@@ -64,7 +66,7 @@ export function GroupMembersTable({ groupSlug, members }: { groupSlug: string; m
                     <GroupMemberClaimBadges member={member} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {member.canChange ? (
+                    {hasActions(member) ? (
                       <div className="flex justify-end">
                         <MemberActions groupSlug={groupSlug} member={member} />
                       </div>
@@ -80,11 +82,16 @@ export function GroupMembersTable({ groupSlug, members }: { groupSlug: string; m
   );
 }
 
+function hasActions(member: GroupMembersTableRow): boolean {
+  return member.canChangeClaims || member.canRemove;
+}
+
+/** The row's actions, each shown only when the viewer may take it. */
 function MemberActions({ groupSlug, member }: { groupSlug: string; member: GroupMembersTableRow }) {
   return (
     <div className="flex gap-1">
-      <GroupMemberClaimsDialog groupSlug={groupSlug} member={member} />
-      <RemoveGroupMemberDialog groupSlug={groupSlug} member={member} />
+      {member.canChangeClaims ? <GroupMemberClaimsDialog groupSlug={groupSlug} member={member} /> : null}
+      {member.canRemove ? <RemoveGroupMemberDialog groupSlug={groupSlug} member={member} /> : null}
     </div>
   );
 }

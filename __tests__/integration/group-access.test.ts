@@ -3,10 +3,17 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 
 import type { GroupClaim } from "@/app/generated/prisma/client";
+import type { GroupCapability } from "@/lib/group-access";
 import { testPrisma } from "../support/db";
 import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createMember, grantClaims } from "../support/fixtures";
-import { changeMember, findGroupAccess, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
+import {
+  changeMemberClaims,
+  findGroupAccess,
+  listGroupAccess,
+  removeMember,
+  requireGroupAccess,
+} from "@/lib/group-access";
 
 type MemberKind = "non-Member" | "plain Member" | GroupClaim | "Creator";
 
@@ -30,22 +37,30 @@ type Expected = {
   manageContent: boolean;
   reorderSetLists: boolean;
   manageRunningOrderNotes: boolean;
+  viewMembers: boolean;
   manageMembers: boolean;
   manageGroup: boolean;
-  changeOtherMember: boolean;
-  changeCreator: boolean;
-  changeSelf: boolean;
+  removeOtherMember: boolean;
+  removeCreator: boolean;
+  removeSelf: boolean;
+  changeOtherMemberClaims: boolean;
+  changeCreatorClaims: boolean;
+  changeOwnClaims: boolean;
 };
 
 const NOTHING: Expected = {
   manageContent: false,
   reorderSetLists: false,
   manageRunningOrderNotes: false,
+  viewMembers: false,
   manageMembers: false,
   manageGroup: false,
-  changeOtherMember: false,
-  changeCreator: false,
-  changeSelf: false,
+  removeOtherMember: false,
+  removeCreator: false,
+  removeSelf: false,
+  changeOtherMemberClaims: false,
+  changeCreatorClaims: false,
+  changeOwnClaims: false,
 };
 
 describe("Group access by Member kind", () => {
@@ -53,7 +68,8 @@ describe("Group access by Member kind", () => {
     ["non-Member", NOTHING],
     ["plain Member", NOTHING],
     ["MANAGE_CONTENT", { ...NOTHING, manageContent: true }],
-    ["MANAGE_MEMBERS", { ...NOTHING, manageMembers: true, changeOtherMember: true }],
+    ["MANAGE_MEMBERS", { ...NOTHING, viewMembers: true, manageMembers: true, removeOtherMember: true }],
+    ["MANAGE_MEMBER_AUTHORIZATION", { ...NOTHING, viewMembers: true, changeOtherMemberClaims: true }],
     ["REORDER_SET_LISTS", { ...NOTHING, reorderSetLists: true }],
     ["MANAGE_RUNNING_ORDER_NOTES", { ...NOTHING, manageRunningOrderNotes: true }],
     [
@@ -63,9 +79,11 @@ describe("Group access by Member kind", () => {
         manageContent: true,
         reorderSetLists: true,
         manageRunningOrderNotes: true,
+        viewMembers: true,
         manageMembers: true,
         manageGroup: true,
-        changeOtherMember: true,
+        removeOtherMember: true,
+        changeOtherMemberClaims: true,
       },
     ],
   ])("%s", async (kind, expected) => {
@@ -84,26 +102,36 @@ describe("Group access by Member kind", () => {
         manageContent: can("manageContent"),
         reorderSetLists: can("reorderSetLists"),
         manageRunningOrderNotes: can("manageRunningOrderNotes"),
+        viewMembers: can("viewMembers"),
         manageMembers: can("manageMembers"),
         manageGroup: can("manageGroup"),
-        changeOtherMember: can(changeMember(target.id)),
-        changeCreator: can(changeMember(creator.id)),
-        changeSelf: can(changeMember(viewer.id)),
+        removeOtherMember: can(removeMember(target.id)),
+        removeCreator: can(removeMember(creator.id)),
+        removeSelf: can(removeMember(viewer.id)),
+        changeOtherMemberClaims: can(changeMemberClaims(target.id)),
+        changeCreatorClaims: can(changeMemberClaims(creator.id)),
+        changeOwnClaims: can(changeMemberClaims(viewer.id)),
       }).toEqual(expected);
     }
   });
 
-  it("does not let one Group's MANAGE_MEMBERS leak into another Group", async () => {
+  it.each<[GroupClaim, GroupCapability]>([
+    ["MANAGE_MEMBERS", "manageMembers"],
+    ["MANAGE_MEMBER_AUTHORIZATION", "viewMembers"],
+  ])("does not let one Group's %s leak into another Group", async (claim, capability) => {
     const { group, member } = await createAccessScenario();
-    await grantClaims(member.id, group.id, ["MANAGE_MEMBERS"]);
+    await grantClaims(member.id, group.id, [claim]);
     const otherGroup = await createGroup();
+    const otherTarget = await createMember(otherGroup, []);
     await testPrisma.usersToGroups.create({ data: { userId: member.id, groupId: otherGroup.id } });
     actAs(member.id);
 
-    expect((await findGroupAccess(otherGroup.slug))?.can("manageMembers")).toBe(false);
+    const other = await findGroupAccess(otherGroup.slug);
+    expect(other?.can(capability)).toBe(false);
+    expect(other?.can(changeMemberClaims(otherTarget.id))).toBe(false);
     const listed = await listGroupAccess();
-    expect(listed.find((entry) => entry.group.id === otherGroup.id)?.can("manageMembers")).toBe(false);
-    expect(listed.find((entry) => entry.group.id === group.id)?.can("manageMembers")).toBe(true);
+    expect(listed.find((entry) => entry.group.id === otherGroup.id)?.can(capability)).toBe(false);
+    expect(listed.find((entry) => entry.group.id === group.id)?.can(capability)).toBe(true);
   });
 });
 
@@ -144,8 +172,11 @@ describe("GroupAccess.require", () => {
     const access = await requireGroupAccess(group.slug);
 
     expect(() => access.require("manageGroup")).toThrow("Du har inte behörighet att hantera gruppen");
-    expect(() => access.require(changeMember(creator.id))).toThrow("Gruppens administratör kan inte ändras");
-    expect(() => access.require(changeMember(member.id))).toThrow("Du kan inte ändra ditt eget medlemskap");
+    expect(() => access.require(removeMember(creator.id))).toThrow("Gruppens administratör kan inte ändras");
+    expect(() => access.require(removeMember(member.id))).toThrow("Du kan inte ändra ditt eget medlemskap");
+    expect(() => access.require(changeMemberClaims(creator.id))).toThrow(
+      "Du har inte behörighet att ändra behörigheter i gruppen",
+    );
   });
 
   it("refuses a Member without MANAGE_MEMBERS with the members message", async () => {
@@ -154,7 +185,7 @@ describe("GroupAccess.require", () => {
 
     const access = await requireGroupAccess(group.slug);
 
-    for (const capability of ["manageMembers", changeMember(creator.id)] as const) {
+    for (const capability of ["viewMembers", "manageMembers", removeMember(creator.id)] as const) {
       expect(() => access.require(capability)).toThrow("Du har inte behörighet att hantera medlemmar i gruppen");
     }
   });

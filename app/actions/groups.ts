@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { firstFreeSlug, slugsFrom } from "@/lib/slug";
-import { changeMember, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
+import { changeMemberClaims, listGroupAccess, removeMember, requireGroupAccess } from "@/lib/group-access";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
@@ -30,7 +30,7 @@ export async function getGroups() {
   const groups = await listGroupAccess();
   return groups.map((access) => ({
     ...access.group,
-    canManageMembers: access.can("manageMembers"),
+    canViewMembers: access.can("viewMembers"),
     canManageGroup: access.can("manageGroup"),
   }));
 }
@@ -123,10 +123,10 @@ export async function deleteGroup(formData: FormData) {
   );
 }
 
-/** The Group's Members with their Claims, and whether the viewer may change each one. */
+/** The Group's Members with their Claims, and whether the viewer may remove each one or change their Claims. */
 export async function listGroupMembers(groupSlug: string) {
   const access = await requireGroupAccess(groupSlug);
-  access.require("manageMembers");
+  access.require("viewMembers");
 
   const rows = await prisma.usersToGroups.findMany({
     where: { groupId: access.group.id },
@@ -155,7 +155,8 @@ export async function listGroupMembers(groupSlug: string) {
     ...row.user,
     // Shown as a badge on the Member; access itself is decided by `access`.
     isCreator: row.user.id === row.group.createdById,
-    canChange: access.can(changeMember(row.user.id)),
+    canRemove: access.can(removeMember(row.user.id)),
+    canChangeClaims: access.can(changeMemberClaims(row.user.id)),
     claims: row.claims.map(({ claim }) => claim),
   }));
 }
@@ -269,7 +270,7 @@ export async function removeMemberFromGroup(formData: FormData) {
   await runGroupMutation(
     groupSlug,
     async ({ access }) =>
-      access.require(changeMember(memberUserId), {
+      access.require(removeMember(memberUserId), {
         targetIsSelf: "Du kan inte ta bort dig själv från gruppen",
         targetIsCreator: "Gruppens administratör kan inte tas bort från gruppen",
       }),
@@ -299,7 +300,7 @@ export async function removeMemberFromGroup(formData: FormData) {
 
 /**
  * Sets a Member's complete Claim set in one transaction; concurrent saves resolve last-write-wins.
- * The caller must manage members, and may not target the Creator or themselves.
+ * The caller must hold `MANAGE_MEMBER_AUTHORIZATION`, and may not target the Creator or themselves.
  */
 export async function setMemberClaims(formData: FormData) {
   const groupSlug = parseGroupSlugFromFormData(formData);
@@ -310,7 +311,7 @@ export async function setMemberClaims(formData: FormData) {
     groupSlug,
     // Creator status implies every Claim and is never stored as a Claim row.
     async ({ access }) =>
-      access.require(changeMember(memberUserId), {
+      access.require(changeMemberClaims(memberUserId), {
         targetIsCreator: "Gruppens administratör har alltid alla behörigheter",
         targetIsSelf: "Du kan inte ändra dina egna behörigheter",
       }),

@@ -7,7 +7,12 @@ import { GroupClaim } from "@/app/generated/prisma/enums";
 
 /** Something a User may or may not do in one Group. */
 export type GroupCapability =
-  /** Invite, list and remove Members, and set their Claims: the Creator or `MANAGE_MEMBERS`. */
+  /**
+   * Open the members page and list the Members with their Claims: the Creator,
+   * `MANAGE_MEMBERS` or `MANAGE_MEMBER_AUTHORIZATION` (ADR-0013).
+   */
+  | "viewMembers"
+  /** Invite people and handle the Group's Invitations: the Creator or `MANAGE_MEMBERS`. */
   | "manageMembers"
   /**
    * Create, edit or delete any of the Group's content (ADR-0004): the Creator
@@ -28,18 +33,29 @@ export type GroupCapability =
   | "manageRunningOrderNotes"
   /** Rename or delete the Group: the Creator only. */
   | "manageGroup"
-  /** Change or remove one Member: `manageMembers`, and the target is neither the Creator nor the viewer. */
-  | ChangeMember;
+  /** Remove one Member: `manageMembers`, and the target is neither the Creator nor the viewer. */
+  | RemoveMember
+  /**
+   * Grant or revoke any Claim on one Member (ADR-0013): the Creator or
+   * `MANAGE_MEMBER_AUTHORIZATION`, and the target is neither the Creator nor the viewer.
+   */
+  | ChangeMemberClaims;
 
-export type ChangeMember = { capability: "changeMember"; targetUserId: string };
+export type RemoveMember = { capability: "removeMember"; targetUserId: string };
+export type ChangeMemberClaims = { capability: "changeMemberClaims"; targetUserId: string };
 
-export function changeMember(targetUserId: string): ChangeMember {
-  return { capability: "changeMember", targetUserId };
+export function removeMember(targetUserId: string): RemoveMember {
+  return { capability: "removeMember", targetUserId };
+}
+
+export function changeMemberClaims(targetUserId: string): ChangeMemberClaims {
+  return { capability: "changeMemberClaims", targetUserId };
 }
 
 /** Why a capability was refused. */
 export type GroupAccessDenial =
   | "lacksManageMembers"
+  | "lacksManageMemberAuthorization"
   | "lacksManageGroup"
   | "lacksManageContent"
   | "lacksReorderSetLists"
@@ -57,27 +73,36 @@ export type GroupAccessFacts = {
 /** `null` when the Member has the capability, otherwise why not. */
 export function groupAccessDenial(facts: GroupAccessFacts, capability: GroupCapability): GroupAccessDenial | null {
   const isCreator = facts.userId === facts.creatorId;
-  const managesMembers = isCreator || facts.claims.includes(GroupClaim.MANAGE_MEMBERS);
+  const holds = (claim: GroupClaim) => isCreator || facts.claims.includes(claim);
 
+  if (capability === "viewMembers") {
+    // Refused as lacking MANAGE_MEMBERS: its message ("hantera medlemmar") fits a
+    // viewer holding neither member Claim.
+    return holds(GroupClaim.MANAGE_MEMBERS) || holds(GroupClaim.MANAGE_MEMBER_AUTHORIZATION)
+      ? null
+      : "lacksManageMembers";
+  }
   if (capability === "manageMembers") {
-    return managesMembers ? null : "lacksManageMembers";
+    return holds(GroupClaim.MANAGE_MEMBERS) ? null : "lacksManageMembers";
   }
   if (capability === "manageContent") {
-    return isCreator || facts.claims.includes(GroupClaim.MANAGE_CONTENT) ? null : "lacksManageContent";
+    return holds(GroupClaim.MANAGE_CONTENT) ? null : "lacksManageContent";
   }
   if (capability === "reorderSetLists") {
-    return isCreator || facts.claims.includes(GroupClaim.REORDER_SET_LISTS) ? null : "lacksReorderSetLists";
+    return holds(GroupClaim.REORDER_SET_LISTS) ? null : "lacksReorderSetLists";
   }
   if (capability === "manageRunningOrderNotes") {
-    return isCreator || facts.claims.includes(GroupClaim.MANAGE_RUNNING_ORDER_NOTES)
-      ? null
-      : "lacksManageRunningOrderNotes";
+    return holds(GroupClaim.MANAGE_RUNNING_ORDER_NOTES) ? null : "lacksManageRunningOrderNotes";
   }
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";
   }
-  if (!managesMembers) {
+
+  if (capability.capability === "removeMember" && !holds(GroupClaim.MANAGE_MEMBERS)) {
     return "lacksManageMembers";
+  }
+  if (capability.capability === "changeMemberClaims" && !holds(GroupClaim.MANAGE_MEMBER_AUTHORIZATION)) {
+    return "lacksManageMemberAuthorization";
   }
   if (capability.targetUserId === facts.userId) {
     return "targetIsSelf";

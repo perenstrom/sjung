@@ -50,7 +50,7 @@ const navItemIcons: Record<GroupNavItem["key"], ReactNode> = {
   members: <UserPlus />,
 };
 
-type GroupOption = SwitchableGroup & { canManageMembers: boolean };
+type GroupOption = SwitchableGroup & { canViewMembers: boolean };
 
 function tenantSlugFromPathname(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
@@ -143,7 +143,7 @@ export function AppSidebar({
 
   const navItems = groupNavItems({
     groupSlug: currentGroupSlug || null,
-    canManageMembers: currentGroup?.canManageMembers ?? false,
+    canViewMembers: currentGroup?.canViewMembers ?? false,
   });
   const groupsHref = MY_GROUPS_PATH;
 

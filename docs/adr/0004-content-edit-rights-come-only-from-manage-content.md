@@ -11,5 +11,5 @@ A Member may create, edit or delete a Group's content (Pieces with their Files, 
 ## Consequences
 
 - The rule depends only on the Member, never on the content row, so it is checked once per action before any content is looked up, not per row.
-- There is no migration: when the rule is switched on, existing Members without the Claim become read-only. Members holding `MANAGE_MEMBERS` grant `MANAGE_CONTENT` where it's needed.
+- There is no migration: when the rule is switched on, existing Members without the Claim become read-only. Members holding `MANAGE_MEMBERS` grant `MANAGE_CONTENT` where it's needed (since ADR-0013, `MANAGE_MEMBER_AUTHORIZATION` holders do).
 - The audit columns `createdById` / `updatedById` on content stay audit-only.

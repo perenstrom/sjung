@@ -1,6 +1,6 @@
 # Group membership gains claims: MANAGE_MEMBERS and MANAGE_CONTENT
 
-Status: accepted (supersedes ADR-0001)
+Status: accepted (supersedes ADR-0001; partly superseded by ADR-0013, which moves granting and revoking Claims to `MANAGE_MEMBER_AUTHORIZATION`)
 
 ADR-0001 established Creator as a Group's only privileged member, with every permission check comparing against `Group.createdById` — deliberately avoiding a roles table because there was only one privilege tier to express. That's no longer true: some Users need to manage group membership without being the Creator, and some need write access to all of a Group's content without being its Creator. We're introducing two independent **Claims** a member can hold — `MANAGE_MEMBERS` and `MANAGE_CONTENT` — via a `GroupMemberClaim` table keyed by (User, Group, claim), rather than a single `role` column, because the two capabilities are genuinely separable: a member might hold one without the other.
 

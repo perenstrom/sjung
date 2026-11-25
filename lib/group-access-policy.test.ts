@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { GroupClaim } from "@/app/generated/prisma/enums";
 import {
-  changeMember,
+  changeMemberClaims,
   groupAccessDenial,
+  removeMember,
   type GroupAccessDenial,
   type GroupAccessFacts,
   type GroupCapability,
@@ -34,7 +35,14 @@ describe("groupAccessDenial", () => {
       "manageRunningOrderNotes",
       "lacksManageRunningOrderNotes",
     ],
-    ["plain Member: changeMember(other)", facts("plain"), changeMember(OTHER), "lacksManageMembers"],
+    ["plain Member: viewMembers", facts("plain"), "viewMembers", "lacksManageMembers"],
+    ["plain Member: removeMember(other)", facts("plain"), removeMember(OTHER), "lacksManageMembers"],
+    [
+      "plain Member: changeMemberClaims(other)",
+      facts("plain"),
+      changeMemberClaims(OTHER),
+      "lacksManageMemberAuthorization",
+    ],
 
     ["MANAGE_CONTENT: manageMembers", facts("MANAGE_CONTENT"), "manageMembers", "lacksManageMembers"],
     ["MANAGE_CONTENT: manageContent", facts("MANAGE_CONTENT"), "manageContent", null],
@@ -47,15 +55,68 @@ describe("groupAccessDenial", () => {
       "manageRunningOrderNotes",
       "lacksManageRunningOrderNotes",
     ],
-    ["MANAGE_CONTENT: changeMember(other)", facts("MANAGE_CONTENT"), changeMember(OTHER), "lacksManageMembers"],
+    ["MANAGE_CONTENT: viewMembers", facts("MANAGE_CONTENT"), "viewMembers", "lacksManageMembers"],
+    ["MANAGE_CONTENT: removeMember(other)", facts("MANAGE_CONTENT"), removeMember(OTHER), "lacksManageMembers"],
 
     ["MANAGE_MEMBERS: manageMembers", facts("MANAGE_MEMBERS"), "manageMembers", null],
     ["MANAGE_MEMBERS: manageContent", facts("MANAGE_MEMBERS"), "manageContent", "lacksManageContent"],
     ["MANAGE_MEMBERS: manageGroup", facts("MANAGE_MEMBERS"), "manageGroup", "lacksManageGroup"],
-    ["MANAGE_MEMBERS: changeMember(other)", facts("MANAGE_MEMBERS"), changeMember(OTHER), null],
-    ["MANAGE_MEMBERS: changeMember(Creator)", facts("MANAGE_MEMBERS"), changeMember(CREATOR), "targetIsCreator"],
+    ["MANAGE_MEMBERS: viewMembers", facts("MANAGE_MEMBERS"), "viewMembers", null],
+    ["MANAGE_MEMBERS: removeMember(other)", facts("MANAGE_MEMBERS"), removeMember(OTHER), null],
+    ["MANAGE_MEMBERS: removeMember(Creator)", facts("MANAGE_MEMBERS"), removeMember(CREATOR), "targetIsCreator"],
+    ["MANAGE_MEMBERS: removeMember(self)", facts("MANAGE_MEMBERS"), removeMember(VIEWER), "targetIsSelf"],
+    // Granting Claims split off into MANAGE_MEMBER_AUTHORIZATION (ADR-0013).
+    [
+      "MANAGE_MEMBERS: changeMemberClaims(other)",
+      facts("MANAGE_MEMBERS"),
+      changeMemberClaims(OTHER),
+      "lacksManageMemberAuthorization",
+    ],
     ["MANAGE_MEMBERS: reorderSetLists", facts("MANAGE_MEMBERS"), "reorderSetLists", "lacksReorderSetLists"],
-    ["MANAGE_MEMBERS: changeMember(self)", facts("MANAGE_MEMBERS"), changeMember(VIEWER), "targetIsSelf"],
+
+    ["MANAGE_MEMBER_AUTHORIZATION: viewMembers", facts("MANAGE_MEMBER_AUTHORIZATION"), "viewMembers", null],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeMemberClaims(other)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeMemberClaims(OTHER),
+      null,
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeMemberClaims(Creator)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeMemberClaims(CREATOR),
+      "targetIsCreator",
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeMemberClaims(self)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeMemberClaims(VIEWER),
+      "targetIsSelf",
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: manageMembers",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      "manageMembers",
+      "lacksManageMembers",
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: removeMember(other)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      removeMember(OTHER),
+      "lacksManageMembers",
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: manageContent",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      "manageContent",
+      "lacksManageContent",
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: manageGroup",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      "manageGroup",
+      "lacksManageGroup",
+    ],
 
     ["REORDER_SET_LISTS: reorderSetLists", facts("REORDER_SET_LISTS"), "reorderSetLists", null],
     ["REORDER_SET_LISTS: manageContent", facts("REORDER_SET_LISTS"), "manageContent", "lacksManageContent"],
@@ -103,8 +164,11 @@ describe("groupAccessDenial", () => {
     ["Creator: manageGroup", facts("creator"), "manageGroup", null],
     ["Creator: reorderSetLists", facts("creator"), "reorderSetLists", null],
     ["Creator: manageRunningOrderNotes", facts("creator"), "manageRunningOrderNotes", null],
-    ["Creator: changeMember(other)", facts("creator"), changeMember(OTHER), null],
-    ["Creator: changeMember(self)", facts("creator"), changeMember(CREATOR), "targetIsSelf"],
+    ["Creator: viewMembers", facts("creator"), "viewMembers", null],
+    ["Creator: removeMember(other)", facts("creator"), removeMember(OTHER), null],
+    ["Creator: removeMember(self)", facts("creator"), removeMember(CREATOR), "targetIsSelf"],
+    ["Creator: changeMemberClaims(other)", facts("creator"), changeMemberClaims(OTHER), null],
+    ["Creator: changeMemberClaims(self)", facts("creator"), changeMemberClaims(CREATOR), "targetIsSelf"],
   ])("%s", (_label, groupFacts, capability, expected) => {
     expect(groupAccessDenial(groupFacts, capability)).toBe(expected);
   });

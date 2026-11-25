@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "group_claim" ADD VALUE 'MANAGE_MEMBER_AUTHORIZATION';

@@ -9,7 +9,12 @@ export const GROUP_CLAIM_OPTIONS: {
   {
     claim: GroupClaim.MANAGE_MEMBERS,
     label: "Hantera medlemmar",
-    description: "Kan lägga till och ta bort medlemmar och ändra andras behörigheter.",
+    description: "Kan bjuda in och ta bort medlemmar och hantera inbjudningar.",
+  },
+  {
+    claim: GroupClaim.MANAGE_MEMBER_AUTHORIZATION,
+    label: "Hantera behörigheter",
+    description: "Kan ge och ta bort behörigheter för andra medlemmar.",
   },
   {
     claim: GroupClaim.MANAGE_CONTENT,

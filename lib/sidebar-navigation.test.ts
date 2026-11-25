@@ -67,7 +67,7 @@ describe("switchGroup", () => {
 
 describe("groupNavItems", () => {
   it("lists Repertoarer first, then Alla noter, Upphovspersoner and Medlemmar", () => {
-    expect(groupNavItems({ groupSlug: "kor", canManageMembers: true })).toEqual([
+    expect(groupNavItems({ groupSlug: "kor", canViewMembers: true })).toEqual([
       { key: "setLists", label: "Repertoarer", href: "/app/kor/setlists" },
       { key: "pieces", label: "Alla noter", href: "/app/kor/pieces" },
       { key: "people", label: "Upphovspersoner", href: "/app/kor/people" },
@@ -75,8 +75,8 @@ describe("groupNavItems", () => {
     ]);
   });
 
-  it("leaves out Medlemmar for those who can't manage members", () => {
-    expect(groupNavItems({ groupSlug: "kor", canManageMembers: false }).map((item) => item.label)).toEqual([
+  it("leaves out Medlemmar for those who can't open the members page", () => {
+    expect(groupNavItems({ groupSlug: "kor", canViewMembers: false }).map((item) => item.label)).toEqual([
       "Repertoarer",
       "Alla noter",
       "Upphovspersoner",
@@ -84,7 +84,7 @@ describe("groupNavItems", () => {
   });
 
   it("disables the items when there is no active group", () => {
-    expect(groupNavItems({ groupSlug: null, canManageMembers: false })).toEqual([
+    expect(groupNavItems({ groupSlug: null, canViewMembers: false })).toEqual([
       { key: "setLists", label: "Repertoarer", href: null },
       { key: "pieces", label: "Alla noter", href: null },
       { key: "people", label: "Upphovspersoner", href: null },
