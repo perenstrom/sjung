@@ -20,7 +20,7 @@ import {
   revalidateGroupSetListDetailRoutes,
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
-import { getWritableGroupIdForSlug, runContentMutation, runGroupMutation } from "@/lib/tenant-group";
+import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
 import { SetListSequence } from "@/lib/setlists/sequence";
 import { PIECE_ALIAS_ORDER } from "@/lib/pieces/types";
 import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
@@ -207,19 +207,15 @@ export async function reorderSetListSteps(formData: FormData) {
   const setListId = parseSetListIdFromFormData(formData);
   const orderedSetListStepIds = parseOrderedSetListStepIdsFromFormData(formData);
 
-  await runGroupMutation(
+  await runContentMutation(
     groupSlug,
-    async ({ access }) => {
-      if (!access.can("manageContent")) {
-        access.require("reorderSetLists");
-      }
-    },
     async ({ userId, groupId }) => {
       const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
       await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
 
       revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
     },
+    { alsoAllowedBy: "reorderSetLists" },
   );
 }
 
