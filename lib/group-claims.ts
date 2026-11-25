@@ -16,4 +16,9 @@ export const GROUP_CLAIM_OPTIONS: {
     label: "Hantera innehåll",
     description: "Kan skapa, redigera och ta bort gruppens innehåll.",
   },
+  {
+    claim: GroupClaim.REORDER_SET_LISTS,
+    label: "Ändra ordning i repertoarer",
+    description: "Kan flytta om stycken och anteckningar i gruppens repertoarer.",
+  },
 ];

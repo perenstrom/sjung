@@ -11,6 +11,7 @@ import { RenamePersonDialog } from "@/components/people/RenamePersonDialog";
 import { createGroupAncestor, createPeopleAncestor } from "@/lib/breadcrumbs";
 import { findPageContent } from "@/lib/content-page";
 import { findGroupAccess } from "@/lib/group-access";
+import { heldEditCapabilities } from "@/lib/edit-mode";
 import { groupPersonPath } from "@/lib/groups/routes";
 
 type PageProps = {
@@ -38,7 +39,7 @@ export default async function TenantPersonPage({ params }: PageProps) {
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider canEdit={access?.can("manageContent") ?? false}>
+    <EditModeProvider capabilities={heldEditCapabilities(access, ["manageContent"])}>
       <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
           trail={{

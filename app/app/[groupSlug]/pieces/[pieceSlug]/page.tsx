@@ -5,6 +5,7 @@ import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
+import { heldEditCapabilities } from "@/lib/edit-mode";
 import { PieceDetailCreditsSection } from "@/components/PieceDetailCreditsSection";
 import { PieceDetailNotesSection } from "@/components/PieceDetailNotesSection";
 import { PieceMetadataSection } from "@/components/PieceMetadataSection";
@@ -48,7 +49,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider canEdit={access?.can("manageContent") ?? false}>
+    <EditModeProvider capabilities={heldEditCapabilities(access, ["manageContent"])}>
       <PieceCategoriesProvider categories={categories}>
         <div className="space-y-4 md:space-y-6">
           <BreadcrumbRegistrar

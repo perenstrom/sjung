@@ -5,6 +5,7 @@ import { getPeople } from "@/app/actions/people";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider, EditOnly } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
+import { heldEditCapabilities } from "@/lib/edit-mode";
 import { PageHeader } from "@/components/PageHeader";
 import { SetListName } from "@/components/setlists/SetListName";
 import { PieceCategoriesProvider } from "@/components/pieces/CategoryPicker";
@@ -45,7 +46,7 @@ export default async function TenantSetListDetailPage({ params }: PageProps) {
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider canEdit={access?.can("manageContent") ?? false}>
+    <EditModeProvider capabilities={heldEditCapabilities(access, ["manageContent", "reorderSetLists"])}>
       <PieceCategoriesProvider categories={categories}>
         <div className="space-y-4 md:space-y-6">
           <BreadcrumbRegistrar

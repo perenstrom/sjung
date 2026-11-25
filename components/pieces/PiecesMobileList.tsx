@@ -35,6 +35,8 @@ const STEP_NUMBER_CLASS = "text-muted-foreground w-6 shrink-0 font-mono text-xs"
  * Pass `setList` instead of `pieces` for a set list's running order: rows get
  * their number, Running-order notes show inline, and in edit mode an open row
  * (or a note) gets the step reorder/remove actions instead of delete-piece.
+ * `isReordering` shows the step actions on its own, for a Member who may
+ * reorder but not otherwise edit; the remove action checks its own capability.
  *
  * Without `setList` (Alla noter) a letter heading comes before the first piece
  * of each letter group; pass `pieces` already in the order to show.
@@ -46,6 +48,7 @@ export function PiecesMobileList({
   creditRoles,
   groupSlug,
   isEditing,
+  isReordering,
   emptyMessage,
   ...props
 }: {
@@ -53,6 +56,8 @@ export function PiecesMobileList({
   creditRoles: string[];
   groupSlug: string;
   isEditing: boolean;
+  /** Edit mode is on and the Member may reorder a Set list's steps. */
+  isReordering: boolean;
   emptyMessage: string;
 } & (
   | {
@@ -91,7 +96,7 @@ export function PiecesMobileList({
         rows.map((row, index) => {
           const number = setList ? <span className={STEP_NUMBER_CLASS}>{index + 1}</span> : null;
           const stepActions =
-            setList && isEditing ? (
+            setList && isReordering ? (
               <div className="flex items-center">
                 <SetListStepActions
                   step={row}

@@ -29,6 +29,14 @@ import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 
 const REFUSED = "Du har inte behörighet att ändra innehåll i gruppen";
+const REORDER_REFUSED = "Du har inte behörighet att ändra ordning i gruppens repertoarer";
+
+/** The one content action that `REORDER_SET_LISTS` also allows (ADR-0012). */
+const REORDER = "reorderSetListSteps";
+
+function refusalFor(name: string): string {
+  return name === REORDER ? REORDER_REFUSED : REFUSED;
+}
 
 /** Exported actions that only read content, so any Member may call them. */
 const READS = new Set([
@@ -161,7 +169,15 @@ function action(name: string): (fd: FormData) => Promise<unknown> {
   return ACTION_MODULES[name as keyof typeof ACTION_MODULES] as (fd: FormData) => Promise<unknown>;
 }
 
-describe("content actions require manageContent", () => {
+async function runningOrder(setListId: string): Promise<string[]> {
+  const [pieces, notes] = await Promise.all([
+    testPrisma.setListPiece.findMany({ where: { setListId }, select: { id: true, position: true } }),
+    testPrisma.setListNote.findMany({ where: { setListId }, select: { id: true, position: true } }),
+  ]);
+  return [...pieces, ...notes].sort((a, b) => a.position - b.position).map((step) => step.id);
+}
+
+describe("content actions require manageContent, and reordering also accepts reorderSetLists", () => {
   let group: Group;
   let content: Seeded;
 
@@ -178,13 +194,36 @@ describe("content actions require manageContent", () => {
   it.each(Object.keys(CONTENT_ACTIONS))("%s refuses a Member without MANAGE_CONTENT", async (name) => {
     actAs((await createMember(group, [GroupClaim.MANAGE_MEMBERS])).id);
 
-    await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(REFUSED);
+    await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(refusalFor(name));
   });
 
   it.each(Object.keys(CONTENT_ACTIONS))("%s refuses a Member with no Claims", async (name) => {
     actAs((await createMember(group, [])).id);
 
-    await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(REFUSED);
+    await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(refusalFor(name));
+  });
+
+  it.each(Object.keys(CONTENT_ACTIONS).filter((name) => name !== REORDER))(
+    "%s refuses a Member with only REORDER_SET_LISTS",
+    async (name) => {
+      actAs((await createMember(group, [GroupClaim.REORDER_SET_LISTS])).id);
+
+      await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(REFUSED);
+    },
+  );
+
+  it.each<[string, boolean, () => Promise<string>]>([
+    ["REORDER_SET_LISTS", false, async () => (await createMember(group, [GroupClaim.REORDER_SET_LISTS])).id],
+    ["REORDER_SET_LISTS", true, async () => (await createMember(group, [GroupClaim.REORDER_SET_LISTS])).id],
+    ["MANAGE_CONTENT", false, async () => (await createMember(group, [GroupClaim.MANAGE_CONTENT])).id],
+    ["the Creator", false, async () => group.createdById],
+  ])("a Member holding %s reorders a Set list (Current: %s)", async (_label, current, member) => {
+    await testPrisma.setList.update({ where: { id: content.setList.id }, data: { current } });
+    actAs(await member());
+
+    await setListActions.reorderSetListSteps(CONTENT_ACTIONS[REORDER](group, content));
+
+    expect(await runningOrder(content.setList.id)).toEqual([content.setListNote.id, content.setListPiece.id]);
   });
 
   describe("a MANAGE_CONTENT Member", () => {

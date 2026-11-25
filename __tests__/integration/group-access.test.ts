@@ -8,7 +8,7 @@ import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createMember, grantClaims } from "../support/fixtures";
 import { changeMember, findGroupAccess, listGroupAccess, requireGroupAccess } from "@/lib/group-access";
 
-type MemberKind = "non-Member" | "plain Member" | "MANAGE_MEMBERS" | "MANAGE_CONTENT" | "Creator";
+type MemberKind = "non-Member" | "plain Member" | GroupClaim | "Creator";
 
 /**
  * A Group with its Creator and a plain Member as change targets, and a viewer of
@@ -28,6 +28,7 @@ async function createViewer(kind: MemberKind) {
 
 type Expected = {
   manageContent: boolean;
+  reorderSetLists: boolean;
   manageMembers: boolean;
   manageGroup: boolean;
   changeOtherMember: boolean;
@@ -37,6 +38,7 @@ type Expected = {
 
 const NOTHING: Expected = {
   manageContent: false,
+  reorderSetLists: false,
   manageMembers: false,
   manageGroup: false,
   changeOtherMember: false,
@@ -50,11 +52,13 @@ describe("Group access by Member kind", () => {
     ["plain Member", NOTHING],
     ["MANAGE_CONTENT", { ...NOTHING, manageContent: true }],
     ["MANAGE_MEMBERS", { ...NOTHING, manageMembers: true, changeOtherMember: true }],
+    ["REORDER_SET_LISTS", { ...NOTHING, reorderSetLists: true }],
     [
       "Creator",
       {
         ...NOTHING,
         manageContent: true,
+        reorderSetLists: true,
         manageMembers: true,
         manageGroup: true,
         changeOtherMember: true,
@@ -74,6 +78,7 @@ describe("Group access by Member kind", () => {
       const can = entry?.can.bind(entry) ?? (() => false);
       expect({
         manageContent: can("manageContent"),
+        reorderSetLists: can("reorderSetLists"),
         manageMembers: can("manageMembers"),
         manageGroup: can("manageGroup"),
         changeOtherMember: can(changeMember(target.id)),

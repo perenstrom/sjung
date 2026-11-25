@@ -4,6 +4,7 @@ import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreateSetListDialog } from "@/components/CreateSetListDialog";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
+import { heldEditCapabilities } from "@/lib/edit-mode";
 import { PageHeader } from "@/components/PageHeader";
 import { SetListsTable } from "@/components/setlists/SetListsTable";
 import { createGroupAncestor } from "@/lib/breadcrumbs";
@@ -23,7 +24,7 @@ export default async function TenantSetListsPage({ params }: PageProps) {
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider canEdit={access?.can("manageContent") ?? false}>
+    <EditModeProvider capabilities={heldEditCapabilities(access, ["manageContent"])}>
       <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
           trail={{
