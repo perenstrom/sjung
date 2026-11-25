@@ -28,6 +28,12 @@ describe("heldEditCapabilities", () => {
       ["manageContent", "reorderSetLists"],
       ["manageContent"],
     ],
+    [
+      "notes-only, Set list page",
+      accessHolding(["manageRunningOrderNotes"]),
+      ["manageContent", "reorderSetLists", "manageRunningOrderNotes"],
+      ["manageRunningOrderNotes"],
+    ],
     ["not a Member", null, ["manageContent", "reorderSetLists"], []],
   ])("%s", (_label, access, relevant, expected) => {
     expect(heldEditCapabilities(access, relevant)).toEqual(expected);

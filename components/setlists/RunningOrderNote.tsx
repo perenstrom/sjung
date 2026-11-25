@@ -20,6 +20,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { RUNNING_ORDER_NOTE_CAPABILITIES } from "@/lib/edit-mode";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +36,7 @@ const RunningOrderNoteEditingContext = createContext<RunningOrderNoteEditingValu
  * edit control sit in different cells of a row, so the state lives above them.
  */
 export function RunningOrderNoteEditingProvider({ children }: { children: ReactNode }) {
-  const { isEditing } = useEditMode();
+  const { isEditing } = useEditMode(RUNNING_ORDER_NOTE_CAPABILITIES);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   // Leaving Edit mode drops an open editor and its draft, as it does a rename.
   if (!isEditing && editingNoteId !== null) {
@@ -53,7 +54,7 @@ function useRunningOrderNoteEditing() {
   return context;
 }
 
-/** The pencil beside a Running-order note's step actions. Render it only to a Member with `manageContent`. */
+/** The pencil beside a Running-order note's step actions. Render it only to a Member who may manage Running-order notes. */
 export function EditRunningOrderNoteButton({ noteId, className }: { noteId: string; className?: string }) {
   const { editingNoteId, setEditingNoteId } = useRunningOrderNoteEditing();
   if (editingNoteId === noteId) {

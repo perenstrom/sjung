@@ -30,12 +30,25 @@ import { actAs } from "../support/session";
 
 const REFUSED = "Du har inte behörighet att ändra innehåll i gruppen";
 const REORDER_REFUSED = "Du har inte behörighet att ändra ordning i gruppens repertoarer";
+const NOTES_REFUSED = "Du har inte behörighet att hantera anteckningar i gruppens repertoarer";
 
-/** The one content action that `REORDER_SET_LISTS` also allows (ADR-0012). */
 const REORDER = "reorderSetListSteps";
 
+/**
+ * The content actions a fine-grained Claim also allows (ADR-0012), and what a
+ * Member holding neither it nor `MANAGE_CONTENT` is told.
+ */
+const ALSO_ALLOWED_BY: Record<string, { claim: GroupClaim; refused: string }> = {
+  [REORDER]: { claim: GroupClaim.REORDER_SET_LISTS, refused: REORDER_REFUSED },
+  appendSetListNote: { claim: GroupClaim.MANAGE_RUNNING_ORDER_NOTES, refused: NOTES_REFUSED },
+  updateSetListNote: { claim: GroupClaim.MANAGE_RUNNING_ORDER_NOTES, refused: NOTES_REFUSED },
+  deleteSetListNote: { claim: GroupClaim.MANAGE_RUNNING_ORDER_NOTES, refused: NOTES_REFUSED },
+};
+
+const FINE_GRAINED_CLAIMS = [GroupClaim.REORDER_SET_LISTS, GroupClaim.MANAGE_RUNNING_ORDER_NOTES];
+
 function refusalFor(name: string): string {
-  return name === REORDER ? REORDER_REFUSED : REFUSED;
+  return ALSO_ALLOWED_BY[name]?.refused ?? REFUSED;
 }
 
 /** Exported actions that only read content, so any Member may call them. */
@@ -179,7 +192,7 @@ async function runningOrder(setListId: string): Promise<string[]> {
   return [...pieces, ...notes].sort((a, b) => a.position - b.position).map((step) => step.id);
 }
 
-describe("content actions require manageContent, and reordering also accepts reorderSetLists", () => {
+describe("content actions require manageContent, or the fine-grained Claim that also allows them", () => {
   let group: Group;
   let content: Seeded;
 
@@ -205,14 +218,17 @@ describe("content actions require manageContent, and reordering also accepts reo
     await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(refusalFor(name));
   });
 
-  it.each(Object.keys(CONTENT_ACTIONS).filter((name) => name !== REORDER))(
-    "%s refuses a Member with only REORDER_SET_LISTS",
-    async (name) => {
-      actAs((await createMember(group, [GroupClaim.REORDER_SET_LISTS])).id);
+  it.each(
+    FINE_GRAINED_CLAIMS.flatMap((claim) =>
+      Object.keys(CONTENT_ACTIONS)
+        .filter((name) => ALSO_ALLOWED_BY[name]?.claim !== claim)
+        .map((name) => [name, claim] as const),
+    ),
+  )("%s refuses a Member with only %s", async (name, claim) => {
+    actAs((await createMember(group, [claim])).id);
 
-      await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(REFUSED);
-    },
-  );
+    await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(refusalFor(name));
+  });
 
   it.each<[string, boolean, () => Promise<string>]>([
     ["REORDER_SET_LISTS", false, async () => (await createMember(group, [GroupClaim.REORDER_SET_LISTS])).id],
@@ -227,6 +243,36 @@ describe("content actions require manageContent, and reordering also accepts reo
 
     expect(await runningOrder(content.setList.id)).toEqual([content.setListNote.id, content.setListPiece.id]);
   });
+
+  it.each<[string, boolean, () => Promise<string>]>([
+    [
+      "MANAGE_RUNNING_ORDER_NOTES",
+      false,
+      async () => (await createMember(group, [GroupClaim.MANAGE_RUNNING_ORDER_NOTES])).id,
+    ],
+    [
+      "MANAGE_RUNNING_ORDER_NOTES",
+      true,
+      async () => (await createMember(group, [GroupClaim.MANAGE_RUNNING_ORDER_NOTES])).id,
+    ],
+    ["MANAGE_CONTENT", false, async () => (await createMember(group, [GroupClaim.MANAGE_CONTENT])).id],
+    ["the Creator", false, async () => group.createdById],
+  ])(
+    "a Member holding %s adds, edits and deletes a Running-order note (Current: %s)",
+    async (_label, current, member) => {
+      await testPrisma.setList.update({ where: { id: content.setList.id }, data: { current } });
+      actAs(await member());
+
+      await setListActions.appendSetListNote(CONTENT_ACTIONS.appendSetListNote(group, content));
+      await setListActions.updateSetListNote(CONTENT_ACTIONS.updateSetListNote(group, content));
+      await setListActions.deleteSetListNote(CONTENT_ACTIONS.deleteSetListNote(group, content));
+
+      expect(
+        await testPrisma.setListNote.findMany({ where: { setListId: content.setList.id }, select: { content: true } }),
+      ).toEqual([{ content: "Paus" }]);
+      expect(await testPrisma.setListNote.count({ where: { id: content.setListNote.id } })).toBe(0);
+    },
+  );
 
   describe("a MANAGE_CONTENT Member", () => {
     let currentUserId: string;

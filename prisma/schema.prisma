@@ -173,6 +173,7 @@ enum GroupClaim {
   MANAGE_MEMBERS
   MANAGE_CONTENT
   REORDER_SET_LISTS
+  MANAGE_RUNNING_ORDER_NOTES
 
   @@map("group_claim")
 }

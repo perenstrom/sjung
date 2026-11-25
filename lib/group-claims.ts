@@ -21,4 +21,9 @@ export const GROUP_CLAIM_OPTIONS: {
     label: "Ändra ordning i repertoarer",
     description: "Kan flytta om stycken och anteckningar i gruppens repertoarer.",
   },
+  {
+    claim: GroupClaim.MANAGE_RUNNING_ORDER_NOTES,
+    label: "Hantera anteckningar i repertoarer",
+    description: "Kan lägga till, ändra och ta bort anteckningar mellan styckena i gruppens repertoarer.",
+  },
 ];
