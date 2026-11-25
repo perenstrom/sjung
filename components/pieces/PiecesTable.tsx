@@ -12,6 +12,7 @@ import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { type ColumnDef, DataTable, DataTableColumnHeader } from "@/components/data-table";
 import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFilesAndLinks";
 import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
+import { setListPieceOf } from "@/lib/setlists/hidden";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { LetterDividerTableRow } from "@/components/pieces/LetterDivider";
@@ -71,6 +72,9 @@ type PieceRow = {
   id: string;
   piece: PieceWithRelations;
   matchingAliases?: readonly string[];
+  /** On a Set list's rows, which are its Set list pieces: what each hides. */
+  hiddenFileIds?: readonly string[];
+  hiddenLinkIds?: readonly string[];
 };
 type NoteRow = { kind: "note"; id: string; content: string };
 type PiecesTableRow = PieceRow | NoteRow;
@@ -112,17 +116,18 @@ function PieceNameCell({
   piece,
   matchingAliases = [],
   groupSlug,
-  setListId,
+  setListPieceId,
   isEditing,
 }: {
   piece: PieceWithRelations;
   /** The Aliases that explain a search match the name doesn't, shown under it. */
   matchingAliases?: readonly string[];
   groupSlug: string;
-  setListId: string | undefined;
+  /** In a Set list, the row's Set list piece, which the Piece's page is opened from. */
+  setListPieceId: string | undefined;
   isEditing: boolean;
 }) {
-  const href = pieceHref(groupSlug, piece, { fromSetListId: setListId });
+  const href = pieceHref(groupSlug, piece, { fromSetListPieceId: setListPieceId });
   const renderName = (name: string) => (
     <Link className={PIECE_NAME_LINK_CLASS} href={href}>
       {name}
@@ -151,9 +156,9 @@ function PieceNameCell({
 }
 
 /** Cell renderer for piece-only columns; note rows never reach it (spanned) but render nothing. */
-function pieceCell(render: (piece: PieceWithRelations, rowId: string) => ReactNode) {
+function pieceCell(render: (piece: PieceWithRelations, row: PieceRow) => ReactNode) {
   return function PieceCell({ row }: { row: { original: PiecesTableRow } }) {
-    return row.original.kind === "piece" ? render(row.original.piece, row.original.id) : null;
+    return row.original.kind === "piece" ? render(row.original.piece, row.original) : null;
   };
 }
 
@@ -244,7 +249,8 @@ export function PiecesTable({
               piece={row.original.piece}
               matchingAliases={row.original.matchingAliases}
               groupSlug={groupSlug}
-              setListId={setListId}
+              // A Set list row's id is its Set list piece's.
+              setListPieceId={setListId ? row.original.id : undefined}
               isEditing={isEditing}
             />
           ),
@@ -298,7 +304,7 @@ export function PiecesTable({
         id: "filesAndLinks",
         enableSorting: false,
         header: () => "Filer och länkar",
-        cell: pieceCell((piece, rowId) => {
+        cell: pieceCell((piece, row) => {
           return (
             <div className={cn(LIST_COLUMN_WIDTH_CLASS, LIST_CELL_OFFSET_CLASS)}>
               <PieceFilesAndLinks
@@ -306,8 +312,7 @@ export function PiecesTable({
                 groupSlug={groupSlug}
                 piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
                 filesAndLinks={toPieceFilesAndLinks(piece)}
-                // A Set list row's id is its Set list piece's.
-                setListPieceId={setListId ? rowId : undefined}
+                setListPiece={setListId ? setListPieceOf(row) : undefined}
               />
             </div>
           );

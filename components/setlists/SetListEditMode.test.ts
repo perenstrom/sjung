@@ -36,7 +36,7 @@ const piece = {
 } as unknown as PieceWithRelations;
 
 const steps = [
-  { kind: "piece", id: "step-1", position: 0, piece },
+  { kind: "piece", id: "step-1", position: 0, piece, hiddenFileIds: [], hiddenLinkIds: [] },
   { kind: "note", id: "step-2", position: 1, content: "Paus" },
 ] as unknown as SetListStep[];
 

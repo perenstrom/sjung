@@ -32,6 +32,8 @@ const TABLES = [
   "set_list_pieces",
   "piece_notes",
   "set_list_piece_notes",
+  "set_list_piece_hidden_files",
+  "set_list_piece_hidden_links",
   "set_list_notes",
   "user_tokens",
   "invitations",

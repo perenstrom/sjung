@@ -6,6 +6,9 @@ export type SetListPieceStep = {
   pieceId: string;
   piece: PieceWithRelations;
   position: number;
+  /** The Piece's Files and Links Hidden on this Set list piece (CONTEXT.md, "Hidden"). */
+  hiddenFileIds: string[];
+  hiddenLinkIds: string[];
 };
 
 export type SetListNoteStep = {
@@ -24,6 +27,14 @@ export type SetListDetail = {
   current: boolean;
   updatedAt: Date;
   steps: SetListStep[];
+};
+
+/** A Set list piece as a Piece's page opened from it sees it: where it leads back to, and what it hides. */
+export type SetListPieceContext = {
+  id: string;
+  setList: { id: string; slug: string; name: string };
+  hiddenFileIds: string[];
+  hiddenLinkIds: string[];
 };
 
 export type SetListPieceOption = {

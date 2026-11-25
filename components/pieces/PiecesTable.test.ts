@@ -42,7 +42,9 @@ function renderPieces(): string {
 }
 
 function renderSetList(stepPiece: PieceWithRelations = piece): string {
-  const steps = [{ kind: "piece", id: "step-1", position: 0, piece: stepPiece }] as unknown as SetListStep[];
+  const steps = [
+    { kind: "piece", id: "step-1", position: 0, piece: stepPiece, hiddenFileIds: [], hiddenLinkIds: [] },
+  ] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesTable, {
       people: [],

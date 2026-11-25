@@ -6,6 +6,7 @@ import * as fileStore from "@/lib/pieces/file-store";
 import { pieceHref, playerHref } from "@/lib/pieces/href";
 import { playbackOf } from "@/lib/pieces/playback";
 import prisma from "@/lib/prisma";
+import { HIDDEN_SELECT, hiddenIdsOf } from "@/lib/setlists/hidden";
 
 /** A Playable File the player can switch to, opened from the same place. */
 export type PlayerFileOption = { id: string; displayName: string; formatLabel: string; href: string };
@@ -63,21 +64,24 @@ export async function getPlayerData(
   if (!piece) return null;
 
   let closeHref = pieceHref(groupSlug, piece);
+  let hiddenFileIds = new Set<string>();
   if (fromSetListPieceId) {
     const setListPiece = await prisma.setListPiece.findFirst({
       where: { id: fromSetListPieceId, pieceId, setList: { groupId: access.group.id } },
-      select: { setList: { select: { slug: true } } },
+      select: { setList: { select: { slug: true } }, ...HIDDEN_SELECT },
     });
     if (!setListPiece) return null;
     closeHref = groupSetListPath(groupSlug, setListPiece.setList);
+    hiddenFileIds = new Set(hiddenIdsOf(setListPiece).hiddenFileIds);
   }
 
-  // Every File shows on a Set list piece until Hidden ones exist (PER-137);
-  // the player must then leave those out too. A MuseScore File not yet
-  // converted can't be played, so it isn't offered either.
+  // A File Hidden on the Set list piece isn't offered, unless it is the one
+  // opened (a Piece's page can show Hidden Files on request). A MuseScore
+  // File not yet converted can't be played, so it isn't offered either.
   const playable = piece.files.flatMap((file) => {
     const format = playableFormatOf(file);
-    return format && playbackOf(file) === "ready" ? [{ ...file, format }] : [];
+    const offered = file.id === fileId || !hiddenFileIds.has(file.id);
+    return format && offered && playbackOf(file) === "ready" ? [{ ...file, format }] : [];
   });
   const file = playable.find((candidate) => candidate.id === fileId);
   if (!file) return null;

@@ -16,8 +16,8 @@ type PieceMetadataSectionProps = {
   initialName: string;
   /** The Piece's Aliases, in the order they were added. */
   aliases: readonly PieceAliasItem[];
-  /** The Set list the page was opened from, kept when a rename moves the page. */
-  fromSetListId: string | undefined;
+  /** The Set list piece the page was opened from, kept when a rename moves the page. */
+  fromSetListPieceId: string | undefined;
 };
 
 const renderHeading = (name: string) => <h1 className="min-w-0 text-2xl font-semibold break-words">{name}</h1>;
@@ -27,7 +27,7 @@ export function PieceMetadataSection({
   pieceId,
   initialName,
   aliases,
-  fromSetListId,
+  fromSetListPieceId,
 }: PieceMetadataSectionProps) {
   const { isEditing } = useEditMode();
   const router = useRouter();
@@ -45,7 +45,7 @@ export function PieceMetadataSection({
             className="flex-1"
             inputClassName="h-10 max-w-md text-lg font-semibold md:pointer-fine:text-lg"
             // The page moves with the Piece's Slug, and the old address no longer works.
-            onRenamed={(slug) => router.replace(pieceHref(groupSlug, { slug }, { fromSetListId }))}
+            onRenamed={(slug) => router.replace(pieceHref(groupSlug, { slug }, { fromSetListPieceId }))}
           />
         ) : (
           <div className="min-w-0 flex-1">{renderHeading(initialName)}</div>

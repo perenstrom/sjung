@@ -59,6 +59,11 @@ const CONTENT = {
 /** A kind of row that belongs to one Group's content. */
 export type ContentKind = keyof typeof CONTENT;
 
+/** What {@link findInGroup} says when a row of this kind isn't there, for a caller that refuses one on its own terms. */
+export function notFoundMessage(kind: ContentKind): string {
+  return CONTENT[kind].notFound;
+}
+
 type ContentSelect<K extends ContentKind> = Parameters<(typeof CONTENT)[K]["find"]>[2];
 
 /** What `findInGroup` returns for a kind and select: the row with just the selected fields. */

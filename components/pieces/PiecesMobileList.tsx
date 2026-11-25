@@ -11,6 +11,7 @@ import { PieceNameEditor } from "@/components/pieces/PieceNameEditor";
 import { RemovableCreditsList } from "@/components/pieces/RemovableCreditsList";
 import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFilesAndLinks";
 import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
+import { applyHidden, setListPieceOf, type SetListPieceHides } from "@/lib/setlists/hidden";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { RunningOrderNoteText } from "@/components/setlists/RunningOrderNote";
@@ -154,7 +155,7 @@ export function PiecesMobileList({
                   groupSlug={groupSlug}
                   isEditing={isEditing}
                   setListId={setList?.id}
-                  setListPieceId={setList ? row.id : undefined}
+                  setListPiece={setList && row.kind === "piece" ? setListPieceOf(row) : undefined}
                   stepActions={stepActions}
                 />
               </MobileListExpandableRow>
@@ -169,8 +170,9 @@ export function PiecesMobileList({
 /**
  * What an open piece row shows: its Files, Links and Piece notes (or, in edit
  * mode, their edit sections), then the row's actions and the Detaljsida link.
- * In a Set list (`setListId`, on its Set list piece `setListPieceId`) the
- * step actions replace delete-piece.
+ * In a Set list (`setListId`, on its Set list piece `setListPiece`) the
+ * step actions replace delete-piece, and what the Set list piece hides is
+ * left out.
  */
 export function PieceRowDetails({
   piece,
@@ -179,7 +181,7 @@ export function PieceRowDetails({
   groupSlug,
   isEditing,
   setListId,
-  setListPieceId,
+  setListPiece,
   stepActions,
 }: {
   piece: PieceWithRelations;
@@ -188,7 +190,7 @@ export function PieceRowDetails({
   groupSlug: string;
   isEditing: boolean;
   setListId?: string;
-  setListPieceId?: string;
+  setListPiece?: SetListPieceHides;
   stepActions?: ReactNode;
 }) {
   return (
@@ -199,10 +201,10 @@ export function PieceRowDetails({
           people={people}
           creditRoles={creditRoles}
           groupSlug={groupSlug}
-          setListPieceId={setListPieceId}
+          setListPiece={setListPiece}
         />
       ) : (
-        <PieceMaterial piece={piece} groupSlug={groupSlug} setListPieceId={setListPieceId} />
+        <PieceMaterial piece={piece} groupSlug={groupSlug} setListPiece={setListPiece} />
       )}
       <div className="flex flex-wrap items-center gap-2">
         {stepActions}
@@ -210,7 +212,7 @@ export function PieceRowDetails({
           <DeletePieceDialog groupSlug={groupSlug} piece={{ id: piece.id, name: piece.name }} />
         ) : null}
         <Link
-          href={pieceHref(groupSlug, piece, { fromSetListId: setListId })}
+          href={pieceHref(groupSlug, piece, { fromSetListPieceId: setListPiece?.id })}
           className="inline-flex min-h-11 items-center gap-1 px-1 text-sm underline underline-offset-4"
         >
           Detaljsida
@@ -225,15 +227,17 @@ export function PieceRowDetails({
 function PieceMaterial({
   piece,
   groupSlug,
-  setListPieceId,
+  setListPiece,
 }: {
   piece: PieceWithRelations;
   groupSlug: string;
-  setListPieceId: string | undefined;
+  setListPiece: SetListPieceHides | undefined;
 }) {
   const notes = piece.notes.length > 0 ? <PieceNotesSection notes={piece.notes} /> : null;
+  // A Set list piece that hides everything shows as a Piece with nothing.
+  const shown = applyHidden(piece.files, piece.links, setListPiece, { showHidden: false });
 
-  if (piece.files.length === 0 && piece.links.length === 0) {
+  if (shown.files.length === 0 && shown.links.length === 0) {
     return (
       <>
         <p className="text-sm text-muted-foreground">Inga filer eller länkar.</p>
@@ -250,7 +254,7 @@ function PieceMaterial({
         groupSlug={groupSlug}
         piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
         filesAndLinks={toPieceFilesAndLinks(piece)}
-        setListPieceId={setListPieceId}
+        setListPiece={setListPiece}
       />
       {notes}
     </>
@@ -263,13 +267,13 @@ function PieceEditSections({
   people,
   creditRoles,
   groupSlug,
-  setListPieceId,
+  setListPiece,
 }: {
   piece: PieceWithRelations;
   people: Person[];
   creditRoles: string[];
   groupSlug: string;
-  setListPieceId: string | undefined;
+  setListPiece: SetListPieceHides | undefined;
 }) {
   return (
     <div className="space-y-3">
@@ -304,7 +308,7 @@ function PieceEditSections({
           groupSlug={groupSlug}
           piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
           filesAndLinks={toPieceFilesAndLinks(piece)}
-          setListPieceId={setListPieceId}
+          setListPiece={setListPiece}
         />
       </section>
       <PieceNotesSection notes={piece.notes}>

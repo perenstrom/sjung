@@ -61,23 +61,20 @@ export function closestBreadcrumb(trail: AppBreadcrumbStaticTrail): ClosestBread
 }
 
 /**
- * A Piece's trail. Opened from a Set list (`fromSetListId`, the `setlist`
- * search param), it leads back to that Set list.
+ * A Piece's trail. Opened from a Set list piece (the `setlistpiece` search
+ * param), it leads back to that Set list piece's Set list, `fromSetList`.
  */
 export function pieceDetailTrail({
   groupSlug,
   groupName,
   pieceName,
-  setLists,
-  fromSetListId,
+  fromSetList: setList,
 }: {
   groupSlug: string;
   groupName: string;
   pieceName: string;
-  setLists: { id: string; slug: string; name: string }[];
-  fromSetListId: string | undefined;
+  fromSetList: { slug: string; name: string } | undefined;
 }): AppBreadcrumbStaticTrail {
-  const setList = setLists.find((candidate) => candidate.id === fromSetListId);
   return {
     visibility: "visible",
     ancestors: [
