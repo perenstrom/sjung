@@ -57,26 +57,24 @@ export type GroupAccessFacts = {
 /** `null` when the Member has the capability, otherwise why not. */
 export function groupAccessDenial(facts: GroupAccessFacts, capability: GroupCapability): GroupAccessDenial | null {
   const isCreator = facts.userId === facts.creatorId;
-  const managesMembers = isCreator || facts.claims.includes(GroupClaim.MANAGE_MEMBERS);
+  const holds = (claim: GroupClaim) => isCreator || facts.claims.includes(claim);
 
   if (capability === "manageMembers") {
-    return managesMembers ? null : "lacksManageMembers";
+    return holds(GroupClaim.MANAGE_MEMBERS) ? null : "lacksManageMembers";
   }
   if (capability === "manageContent") {
-    return isCreator || facts.claims.includes(GroupClaim.MANAGE_CONTENT) ? null : "lacksManageContent";
+    return holds(GroupClaim.MANAGE_CONTENT) ? null : "lacksManageContent";
   }
   if (capability === "reorderSetLists") {
-    return isCreator || facts.claims.includes(GroupClaim.REORDER_SET_LISTS) ? null : "lacksReorderSetLists";
+    return holds(GroupClaim.REORDER_SET_LISTS) ? null : "lacksReorderSetLists";
   }
   if (capability === "manageRunningOrderNotes") {
-    return isCreator || facts.claims.includes(GroupClaim.MANAGE_RUNNING_ORDER_NOTES)
-      ? null
-      : "lacksManageRunningOrderNotes";
+    return holds(GroupClaim.MANAGE_RUNNING_ORDER_NOTES) ? null : "lacksManageRunningOrderNotes";
   }
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";
   }
-  if (!managesMembers) {
+  if (!holds(GroupClaim.MANAGE_MEMBERS)) {
     return "lacksManageMembers";
   }
   if (capability.targetUserId === facts.userId) {
