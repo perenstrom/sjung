@@ -94,8 +94,9 @@ export function revalidateAppAndMyGroupsRoutes() {
   revalidatePath(MY_GROUPS_PATH);
 }
 
-/** Also refreshes the Group's Home. */
+/** Also refreshes the Group's Home and Repertoarer, which show its name. */
 export function revalidateAppAndMyGroupsWithGroupRoute(groupSlug: string) {
   revalidateAppAndMyGroupsRoutes();
   revalidateGroupHomeRoute(groupSlug);
+  revalidatePath(groupSetListsPath(groupSlug));
 }
