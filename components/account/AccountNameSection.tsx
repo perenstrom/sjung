@@ -8,12 +8,11 @@ import { Label } from "@/components/ui/label";
 
 /**
  * "Namn" on the account page: the User's name as the Members of their Groups
- * see it, which they can change. After a failed save the field keeps what was
- * typed; after a successful one it shows the saved name.
+ * see it, which they can change. After each save the field shows the stored
+ * name: the new one, or the old one when the new one was refused.
  */
 export function AccountNameSection({ name }: { name: string }) {
   const [state, formAction, isPending] = useActionState(changeOwnName, null);
-  const shownName = state?.status === "error" ? state.values.name : name;
 
   return (
     <section className="max-w-xl space-y-4">
@@ -32,7 +31,7 @@ export function AccountNameSection({ name }: { name: string }) {
 
         <div className="space-y-2">
           <Label htmlFor="account-name">Namn</Label>
-          <Input id="account-name" name="name" autoComplete="name" required defaultValue={shownName} />
+          <Input id="account-name" name="name" autoComplete="name" required defaultValue={name} />
         </div>
 
         <Button type="submit" disabled={isPending}>

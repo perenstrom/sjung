@@ -9,17 +9,8 @@ import prisma from "@/lib/prisma";
 import { userNameSchema } from "@/lib/schemas/auth";
 import { formDataString } from "@/lib/schemas/form-data";
 
-/** The viewer's own name, as shown to the Members of their Groups. */
-export async function getOwnName() {
-  const user = await requireUser();
-  return user.name;
-}
-
-/**
- * `useActionState` state for the "Namn" form: `null` until submitted. A failed
- * submit echoes the trimmed name back so the field keeps what was typed.
- */
-export type ChangeNameState = { status: "saved" } | { status: "error"; error: string; values: { name: string } } | null;
+/** `useActionState` state for the "Namn" form: `null` until submitted. */
+export type ChangeNameState = { status: "saved" } | { status: "error"; error: string } | null;
 
 /**
  * Changes the signed-in User's name. Always their own: the User comes from the
@@ -29,14 +20,9 @@ export type ChangeNameState = { status: "saved" } | { status: "error"; error: st
 export async function changeOwnName(_prevState: ChangeNameState, formData: FormData): Promise<ChangeNameState> {
   const user = await requireUser();
 
-  const submitted = formDataString(formData, "name");
-  const parsed = userNameSchema.safeParse(submitted);
+  const parsed = userNameSchema.safeParse(formDataString(formData, "name"));
   if (!parsed.success) {
-    return {
-      status: "error",
-      error: parsed.error.issues[0]?.message ?? "Namn krävs",
-      values: { name: submitted.trim() },
-    };
+    return { status: "error", error: parsed.error.issues[0]?.message ?? "Namn krävs" };
   }
 
   await prisma.user.update({

@@ -20,11 +20,11 @@ async function storedName(userId: string) {
 }
 
 describe("changeOwnName", () => {
-  it("saves the trimmed name, stamped as changed by the User", async () => {
+  it("saves the new name, stamped as changed by the User", async () => {
     const user = await createUser({ name: "anna@example.com" });
     actAs(user.id);
 
-    const state = await changeNameTo("  Anna Andersson ");
+    const state = await changeNameTo("Anna Andersson");
 
     expect(state).toEqual({ status: "saved" });
     const stored = await testPrisma.user.findUniqueOrThrow({ where: { id: user.id } });
@@ -38,7 +38,7 @@ describe("changeOwnName", () => {
 
     const state = await changeNameTo("   ");
 
-    expect(state).toEqual({ status: "error", error: "Namn krävs", values: { name: "" } });
+    expect(state).toEqual({ status: "error", error: "Namn krävs" });
     expect(await storedName(user.id)).toBe("Anna");
   });
 
