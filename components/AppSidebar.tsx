@@ -21,6 +21,7 @@ import {
   Boxes,
   CircleUser,
   Gauge,
+  House,
   ListMusic,
   LogOut,
   Music,
@@ -44,6 +45,7 @@ import { PRIVACY_POLICY_PATH, TERMS_OF_USE_PATH } from "@/lib/legal/routes";
 import { OPERATOR_GROUPS_PATH } from "@/lib/operators/routes";
 
 const navItemIcons: Record<GroupNavItem["key"], ReactNode> = {
+  home: <House />,
   setLists: <ListMusic />,
   pieces: <Music />,
   people: <Users />,

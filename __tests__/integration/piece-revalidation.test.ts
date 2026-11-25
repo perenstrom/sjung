@@ -63,7 +63,7 @@ describe("piece mutations revalidate every page that shows the piece", () => {
     expect(paths).not.toContain(`/app/${group.slug}/setlists`);
   });
 
-  it("deleting a piece refreshes the set lists that contained it", async () => {
+  it("deleting a piece refreshes the set lists that contained it, and Home, which counts their Pieces", async () => {
     const containing = await createSetListWithPieces(group, [piece, otherPiece]);
     const without = await createSetListWithPieces(group, [otherPiece]);
 
@@ -75,6 +75,7 @@ describe("piece mutations revalidate every page that shows the piece", () => {
     const paths = revalidatedPaths();
     expect(paths).toContain(`/app/${group.slug}/pieces`);
     expect(paths).toContain(`/app/${group.slug}/setlists/${containing.slug}`);
+    expect(paths).toContain(`/app/${group.slug}`);
     expect(paths).not.toContain(`/app/${group.slug}/setlists/${without.slug}`);
     expect(paths).not.toContain(`/app/${group.slug}/setlists`);
   });

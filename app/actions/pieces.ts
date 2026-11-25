@@ -47,6 +47,7 @@ import {
   type ImportPreview,
 } from "@/lib/pieces/import";
 import {
+  revalidateGroupHomeRoute,
   revalidateGroupPeopleRoutes,
   revalidatePiecePages,
   revalidatePieceRoutes,
@@ -463,5 +464,9 @@ export async function deletePiece(formData: FormData) {
     await deletePieceFiles(piece);
 
     revalidatePiecePages(groupSlug, pages);
+    // The cascade changed those Set lists' Piece counts, which Home shows.
+    if (pages.setListSlugs.length > 0) {
+      revalidateGroupHomeRoute(groupSlug);
+    }
   });
 }

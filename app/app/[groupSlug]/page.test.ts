@@ -1,17 +1,27 @@
+import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("next/navigation", () => ({
-  redirect: vi.fn((url: string) => {
-    throw new Error(`redirect:${url}`);
-  }),
+// The page's reads reach the database.
+vi.mock("@/app/actions/groups", () => ({
+  getGroups: async () => [{ slug: "kor", name: "Kören" }],
+}));
+vi.mock("@/app/actions/setlists", () => ({
+  getCurrentSetLists: async () => [
+    { id: "1", slug: "lucia", name: "Lucia", date: new Date("2026-12-13T12:00:00Z"), pieceCount: 12 },
+  ],
 }));
 
+import { AppBreadcrumbProvider } from "@/components/AppBreadcrumbContext";
+import { renderMarkup, textOf } from "@/lib/testing/markup";
 import TenantGroupPage from "./page";
 
 describe("a Group's own address", () => {
-  it("sends the User to the Group's Repertoarer page", async () => {
-    await expect(TenantGroupPage({ params: Promise.resolve({ groupSlug: "kor" }) })).rejects.toThrow(
-      "redirect:/app/kor/setlists",
-    );
+  it("shows the Group's Home, with its Current Set lists", async () => {
+    const page = await TenantGroupPage({ params: Promise.resolve({ groupSlug: "kor" }) });
+    const text = textOf(renderMarkup(createElement(AppBreadcrumbProvider, null, page)));
+
+    expect(text).toContain("Hem");
+    expect(text).toContain("Aktuell repertoar");
+    expect(text).toContain("Lucia2026-12-13 · 12 stycken");
   });
 });

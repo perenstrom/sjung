@@ -2,16 +2,16 @@ import { getThrownMessage } from "@/lib/getThrownMessage";
 import { groupMembersPath, groupPath, groupPeoplePath, groupPiecesPath, groupSetListsPath } from "@/lib/groups/routes";
 
 export type GroupNavItem = {
-  key: "setLists" | "pieces" | "people" | "members";
+  key: "home" | "setLists" | "pieces" | "people" | "members";
   label: string;
   /** `null` when there is no active group: the item shows disabled. */
   href: string | null;
 };
 
 /**
- * The sidebar's links into the active group, in order. Repertoarer comes
- * first, as it's the group's start page; Medlemmar only shows to those who
- * can open the members page.
+ * The sidebar's links into the active group, in order. Hem comes first, as
+ * it's the group's start page; Medlemmar only shows to those who can open the
+ * members page.
  */
 export function groupNavItems({
   groupSlug,
@@ -22,6 +22,7 @@ export function groupNavItems({
 }): GroupNavItem[] {
   const href = (path: (slug: string) => string) => (groupSlug ? path(groupSlug) : null);
   const items: GroupNavItem[] = [
+    { key: "home", label: "Hem", href: href(groupPath) },
     { key: "setLists", label: "Repertoarer", href: href(groupSetListsPath) },
     { key: "pieces", label: "Alla noter", href: href(groupPiecesPath) },
     { key: "people", label: "Upphovspersoner", href: href(groupPeoplePath) },

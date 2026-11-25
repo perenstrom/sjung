@@ -63,6 +63,7 @@ const READS = new Set([
   "getPeopleWithPieceCounts",
   "getPersonDetail",
   "getSetLists",
+  "getCurrentSetLists",
   "getSetListDetail",
   "getSetListPieceContext",
   "getSetListPieceOptions",

@@ -4,6 +4,7 @@ import { getPiecePages, type PiecePages } from "@/lib/pieces/queries";
 import {
   MY_GROUPS_PATH,
   groupMembersPath,
+  groupPath,
   groupPeoplePath,
   groupPersonPath,
   groupPiecesPath,
@@ -28,9 +29,16 @@ export function revalidateGroupPersonRoutes(groupSlug: string, personSlug: strin
   revalidatePath(groupPersonPath(groupSlug, { slug: personSlug }));
 }
 
+/** Home: the Group's start page, at its own address. It lists the Current Set lists with their Piece counts. */
+export function revalidateGroupHomeRoute(groupSlug: string) {
+  revalidatePath(groupPath(groupSlug));
+}
+
+/** Also refreshes Home, as any Set list change may change what it shows. */
 export function revalidateGroupSetListsRoutes(groupSlug: string) {
   revalidateGroupPiecesRoute(groupSlug);
   revalidatePath(groupSetListsPath(groupSlug));
+  revalidateGroupHomeRoute(groupSlug);
 }
 
 export function revalidateGroupSetListDetailRoutes(groupSlug: string, setListSlug: string) {
@@ -75,8 +83,8 @@ export function revalidateAppAndMyGroupsRoutes() {
   revalidatePath(MY_GROUPS_PATH);
 }
 
-/** Also refreshes the Group's start page, Repertoarer, where its address leads. */
+/** Also refreshes the Group's start page, Home. */
 export function revalidateAppAndMyGroupsWithGroupRoute(groupSlug: string) {
   revalidateAppAndMyGroupsRoutes();
-  revalidatePath(groupSetListsPath(groupSlug));
+  revalidateGroupHomeRoute(groupSlug);
 }
