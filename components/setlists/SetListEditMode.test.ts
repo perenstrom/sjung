@@ -152,4 +152,16 @@ describe("Edit mode on a Set list", () => {
     expect(noteEditors()).toEqual([]);
     expect(container.textContent).toContain("Paus, tio minuter");
   });
+
+  it("closes a Running-order note's editor when Edit mode is turned off", () => {
+    render(["manageContent"], noteOnly);
+    turnOnEditMode();
+    act(() => buttonsNamed(EDIT_NOTE)[0].click());
+
+    act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Klar"]')!.click());
+    expect(noteEditors()).toEqual([]);
+
+    turnOnEditMode();
+    expect(noteEditors()).toEqual([]);
+  });
 });

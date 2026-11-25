@@ -15,6 +15,7 @@ import {
 } from "react";
 
 import { updateSetListNote } from "@/app/actions/setlists";
+import { useEditMode } from "@/components/EditModeContext";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,7 +35,12 @@ const RunningOrderNoteEditingContext = createContext<RunningOrderNoteEditingValu
  * edit control sit in different cells of a row, so the state lives above them.
  */
 export function RunningOrderNoteEditingProvider({ children }: { children: ReactNode }) {
+  const { isEditing } = useEditMode();
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  // Leaving Edit mode drops an open editor and its draft, as it does a rename.
+  if (!isEditing && editingNoteId !== null) {
+    setEditingNoteId(null);
+  }
   const value = useMemo(() => ({ editingNoteId, setEditingNoteId }), [editingNoteId]);
   return <RunningOrderNoteEditingContext.Provider value={value}>{children}</RunningOrderNoteEditingContext.Provider>;
 }
@@ -139,6 +145,11 @@ function RunningOrderNoteEditor({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (draft.trim() === content) {
+      onCancel();
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
       const formData = new FormData();
