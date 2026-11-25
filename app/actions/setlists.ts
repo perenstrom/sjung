@@ -20,7 +20,7 @@ import {
   revalidateGroupSetListDetailRoutes,
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
-import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
+import { getWritableGroupIdForSlug, runContentMutation, runGroupMutation } from "@/lib/tenant-group";
 import { SetListSequence } from "@/lib/setlists/sequence";
 import { PIECE_ALIAS_ORDER } from "@/lib/pieces/types";
 import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
@@ -201,17 +201,26 @@ export async function removePieceFromWholeSetList(formData: FormData) {
   });
 }
 
+/** Allowed with `manageContent` or `reorderSetLists` (ADR-0012), for any of the Group's Set lists. */
 export async function reorderSetListSteps(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListId = parseSetListIdFromFormData(formData);
   const orderedSetListStepIds = parseOrderedSetListStepIdsFromFormData(formData);
 
-  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
-    const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
-    await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) => {
+      if (!access.can("manageContent")) {
+        access.require("reorderSetLists");
+      }
+    },
+    async ({ userId, groupId }) => {
+      const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
+      await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
 
-    revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
-  });
+      revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
+    },
+  );
 }
 
 export async function appendSetListNote(formData: FormData) {

@@ -57,7 +57,9 @@ export async function runGroupMutation<TGuard, TResult>(
  * The one entry point for changing a Group's content (Pieces, Set lists,
  * People and everything under them): resolve the User's Group access, require
  * `manageContent` once, then run the mutation. The mutation looks up the rows
- * it touches with `findInGroup`, and revalidates as its last step.
+ * it touches with `findInGroup`, and revalidates as its last step. A change
+ * that a fine-grained Claim also allows (ADR-0012) uses {@link runGroupMutation}
+ * with a guard that accepts either.
  */
 export async function runContentMutation<TResult>(
   groupSlug: string,

@@ -59,7 +59,7 @@ What one User may do in one Group: whether they are a Member at all, and which c
 _Avoid_: Permissions, Role, Rights.
 
 **Edit mode**:
-The state of a Group content page in which it offers controls that change content. Every content page opens read-only and is switched into Edit mode by its own toggle; the mode lasts until the page is left or reloaded, and is never shared between pages or remembered. It is a convenience, not a permission: only a Member allowed to change the Group's content (see ADR-0004) is offered the toggle at all. Swedish UI: _Redigera_ (the toggle), _Klar_ (to leave it).
+The state of a Group content page in which it offers controls that change content. Every content page opens read-only and is switched into Edit mode by its own toggle; the mode lasts until the page is left or reloaded, and is never shared between pages or remembered. It is a convenience, not a permission: a Member is offered the toggle only when they hold a capability that matters on that page, and each control in Edit mode shows only to a Member holding the capability it needs (a Set list's move buttons need `reorderSetLists` or `manageContent`; every other control needs `manageContent`). See ADR-0004, ADR-0012. Swedish UI: _Redigera_ (the toggle), _Klar_ (to leave it).
 _Avoid_: Admin mode, Write access — those describe Group access, which Edit mode never grants.
 
 **Person**:

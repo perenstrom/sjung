@@ -10,6 +10,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const editMode = vi.hoisted(() => ({ isEditing: false }));
 vi.mock("@/components/EditModeContext", () => ({
   useEditMode: () => ({ canEdit: true, isEditing: editMode.isEditing, setIsEditing: vi.fn() }),
+  useEditModeToggle: () => ({ isOffered: true, isEditing: editMode.isEditing, setIsEditing: vi.fn() }),
 }));
 
 const twoAliases = [

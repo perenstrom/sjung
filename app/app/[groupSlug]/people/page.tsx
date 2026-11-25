@@ -6,6 +6,7 @@ import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { CreatePersonDialog } from "@/components/CreatePersonDialog";
 import { EditModeProvider } from "@/components/EditModeContext";
 import { findGroupAccess } from "@/lib/group-access";
+import { heldEditCapabilities } from "@/lib/edit-mode";
 import { PageHeader } from "@/components/PageHeader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
@@ -27,7 +28,7 @@ export default async function TenantPeoplePage({ params }: PageProps) {
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider canEdit={access?.can("manageContent") ?? false}>
+    <EditModeProvider capabilities={heldEditCapabilities(access, ["manageContent"])}>
       <div className="space-y-4 md:space-y-6">
         <BreadcrumbRegistrar
           trail={{

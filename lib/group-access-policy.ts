@@ -14,6 +14,12 @@ export type GroupCapability =
    * or `MANAGE_CONTENT`. Depends only on the Member, never on the content row.
    */
   | "manageContent"
+  /**
+   * Change the order of the steps in any of the Group's Set lists (ADR-0012):
+   * the Creator or `REORDER_SET_LISTS`. Not implied by `manageContent`; an
+   * action that allows reordering accepts either.
+   */
+  | "reorderSetLists"
   /** Rename or delete the Group: the Creator only. */
   | "manageGroup"
   /** Change or remove one Member: `manageMembers`, and the target is neither the Creator nor the viewer. */
@@ -27,7 +33,12 @@ export function changeMember(targetUserId: string): ChangeMember {
 
 /** Why a capability was refused. */
 export type GroupAccessDenial =
-  "lacksManageMembers" | "lacksManageGroup" | "lacksManageContent" | "targetIsSelf" | "targetIsCreator";
+  | "lacksManageMembers"
+  | "lacksManageGroup"
+  | "lacksManageContent"
+  | "lacksReorderSetLists"
+  | "targetIsSelf"
+  | "targetIsCreator";
 
 /** What one Member's access is derived from. Never stored. */
 export type GroupAccessFacts = {
@@ -46,6 +57,9 @@ export function groupAccessDenial(facts: GroupAccessFacts, capability: GroupCapa
   }
   if (capability === "manageContent") {
     return isCreator || facts.claims.includes(GroupClaim.MANAGE_CONTENT) ? null : "lacksManageContent";
+  }
+  if (capability === "reorderSetLists") {
+    return isCreator || facts.claims.includes(GroupClaim.REORDER_SET_LISTS) ? null : "lacksReorderSetLists";
   }
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";

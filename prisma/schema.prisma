@@ -172,6 +172,7 @@ model InvitationToken {
 enum GroupClaim {
   MANAGE_MEMBERS
   MANAGE_CONTENT
+  REORDER_SET_LISTS
 
   @@map("group_claim")
 }

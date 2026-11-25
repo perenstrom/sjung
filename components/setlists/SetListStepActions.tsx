@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { deleteSetListNote, reorderSetListSteps, removePieceFromSetList } from "@/app/actions/setlists";
+import { useEditMode } from "@/components/EditModeContext";
 import { buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SetListStep } from "@/lib/setlists/types";
@@ -60,7 +61,10 @@ function MoveStepButton({
   );
 }
 
-/** Move up, move down and remove controls for one step of a set list. */
+/**
+ * Move up, move down and remove controls for one step of a set list. Shown
+ * to a Member who may reorder; the remove control only with `manageContent`.
+ */
 export function SetListStepActions({
   step,
   stepIndex,
@@ -74,6 +78,7 @@ export function SetListStepActions({
   groupSlug: string;
   setListId: string;
 }) {
+  const { isEditing: showsRemove } = useEditMode();
   const isNote = step.kind === "note";
   const removeLabel = isNote ? "Ta bort" : "Ta bort från repertoaren";
 
@@ -95,24 +100,26 @@ export function SetListStepActions({
         groupSlug={groupSlug}
         setListId={setListId}
       />
-      <Tooltip>
-        <form action={isNote ? deleteSetListNote : removePieceFromSetList}>
-          <input type="hidden" name="groupSlug" value={groupSlug} />
-          <input type="hidden" name={isNote ? "setListNoteId" : "setListPieceId"} value={step.id} />
-          <TooltipTrigger
-            type="submit"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon" }),
-              ICON_BUTTON_CLASS,
-              "text-destructive hover:text-destructive",
-            )}
-          >
-            <Trash2 className="size-4" aria-hidden="true" />
-            <span className="sr-only">{removeLabel}</span>
-          </TooltipTrigger>
-        </form>
-        <TooltipContent side="top">{removeLabel}</TooltipContent>
-      </Tooltip>
+      {showsRemove ? (
+        <Tooltip>
+          <form action={isNote ? deleteSetListNote : removePieceFromSetList}>
+            <input type="hidden" name="groupSlug" value={groupSlug} />
+            <input type="hidden" name={isNote ? "setListNoteId" : "setListPieceId"} value={step.id} />
+            <TooltipTrigger
+              type="submit"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                ICON_BUTTON_CLASS,
+                "text-destructive hover:text-destructive",
+              )}
+            >
+              <Trash2 className="size-4" aria-hidden="true" />
+              <span className="sr-only">{removeLabel}</span>
+            </TooltipTrigger>
+          </form>
+          <TooltipContent side="top">{removeLabel}</TooltipContent>
+        </Tooltip>
+      ) : null}
     </>
   );
 }

@@ -297,12 +297,14 @@ describe("renaming and deleting the Group", () => {
 });
 
 describe("setMemberClaims", () => {
-  it("lets the Creator grant both Claims and then clear them", async () => {
+  it("lets the Creator grant every Claim and then clear them", async () => {
     const { group, creator, other } = await createManagerScenario();
     actAs(creator.id);
 
-    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT"]));
-    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_MEMBERS", "MANAGE_CONTENT"]);
+    await setMemberClaims(
+      claimsFormData(group.slug, other.id, ["MANAGE_MEMBERS", "MANAGE_CONTENT", "REORDER_SET_LISTS"]),
+    );
+    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_MEMBERS", "MANAGE_CONTENT", "REORDER_SET_LISTS"]);
 
     await setMemberClaims(claimsFormData(group.slug, other.id, []));
     expect(await claimsOf(other.id, group.id)).toEqual([]);
@@ -318,14 +320,19 @@ describe("setMemberClaims", () => {
     expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
   });
 
-  it("lets a MANAGE_MEMBERS-only holder grant MANAGE_CONTENT they don't hold", async () => {
-    const { group, manager, other } = await createManagerScenario(["MANAGE_MEMBERS"]);
-    actAs(manager.id);
+  it.each<GroupClaim>(["MANAGE_CONTENT", "REORDER_SET_LISTS"])(
+    "lets a MANAGE_MEMBERS-only holder grant %s they don't hold, and revoke it",
+    async (claim) => {
+      const { group, manager, other } = await createManagerScenario(["MANAGE_MEMBERS"]);
+      actAs(manager.id);
 
-    await setMemberClaims(claimsFormData(group.slug, other.id, ["MANAGE_CONTENT"]));
+      await setMemberClaims(claimsFormData(group.slug, other.id, [claim]));
+      expect(await claimsOf(other.id, group.id)).toEqual([claim]);
 
-    expect(await claimsOf(other.id, group.id)).toEqual(["MANAGE_CONTENT"]);
-  });
+      await setMemberClaims(claimsFormData(group.slug, other.id, []));
+      expect(await claimsOf(other.id, group.id)).toEqual([]);
+    },
+  );
 
   it("lets a MANAGE_MEMBERS holder revoke another member's MANAGE_MEMBERS", async () => {
     const { group, manager, other } = await createManagerScenario();

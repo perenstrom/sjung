@@ -2,15 +2,15 @@
 
 import { Pencil } from "lucide-react";
 
-import { useEditMode } from "@/components/EditModeContext";
+import { useEditModeToggle } from "@/components/EditModeContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /** The Redigera/Klar toggle. Renders nothing for a Member who can't edit. */
 export function EditModeToggle() {
-  const { canEdit, isEditing, setIsEditing } = useEditMode();
+  const { isOffered, isEditing, setIsEditing } = useEditModeToggle();
 
-  if (!canEdit) {
+  if (!isOffered) {
     return null;
   }
 
