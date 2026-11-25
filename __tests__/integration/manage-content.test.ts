@@ -152,6 +152,8 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
       orderedSetListStepIds: JSON.stringify([c.setListNote.id, c.setListPiece.id]),
     }),
   appendSetListNote: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, content: "Paus" }),
+  updateSetListNote: (g, c) =>
+    formData({ groupSlug: g.slug, setListNoteId: c.setListNote.id, content: "Paus, tio minuter" }),
   deleteSetListNote: (g, c) => formData({ groupSlug: g.slug, setListNoteId: c.setListNote.id }),
   createPerson: (g) => formData({ groupSlug: g.slug, name: "Hugo Alfvén" }),
   renamePerson: (g, c) => formData({ groupSlug: g.slug, personId: c.person.id, name: "Hugo Alfvén" }),
@@ -227,8 +229,11 @@ describe("content actions require manageContent, and reordering also accepts reo
   });
 
   describe("a MANAGE_CONTENT Member", () => {
+    let currentUserId: string;
+
     beforeEach(async () => {
-      actAs((await createMember(group, [GroupClaim.MANAGE_CONTENT])).id);
+      currentUserId = (await createMember(group, [GroupClaim.MANAGE_CONTENT])).id;
+      actAs(currentUserId);
     });
 
     it("changes a Piece", async () => {
@@ -294,6 +299,43 @@ describe("content actions require manageContent, and reordering also accepts reo
     it("adds a Set list step", async () => {
       await setListActions.appendSetListNote(CONTENT_ACTIONS.appendSetListNote(group, content));
       expect(await testPrisma.setListNote.count({ where: { setListId: content.setList.id } })).toBe(2);
+    });
+
+    it("changes a Running-order note's text without moving it", async () => {
+      const orderBefore = await runningOrder(content.setList.id);
+      await setListActions.updateSetListNote(CONTENT_ACTIONS.updateSetListNote(group, content));
+
+      expect(await testPrisma.setListNote.findUniqueOrThrow({ where: { id: content.setListNote.id } })).toMatchObject({
+        content: "Paus, tio minuter",
+        updatedById: currentUserId,
+      });
+      expect(await runningOrder(content.setList.id)).toEqual(orderBefore);
+    });
+
+    it("refuses blank Running-order note text and keeps the note", async () => {
+      await expect(
+        setListActions.updateSetListNote(
+          formData({ groupSlug: group.slug, setListNoteId: content.setListNote.id, content: "   " }),
+        ),
+      ).rejects.toThrow("Anteckning krävs");
+
+      expect(await testPrisma.setListNote.findUniqueOrThrow({ where: { id: content.setListNote.id } })).toMatchObject({
+        content: "Paus",
+      });
+    });
+
+    it("refuses to change another Group's Running-order note", async () => {
+      const otherNote = await createSetListNote(await createSetList(await createGroup()), "Paus", 1000);
+
+      await expect(
+        setListActions.updateSetListNote(
+          formData({ groupSlug: group.slug, setListNoteId: otherNote.id, content: "Kapad" }),
+        ),
+      ).rejects.toThrow("Anteckning hittades inte");
+
+      expect(await testPrisma.setListNote.findUniqueOrThrow({ where: { id: otherNote.id } })).toMatchObject({
+        content: "Paus",
+      });
     });
 
     it("creates a Person", async () => {

@@ -13,6 +13,7 @@ import { PieceFilesAndLinks } from "@/components/pieces/files-and-links/PieceFil
 import { toPieceFilesAndLinks } from "@/components/pieces/files-and-links/toPieceFilesAndLinks";
 import { PieceNotesDialog } from "@/components/pieces/PieceNotesDialog";
 import { PieceNotesList } from "@/components/pieces/PieceNotesList";
+import { RunningOrderNoteText } from "@/components/setlists/RunningOrderNote";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { MobileList, MobileListEmpty, MobileListExpandableRow } from "@/components/ui/mobile-list";
 import { CREDITS_HEADING, formatCreditsLine } from "@/lib/pieces/credits";
@@ -113,9 +114,12 @@ export function PiecesMobileList({
               <li key={row.id} className="flex items-baseline gap-2 px-4 py-3">
                 {number}
                 <div className="min-w-0 flex-1 space-y-2">
-                  <p className="border-l-2 pl-3 text-sm whitespace-pre-wrap text-muted-foreground italic">
-                    {row.content}
-                  </p>
+                  <RunningOrderNoteText
+                    groupSlug={groupSlug}
+                    noteId={row.id}
+                    content={row.content}
+                    className="border-l-2 pl-3 text-sm whitespace-pre-wrap text-muted-foreground italic"
+                  />
                   {stepActions}
                 </div>
               </li>

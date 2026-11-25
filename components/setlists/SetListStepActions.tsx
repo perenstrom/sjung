@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { deleteSetListNote, reorderSetListSteps, removePieceFromSetList } from "@/app/actions/setlists";
 import { useEditMode } from "@/components/EditModeContext";
+import { EditRunningOrderNoteButton } from "@/components/setlists/RunningOrderNote";
 import { buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { SetListStep } from "@/lib/setlists/types";
@@ -62,8 +63,9 @@ function MoveStepButton({
 }
 
 /**
- * Move up, move down and remove controls for one step of a set list. Shown
- * to a Member who may reorder; the remove control only with `manageContent`.
+ * Move up, move down and remove controls for one step of a set list, and an
+ * edit control for a Running-order note. Shown to a Member who may reorder;
+ * the edit and remove controls only with `manageContent`.
  */
 export function SetListStepActions({
   step,
@@ -78,7 +80,7 @@ export function SetListStepActions({
   groupSlug: string;
   setListId: string;
 }) {
-  const { isEditing: showsRemove } = useEditMode();
+  const { isEditing: showsContentActions } = useEditMode();
   const isNote = step.kind === "note";
   const removeLabel = isNote ? "Ta bort" : "Ta bort från repertoaren";
 
@@ -100,7 +102,10 @@ export function SetListStepActions({
         groupSlug={groupSlug}
         setListId={setListId}
       />
-      {showsRemove ? (
+      {showsContentActions && isNote ? (
+        <EditRunningOrderNoteButton noteId={step.id} className={ICON_BUTTON_CLASS} />
+      ) : null}
+      {showsContentActions ? (
         <Tooltip>
           <form action={isNote ? deleteSetListNote : removePieceFromSetList}>
             <input type="hidden" name="groupSlug" value={groupSlug} />

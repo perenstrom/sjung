@@ -17,6 +17,7 @@ import { PieceNotesList } from "@/components/pieces/PieceNotesList";
 import { LetterDividerTableRow } from "@/components/pieces/LetterDivider";
 import { PieceAliasesLine } from "@/components/pieces/PieceAliasesLine";
 import { PiecesMobileList } from "@/components/pieces/PiecesMobileList";
+import { RunningOrderNoteEditingProvider, RunningOrderNoteText } from "@/components/setlists/RunningOrderNote";
 import { SetListStepActions } from "@/components/setlists/SetListStepActions";
 import { compareCaseInsensitive } from "@/lib/data-table/sorting";
 import { REORDER_SET_LIST_CAPABILITIES } from "@/lib/edit-mode";
@@ -232,7 +233,12 @@ export function PiecesTable({
         header: ({ column }) => <DataTableColumnHeader column={column} title="Namn" />,
         cell: ({ row }) =>
           row.original.kind === "note" ? (
-            <div className="py-1.5 whitespace-pre-wrap text-muted-foreground">{row.original.content}</div>
+            <RunningOrderNoteText
+              groupSlug={groupSlug}
+              noteId={row.original.id}
+              content={row.original.content}
+              className="py-1.5 whitespace-pre-wrap text-muted-foreground"
+            />
           ) : (
             <PieceNameCell
               piece={row.original.piece}
@@ -342,25 +348,27 @@ export function PiecesTable({
 
   return (
     <PiecesTableCellContext.Provider value={cellContext}>
-      <PiecesMobileList
-        {...(setList ? { setList } : { pieces: pieces ?? [], matchingAliases })}
-        people={people}
-        creditRoles={creditRoles}
-        groupSlug={groupSlug}
-        isEditing={isEditing}
-        isReordering={isReordering}
-        emptyMessage={emptyMessage}
-      />
-      <DataTable
-        className="max-md:hidden"
-        columns={columns}
-        data={rows}
-        enableSorting={!setList}
-        cellAlign="top"
-        getRowId={getRowId}
-        renderRowDivider={setList ? undefined : renderLetterDivider}
-        emptyMessage={emptyMessage}
-      />
+      <RunningOrderNoteEditingProvider>
+        <PiecesMobileList
+          {...(setList ? { setList } : { pieces: pieces ?? [], matchingAliases })}
+          people={people}
+          creditRoles={creditRoles}
+          groupSlug={groupSlug}
+          isEditing={isEditing}
+          isReordering={isReordering}
+          emptyMessage={emptyMessage}
+        />
+        <DataTable
+          className="max-md:hidden"
+          columns={columns}
+          data={rows}
+          enableSorting={!setList}
+          cellAlign="top"
+          getRowId={getRowId}
+          renderRowDivider={setList ? undefined : renderLetterDivider}
+          emptyMessage={emptyMessage}
+        />
+      </RunningOrderNoteEditingProvider>
     </PiecesTableCellContext.Provider>
   );
 }
