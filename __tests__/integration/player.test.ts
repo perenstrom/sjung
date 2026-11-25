@@ -8,6 +8,7 @@ import { groupSetListPath } from "@/lib/groups/routes";
 import { pieceHref, playerHref } from "@/lib/pieces/href";
 import { getPlayerData } from "@/lib/pieces/player";
 import { PLAYER_SOUNDFONT_KEY } from "@/lib/player/soundfont";
+import { testPrisma } from "../support/db";
 import {
   createFile,
   createGroup,
@@ -131,6 +132,22 @@ describe("opening the player", () => {
 
     expect(player?.closeHref).toBe(groupSetListPath(group.slug, setList));
     expect(player?.files[0].href).toBe(playerHref(group.slug, piece, sopran, { fromSetListPieceId: setListPiece.id }));
+  });
+
+  it("opened from a Set list piece, leaves out the Files Hidden there, unless one is the File opened", async () => {
+    const alt = await audioFile(piece, "Alt");
+    const sopran = await audioFile(piece, "Sopran");
+    const setListPiece = await createSetListPiece(await createSetList(group), piece);
+    await testPrisma.setListPieceHiddenFile.create({ data: { setListPieceId: setListPiece.id, fileId: alt.id } });
+    const from = { fromSetListPieceId: setListPiece.id };
+
+    const openedVisible = await getPlayerData(group.slug, piece.id, sopran.id, from);
+    const openedHidden = await getPlayerData(group.slug, piece.id, alt.id, from);
+    const openedOnPiece = await getPlayerData(group.slug, piece.id, sopran.id);
+
+    expect(openedVisible?.files.map(({ id }) => id)).toEqual([sopran.id]);
+    expect(openedHidden?.files.map(({ id }) => id)).toEqual([alt.id, sopran.id]);
+    expect(openedOnPiece?.files.map(({ id }) => id)).toEqual([alt.id, sopran.id]);
   });
 
   it.each([

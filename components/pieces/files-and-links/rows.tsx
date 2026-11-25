@@ -1,6 +1,6 @@
 "use client";
 
-import { ClefTreble, Download, ExternalLink, FileText, Play, Trash2 } from "lucide-react";
+import { ClefTreble, Download, ExternalLink, Eye, EyeOff, FileText, Play, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { type ComponentProps, type ReactNode, useState, useTransition } from "react";
 
@@ -46,14 +46,39 @@ type RowProps<T> = {
   /** Shown under the row inline; on the Piece page the errors gather by the add rows. */
   error: string | undefined;
   onRemove: () => void;
+  /** Hidden on the Set list piece, and shown anyway (Edit mode, or "Visa alla"): the row is dimmed. */
+  hidden: boolean;
+  /** In Edit mode on a Set list piece: hides or shows the item there. */
+  hideToggle: HideToggle | undefined;
 };
 
-export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps<PieceFileListItem>) {
+type HideToggle = {
+  /** Where it is hidden, as `hiddenPlace` says it. */
+  place: string;
+  pending: boolean;
+  onToggle: () => void;
+};
+
+/** Dims a Hidden row, but not while it is pointed at or has focus, so its controls read clearly. */
+const HIDDEN_ROW = "opacity-50 focus-within:opacity-100 hover:opacity-100";
+
+export function FileRow({
+  ctx,
+  item: file,
+  removing,
+  error,
+  onRemove,
+  hidden,
+  hideToggle,
+}: RowProps<PieceFileListItem>) {
   const rename: EditorTarget = { kind: "renameFile", id: file.id };
   const replace: EditorTarget = { kind: "replaceFile", id: file.id };
 
   const actions = ctx.isEditing ? (
     <>
+      {hideToggle ? (
+        <HideToggleButton name={file.displayName} hidden={hidden} toggle={hideToggle} disabled={removing} />
+      ) : null}
       <RenamePieceFilePopover
         groupSlug={ctx.groupSlug}
         fileId={file.id}
@@ -86,7 +111,7 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
 
   if (ctx.layout === "inline") {
     return (
-      <InlineRow touch={ctx.touch} error={error} below={<FileConversionRetry ctx={ctx} file={file} />}>
+      <InlineRow touch={ctx.touch} hidden={hidden} error={error} below={<FileConversionRetry ctx={ctx} file={file} />}>
         <FileIcon file={file} />
         <TruncatedTooltip content={file.displayName}>
           <FileOpenLink
@@ -106,7 +131,10 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
   }
 
   return (
-    <li className="flex min-h-7 flex-wrap items-center gap-x-2">
+    <li
+      data-hidden={hidden || undefined}
+      className={cn("flex min-h-7 flex-wrap items-center gap-x-2", hidden && HIDDEN_ROW)}
+    >
       {/* The icon and name never wrap apart; the name truncates instead. */}
       <span className="inline-flex max-w-full min-w-0 items-center gap-2">
         <FileIcon file={file} />
@@ -128,12 +156,13 @@ export function FileRow({ ctx, item: file, removing, error, onRemove }: RowProps
   );
 }
 
-export function LinkRow({ ctx, item: link, removing, error, onRemove }: RowProps<PieceLink>) {
+export function LinkRow({ ctx, item: link, removing, error, onRemove, hidden, hideToggle }: RowProps<PieceLink>) {
   const edit: EditorTarget = { kind: "editLink", id: link.id };
   const label = labelForLink(link);
 
   const actions = ctx.isEditing ? (
     <>
+      {hideToggle ? <HideToggleButton name={label} hidden={hidden} toggle={hideToggle} disabled={removing} /> : null}
       <EditPieceLinkPopover
         groupSlug={ctx.groupSlug}
         link={link}
@@ -149,7 +178,7 @@ export function LinkRow({ ctx, item: link, removing, error, onRemove }: RowProps
 
   if (ctx.layout === "inline") {
     return (
-      <InlineRow touch={ctx.touch} error={error}>
+      <InlineRow touch={ctx.touch} hidden={hidden} error={error}>
         <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
         <TruncatedTooltip content={label}>
           <a
@@ -172,7 +201,10 @@ export function LinkRow({ ctx, item: link, removing, error, onRemove }: RowProps
 
   const metadata = metadataForLink(link);
   return (
-    <li className="flex min-h-7 flex-wrap items-center gap-x-2">
+    <li
+      data-hidden={hidden || undefined}
+      className={cn("flex min-h-7 flex-wrap items-center gap-x-2", hidden && HIDDEN_ROW)}
+    >
       {/* The icon and label never wrap apart; the label truncates instead. */}
       <span className="inline-flex max-w-full min-w-0 items-center gap-2">
         <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
@@ -202,22 +234,54 @@ export function LinkRow({ ctx, item: link, removing, error, onRemove }: RowProps
 /** A row in a table cell or touch list: 28px, or 40px for touch, so the first lines up with its neighbours. */
 function InlineRow({
   touch,
+  hidden,
   error,
   below,
   children,
 }: {
   touch: boolean;
+  hidden: boolean;
   error: string | undefined;
   /** Shown on its own line under the row, if it renders anything. */
   below?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <li className="space-y-1">
+    <li data-hidden={hidden || undefined} className={cn("space-y-1", hidden && HIDDEN_ROW)}>
       <div className={cn("flex min-w-0 items-center gap-1", touch ? "min-h-10" : "min-h-7")}>{children}</div>
       {below}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </li>
+  );
+}
+
+/** Hides a File or Link on the Set list piece, or shows a Hidden one there again. */
+function HideToggleButton({
+  name,
+  hidden,
+  toggle,
+  disabled,
+}: {
+  name: string;
+  hidden: boolean;
+  toggle: HideToggle;
+  disabled: boolean;
+}) {
+  const verb = hidden ? "Visa" : "Dölj";
+  const Icon = hidden ? Eye : EyeOff;
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="size-7 shrink-0"
+      onClick={toggle.onToggle}
+      disabled={disabled || toggle.pending}
+      aria-label={`${verb} ${name} ${toggle.place}`}
+      title={`${verb} ${toggle.place}`}
+    >
+      <Icon className="size-3.5" aria-hidden="true" />
+    </Button>
   );
 }
 

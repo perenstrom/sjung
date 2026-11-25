@@ -55,7 +55,9 @@ function renderPieces(isEditing: boolean): string {
 
 function renderSetList(isEditing: boolean): string {
   editMode = isEditing;
-  const steps = [{ kind: "piece", id: "step-1", position: 0, piece }] as unknown as SetListStep[];
+  const steps = [
+    { kind: "piece", id: "step-1", position: 0, piece, hiddenFileIds: [], hiddenLinkIds: [] },
+  ] as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesMobileList, {
       people: [],
@@ -176,7 +178,7 @@ describe("PieceRowDetails, an open piece row", () => {
         groupSlug: "koren",
         isEditing,
         setListId,
-        setListPieceId,
+        setListPiece: setListPieceId ? { id: setListPieceId, hiddenFileIds: [], hiddenLinkIds: [] } : undefined,
       }),
     );
   }
@@ -276,6 +278,24 @@ describe("PieceRowDetails, an open piece row", () => {
     });
   });
 
+  it("in the running order, reads like a Piece with no Files or Links when its Set list piece hides them all", () => {
+    const html = renderMarkup(
+      createElement(PieceRowDetails, {
+        piece: { ...piece, files: [piece.files[0]] },
+        people: [],
+        creditRoles: [],
+        groupSlug: "koren",
+        isEditing: false,
+        setListId: "setlist-1",
+        setListPiece: { id: "step-1", hiddenFileIds: ["file-1"], hiddenLinkIds: ["link-1"] },
+      }),
+    );
+
+    expect(textOf(html)).toContain("Inga filer eller länkar.");
+    expect(textOf(html)).not.toContain("Sopran.pdf");
+    expect(textOf(html)).not.toContain("Inspelning");
+  });
+
   it("in the running order, opens a Playable File in the player for its Set list piece", () => {
     const sopran = {
       id: "file-1",
@@ -293,13 +313,13 @@ describe("PieceRowDetails, an open piece row", () => {
   });
 
   describe.each([
-    ["Noter, read mode", false, undefined],
-    ["Noter, edit mode", true, undefined],
-    ["running order, read mode", false, "setlist-1"],
-    ["running order, edit mode", true, "setlist-1"],
-  ])("in the %s", (_, isEditing, setListId) => {
-    const html = renderDetails(isEditing, {}, setListId);
-    const href = pieceHref("koren", piece, { fromSetListId: setListId }).replace("?", "\\?");
+    ["Noter, read mode", false, undefined, undefined],
+    ["Noter, edit mode", true, undefined, undefined],
+    ["running order, read mode", false, "setlist-1", "step-1"],
+    ["running order, edit mode", true, "setlist-1", "step-1"],
+  ])("in the %s", (_, isEditing, setListId, setListPieceId) => {
+    const html = renderDetails(isEditing, {}, setListId, setListPieceId);
+    const href = pieceHref("koren", piece, { fromSetListPieceId: setListPieceId }).replace("?", "\\?");
 
     it("links to the piece's detail page as Detaljsida with a hidden chevron", () => {
       expect(textOf(html)).not.toContain("Öppna stycket");

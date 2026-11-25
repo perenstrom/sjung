@@ -1,11 +1,12 @@
 "use server";
 
 import { saveWithFreeSlug } from "@/lib/content-slug";
-import { findInGroup } from "@/lib/find-in-group";
+import { findInGroup, findInGroupOrNull, notFoundMessage } from "@/lib/find-in-group";
 import prisma from "@/lib/prisma";
 import { parsePieceIdFromFormData } from "@/lib/schemas/pieces";
 import { parseWritableGroupSlugFromFormData, parseWritableGroupSlugParam } from "@/lib/schemas/people";
 import {
+  parseHiddenItemFromFormData,
   parseOptionalSetListDateFromFormData,
   parseOrderedSetListStepIdsFromFormData,
   parseSetListCurrentFromFormData,
@@ -21,9 +22,10 @@ import {
   revalidateGroupSetListsRoutes,
 } from "@/lib/revalidate/group-routes";
 import { getWritableGroupIdForSlug, runContentMutation } from "@/lib/tenant-group";
+import { HIDDEN_SELECT, hiddenIdsOf } from "@/lib/setlists/hidden";
 import { SetListSequence } from "@/lib/setlists/sequence";
 import { PIECE_ALIAS_ORDER } from "@/lib/pieces/types";
-import type { SetListDetail, SetListPieceOption } from "@/lib/setlists/types";
+import type { SetListDetail, SetListPieceContext, SetListPieceOption } from "@/lib/setlists/types";
 
 type SetListRow = {
   id: string;
@@ -76,6 +78,25 @@ export async function getSetListDetail(groupSlug: string, setListId: string): Pr
     updatedAt: setList.updatedAt,
     steps: await SetListSequence.steps(setList.id),
   };
+}
+
+/**
+ * The Set list piece a Piece's page was opened from: its Set list, for the
+ * breadcrumb, and what it hides. `null` when it is gone, isn't one of this
+ * Piece's, or is in another Group, so the page shows the Piece on its own.
+ */
+export async function getSetListPieceContext(
+  groupSlug: string,
+  pieceId: string,
+  setListPieceId: string,
+): Promise<SetListPieceContext | null> {
+  const { groupId } = await getWritableGroupIdForSlug(groupSlug);
+  const setListPiece = await prisma.setListPiece.findFirst({
+    where: { id: setListPieceId, pieceId, setList: { groupId } },
+    select: { id: true, setList: { select: { id: true, slug: true, name: true } }, ...HIDDEN_SELECT },
+  });
+  if (!setListPiece) return null;
+  return { id: setListPiece.id, setList: setListPiece.setList, ...hiddenIdsOf(setListPiece) };
 }
 
 export async function getSetListPieceOptions(groupSlug: string): Promise<SetListPieceOption[]> {
@@ -198,6 +219,61 @@ export async function removePieceFromWholeSetList(formData: FormData) {
 
     revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
     revalidateGroupPieceDetailRoutes(groupSlug, piece.slug);
+  });
+}
+
+/** Hides one of the Piece's Files or Links on this Set list piece only (CONTEXT.md, "Hidden"). */
+export async function hideOnSetListPiece(formData: FormData) {
+  await setHiddenOnSetListPiece(formData, true);
+}
+
+/** Shows a Hidden File or Link on this Set list piece again. */
+export async function unhideOnSetListPiece(formData: FormData) {
+  await setHiddenOnSetListPiece(formData, false);
+}
+
+/** Where each kind's hides are kept. Hiding what is already hidden, or unhiding what isn't, changes nothing. */
+const HIDES = {
+  file: {
+    hide: (setListPieceId: string, fileId: string) =>
+      prisma.setListPieceHiddenFile.createMany({ data: { setListPieceId, fileId }, skipDuplicates: true }),
+    unhide: (setListPieceId: string, fileId: string) =>
+      prisma.setListPieceHiddenFile.deleteMany({ where: { setListPieceId, fileId } }),
+  },
+  link: {
+    hide: (setListPieceId: string, linkId: string) =>
+      prisma.setListPieceHiddenLink.createMany({ data: { setListPieceId, linkId }, skipDuplicates: true }),
+    unhide: (setListPieceId: string, linkId: string) =>
+      prisma.setListPieceHiddenLink.deleteMany({ where: { setListPieceId, linkId } }),
+  },
+};
+
+/**
+ * Hides or shows a File or Link on a Set list piece. The File or Link must be
+ * the Set list piece's Piece's; any other is refused as not found.
+ */
+async function setHiddenOnSetListPiece(formData: FormData, hidden: boolean) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const setListPieceId = parseSetListPieceIdFromFormData(formData);
+  const item = parseHiddenItemFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ userId, groupId }) => {
+    const setListPiece = await findInGroup(groupId, "setListPiece", setListPieceId, {
+      select: { id: true, pieceId: true, setList: { select: { slug: true } }, piece: { select: { slug: true } } },
+    });
+    const found = await findInGroupOrNull(groupId, item.kind, item.id, { select: { pieceId: true } });
+    if (found?.pieceId !== setListPiece.pieceId) {
+      throw new Error(notFoundMessage(item.kind));
+    }
+
+    const store = HIDES[item.kind];
+    await prisma.$transaction([
+      (hidden ? store.hide : store.unhide)(setListPiece.id, item.id),
+      prisma.setListPiece.update({ where: { id: setListPiece.id }, data: { updatedById: userId } }),
+    ]);
+
+    revalidateGroupSetListDetailRoutes(groupSlug, setListPiece.setList.slug);
+    revalidateGroupPieceDetailRoutes(groupSlug, setListPiece.piece.slug);
   });
 }
 

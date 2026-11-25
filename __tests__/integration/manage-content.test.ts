@@ -64,6 +64,7 @@ const READS = new Set([
   "getPersonDetail",
   "getSetLists",
   "getSetListDetail",
+  "getSetListPieceContext",
   "getSetListPieceOptions",
 ]);
 
@@ -164,6 +165,8 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
       setListId: c.setList.id,
       orderedSetListStepIds: JSON.stringify([c.setListNote.id, c.setListPiece.id]),
     }),
+  hideOnSetListPiece: (g, c) => formData({ groupSlug: g.slug, setListPieceId: c.setListPiece.id, fileId: c.file.id }),
+  unhideOnSetListPiece: (g, c) => formData({ groupSlug: g.slug, setListPieceId: c.setListPiece.id, linkId: c.link.id }),
   appendSetListNote: (g, c) => formData({ groupSlug: g.slug, setListId: c.setList.id, content: "Paus" }),
   updateSetListNote: (g, c) =>
     formData({ groupSlug: g.slug, setListNoteId: c.setListNote.id, content: "Paus, tio minuter" }),

@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { deletePieceFile } from "@/app/actions/files";
 import { removeLink } from "@/app/actions/pieces";
+import { hideOnSetListPiece, unhideOnSetListPiece } from "@/app/actions/setlists";
 import { useEditMode } from "@/components/EditModeContext";
 import { AddPieceFilePopover } from "@/components/pieces/AddPieceFilePopover";
 import { AddPieceFileRow } from "@/components/pieces/AddPieceFileRow";
@@ -13,6 +14,7 @@ import { AddPieceLinkRow } from "@/components/pieces/AddPieceLinkRow";
 import { CategoryHeading } from "@/components/pieces/CategoryHeading";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 import { groupByCategory } from "@/lib/pieces/categories";
+import { applyHidden, hiddenNotice, hiddenPlace, type SetListPieceHides } from "@/lib/setlists/hidden";
 import { cn } from "@/lib/utils";
 
 import { type EditorTarget, isBlocked, isOpen, nextEditor, type OpenEditor } from "./editor";
@@ -33,8 +35,11 @@ type PieceFilesAndLinksProps = {
   layout: "detail" | "inline";
   /** Inline only: 40px lines whose names fill the line, for touch lists. */
   touch?: boolean;
-  /** The Set list piece these are shown on, if any: its Playable Files open the player for it. */
-  setListPieceId?: string;
+  /**
+   * The Set list piece these are shown on, if any: its Playable Files open
+   * the player for it, and what it hides is left out (CONTEXT.md, "Hidden").
+   */
+  setListPiece?: SetListPieceHides;
 };
 
 /**
@@ -42,6 +47,11 @@ type PieceFilesAndLinksProps = {
  * CONTEXT.md), each group one list sorted by name. In Edit mode it offers
  * adding, renaming, replacing, editing and removing them, with one editor
  * open at a time for the Piece. Leaving or entering Edit mode closes any editor.
+ *
+ * On a Set list piece, what it hides is left out; in Edit mode it shows
+ * dimmed instead, and each File and Link can be hidden or shown there. On a
+ * Piece's page opened from the Set list piece, a notice says how many are
+ * hidden and can show them, dimmed, until the page is left.
  */
 export function PieceFilesAndLinks(props: PieceFilesAndLinksProps) {
   const { canEdit, isEditing } = useEditMode();
@@ -58,34 +68,39 @@ function Body({
   filesAndLinks,
   layout,
   touch = false,
-  setListPieceId,
+  setListPiece,
 }: PieceFilesAndLinksProps & { canManage: boolean; isEditing: boolean }) {
   const router = useRouter();
   const [editor, setEditorState] = useState<OpenEditor>(null);
   const [removing, setRemoving] = useState<ReadonlySet<string>>(new Set());
+  const [togglingHidden, setTogglingHidden] = useState<ReadonlySet<string>>(new Set());
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  // "Visa alla" on a Piece's page; never stored, so leaving the page resets it.
+  const [revealed, setRevealed] = useState(false);
   useRefreshWhilePreparing(filesAndLinks.files, router);
 
-  async function remove(kind: "file" | "link", id: string) {
-    const key = `${kind}:${id}`;
-    setRemoving((prev) => new Set(prev).add(key));
+  /**
+   * Runs a row's server action for one File or Link (`kind:id`): marks it
+   * pending in `setPending` meanwhile, clears its last error, refreshes on
+   * success and keeps the error message, or `fallback`, on failure.
+   */
+  async function runRowAction(
+    key: string,
+    setPending: (update: (prev: ReadonlySet<string>) => ReadonlySet<string>) => void,
+    fallback: string,
+    action: (formData: FormData) => Promise<unknown>,
+  ) {
+    setPending((prev) => new Set(prev).add(key));
     setErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key)));
     try {
       const formData = new FormData();
       formData.set("groupSlug", groupSlug);
-      if (kind === "file") {
-        formData.set("fileId", id);
-        await deletePieceFile(formData);
-      } else {
-        formData.set("linkId", id);
-        await removeLink(formData);
-      }
+      await action(formData);
       router.refresh();
     } catch (err) {
-      const fallback = kind === "file" ? "Kunde inte ta bort fil" : "Kunde inte ta bort länk";
       setErrors((prev) => ({ ...prev, [key]: getThrownMessage(err, fallback) }));
     } finally {
-      setRemoving((prev) => {
+      setPending((prev) => {
         const next = new Set(prev);
         next.delete(key);
         return next;
@@ -93,12 +108,32 @@ function Body({
     }
   }
 
+  function setHidden(kind: "file" | "link", id: string, hidden: boolean) {
+    if (!setListPiece) return;
+    const fallback = hidden ? "Kunde inte dölja" : "Kunde inte visa";
+    void runRowAction(`${kind}:${id}`, setTogglingHidden, fallback, (formData) => {
+      formData.set("setListPieceId", setListPiece.id);
+      formData.set(kind === "file" ? "fileId" : "linkId", id);
+      return (hidden ? hideOnSetListPiece : unhideOnSetListPiece)(formData);
+    });
+  }
+
+  function remove(kind: "file" | "link", id: string) {
+    const fallback = kind === "file" ? "Kunde inte ta bort fil" : "Kunde inte ta bort länk";
+    void runRowAction(`${kind}:${id}`, setRemoving, fallback, (formData) => {
+      formData.set(kind === "file" ? "fileId" : "linkId", id);
+      return kind === "file" ? deletePieceFile(formData) : removeLink(formData);
+    });
+  }
+
   const ctx: RowContext = {
     groupSlug,
     pieceId: piece.id,
     pieceSlug: piece.slug,
     pieceName: piece.name,
-    setListPieceId,
+    // Only a Set list's rows open the player for their Set list piece, which
+    // closes back to the Set list; on a Piece's page it closes to the Piece.
+    setListPieceId: layout === "inline" ? setListPiece?.id : undefined,
     layout,
     touch,
     canManage,
@@ -108,12 +143,24 @@ function Body({
     onRefresh: () => router.refresh(),
   };
 
-  const groups = groupByCategory(filesAndLinks.files, filesAndLinks.links);
-  const rowProps = (kind: "file" | "link", id: string) => ({
+  const shown = applyHidden(filesAndLinks.files, filesAndLinks.links, setListPiece, {
+    showHidden: isEditing || revealed,
+  });
+  const groups = groupByCategory(shown.files, shown.links);
+  const rowProps = (kind: "file" | "link", id: string, hidden: boolean) => ({
     ctx,
     removing: removing.has(`${kind}:${id}`),
     error: layout === "inline" ? errors[`${kind}:${id}`] : undefined,
-    onRemove: () => void remove(kind, id),
+    onRemove: () => remove(kind, id),
+    hidden,
+    hideToggle:
+      setListPiece && isEditing
+        ? {
+            place: hiddenPlace(setListPiece.setListName),
+            pending: togglingHidden.has(`${kind}:${id}`),
+            onToggle: () => setHidden(kind, id, !hidden),
+          }
+        : undefined,
   });
 
   const list = (group: (typeof groups)[number]) => (
@@ -122,9 +169,17 @@ function Body({
     >
       {group.entries.map((entry) =>
         entry.kind === "file" ? (
-          <FileRow key={`file:${entry.file.id}`} item={entry.file} {...rowProps("file", entry.file.id)} />
+          <FileRow
+            key={`file:${entry.file.id}`}
+            item={entry.file}
+            {...rowProps("file", entry.file.id, entry.file.hidden)}
+          />
         ) : (
-          <LinkRow key={`link:${entry.link.id}`} item={entry.link} {...rowProps("link", entry.link.id)} />
+          <LinkRow
+            key={`link:${entry.link.id}`}
+            item={entry.link}
+            {...rowProps("link", entry.link.id, entry.link.hidden)}
+          />
         ),
       )}
     </ul>
@@ -167,10 +222,26 @@ function Body({
   }
 
   const categorized = groups.some((group) => group.heading !== null);
+  const setListName = setListPiece?.setListName;
   return (
     <>
+      {setListName !== undefined && !isEditing && shown.hiddenCount > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {hiddenNotice(shown.hiddenCount, setListName)}{" "}
+          <button
+            type="button"
+            className="text-primary underline-offset-4 hover:underline"
+            onClick={() => setRevealed((was) => !was)}
+          >
+            {revealed ? "Dölj igen" : "Visa alla"}
+          </button>
+        </p>
+      ) : null}
       {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Inga filer eller länkar tillagda ännu.</p>
+        // Everything Hidden: the notice above already says so.
+        shown.hiddenCount > 0 ? null : (
+          <p className="text-sm text-muted-foreground">Inga filer eller länkar tillagda ännu.</p>
+        )
       ) : categorized ? (
         <div className="space-y-4">
           {groups.map((group) => (

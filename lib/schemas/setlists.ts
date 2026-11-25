@@ -39,6 +39,15 @@ export function parseSetListPieceIdFromFormData(formData: FormData): string {
   return result.data;
 }
 
+/** The File or Link to hide or unhide on a Set list piece: `fileId` or `linkId`, exactly one. */
+export function parseHiddenItemFromFormData(formData: FormData): { kind: "file" | "link"; id: string } {
+  const fileId = formDataString(formData, "fileId").trim();
+  const linkId = formDataString(formData, "linkId").trim();
+  if (fileId && !linkId) return { kind: "file", id: fileId };
+  if (linkId && !fileId) return { kind: "link", id: linkId };
+  throw new Error("Fil eller länk saknas");
+}
+
 export function parseSetListNoteIdFromFormData(formData: FormData): string {
   const result = setListNoteIdSchema.safeParse(formDataString(formData, "setListNoteId"));
   if (!result.success) {

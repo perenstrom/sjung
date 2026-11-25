@@ -1,6 +1,7 @@
 import type { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
 import { pieceWithRelationsInclude } from "@/lib/pieces/types";
+import { HIDDEN_SELECT, hiddenIdsOf } from "@/lib/setlists/hidden";
 import { SetListPositions } from "@/lib/setlists/sequence-positions";
 import type { SetListSequenceStep, SetListStep } from "@/lib/setlists/types";
 
@@ -53,6 +54,7 @@ export const SetListSequence = {
           position: true,
           createdAt: true,
           piece: { include: pieceWithRelationsInclude },
+          ...HIDDEN_SELECT,
         },
       }),
       prisma.setListNote.findMany({
@@ -62,10 +64,10 @@ export const SetListSequence = {
     ]);
 
     const ordered: (OrderedStep & { step: SetListStep })[] = [
-      ...pieces.map(({ createdAt, ...step }) => ({
+      ...pieces.map(({ createdAt, hiddenFiles, hiddenLinks, ...step }) => ({
         position: step.position,
         createdAt,
-        step: { ...step, kind: "piece" as const },
+        step: { ...step, ...hiddenIdsOf({ hiddenFiles, hiddenLinks }), kind: "piece" as const },
       })),
       ...notes.map(({ createdAt, ...step }) => ({
         position: step.position,

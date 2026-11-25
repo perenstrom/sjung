@@ -5,6 +5,7 @@ import type { PieceFileListItem, PieceLink } from "@/components/pieces/types";
 import { fileDownloadHref, playerHref } from "@/lib/pieces/href";
 import type { PlayerEngine } from "@/lib/file-formats";
 import type { Playback } from "@/lib/pieces/playback";
+import type { SetListPieceHides } from "@/lib/setlists/hidden";
 import { renderMarkup, textOf } from "@/lib/testing/markup";
 
 import { PieceFilesAndLinks } from "./PieceFilesAndLinks";
@@ -12,6 +13,7 @@ import { PieceFilesAndLinks } from "./PieceFilesAndLinks";
 // The rows and popovers import server actions, which reach the database.
 vi.mock("@/app/actions/files", () => ({}));
 vi.mock("@/app/actions/pieces", () => ({}));
+vi.mock("@/app/actions/setlists", () => ({}));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 let canEdit = false;
 let isEditing = false;
@@ -42,6 +44,11 @@ const link = (label: string, category: string | null = null): PieceLink => ({
 
 const PIECE = { id: "piece-1", slug: "vem-kan-segla", name: "Vem kan segla" };
 
+/** A Set list piece "slp-1" hiding the Files and Links with these ids (the test items' ids are their names). */
+function onSetListPiece(hidden: string[] = [], setListName?: string): SetListPieceHides {
+  return { id: "slp-1", hiddenFileIds: hidden, hiddenLinkIds: hidden, setListName };
+}
+
 function render(
   layout: "detail" | "inline",
   files: PieceFileListItem[],
@@ -49,8 +56,8 @@ function render(
   {
     editing = false,
     canManageContent = editing,
-    setListPieceId,
-  }: { editing?: boolean; canManageContent?: boolean; setListPieceId?: string } = {},
+    setListPiece,
+  }: { editing?: boolean; canManageContent?: boolean; setListPiece?: SetListPieceHides } = {},
 ): string {
   isEditing = editing;
   canEdit = canManageContent;
@@ -60,7 +67,7 @@ function render(
       groupSlug: "koren",
       piece: PIECE,
       filesAndLinks: { files, links },
-      setListPieceId,
+      setListPiece,
     }),
   );
 }
@@ -221,11 +228,44 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
     },
   );
 
-  it("on a Set list piece, opens the player for that Set list piece", () => {
-    const html = render(layout, [file("Sopran.mp3", null, "ready")], [], { setListPieceId: "slp-1" });
-    const href = playerHref("koren", PIECE, { slug: "Sopran.mp3" }, { fromSetListPieceId: "slp-1" });
+  it("on a Set list piece outside Edit mode, leaves out what is Hidden there, Categories and all", () => {
+    const html = render(layout, [file("Sopran.pdf", "Noter"), file("Alt.pdf")], [link("Inspelning", "Inspelningar")], {
+      setListPiece: onSetListPiece(["Sopran.pdf", "Inspelning"]),
+    });
 
-    expect(html).toContain(`href="${href}"`);
+    expect(shownSequence(html)).toEqual(["Alt.pdf"]);
+  });
+
+  it("on a Set list piece in Edit mode, shows what is Hidden dimmed, offering to hide or show each", () => {
+    const html = render(layout, [file("Sopran.pdf"), file("Alt.pdf")], [link("Inspelning")], {
+      editing: true,
+      setListPiece: onSetListPiece(["Sopran.pdf", "Inspelning"]),
+    });
+
+    expect(shownSequence(html)).toEqual(["Alt.pdf", "Inspelning", "Sopran.pdf", "[add]"]);
+    expect([...html.matchAll(/aria-label="((?:Dölj|Visa) [^"]*)"/g)].map(([, label]) => label)).toEqual([
+      "Dölj Alt.pdf i repertoaren",
+      "Visa Inspelning i repertoaren",
+      "Visa Sopran.pdf i repertoaren",
+    ]);
+    expect(html.match(/<li[^>]*data-hidden[^>]*>/g)).toHaveLength(2);
+  });
+
+  it("names the Set list in the hide action where it is known", () => {
+    const html = render(layout, [file("Alt.pdf")], [], {
+      editing: true,
+      setListPiece: onSetListPiece([], "Julkonsert 2026"),
+    });
+
+    expect(html).toContain('aria-label="Dölj Alt.pdf i &quot;Julkonsert 2026&quot;"');
+  });
+
+  it("offers no hiding without Manage content, nor outside a Set list piece", () => {
+    const singer = render(layout, [file("Alt.pdf")], [], { setListPiece: onSetListPiece() });
+    const catalog = render(layout, [file("Alt.pdf")], [], { editing: true });
+
+    expect(singer).not.toContain("Dölj");
+    expect(catalog).not.toContain("Dölj");
   });
 
   it("offers no changes outside Edit mode", () => {
@@ -238,14 +278,66 @@ describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (l
 });
 
 describe("PieceFilesAndLinks, detail layout", () => {
+  it("opened from a Set list piece, opens the player on the Piece, to close back to it", () => {
+    const html = render("detail", [file("Sopran.mp3", null, "ready")], [], {
+      setListPiece: onSetListPiece([], "Julkonsert 2026"),
+    });
+
+    expect(html).toContain(`href="${playerHref("koren", PIECE, { slug: "Sopran.mp3" })}"`);
+  });
+
   it("says there is nothing yet when there are no Files or Links", () => {
     expect(textOf(render("detail", [], []))).toContain("Inga filer eller länkar tillagda ännu.");
+  });
+
+  it("opened from a Set list piece that hides some, says how many, offering to show them", () => {
+    const html = render("detail", [file("Sopran.pdf"), file("Alt.pdf")], [link("Inspelning")], {
+      setListPiece: onSetListPiece(["Sopran.pdf", "Inspelning"], "Julkonsert 2026"),
+    });
+
+    expect(textOf(html)).toContain('2 filer och länkar är dolda i "Julkonsert 2026".');
+    expect(html).toMatch(/<button[^>]*>Visa alla<\/button>/);
+  });
+
+  it("opened from a Set list piece that hides everything, says only that", () => {
+    const html = render("detail", [file("Sopran.pdf")], [], {
+      setListPiece: onSetListPiece(["Sopran.pdf"], "Julkonsert 2026"),
+    });
+
+    expect(textOf(html)).toContain('En fil eller länk är dold i "Julkonsert 2026".');
+    expect(textOf(html)).not.toContain("Inga filer eller länkar");
+  });
+
+  it.each([
+    { case: "nothing is Hidden", editing: false, hidden: [] },
+    { case: "in Edit mode", editing: true, hidden: ["Sopran.pdf"] },
+  ])("gives no notice when $case", ({ editing, hidden }) => {
+    const html = render("detail", [file("Sopran.pdf")], [], {
+      editing,
+      setListPiece: onSetListPiece(hidden, "Julkonsert 2026"),
+    });
+
+    expect(textOf(html)).not.toContain("dold");
+    expect(textOf(html)).not.toContain("Visa alla");
   });
 });
 
 describe("PieceFilesAndLinks, inline layout", () => {
+  it("on a Set list piece, opens the player for that Set list piece", () => {
+    const html = render("inline", [file("Sopran.mp3", null, "ready")], [], { setListPiece: onSetListPiece() });
+    const href = playerHref("koren", PIECE, { slug: "Sopran.mp3" }, { fromSetListPieceId: "slp-1" });
+
+    expect(html).toContain(`href="${href}"`);
+  });
+
   it("shows nothing when there are no Files or Links", () => {
     expect(textOf(render("inline", [], [])).trim()).toBe("");
+  });
+
+  it("shows nothing, and gives no notice, when everything is Hidden on the Set list piece", () => {
+    const html = render("inline", [file("Sopran.pdf")], [], { setListPiece: onSetListPiece(["Sopran.pdf"]) });
+
+    expect(textOf(html).trim()).toBe("");
   });
 
   it("keeps the end of a long File name in its own part, which never shrinks", () => {

@@ -249,6 +249,8 @@ model Link {
   updatedBy User? @relation("LinkUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   piece     Piece @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
+  hiddenOnSetListPieces SetListPieceHiddenLink[]
+
   @@map("links")
 }
 
@@ -284,6 +286,8 @@ model File {
   createdBy User?  @relation("FileCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy User?  @relation("FileUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   piece     Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  hiddenOnSetListPieces SetListPieceHiddenFile[]
 
   @@index([pieceId, slug])
   @@map("files")
@@ -364,7 +368,36 @@ model SetListPiece {
   piece     Piece   @relation(fields: [pieceId], references: [id], onDelete: Cascade)
   notes     SetListPieceNote[]
 
+  hiddenFiles SetListPieceHiddenFile[]
+  hiddenLinks SetListPieceHiddenLink[]
+
   @@map("set_list_pieces")
+}
+
+/// A File Hidden on one Set list piece (CONTEXT.md, "Hidden"). The File belongs to the Set list piece's Piece.
+model SetListPieceHiddenFile {
+  setListPieceId String @map("set_list_piece_id")
+  fileId         String @map("file_id")
+
+  setListPiece SetListPiece @relation(fields: [setListPieceId], references: [id], onDelete: Cascade)
+  file         File         @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@id([setListPieceId, fileId])
+  @@index([fileId])
+  @@map("set_list_piece_hidden_files")
+}
+
+/// A Link Hidden on one Set list piece (CONTEXT.md, "Hidden"). The Link belongs to the Set list piece's Piece.
+model SetListPieceHiddenLink {
+  setListPieceId String @map("set_list_piece_id")
+  linkId         String @map("link_id")
+
+  setListPiece SetListPiece @relation(fields: [setListPieceId], references: [id], onDelete: Cascade)
+  link         Link         @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@id([setListPieceId, linkId])
+  @@index([linkId])
+  @@map("set_list_piece_hidden_links")
 }
 
 model PieceNote {

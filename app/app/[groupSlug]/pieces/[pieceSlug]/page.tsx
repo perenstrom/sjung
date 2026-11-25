@@ -1,6 +1,6 @@
 import { getPeople } from "@/app/actions/people";
 import { getCategories, getCreditRoles, getPieceDetail } from "@/app/actions/pieces";
-import { getSetLists } from "@/app/actions/setlists";
+import { getSetListPieceContext, getSetLists } from "@/app/actions/setlists";
 import { getGroups } from "@/app/actions/groups";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
@@ -22,19 +22,21 @@ import { pieceHref } from "@/lib/pieces/href";
 
 type PageProps = {
   params: Promise<{ groupSlug: string; pieceSlug: string }>;
-  searchParams: Promise<{ setlist?: string | string[] }>;
+  searchParams: Promise<{ setlistpiece?: string | string[] }>;
 };
 
 export default async function TenantPieceDetailPage({ params, searchParams }: PageProps) {
-  const [{ groupSlug, pieceSlug }, { setlist }] = await Promise.all([params, searchParams]);
-  const fromSetListId = searchParamId(setlist);
+  const [{ groupSlug, pieceSlug }, { setlistpiece }] = await Promise.all([params, searchParams]);
+  const fromSetListPieceId = searchParamId(setlistpiece);
   const match = await findPageContent(groupSlug, "piece", pieceSlug);
   // A link by id always works and moves to the Slug URL (ADR-0011).
   if (match.slug !== pieceSlug) {
-    permanentRedirect(pieceHref(groupSlug, match, { fromSetListId }));
+    permanentRedirect(pieceHref(groupSlug, match, { fromSetListPieceId }));
   }
-  const [piece, people, creditRoles, categories, setLists, groups, access] = await Promise.all([
+  const [piece, fromSetListPiece, people, creditRoles, categories, setLists, groups, access] = await Promise.all([
     getPieceDetail(groupSlug, match.id),
+    // A Set list piece that is gone, or not this Piece's, leaves the Piece on its own.
+    fromSetListPieceId ? getSetListPieceContext(groupSlug, match.id, fromSetListPieceId) : null,
     getPeople(groupSlug),
     getCreditRoles(groupSlug),
     getCategories(groupSlug),
@@ -57,8 +59,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
               groupSlug,
               groupName,
               pieceName: piece.name,
-              setLists,
-              fromSetListId,
+              fromSetList: fromSetListPiece?.setList,
             })}
           />
           <PieceMetadataSection
@@ -67,7 +68,7 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
             pieceId={piece.id}
             initialName={piece.name}
             aliases={piece.aliases}
-            fromSetListId={fromSetListId}
+            fromSetListPieceId={fromSetListPiece?.id}
           />
 
           <PieceDetailSectionStack>
@@ -90,6 +91,9 @@ export default async function TenantPieceDetailPage({ params, searchParams }: Pa
                 groupSlug={groupSlug}
                 piece={{ id: piece.id, slug: piece.slug, name: piece.name }}
                 filesAndLinks={toPieceFilesAndLinks(piece)}
+                setListPiece={
+                  fromSetListPiece ? { ...fromSetListPiece, setListName: fromSetListPiece.setList.name } : undefined
+                }
               />
             </PieceDetailSectionLayout>
 

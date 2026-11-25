@@ -2,17 +2,18 @@
 type Slugged = { slug: string };
 
 /**
- * A Piece's detail page. Links from a Set list pass `fromSetListId`, so the
- * Piece's breadcrumb leads back to that Set list.
+ * A Piece's detail page. Links from a Set list pass the Set list piece they
+ * are on, `fromSetListPieceId`, so the Piece's breadcrumb leads back to its
+ * Set list and the page leaves out what that Set list piece hides.
  */
 export function pieceHref(
   groupSlug: string,
   piece: Slugged,
-  { fromSetListId }: { fromSetListId?: string } = {},
+  { fromSetListPieceId }: { fromSetListPieceId?: string } = {},
 ): string {
   const href = `/app/${groupSlug}/pieces/${piece.slug}`;
-  if (!fromSetListId) return href;
-  return `${href}?${new URLSearchParams({ setlist: fromSetListId })}`;
+  if (!fromSetListPieceId) return href;
+  return `${href}?${new URLSearchParams({ setlistpiece: fromSetListPieceId })}`;
 }
 
 /**

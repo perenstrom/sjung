@@ -7,9 +7,9 @@ describe("pieceHref", () => {
     expect(pieceHref("kor", { slug: "ave-maria" })).toBe("/app/kor/pieces/ave-maria");
   });
 
-  it("carries the set list it was opened from", () => {
-    expect(pieceHref("kor", { slug: "ave-maria" }, { fromSetListId: "sl-1" })).toBe(
-      "/app/kor/pieces/ave-maria?setlist=sl-1",
+  it("carries the Set list piece it was opened from", () => {
+    expect(pieceHref("kor", { slug: "ave-maria" }, { fromSetListPieceId: "slp-1" })).toBe(
+      "/app/kor/pieces/ave-maria?setlistpiece=slp-1",
     );
   });
 });

@@ -45,19 +45,13 @@ describe("closestBreadcrumb", () => {
 });
 
 describe("pieceDetailTrail", () => {
-  const setLists = [
-    { id: "sl-1", slug: "varkonsert", name: "Vårkonsert" },
-    { id: "sl-2", slug: "repertoar", name: "" },
-  ];
-
   it("leads back to the set list the piece was opened from", () => {
     expect(
       pieceDetailTrail({
         groupSlug: "kor",
         groupName: "Kören",
         pieceName: "Vem kan segla",
-        setLists,
-        fromSetListId: "sl-1",
+        fromSetList: { slug: "varkonsert", name: "Vårkonsert" },
       }),
     ).toEqual({
       visibility: "visible",
@@ -85,20 +79,7 @@ describe("pieceDetailTrail", () => {
         groupSlug: "kor",
         groupName: "Kören",
         pieceName: "Vem kan segla",
-        setLists,
-        fromSetListId: undefined,
-      }),
-    ).toEqual(piecesTrail);
-  });
-
-  it("leads back to Alla noter when the set list isn't one of this group's", () => {
-    expect(
-      pieceDetailTrail({
-        groupSlug: "kor",
-        groupName: "Kören",
-        pieceName: "Vem kan segla",
-        setLists,
-        fromSetListId: "sl-from-another-group",
+        fromSetList: undefined,
       }),
     ).toEqual(piecesTrail);
   });
@@ -108,8 +89,7 @@ describe("pieceDetailTrail", () => {
       groupSlug: "kor",
       groupName: "Kören",
       pieceName: "Vem kan segla",
-      setLists,
-      fromSetListId: "sl-2",
+      fromSetList: { slug: "repertoar", name: "" },
     });
     expect(closestBreadcrumb(trail)).toEqual({
       kind: "back",
@@ -123,8 +103,7 @@ describe("pieceDetailTrail", () => {
       groupSlug: "kor",
       groupName: "Kören",
       pieceName: "",
-      setLists,
-      fromSetListId: undefined,
+      fromSetList: undefined,
     });
     expect(trail).toMatchObject({ tail: { kind: "static", label: "Notstycke" } });
   });
