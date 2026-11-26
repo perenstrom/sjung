@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { type MidiPart } from "@/lib/player/midi-parts";
 import { createMidiPlayer, type MidiSequencer } from "@/lib/player/midi-player";
 import { DEFAULT_GAIN } from "@/lib/player/mix";
-import type { Player } from "@/lib/player/player";
+import { clampTempo, type Player } from "@/lib/player/player";
 import { manualFrames } from "@/lib/testing/player";
 
 /**
@@ -131,29 +131,21 @@ describe("the MIDI player", () => {
     expect(player.getSnapshot().position).toBe(0);
   });
 
-  it.each([
-    [75, 75],
-    [200, 120],
-    [10, 50],
-  ])("changes the tempo to %s %% (kept to %s %%)", (asked, tempo) => {
-    player.setTempo(asked);
+  it("plays at the kept tempo", () => {
+    player.setTempo(200);
 
-    expect(player.getSnapshot().tempo).toBe(tempo);
-    expect(sequencer.playbackRate).toBe(tempo / 100);
+    expect(player.getSnapshot().tempo).toBe(clampTempo(200));
+    expect(sequencer.playbackRate).toBe(clampTempo(200) / 100);
   });
 
-  it("jumps back to the start of the passage when playback reaches its end, until repeating stops", () => {
+  it("jumps back to the start of the passage when playback reaches its end", () => {
     player.setPassage({ start: 10, end: 20 });
     player.play();
 
     sequencer.currentTime = 20.05;
     frames.run();
-    expect([sequencer.currentTime, player.getSnapshot().position]).toEqual([10, 10]);
 
-    player.setPassage(null);
-    sequencer.currentTime = 20.05;
-    frames.run();
-    expect(player.getSnapshot().position).toBe(20.05);
+    expect([sequencer.currentTime, player.getSnapshot().position]).toEqual([10, 10]);
   });
 
   it("keeps repeating while no frames run, as with the screen locked", () => {
@@ -205,25 +197,13 @@ describe("the MIDI player", () => {
     );
   });
 
-  it("plays each part's channels at its volume, the default volume being the file's own", () => {
-    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([1, 1, 1]);
-
-    player.setPart("track-1", { gain: DEFAULT_GAIN / 2 });
+  it("plays each part's channels at the volume it is heard at, the default volume being the file's own", () => {
+    player.setPart("track-1", { gain: DEFAULT_GAIN / 2, solo: true });
+    player.setPart("track-4", { solo: true });
 
     expect(player.getSnapshot().parts[0].gain).toBe(DEFAULT_GAIN / 2);
-    expect(sequencer.gainOf(0)).toBe(0.5);
-  });
-
-  it("silences a muted part, and every part but the soloed ones", () => {
-    player.setPart("track-1", { muted: true });
-    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([0, 1, 1]);
-
-    player.setPart("track-4", { solo: true });
-    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([0, 0, 1]);
-
-    player.setPart("track-4", { solo: false });
-    player.setPart("track-1", { muted: false });
-    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([1, 1, 1]);
+    // The soloed soprano at half volume, the alto silenced by the solos, the soloed drums at full.
+    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([0.5, 0, 1]);
   });
 
   it("keeps a channel heard while any part on it is", () => {

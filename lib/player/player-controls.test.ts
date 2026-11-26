@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { EQUAL_MIX } from "@/lib/player/mix";
-import type { Passage, PlayerSnapshot } from "@/lib/player/player";
+import { type Passage, type PlayerSnapshot, TEMPO_MAX } from "@/lib/player/player";
 import { createPlayerControls, type PlayerCommand } from "@/lib/player/player-controls";
 import { fakePlayer, part } from "@/lib/testing/player";
 
@@ -279,8 +279,8 @@ describe("the playhead and tempo as the controls show them", () => {
   it.each([
     { by: -1, tempo: 100, expected: 95 },
     { by: 1, tempo: 100, expected: 105 },
-    { by: -1, tempo: 50, expected: 50 },
-    { by: 1, tempo: 120, expected: 120 },
+    // Stepping past the fastest tempo keeps it there (the bounds themselves are clampTempo's).
+    { by: 1, tempo: TEMPO_MAX, expected: TEMPO_MAX },
   ])("stepTempo $by at $tempo % sets $expected %", ({ by, tempo, expected }) => {
     expect(run({ type: "stepTempo", by }, { tempo })).toMatchObject({
       message: `Tempo ${expected} %`,

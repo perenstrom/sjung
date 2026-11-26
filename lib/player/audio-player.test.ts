@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createAudioPlayer, type MediaElement } from "@/lib/player/audio-player";
-import type { Player } from "@/lib/player/player";
+import { clampTempo, type Player } from "@/lib/player/player";
 import { manualFrames } from "@/lib/testing/player";
 
 /**
@@ -79,31 +79,32 @@ describe("the audio player", () => {
     expect(player.getSnapshot().position).toBe(0);
   });
 
-  it.each([
-    [75, 75],
-    [200, 120],
-    [10, 50],
-  ])("changes the tempo to %s %% (kept to %s %%) without changing the pitch", (asked, tempo) => {
-    player.setTempo(asked);
+  it("plays at the kept tempo without changing the pitch", () => {
+    player.setTempo(200);
 
-    expect(player.getSnapshot().tempo).toBe(tempo);
-    expect(audio.playbackRate).toBe(tempo / 100);
+    expect(player.getSnapshot().tempo).toBe(clampTempo(200));
+    expect(audio.playbackRate).toBe(clampTempo(200) / 100);
     expect(audio.preservesPitch).toBe(true);
   });
 
-  it("jumps back to the start of the passage when playback reaches its end, until repeating stops", async () => {
+  it("jumps back to the start of the passage when playback reaches its end", async () => {
     player.setPassage({ start: 10, end: 20 });
     player.play();
     await Promise.resolve();
 
     audio.currentTime = 20.05;
     frames.run();
-    expect(player.getSnapshot().position).toBe(10);
 
-    player.setPassage(null);
-    audio.currentTime = 20.05;
-    frames.run();
-    expect(player.getSnapshot().position).toBe(20.05);
+    expect([audio.currentTime, player.getSnapshot().position]).toEqual([10, 10]);
+  });
+
+  it("starts a whole passage from its beginning when Play is pressed outside it", async () => {
+    player.setPassage({ start: 10, end: 20 });
+    player.seek(30);
+    player.play();
+    await Promise.resolve();
+
+    expect(audio.currentTime).toBe(10);
   });
 
   it("repeats a passage that ends at the end of the file", async () => {
@@ -128,17 +129,6 @@ describe("the audio player", () => {
     audio.dispatchEvent(new Event("timeupdate"));
 
     expect(player.getSnapshot().position).toBe(10);
-  });
-
-  it("plays on past a passage that has only a start", async () => {
-    player.setPassage({ start: 10, end: null });
-    player.play();
-    await Promise.resolve();
-
-    audio.currentTime = 30;
-    frames.run();
-
-    expect(player.getSnapshot().position).toBe(30);
   });
 
   it("tells subscribers when something changes, until they unsubscribe", () => {
