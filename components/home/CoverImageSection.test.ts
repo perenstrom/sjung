@@ -20,6 +20,8 @@ let root: Root;
 
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+  // jsdom has no `matchMedia`; asking for reduced motion keeps the parallax off.
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -28,6 +30,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount());
   container.remove();
+  vi.unstubAllGlobals();
 });
 
 function render(href: string | null, capabilities: EditCapability[] = []) {

@@ -86,7 +86,7 @@ export function CoverImageUploadDialog({ groupSlug, replacing = false }: { group
             <p className="text-xs text-muted-foreground">JPEG, PNG eller WebP, högst 5 MB.</p>
             <FileRightsReminder />
           </div>
-          {chosen ? <CoverImageFrame src={chosen.previewUrl} /> : null}
+          {chosen ? <CoverImageFrame src={chosen.previewUrl} className="rounded-lg" /> : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
