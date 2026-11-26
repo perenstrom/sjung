@@ -22,9 +22,16 @@ export function CoverImageSection({ groupSlug, href }: { groupSlug: string; href
 
   return (
     <section aria-label="Omslagsbild" className="space-y-2">
-      <CoverImageFrame src={href} parallax className="-mx-4 -mt-4 w-auto md:-mt-8 md:-mr-8 md:-ml-12" />
+      {/* The negative bottom margin pulls what follows (the heading, or the
+          edit actions) up into the fade; it stacks above as it is positioned
+          (Home's page wraps everything after this section). */}
+      <CoverImageFrame
+        src={href}
+        parallax
+        className="-mx-4 -mt-4 -mb-12 w-auto md:-mt-8 md:-mr-8 md:-mb-16 md:-ml-12"
+      />
       {isEditing ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="relative flex flex-wrap gap-2">
           <CoverImageUploadDialog groupSlug={groupSlug} replacing />
           <RemoveCoverImageDialog groupSlug={groupSlug} />
         </div>

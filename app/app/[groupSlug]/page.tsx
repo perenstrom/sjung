@@ -36,16 +36,19 @@ export default async function TenantGroupPage({ params }: PageProps) {
           trail={{ visibility: "visible", ancestors: [], tail: { kind: "static", label: groupName } }}
         />
         <CoverImageSection groupSlug={groupSlug} href={coverImageHref} />
-        <PageHeader title="Hem" />
-        <GroupDescriptionSection
-          groupSlug={groupSlug}
-          description={description}
-          hasCoverImage={coverImageHref !== null}
-        />
-        <CurrentSetListsSection
-          groupSlug={groupSlug}
-          setLists={currentSetLists.map(({ date, ...setList }) => ({ ...setList, dateLabel: formatDate(date) }))}
-        />
+        {/* Positioned, so it stacks above the Cover image's fade, which pulls it up. */}
+        <div className="relative space-y-4 md:space-y-6">
+          <PageHeader title="Hem" />
+          <GroupDescriptionSection
+            groupSlug={groupSlug}
+            description={description}
+            hasCoverImage={coverImageHref !== null}
+          />
+          <CurrentSetListsSection
+            groupSlug={groupSlug}
+            setLists={currentSetLists.map(({ date, ...setList }) => ({ ...setList, dateLabel: formatDate(date) }))}
+          />
+        </div>
       </div>
     </EditModeProvider>
   );
