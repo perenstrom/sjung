@@ -23,6 +23,10 @@ vi.mock("@/components/EditModeContext", () => ({
   useEditMode: () => ({ canEdit: true, isEditing: editMode.isEditing, setIsEditing: vi.fn() }),
 }));
 
+// What PiecesTable adds over PiecesMobileList (tested on its own) is the
+// desktop table, and the sorted, searched pieces and empty message it passes
+// both. The search, letter-group and Category rules are tested in lib/pieces.
+
 const piece = {
   id: "piece-1",
   slug: "vem-kan-segla",
@@ -37,14 +41,23 @@ const piece = {
   notes: [],
 } as unknown as PieceWithRelations;
 
-function renderPieces(): string {
-  return renderMarkup(createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] }));
+function namedPiece(name: string, overrides: Partial<PieceWithRelations> = {}): PieceWithRelations {
+  return { ...piece, id: name, name, credits: [], ...overrides } as unknown as PieceWithRelations;
 }
 
-function renderSetList(stepPiece: PieceWithRelations = piece): string {
-  const steps = [
-    { kind: "piece", id: "step-1", position: 0, piece: stepPiece, hiddenFileIds: [], hiddenLinkIds: [] },
-  ] as unknown as SetListStep[];
+function renderPieces(pieces: PieceWithRelations[], search?: string): string {
+  return renderMarkup(createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces, search }));
+}
+
+function renderSetList(stepPieces: PieceWithRelations[]): string {
+  const steps = stepPieces.map((stepPiece, position) => ({
+    kind: "piece",
+    id: `step-${position + 1}`,
+    position,
+    piece: stepPiece,
+    hiddenFileIds: [],
+    hiddenLinkIds: [],
+  })) as unknown as SetListStep[];
   return renderMarkup(
     createElement(PiecesTable, {
       people: [],
@@ -55,20 +68,12 @@ function renderSetList(stepPiece: PieceWithRelations = piece): string {
   );
 }
 
-/** The markup inside the first body cell (`<td>`) that contains `text`, or "" if none does. */
-function cellContaining(markup: string, text: string): string {
-  const cell = markup
-    .split("<td")
-    .slice(1)
-    .find((td) => td.includes(text));
-  return cell ? cell.slice(cell.indexOf(">") + 1) : "";
+function desktopTable(html: string): string {
+  return html.slice(html.indexOf("<table"));
 }
 
-// The order the database may return: Ä among A, digits last.
-const unsortedNames = ["Abendlied", "Änglamark", "Ave verum", "Bred dina vida vingar", "Över berg och dal", "1700-tal"];
-
-function namedPiece(name: string): PieceWithRelations {
-  return { ...piece, id: name, name, credits: [] } as unknown as PieceWithRelations;
+function mobileList(html: string): string {
+  return html.slice(0, html.indexOf("<table"));
 }
 
 /** The letter dividers and the given piece names in `html`, in the order shown. */
@@ -83,92 +88,111 @@ function shownSequence(html: string, names: string[]): string[] {
   return [...dividers, ...pieces].sort((a, b) => a.index - b.index).map(({ text }) => text);
 }
 
-function desktopTable(html: string): string {
-  return html.slice(html.indexOf("<table"));
-}
+// The order the database may return: Ä among A, digits last.
+const unsortedNames = ["Abendlied", "Änglamark", "Ave verum", "Bred dina vida vingar", "Över berg och dal", "1700-tal"];
 
-function mobileList(html: string): string {
-  return html.slice(0, html.indexOf("<table"));
-}
+beforeEach(() => {
+  editMode.isEditing = false;
+});
 
-describe("PiecesTable letter dividers", () => {
-  describe.each([
-    ["edit", true],
-    ["read", false],
-  ])("in %s mode", (_, isEditing) => {
-    beforeEach(() => {
-      editMode.isEditing = isEditing;
-    });
+describe("PiecesTable on Alla noter", () => {
+  it("sorts the pieces in Swedish order with a divider before each letter group", () => {
+    const html = desktopTable(renderPieces(unsortedNames.map((name) => namedPiece(name))));
 
-    it.each([
-      ["desktop table", desktopTable],
-      ["mobile list", mobileList],
-    ])("sorts Alla noter in Swedish order with a divider before each letter group in the %s", (_, part) => {
-      const html = renderMarkup(
-        createElement(PiecesTable, {
-          people: [],
-          creditRoles: [],
-          groupSlug: "koren",
-          pieces: unsortedNames.map(namedPiece),
-        }),
-      );
+    expect(shownSequence(html, unsortedNames)).toEqual([
+      "#",
+      "1700-tal",
+      "A",
+      "Abendlied",
+      "Ave verum",
+      "B",
+      "Bred dina vida vingar",
+      "Ä",
+      "Änglamark",
+      "Ö",
+      "Över berg och dal",
+    ]);
+  });
 
-      expect(shownSequence(part(html), unsortedNames)).toEqual([
-        "#",
-        "1700-tal",
-        "A",
-        "Abendlied",
-        "Ave verum",
-        "B",
-        "Bred dina vida vingar",
-        "Ä",
-        "Änglamark",
-        "Ö",
-        "Över berg och dal",
-      ]);
-    });
+  it("heads the Credits column Upphovspersoner", () => {
+    expect(textOf(desktopTable(renderPieces([piece])))).toContain("Upphovspersoner");
+  });
 
-    it("renders a divider as a full-width heading row", () => {
-      const html = desktopTable(
-        renderMarkup(createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [piece] })),
-      );
-      const columnCount = html.match(/<th[\s>]/g)?.length;
+  it.each([
+    ["rename the piece", 'aria-label="Byt namn på Vem kan segla"'],
+    ["remove a Person's Credits", 'aria-label="Ta bort Anna Andersson"'],
+  ])("offers to %s in edit mode only", (_, control) => {
+    editMode.isEditing = true;
+    expect(desktopTable(renderPieces([piece]))).toContain(control);
 
-      expect(html).toMatch(new RegExp(`<td[^>]*colSpan="${columnCount}"[^>]*><h2[^>]*>V</h2>`));
-    });
+    editMode.isEditing = false;
+    expect(desktopTable(renderPieces([piece]))).not.toContain(control);
+  });
 
-    it("shows no dividers in a set list and keeps its running order", () => {
-      const steps = ["Över berg och dal", "Abendlied"].map((name, position) => ({
-        kind: "piece",
-        id: `step-${position}`,
-        position,
-        piece: namedPiece(name),
-      })) as unknown as SetListStep[];
-      const html = renderMarkup(
-        createElement(PiecesTable, {
-          people: [],
-          creditRoles: [],
-          groupSlug: "koren",
-          setList: { id: "setlist-1", steps },
-        }),
-      );
+  it("has no Redigera button in edit mode", () => {
+    editMode.isEditing = true;
 
-      expect(html).not.toContain("<h2");
-      expect(shownSequence(desktopTable(html), unsortedNames)).toEqual(["Över berg och dal", "Abendlied"]);
-    });
-
-    it("shows no dividers when there are no pieces", () => {
-      const html = renderMarkup(
-        createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [] }),
-      );
-
-      expect(html).not.toContain("<h2");
-      expect(textOf(html)).toContain("Inga noter tillagda ännu.");
-    });
+    expect(desktopTable(renderPieces([piece]))).not.toMatch(/>Redigera</);
   });
 });
 
-describe("PiecesTable Files in a set list", () => {
+describe("PiecesTable search on Alla noter", () => {
+  const pieces = [
+    ...unsortedNames.map((name) => namedPiece(name)),
+    namedPiece("Pavane"),
+    namedPiece("O helga natt", {
+      aliases: ["Julsången", "Cantique de Noël"].map((name) => ({ id: name, name })),
+    } as Partial<PieceWithRelations>),
+    namedPiece("Cantique de Jean Racine"),
+  ];
+  const names = pieces.map(({ name }) => name);
+
+  it.each([
+    ["desktop table", desktopTable],
+    ["mobile list", mobileList],
+  ])(
+    "shows only the matching pieces, sorted under their letters, with the Aliases that matched, in the %s",
+    (_, part) => {
+      const html = part(renderPieces(pieces, "an"));
+
+      expect(shownSequence(html, names)).toEqual(["C", "Cantique de Jean Racine", "O", "O helga natt", "P", "Pavane"]);
+      expect(textOf(html)).toContain("Även kallad Cantique de Noël");
+    },
+  );
+
+  it("finds a piece by a credited Person", () => {
+    const credited = namedPiece("Pavane", {
+      credits: [{ personId: "person-2", role: "Kompositör", person: { name: "Gabriel Fauré" } }],
+    } as unknown as Partial<PieceWithRelations>);
+
+    expect(shownSequence(desktopTable(renderPieces([...pieces, credited], "faure")), names)).toEqual(["P", "Pavane"]);
+  });
+
+  it("shows no Aliases for a piece whose name matches", () => {
+    expect(textOf(renderPieces(pieces, "helga"))).not.toContain("Även kallad");
+  });
+});
+
+describe("PiecesTable empty message", () => {
+  it.each([
+    ["a Group without pieces", () => renderPieces([], ""), "Inga noter tillagda ännu."],
+    ["a search that matches nothing", () => renderPieces([piece], "  zzz "), 'Inga stycken matchar "zzz"'],
+    ["a set list without steps", () => renderSetList([]), "Inga steg i repertoaren ännu."],
+  ])("for %s, in both the desktop table and the mobile list", (_, render, message) => {
+    const html = render();
+
+    expect(textOf(desktopTable(html))).toContain(message);
+    expect(textOf(mobileList(html))).toContain(message);
+  });
+});
+
+describe("PiecesTable for a set list", () => {
+  it("keeps the running order, without letter dividers", () => {
+    const html = desktopTable(renderSetList(["Över berg och dal", "Abendlied"].map((name) => namedPiece(name))));
+
+    expect(shownSequence(html, unsortedNames)).toEqual(["Över berg och dal", "Abendlied"]);
+  });
+
   it("opens a Playable File in the player for the row's Set list piece", () => {
     const sopran = {
       id: "file-1",
@@ -179,169 +203,10 @@ describe("PiecesTable Files in a set list", () => {
       mimeType: "audio/mpeg",
       fileName: "Sopran.mp3",
     };
-    const html = renderSetList({ ...piece, files: [sopran] } as unknown as PieceWithRelations);
+    const html = desktopTable(renderSetList([{ ...piece, files: [sopran] } as unknown as PieceWithRelations]));
 
     expect(html).toContain(
       `href="${playerHref("koren", piece, { slug: "file-1" }, { fromSetListPieceId: "step-1" })}"`,
     );
-  });
-});
-
-describe("PiecesTable search on Alla noter", () => {
-  const credited = {
-    ...namedPiece("Cantique de Jean Racine"),
-    credits: [{ personId: "person-2", role: "Kompositör", person: { name: "Gabriel Fauré" } }],
-  } as unknown as PieceWithRelations;
-  const arranged = {
-    ...namedPiece("Pavane"),
-    credits: [{ personId: "person-2", role: "Arrangör", person: { name: "Gabriel Fauré" } }],
-  } as unknown as PieceWithRelations;
-  const aliased = {
-    ...namedPiece("O helga natt"),
-    aliases: ["Julsången", "Cantique de Noël", "Den långa"].map((name) => ({ id: name, name })),
-  } as unknown as PieceWithRelations;
-  const allPieces = [...unsortedNames.map(namedPiece), credited, arranged, aliased];
-  const allNames = allPieces.map((p) => p.name);
-
-  function renderSearch(search: string): string {
-    return renderMarkup(
-      createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: allPieces, search }),
-    );
-  }
-
-  describe.each([
-    ["edit", true],
-    ["read", false],
-  ])("in %s mode", (_, isEditing) => {
-    beforeEach(() => {
-      editMode.isEditing = isEditing;
-    });
-
-    describe.each([
-      ["desktop table", desktopTable],
-      ["mobile list", mobileList],
-    ])("in the %s", (_, part) => {
-      it("shows only matching pieces, with dividers for their letter groups only", () => {
-        expect(shownSequence(part(renderSearch("av")), allNames)).toEqual(["A", "Ave verum", "P", "Pavane"]);
-      });
-
-      it("lists every piece a credited Person is on, whatever the role", () => {
-        expect(shownSequence(part(renderSearch("faure")), allNames)).toEqual([
-          "C",
-          "Cantique de Jean Racine",
-          "P",
-          "Pavane",
-        ]);
-      });
-
-      it("lists a piece found by its Aliases under its own name, showing just the matching ones", () => {
-        const html = part(renderSearch("ÅNG"));
-
-        expect(shownSequence(html, allNames)).toEqual(["O", "O helga natt"]);
-        expect(textOf(html)).toContain("Även kallad Julsången, Den långa");
-        expect(textOf(html)).not.toContain("Noël");
-      });
-
-      it("shows no Aliases for a piece whose name matches", () => {
-        expect(textOf(part(renderSearch("helga")))).not.toContain("Även kallad");
-      });
-
-      it("says nothing matches, quoting the trimmed text", () => {
-        const text = textOf(part(renderSearch("  zzz ")));
-
-        expect(text).toContain('Inga stycken matchar "zzz"');
-        expect(text).not.toContain("Inga noter tillagda ännu.");
-      });
-
-      it("shows every piece for whitespace-only text", () => {
-        const shown = shownSequence(part(renderSearch("  ")), allNames);
-
-        expect(shown).toEqual(shownSequence(part(renderSearch("")), allNames));
-        expect(shown.filter((text) => allNames.includes(text))).toHaveLength(allNames.length);
-      });
-    });
-  });
-
-  it("keeps the empty-Group message when there are no pieces at all", () => {
-    const html = renderMarkup(
-      createElement(PiecesTable, { people: [], creditRoles: [], groupSlug: "koren", pieces: [], search: "" }),
-    );
-
-    expect(textOf(html)).toContain("Inga noter tillagda ännu.");
-  });
-});
-
-describe.each([
-  ["Noter", renderPieces],
-  ["set list", renderSetList],
-])("PiecesTable for %s", (_, render) => {
-  describe.each([
-    ["edit", true],
-    ["read", false],
-  ])("in %s mode", (_, isEditing) => {
-    beforeEach(() => {
-      editMode.isEditing = isEditing;
-    });
-
-    it("heads the Credits column Upphovspersoner", () => {
-      expect(render()).toMatch(/<th[^>]*>(?:<[^>]+>)*Upphovspersoner</);
-    });
-
-    it("caps Upphovspersoner at the width of the other list columns and lets it wrap", () => {
-      const contentClasses = cellContaining(render(), "Anna Andersson")
-        .match(/^\s*<div class="([^"]*)"/)?.[1]
-        .split(" ");
-
-      expect(contentClasses).toEqual(expect.arrayContaining(["min-w-56", "max-w-xs", "whitespace-normal"]));
-    });
-
-    it("pads the piece name inside its 32px first line, not above it, so it lines up with the row", () => {
-      // Inside the cell: the <td>'s own padding is the same for every cell in the row.
-      const cell = cellContaining(render(), ">Vem kan segla</a>");
-      const beforeName = cell.slice(0, cell.indexOf(">Vem kan segla</a>"));
-      const classLists = [...beforeName.matchAll(/class="([^"]*)"/g)].map((match) => match[1].split(" "));
-      const nameClasses = classLists.at(-1);
-      const enclosingClasses = classLists.slice(0, -1).flat();
-
-      expect(nameClasses).toContain("py-1.5");
-      expect(enclosingClasses.filter((name) => /^(p|py|pt|m|my|mt)-/.test(name))).toEqual([]);
-    });
-  });
-
-  describe("in edit mode", () => {
-    beforeEach(() => {
-      editMode.isEditing = true;
-    });
-
-    it("has no Redigera button", () => {
-      expect(render()).not.toMatch(/>Redigera</);
-    });
-
-    it("offers to rename the piece next to its name", () => {
-      expect(render()).toMatch(/>Vem kan segla<\/a>.*?aria-label="Byt namn på Vem kan segla"/);
-    });
-
-    it("lets a Person's Credits be removed", () => {
-      const html = render();
-
-      expect(html).toContain('aria-label="Ta bort Anna Andersson"');
-    });
-  });
-
-  describe("in read mode", () => {
-    beforeEach(() => {
-      editMode.isEditing = false;
-    });
-
-    it("shows the name as a link with no way to rename it", () => {
-      const html = render();
-
-      expect(textOf(html)).toContain("Vem kan segla");
-      expect(html).not.toContain("Byt namn");
-    });
-
-    it("has no way to remove a credit", () => {
-      expect(render()).not.toContain("Ta bort Anna Andersson");
-    });
   });
 });

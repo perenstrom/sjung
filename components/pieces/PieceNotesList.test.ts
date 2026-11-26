@@ -19,15 +19,16 @@ describe("PieceNotesList", () => {
       }),
     );
 
-    expect(html.match(/<li/g)).toHaveLength(2);
-    expect(html.indexOf("Nyast\nmed radbrytning")).toBeLessThan(html.indexOf("Äldst"));
-    expect(html).toContain("whitespace-pre-wrap");
+    expect(textOf(html)).toMatch(/Nyast med radbrytning.*Äldst/);
+    expect(html).toContain("Nyast\nmed radbrytning");
   });
 
-  it("cuts each note off after 3 lines until it's expanded", () => {
+  // Line breaks and the 3-line cut-off are CSS only a browser shows, so these
+  // classes are the one thing pinning them. Kept for the maintainer to decide (PER-505).
+  it("shows each note's line breaks and cuts it off after 3 lines", () => {
     const html = renderMarkup(createElement(PieceNotesList, { notes: [{ id: "note-1", content: "Lång anteckning" }] }));
 
+    expect(html).toContain("whitespace-pre-wrap");
     expect(html).toContain("line-clamp-3");
-    expect(textOf(html)).toBe("Lång anteckning");
   });
 });

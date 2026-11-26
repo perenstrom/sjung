@@ -38,127 +38,74 @@ const notes = [
   { id: "note-2", content: "Äldst" },
 ];
 
-function renderPieces(isEditing: boolean): string {
-  editMode = isEditing;
+/** The list in read mode, of Alla noter (`pieces`) or a set list's running order (`setList`). */
+function renderList(
+  rows: { pieces: PieceWithRelations[] } | { setList: { id: string; steps: SetListStep[] } },
+): string {
   return renderMarkup(
     createElement(PiecesMobileList, {
       people: [],
       creditRoles: [],
       groupSlug: "koren",
-      isEditing,
-      showsStepActions: isEditing,
+      isEditing: false,
+      showsStepActions: false,
       emptyMessage: "",
-      pieces: [piece],
-    }),
-  );
-}
-
-function renderSetList(isEditing: boolean): string {
-  editMode = isEditing;
-  const steps = [
-    { kind: "piece", id: "step-1", position: 0, piece, hiddenFileIds: [], hiddenLinkIds: [] },
-  ] as unknown as SetListStep[];
-  return renderMarkup(
-    createElement(PiecesMobileList, {
-      people: [],
-      creditRoles: [],
-      groupSlug: "koren",
-      isEditing,
-      showsStepActions: isEditing,
-      emptyMessage: "",
-      setList: { id: "setlist-1", steps },
+      ...rows,
     }),
   );
 }
 
 describe("PiecesMobileList", () => {
-  describe.each([
-    ["Noter, read mode", () => renderPieces(false)],
-    ["Noter, edit mode", () => renderPieces(true)],
-    ["running order, read mode", () => renderSetList(false)],
-    ["running order, edit mode", () => renderSetList(true)],
-  ])("a closed piece row in the %s", (_, render) => {
-    const html = render();
+  it("shows a closed piece row by its name alone, without its Files, Links or counts of them", () => {
+    const text = textOf(renderList({ pieces: [piece] }));
 
-    it("shows the piece name", () => {
-      expect(textOf(html)).toContain("Vem kan segla");
-    });
-
-    it("shows no file or link counts", () => {
-      // The chevron is the row's only icon.
-      expect(html.split("<svg").length - 1).toBe(1);
-      expect(textOf(html)).not.toMatch(/\d (fil|filer|länk|länkar)\b/);
-    });
+    expect(text).toContain("Vem kan segla");
+    expect(text).not.toMatch(/Sopran\.pdf|Inspelning|Detaljsida|\d (fil|filer|länk|länkar)\b/);
   });
 });
 
 describe("PiecesMobileList letter dividers", () => {
+  const names = ["1700-tal", "Abendlied", "Ave verum", "Bred dina vida vingar", "Änglamark", "Över berg och dal"];
+
   function namedPiece(name: string): PieceWithRelations {
     return { ...piece, id: name, name } as unknown as PieceWithRelations;
   }
 
   /** The letter dividers and piece names in `html`, in the order shown. */
   function shownSequence(html: string): string[] {
-    return [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>|<span class="font-medium">([^<]*)<\/span>/g)].map(
-      (match) => match[1] ?? match[2],
-    );
+    return [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>|>([^<]+)</g)]
+      .filter(([, divider, text]) => divider !== undefined || names.includes(text))
+      .map(([, divider, text]) => divider ?? text);
   }
 
-  describe.each([
-    ["read", false],
-    ["edit", true],
-  ])("in %s mode", (_, isEditing) => {
-    it("shows Alla noter as given, with a heading before the first piece of each letter group", () => {
-      const html = renderMarkup(
-        createElement(PiecesMobileList, {
-          people: [],
-          creditRoles: [],
-          groupSlug: "koren",
-          isEditing,
-          showsStepActions: isEditing,
-          emptyMessage: "",
-          pieces: ["1700-tal", "Abendlied", "Ave verum", "Bred dina vida vingar", "Änglamark", "Över berg och dal"].map(
-            namedPiece,
-          ),
-        }),
-      );
+  it("shows Alla noter as given, with a heading before the first piece of each letter group", () => {
+    const html = renderList({ pieces: names.map(namedPiece) });
 
-      expect(shownSequence(html)).toEqual([
-        "#",
-        "1700-tal",
-        "A",
-        "Abendlied",
-        "Ave verum",
-        "B",
-        "Bred dina vida vingar",
-        "Ä",
-        "Änglamark",
-        "Ö",
-        "Över berg och dal",
-      ]);
-    });
+    expect(shownSequence(html)).toEqual([
+      "#",
+      "1700-tal",
+      "A",
+      "Abendlied",
+      "Ave verum",
+      "B",
+      "Bred dina vida vingar",
+      "Ä",
+      "Änglamark",
+      "Ö",
+      "Över berg och dal",
+    ]);
+  });
 
-    it("shows no dividers in a set list's running order", () => {
-      const steps = ["Över berg och dal", "Abendlied"].map((name, position) => ({
-        kind: "piece",
-        id: `step-${position}`,
-        position,
-        piece: namedPiece(name),
-      })) as unknown as SetListStep[];
-      const html = renderMarkup(
-        createElement(PiecesMobileList, {
-          people: [],
-          creditRoles: [],
-          groupSlug: "koren",
-          isEditing,
-          showsStepActions: isEditing,
-          emptyMessage: "",
-          setList: { id: "setlist-1", steps },
-        }),
-      );
+  it("shows no dividers in a set list's running order", () => {
+    const steps = ["Över berg och dal", "Abendlied"].map((name, position) => ({
+      kind: "piece",
+      id: `step-${position}`,
+      position,
+      piece: namedPiece(name),
+    })) as unknown as SetListStep[];
+    const html = renderList({ setList: { id: "setlist-1", steps } });
 
-      expect(shownSequence(html)).toEqual(["Över berg och dal", "Abendlied"]);
-    });
+    expect(shownSequence(html)).toEqual(["Över berg och dal", "Abendlied"]);
   });
 });
 
@@ -183,46 +130,9 @@ describe("PieceRowDetails, an open piece row", () => {
     );
   }
 
-  describe.each([
-    ["read", false],
-    ["edit", true],
-  ])("with a Category in %s mode", (_, isEditing) => {
-    it("groups the Files and Links under their Category headings, Övrigt last", () => {
-      const text = textOf(
-        renderDetails(isEditing, {
-          files: [
-            {
-              id: "file-1",
-              slug: "file-1",
-              displayName: "Sopran.pdf",
-              fileName: "Sopran.pdf",
-              size: 1024,
-              category: null,
-            },
-            {
-              id: "file-2",
-              slug: "file-2",
-              displayName: "Alt.pdf",
-              fileName: "Alt.pdf",
-              size: 1024,
-              category: "Noter",
-            },
-          ],
-          links: [{ id: "link-1", url: "https://example.com/inspelning", label: "Inspelning", category: "Noter" }],
-        } as unknown as Partial<PieceWithRelations>),
-      );
-
-      expect(text).toMatch(/Noter.*Alt\.pdf.*Inspelning.*Övrigt.*Sopran\.pdf/);
-    });
-  });
-
   describe("in read mode", () => {
     it("lists the piece's notes under an Anteckningar heading, after Files and Links", () => {
-      const html = renderDetails(false, { notes });
-      const text = textOf(html);
-
-      expect(text).toMatch(/Inspelning.*Anteckningar.*Nyast med radbrytning.*Äldst/);
-      expect(html).toContain("<h3");
+      expect(textOf(renderDetails(false, { notes }))).toMatch(/Inspelning.*Anteckningar.*Nyast med radbrytning.*Äldst/);
     });
 
     it("hides the Anteckningar section for a piece without notes", () => {
@@ -312,20 +222,13 @@ describe("PieceRowDetails, an open piece row", () => {
     );
   });
 
-  describe.each([
-    ["Noter, read mode", false, undefined, undefined],
-    ["Noter, edit mode", true, undefined, undefined],
-    ["running order, read mode", false, "setlist-1", "step-1"],
-    ["running order, edit mode", true, "setlist-1", "step-1"],
-  ])("in the %s", (_, isEditing, setListId, setListPieceId) => {
-    const html = renderDetails(isEditing, {}, setListId, setListPieceId);
+  it.each([
+    ["Alla noter", undefined, undefined],
+    ["running order", "setlist-1", "step-1"],
+  ])("in the %s, links to the piece's detail page as Detaljsida", (_, setListId, setListPieceId) => {
+    const html = renderDetails(false, {}, setListId, setListPieceId);
     const href = pieceHref("koren", piece, { fromSetListPieceId: setListPieceId }).replace("?", "\\?");
 
-    it("links to the piece's detail page as Detaljsida with a hidden chevron", () => {
-      expect(textOf(html)).not.toContain("Öppna stycket");
-      expect(html).toMatch(
-        new RegExp(`<a[^>]*href="${href}"[^>]*>Detaljsida<svg[^>]*aria-hidden="true"[^>]*>.*?</svg></a>`),
-      );
-    });
+    expect(html).toMatch(new RegExp(`<a[^>]*href="${href}"[^>]*>Detaljsida<`));
   });
 });

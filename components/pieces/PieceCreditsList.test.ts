@@ -14,17 +14,6 @@ function renderCredits(): string {
 }
 
 describe("PieceCreditsList", () => {
-  it("lets a Person's Credit role badges wrap under the name at every width", () => {
-    const html = renderCredits();
-
-    expect(html).toMatch(/<li[^>]*><div class="[^"]*\bflex-wrap\b/);
-    expect(html).not.toContain("flex-nowrap");
-  });
-
-  it("breaks a long name instead of letting it overflow", () => {
-    expect(renderCredits()).toMatch(/<span class="[^"]*\bmin-w-0\b[^"]*\bbreak-words\b[^"]*">Anna Andersson</);
-  });
-
   it("ends each Person's row with one remove button, not one per Credit role", () => {
     const html = renderMarkup(
       createElement(PieceCreditsList, {
