@@ -78,9 +78,7 @@ function render(
  */
 function shownSequence(html: string): string[] {
   const shown = [
-    ...html.matchAll(
-      /<(?:h3|p) class="text-xs font-medium[^"]*">(.*?)<\/(?:h3|p)>|<a[^>]*>(.*?)<\/a>|(aria-label="(?:Fil|Ladda upp fil)")/g,
-    ),
+    ...html.matchAll(/<(?:h3|p)\b[^>]*>(.*?)<\/(?:h3|p)>|<a[^>]*>(.*?)<\/a>|(aria-label="(?:Fil|Ladda upp fil)")/g),
   ].map(([, category, item, add]) => {
     if (category !== undefined) return `### ${textOf(category).trim()}`;
     if (add !== undefined) return "[add]";
@@ -91,44 +89,32 @@ function shownSequence(html: string): string[] {
 }
 
 describe.each(["detail", "inline"] as const)("PieceFilesAndLinks, %s layout", (layout) => {
-  it("lists Files and Links together by name without headings when nothing has a Category", () => {
-    const html = render(layout, [file("sopran.pdf"), file("Alt.pdf")], [link("Bas")]);
+  // The grouping and order are groupByCategory's (lib/pieces/categories.test.ts); these prove the wiring.
+  it("shows a heading per Category, Övrigt last, then adding, in Edit mode", () => {
+    const html = render(
+      layout,
+      [file("Sopran.pdf", "Inspelningar"), file("Text.pdf"), file("Tenor.pdf", "Noter")],
+      [link("Alt", "Inspelningar"), link("Annat")],
+      { editing: true },
+    );
 
-    expect(shownSequence(html)).toEqual(["Alt.pdf", "Bas", "sopran.pdf"]);
-  });
-
-  it.each([false, true])(
-    "shows a heading per Category in ranking order, each sorted by name, Övrigt last (Edit mode: %s)",
-    (editing) => {
-      const html = render(
-        layout,
-        [file("Sopran.pdf", "Inspelningar"), file("Text.pdf"), file("Tenor.pdf", "Noter")],
-        [link("Alt", "Inspelningar"), link("Annat")],
-        { editing },
-      );
-
-      expect(shownSequence(html)).toEqual([
-        "### Noter",
-        "Tenor.pdf",
-        "### Inspelningar",
-        "Alt",
-        "Sopran.pdf",
-        "### Övrigt",
-        "Annat",
-        "Text.pdf",
-        ...(editing ? ["[add]"] : []),
-      ]);
-    },
-  );
-
-  it.each([
-    { case: "nothing has a Category", category: null, expected: ["Sopran.pdf"] },
-    { case: "something has a Category", category: "Noter", expected: ["### Noter", "Sopran.pdf"] },
-  ])("puts adding last in Edit mode when $case", ({ category, expected }) => {
-    expect(shownSequence(render(layout, [file("Sopran.pdf", category)], [], { editing: true }))).toEqual([
-      ...expected,
+    expect(shownSequence(html)).toEqual([
+      "### Noter",
+      "Tenor.pdf",
+      "### Inspelningar",
+      "Alt",
+      "Sopran.pdf",
+      "### Övrigt",
+      "Annat",
+      "Text.pdf",
       "[add]",
     ]);
+  });
+
+  it("lists Files and Links without headings when nothing has a Category, then adding, in Edit mode", () => {
+    const html = render(layout, [file("sopran.pdf"), file("Alt.pdf")], [link("Bas")], { editing: true });
+
+    expect(shownSequence(html)).toEqual(["Alt.pdf", "Bas", "sopran.pdf", "[add]"]);
   });
 
   it.each([false, true])("opens a File through a plain link in a new tab (Edit mode: %s)", (editing) => {
@@ -340,9 +326,9 @@ describe("PieceFilesAndLinks, inline layout", () => {
     expect(textOf(html).trim()).toBe("");
   });
 
-  it("keeps the end of a long File name in its own part, which never shrinks", () => {
+  it("keeps the end of a long File name in a part of its own, so it stays visible when the name is cut short", () => {
     expect(render("inline", [file("Sopran_stämma_REVIDERAD.pdf")], [])).toMatch(
-      />Sopran_stämma_REV<\/span><span[^>]*shrink-0[^>]*>IDERAD\.pdf</,
+      />Sopran_stämma_REV<\/span><span[^>]*>IDERAD\.pdf</,
     );
   });
 

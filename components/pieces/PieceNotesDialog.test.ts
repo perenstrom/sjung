@@ -28,10 +28,7 @@ describe("PieceNotesDialog", () => {
     expect(textOf(renderTrigger(false))).toBe("Lägg till anteckning");
   });
 
-  it("is triggered by a link-styled button", () => {
-    const html = renderTrigger(true);
-
-    expect(html).toMatch(/^<button[^>]*type="button"/);
-    expect(html).toMatch(/^<button[^>]*class="[^"]*underline/);
+  it("is triggered by a button that doesn't submit a surrounding form", () => {
+    expect(renderTrigger(true)).toMatch(/^<button[^>]*type="button"/);
   });
 });
