@@ -24,21 +24,18 @@ describe("parseFeedbackForm", () => {
     expect(result).toMatchObject({ success: true, data: { groupSlug: null, userAgent: "", browserAppVersion: "" } });
   });
 
-  it("rejects a blank message, keeping what was typed trimmed", () => {
-    expect(parseFeedbackForm(formData({ message: "   ", ...context }))).toEqual({
+  it.each([
+    ["   ", "Skriv din feedback innan du skickar", ""],
+    [
+      "a".repeat(FEEDBACK_MAX_LENGTH + 1),
+      "Feedbacken får vara högst 5 000 tecken",
+      "a".repeat(FEEDBACK_MAX_LENGTH + 1),
+    ],
+  ])("rejects %j with %s, keeping what was typed trimmed", (message, error, kept) => {
+    expect(parseFeedbackForm(formData({ message, ...context }))).toEqual({
       success: false,
-      error: "Skriv din feedback innan du skickar",
-      values: { message: "" },
-    });
-  });
-
-  it("rejects a message over the limit", () => {
-    const long = "a".repeat(FEEDBACK_MAX_LENGTH + 1);
-
-    expect(parseFeedbackForm(formData({ message: long, ...context }))).toEqual({
-      success: false,
-      error: "Feedbacken får vara högst 5 000 tecken",
-      values: { message: long },
+      error,
+      values: { message: kept },
     });
   });
 
