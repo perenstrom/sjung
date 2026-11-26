@@ -38,9 +38,9 @@ export function groupMembersPath(groupSlug: string): string {
 
 /**
  * Home's Cover image: a route that sends a Member on to a short-lived signed
- * URL. `version` (the stored object's key) changes when the image is
- * replaced, so a browser never shows the old one from its cache.
+ * URL. `version` changes when the image is replaced, so a browser never
+ * shows the old one from its cache.
  */
 export function groupCoverImagePath(groupSlug: string, version: string): string {
-  return `${groupPath(groupSlug)}/cover-image?${new URLSearchParams({ v: version.slice(version.lastIndexOf("/") + 1) })}`;
+  return `${groupPath(groupSlug)}/cover-image?${new URLSearchParams({ v: version })}`;
 }

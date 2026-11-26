@@ -4,7 +4,7 @@ import { inlineDisposition } from "@/lib/content-disposition";
 import { cleanUpStorage, groupStoragePrefix } from "@/lib/groups/storage";
 import { deleteObjects, headObject, signGet, signPut } from "@/lib/object-storage";
 import prisma from "@/lib/prisma";
-import { coverImageRefusal } from "@/lib/schemas/cover-image";
+import { coverImageRefusal, type CoverImageCandidate } from "@/lib/schemas/cover-image";
 
 /**
  * The Cover image store: a Group's one optional Cover image in storage. It
@@ -25,10 +25,7 @@ const VIEW_URL_EXPIRES_SECONDS = 60 * 5;
 export type StoredCoverImage = { key: string; contentType: string };
 
 /** A presigned PUT for a new Cover image object of this type and size. */
-export async function signCoverImageUpload(
-  groupId: string,
-  { contentType, size }: { contentType: string; size: number },
-) {
+export async function signCoverImageUpload(groupId: string, { contentType, size }: CoverImageCandidate) {
   const storagePath = `${coverImagePrefix(groupId)}${randomUUID()}`;
   const uploadUrl = await signPut(storagePath, {
     contentType,
@@ -59,7 +56,7 @@ export async function setCoverImage(groupId: string, storagePath: string, userId
   }
   const refusal = coverImageRefusal(stored);
   if (refusal) {
-    await cleanUpStorage("setCoverImage", { groupId }, () => deleteObjects([storagePath]));
+    await cleanUpStorage("setCoverImage (refused upload)", { groupId }, () => deleteObjects([storagePath]));
     throw new Error(refusal);
   }
 
@@ -73,7 +70,7 @@ export async function setCoverImage(groupId: string, storagePath: string, userId
     },
   });
   if (current) {
-    await cleanUpStorage("setCoverImage", { groupId }, () => deleteObjects([current.key]));
+    await cleanUpStorage("setCoverImage (replaced image)", { groupId }, () => deleteObjects([current.key]));
   }
 }
 
@@ -91,15 +88,15 @@ export async function removeCoverImage(groupId: string, userId: string) {
   await cleanUpStorage("removeCoverImage", { groupId }, () => deleteObjects([current.key]));
 }
 
+/** Selects a Group's Cover image as `toStoredCoverImage` needs it, e.g. alongside other Group columns. */
+export const COVER_IMAGE_SELECT = { coverImageKey: true, coverImageContentType: true } as const;
+
 export async function findCoverImage(groupId: string): Promise<StoredCoverImage | null> {
-  const group = await prisma.group.findUniqueOrThrow({
-    where: { id: groupId },
-    select: { coverImageKey: true, coverImageContentType: true },
-  });
+  const group = await prisma.group.findUniqueOrThrow({ where: { id: groupId }, select: COVER_IMAGE_SELECT });
   return toStoredCoverImage(group);
 }
 
-/** The Cover image from a Group row's columns. */
+/** The Cover image from a Group row read with `COVER_IMAGE_SELECT`. */
 export function toStoredCoverImage({
   coverImageKey,
   coverImageContentType,
@@ -108,6 +105,12 @@ export function toStoredCoverImage({
   coverImageContentType: string | null;
 }): StoredCoverImage | null {
   return coverImageKey && coverImageContentType ? { key: coverImageKey, contentType: coverImageContentType } : null;
+}
+
+/** Identifies this Cover image among the Group's past and future ones, e.g. to keep browsers from showing a cached old one. */
+export function coverImageVersion(image: StoredCoverImage): string {
+  // The key ends in a fresh random id for every upload.
+  return image.key.slice(image.key.lastIndexOf("/") + 1);
 }
 
 /** A short-lived signed URL the browser shows the Cover image from. */

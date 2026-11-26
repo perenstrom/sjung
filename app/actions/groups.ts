@@ -142,12 +142,12 @@ export async function getGroupHome(
   const access = await requireGroupAccess(groupSlug);
   const group = await prisma.group.findUniqueOrThrow({
     where: { id: access.group.id },
-    select: { description: true, coverImageKey: true, coverImageContentType: true },
+    select: { description: true, ...coverImageStore.COVER_IMAGE_SELECT },
   });
   const coverImage = coverImageStore.toStoredCoverImage(group);
   return {
     description: group.description,
-    coverImageHref: coverImage ? groupCoverImagePath(groupSlug, coverImage.key) : null,
+    coverImageHref: coverImage ? groupCoverImagePath(groupSlug, coverImageStore.coverImageVersion(coverImage)) : null,
     canChange: access.can("manageGroupHome"),
   };
 }

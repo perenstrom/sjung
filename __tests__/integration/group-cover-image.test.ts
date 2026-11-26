@@ -128,46 +128,28 @@ describe("adding a Cover image", () => {
     expect(home.canChange).toBe(false);
   });
 
-  it.each([
-    ["a GIF", { contentType: "image/gif", size: 1024 }, "Omslagsbilden måste vara en JPEG-, PNG- eller WebP-bild"],
-    [
-      "an image over 5 MB",
-      { contentType: "image/jpeg", size: 5 * 1024 * 1024 + 1 },
-      "Omslagsbilden är för stor (max 5 MB)",
-    ],
-  ])("refuses to sign an upload of %s", async (_label, image, message) => {
+  // Which images are refused is covered in lib/schemas/cover-image.test.ts; these prove both checks are wired in.
+  it("refuses to sign an upload of an image that can't be a Cover image", async () => {
     const { group, creator } = await createAccessScenario();
     actAs(creator.id);
 
     await expect(
-      createGroupCoverImageUploadUrl(
-        formData({ groupSlug: group.slug, contentType: image.contentType, size: String(image.size) }),
-      ),
-    ).rejects.toThrow(message);
+      createGroupCoverImageUploadUrl(formData({ groupSlug: group.slug, contentType: "image/gif", size: "1024" })),
+    ).rejects.toThrow("Omslagsbilden måste vara en JPEG-, PNG- eller WebP-bild");
   });
 
-  it.each([
-    ["a GIF", { contentType: "image/gif", size: 1024 }, "Omslagsbilden måste vara en JPEG-, PNG- eller WebP-bild"],
-    [
-      "an image over 5 MB",
-      { contentType: "image/png", size: 5 * 1024 * 1024 + 1 },
-      "Omslagsbilden är för stor (max 5 MB)",
-    ],
-  ])(
-    "checks the stored object, not the browser's word: refuses %s and saves nothing",
-    async (_label, stored, message) => {
-      const { group, creator } = await createAccessScenario();
-      actAs(creator.id);
-      // The browser asked for a small PNG but stored something else.
-      const key = await upload(group);
-      putStoredObject(key, stored);
+  it("checks the stored object, not the browser's word, and saves nothing for a refused one", async () => {
+    const { group, creator } = await createAccessScenario();
+    actAs(creator.id);
+    // The browser asked for a small PNG but stored something larger.
+    const key = await upload(group);
+    putStoredObject(key, { contentType: "image/png", size: 5 * 1024 * 1024 + 1 });
 
-      await expect(save(group, key)).rejects.toThrow(message);
+    await expect(save(group, key)).rejects.toThrow("Omslagsbilden är för stor (max 5 MB)");
 
-      expect((await storedCoverImage(group)).coverImageKey).toBeNull();
-      expect(storedKeys()).toEqual([]);
-    },
-  );
+    expect((await storedCoverImage(group)).coverImageKey).toBeNull();
+    expect(storedKeys()).toEqual([]);
+  });
 
   it.each([
     ["outside the Group's Cover image prefix", (group: Group) => `groups/${group.id}/pieces/x/y.png`],

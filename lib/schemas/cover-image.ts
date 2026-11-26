@@ -7,6 +7,9 @@ export const COVER_IMAGE_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp
 
 export const COVER_IMAGE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
+/** An image offered as the Cover image: the chosen file, the upload request, or the stored object. */
+export type CoverImageCandidate = { contentType: string; size: number };
+
 const UNSUPPORTED_TYPE_MESSAGE = "Omslagsbilden måste vara en JPEG-, PNG- eller WebP-bild";
 const TOO_LARGE_MESSAGE = "Omslagsbilden är för stor (max 5 MB)";
 
@@ -14,7 +17,7 @@ const TOO_LARGE_MESSAGE = "Omslagsbilden är för stor (max 5 MB)";
  * Why an image can't be a Cover image, in Swedish, or `null` when it can.
  * Checked on the chosen file, on the upload request, and on the stored object.
  */
-export function coverImageRefusal({ contentType, size }: { contentType: string; size: number }): string | null {
+export function coverImageRefusal({ contentType, size }: CoverImageCandidate): string | null {
   if (!(COVER_IMAGE_CONTENT_TYPES as readonly string[]).includes(contentType)) {
     return UNSUPPORTED_TYPE_MESSAGE;
   }
@@ -30,7 +33,7 @@ export function coverImageRefusal({ contentType, size }: { contentType: string; 
 const storagePathSchema = z.string().trim().min(1, { error: "Sökväg saknas" });
 
 /** The image the browser asks to upload as the Cover image; refused unless it may be one. */
-export function parseCoverImageUploadFromFormData(formData: FormData): { contentType: string; size: number } {
+export function parseCoverImageUploadFromFormData(formData: FormData): CoverImageCandidate {
   const upload = {
     contentType: formDataString(formData, "contentType").trim(),
     size: Number(formDataString(formData, "size")),
