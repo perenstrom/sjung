@@ -1,8 +1,7 @@
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { textOf } from "@/lib/testing/markup";
+import { renderMarkup, textOf } from "@/lib/testing/markup";
 import { MyGroupsView } from "./MyGroupsView";
 import type { MyGroupsTableRow } from "./MyGroupsTable";
 
@@ -18,7 +17,7 @@ const EMPTY_BODY =
   "När någon bjuder in dig till en grupp får du en inbjudan via e-post. Följ länken i mejlet för att gå med.";
 
 function render(groups: MyGroupsTableRow[]): string {
-  return renderToStaticMarkup(createElement(MyGroupsView, { groups }));
+  return renderMarkup(createElement(MyGroupsView, { groups }));
 }
 
 function countOccurrences(haystack: string, needle: string): number {
