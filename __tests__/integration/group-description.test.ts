@@ -13,7 +13,7 @@ import { createAccessScenario, createMember } from "../support/fixtures";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 
-const REFUSED = "Du har inte behörighet att ändra gruppens beskrivning";
+const REFUSED = "Du har inte behörighet att ändra gruppens startsida";
 
 function saveDescription(groupSlug: string, description: string) {
   return setGroupDescription(formData({ groupSlug, description }));
@@ -27,7 +27,7 @@ async function storedDescription(groupId: string) {
 describe("setGroupDescription", () => {
   it.each<[string, GroupClaim[] | "Creator", boolean]>([
     ["the Creator", "Creator", true],
-    ["a MANAGE_GROUP_DESCRIPTION holder", ["MANAGE_GROUP_DESCRIPTION"], true],
+    ["a MANAGE_GROUP_HOME holder", ["MANAGE_GROUP_HOME"], true],
     ["a MANAGE_CONTENT-only holder", ["MANAGE_CONTENT"], false],
     ["a Member holding no Claim", [], false],
   ])("lets %s change it: %s", async (_label, kind, allowed) => {

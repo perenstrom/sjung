@@ -3,7 +3,7 @@
 import { useEditMode } from "@/components/EditModeContext";
 import { CollapsibleGroupDescription } from "@/components/home/CollapsibleGroupDescription";
 import { EditGroupDescriptionDialog } from "@/components/home/EditGroupDescriptionDialog";
-import { GROUP_DESCRIPTION_CAPABILITIES } from "@/lib/edit-mode";
+import { GROUP_HOME_CAPABILITIES } from "@/lib/edit-mode";
 
 /**
  * The top of Home: the Group description, with no heading of its own, the
@@ -11,7 +11,7 @@ import { GROUP_DESCRIPTION_CAPABILITIES } from "@/lib/edit-mode";
  * where a Member who can change it gets a way to write the first one.
  */
 export function GroupDescriptionSection({ groupSlug, description }: { groupSlug: string; description: string | null }) {
-  const { isEditing } = useEditMode(GROUP_DESCRIPTION_CAPABILITIES);
+  const { isEditing } = useEditMode(GROUP_HOME_CAPABILITIES);
 
   if (!description && !isEditing) {
     return null;

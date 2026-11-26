@@ -65,13 +65,13 @@ describe("GroupDescriptionSection", () => {
   });
 
   it("renders nothing without a description outside Edit mode", () => {
-    render(null, ["manageGroupDescription"]);
+    render(null, ["manageGroupHome"]);
 
     expect(container.querySelector("section")).toBeNull();
   });
 
   it("offers a holder the Edit mode toggle, and in it a way to write the first description", () => {
-    render(null, ["manageGroupDescription"]);
+    render(null, ["manageGroupHome"]);
     turnOnEditMode();
 
     expect(container.textContent).toContain("Ingen beskrivning än");
@@ -79,7 +79,7 @@ describe("GroupDescriptionSection", () => {
   });
 
   it("shows the description and its edit button to a holder in Edit mode", () => {
-    render("Vi repar tisdagar.", ["manageGroupDescription"]);
+    render("Vi repar tisdagar.", ["manageGroupHome"]);
     turnOnEditMode();
 
     expect(container.textContent).toContain("Vi repar tisdagar.");

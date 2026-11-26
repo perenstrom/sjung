@@ -140,7 +140,7 @@ export async function getGroupDescription(
     where: { id: access.group.id },
     select: { description: true },
   });
-  return { description: group.description, canChange: access.can("manageGroupDescription") };
+  return { description: group.description, canChange: access.can("manageGroupHome") };
 }
 
 /**
@@ -153,7 +153,7 @@ export async function setGroupDescription(formData: FormData) {
 
   await runGroupMutation(
     groupSlug,
-    async ({ access }) => access.require("manageGroupDescription"),
+    async ({ access }) => access.require("manageGroupHome"),
     async ({ userId, groupId }) => {
       await prisma.group.update({
         where: { id: groupId },

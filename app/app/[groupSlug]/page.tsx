@@ -5,7 +5,7 @@ import { EditModeProvider } from "@/components/EditModeContext";
 import { PageHeader } from "@/components/PageHeader";
 import { CurrentSetListsSection } from "@/components/home/CurrentSetListsSection";
 import { GroupDescriptionSection } from "@/components/home/GroupDescriptionSection";
-import { GROUP_DESCRIPTION_CAPABILITIES } from "@/lib/edit-mode";
+import { GROUP_HOME_CAPABILITIES } from "@/lib/edit-mode";
 import { formatDate } from "@/lib/format-date";
 
 type PageProps = {
@@ -27,7 +27,7 @@ export default async function TenantGroupPage({ params }: PageProps) {
   const groupName = groups.find((group) => group.slug === groupSlug)?.name ?? groupSlug;
 
   return (
-    <EditModeProvider capabilities={canChange ? GROUP_DESCRIPTION_CAPABILITIES : []}>
+    <EditModeProvider capabilities={canChange ? GROUP_HOME_CAPABILITIES : []}>
       <div className="space-y-4 md:space-y-6">
         {/* Home is the Group's root, the page every other Group page's first crumb leads to. */}
         <BreadcrumbRegistrar
