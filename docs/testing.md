@@ -61,3 +61,18 @@ Every test runs on every PR, and integration files run one at a time against a s
 - Leave to the tools what they already check: types to `tsc`, lint rules to ESLint, Prisma, Next and library behaviour to their own projects.
 - A bug fix gets the one test that went red on the bug, at the lowest layer that reproduces it.
 - E2E tests are the slowest and most likely to flake. Add one only for a journey on the PER-429 list or one that has broken in production.
+
+### Pruning
+
+When streamlining existing tests, apply these rules:
+
+1. Same behaviour in two files or two layers: keep it once, closest to the code that owns the rule. Higher-level tests keep only what is new at their level (access rights, form-to-argument mapping, wiring side effects). For a form schema, test the public parser a caller uses (the `parse…FormData` wrapper where one exists), not the schema behind it.
+2. `it` blocks that differ only in input become one `it.each` table, for example one `[parser, field, Swedish message]` table for a file's trim-and-required field parsers.
+3. `toHaveBeenCalledWith` on Sjung's own code: assert the outcome instead, or delete it if another test already covers it.
+4. Markup structure or class-name assertions: assert visible text instead.
+5. Tests of what `tsc`, zod, Prisma or Next guarantee: delete, unless the test is the only one pinning a Swedish error message.
+6. Several assertions in one test that go red for the same break: keep the most telling one (obvious cases only).
+7. Tests of test-support code: keep at most one or two.
+8. One rule run across variants that can't affect it (every mode × every layout): run it once.
+
+**No coverage loss.** Every behaviour that goes red today must still go red. Before deleting a test, break the code it covers, see a surviving test go red, and revert. A test that seems not worth having but is the only one covering its behaviour stays; list it in the PR description for the maintainer to decide.
