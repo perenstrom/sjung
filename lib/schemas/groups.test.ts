@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  GROUP_DESCRIPTION_MAX_LENGTH,
+  groupDescriptionSchema,
   groupNameSchema,
   inviteEmailSchema,
   memberUserIdSchema,
@@ -155,5 +157,13 @@ describe("parseGroupClaimsFromFormData", () => {
     expect(() => parseGroupClaimsFromFormData(claimsFormData(["MANAGE_MEMBERS", "ADMIN"]))).toThrow(
       "Ogiltig behörighet",
     );
+  });
+});
+
+describe("groupDescriptionSchema", () => {
+  it("counts a posted CRLF line break as one character, as the textarea's maxLength does", () => {
+    const lines = "a\r\n".repeat(GROUP_DESCRIPTION_MAX_LENGTH / 2 - 1) + "ab";
+
+    expect(groupDescriptionSchema.parse(lines)).toHaveLength(GROUP_DESCRIPTION_MAX_LENGTH);
   });
 });

@@ -35,6 +35,7 @@ describe("groupAccessDenial", () => {
       "manageRunningOrderNotes",
       "lacksManageRunningOrderNotes",
     ],
+    ["plain Member: manageGroupDescription", facts("plain"), "manageGroupDescription", "lacksManageGroupDescription"],
     ["plain Member: viewMembers", facts("plain"), "viewMembers", "lacksManageMembers"],
     ["plain Member: removeMember(other)", facts("plain"), removeMember(OTHER), "lacksManageMembers"],
     [
@@ -54,6 +55,13 @@ describe("groupAccessDenial", () => {
       facts("MANAGE_CONTENT"),
       "manageRunningOrderNotes",
       "lacksManageRunningOrderNotes",
+    ],
+    // The Group description was never part of MANAGE_CONTENT.
+    [
+      "MANAGE_CONTENT: manageGroupDescription",
+      facts("MANAGE_CONTENT"),
+      "manageGroupDescription",
+      "lacksManageGroupDescription",
     ],
     ["MANAGE_CONTENT: viewMembers", facts("MANAGE_CONTENT"), "viewMembers", "lacksManageMembers"],
     ["MANAGE_CONTENT: removeMember(other)", facts("MANAGE_CONTENT"), removeMember(OTHER), "lacksManageMembers"],
@@ -155,6 +163,20 @@ describe("groupAccessDenial", () => {
     ],
     ["MANAGE_RUNNING_ORDER_NOTES: manageGroup", facts("MANAGE_RUNNING_ORDER_NOTES"), "manageGroup", "lacksManageGroup"],
 
+    [
+      "MANAGE_GROUP_DESCRIPTION: manageGroupDescription",
+      facts("MANAGE_GROUP_DESCRIPTION"),
+      "manageGroupDescription",
+      null,
+    ],
+    [
+      "MANAGE_GROUP_DESCRIPTION: manageContent",
+      facts("MANAGE_GROUP_DESCRIPTION"),
+      "manageContent",
+      "lacksManageContent",
+    ],
+    ["MANAGE_GROUP_DESCRIPTION: manageGroup", facts("MANAGE_GROUP_DESCRIPTION"), "manageGroup", "lacksManageGroup"],
+
     ["both Claims: manageMembers", facts("both"), "manageMembers", null],
     ["both Claims: manageContent", facts("both"), "manageContent", null],
     ["both Claims: manageGroup", facts("both"), "manageGroup", "lacksManageGroup"],
@@ -164,6 +186,7 @@ describe("groupAccessDenial", () => {
     ["Creator: manageGroup", facts("creator"), "manageGroup", null],
     ["Creator: reorderSetLists", facts("creator"), "reorderSetLists", null],
     ["Creator: manageRunningOrderNotes", facts("creator"), "manageRunningOrderNotes", null],
+    ["Creator: manageGroupDescription", facts("creator"), "manageGroupDescription", null],
     ["Creator: viewMembers", facts("creator"), "viewMembers", null],
     ["Creator: removeMember(other)", facts("creator"), removeMember(OTHER), null],
     ["Creator: removeMember(self)", facts("creator"), removeMember(CREATOR), "targetIsSelf"],

@@ -31,4 +31,9 @@ export const GROUP_CLAIM_OPTIONS: {
     label: "Hantera anteckningar i repertoarer",
     description: "Kan lägga till, ändra och ta bort anteckningar mellan styckena i gruppens repertoarer.",
   },
+  {
+    claim: GroupClaim.MANAGE_GROUP_DESCRIPTION,
+    label: "Hantera beskrivning",
+    description: "Kan skriva, ändra och ta bort gruppens beskrivning på startsidan.",
+  },
 ];

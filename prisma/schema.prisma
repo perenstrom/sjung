@@ -99,6 +99,12 @@ model Group {
 
   name String
   slug String @unique @map("slug")
+  // The Group description: Markdown for its Members, shown on Home. Blank is
+  // stored as null, meaning the Group has none.
+  description          String?
+  // When the description last changed, for the Group overview's "last
+  // changed"; renaming the Group doesn't count, so `updatedAt` can't serve.
+  descriptionUpdatedAt DateTime? @map("description_updated_at")
 
   createdBy User @relation("GroupCreatedBy", fields: [createdById], references: [id])
   updatedBy User? @relation("GroupUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
@@ -175,6 +181,7 @@ enum GroupClaim {
   REORDER_SET_LISTS
   MANAGE_RUNNING_ORDER_NOTES
   MANAGE_MEMBER_AUTHORIZATION
+  MANAGE_GROUP_DESCRIPTION
 
   @@map("group_claim")
 }

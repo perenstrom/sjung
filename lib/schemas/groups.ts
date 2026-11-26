@@ -13,6 +13,22 @@ export const inviteEmailSchema = z
   .pipe(z.email({ error: "Ange en giltig e-postadress" }))
   .transform((s) => s.toLowerCase());
 
+export const GROUP_DESCRIPTION_MAX_LENGTH = 5_000;
+
+/** The Group description as saved: trimmed, and blank meaning the Group has none. */
+export const groupDescriptionSchema = z
+  .string()
+  // Forms post line breaks as CRLF while the textarea's maxLength counts one
+  // character each, so count them the same way here.
+  .transform((text) => text.replace(/\r\n?/g, "\n"))
+  .pipe(
+    z
+      .string()
+      .trim()
+      .max(GROUP_DESCRIPTION_MAX_LENGTH, { error: "Beskrivningen får vara högst 5 000 tecken" })
+      .transform((text) => text || null),
+  );
+
 export const memberUserIdSchema = z.string().trim().min(1, { error: "Ogiltig medlem" });
 
 export const invitationIdSchema = z.uuid({ error: "Ogiltig inbjudan" });
@@ -60,4 +76,13 @@ export function parseGroupClaimsFromFormData(formData: FormData): GroupClaim[] {
     throw new Error(result.error.issues[0]?.message ?? "Ogiltig behörighet");
   }
   return [...new Set(result.data)];
+}
+
+/** Reads the `description` field as the Group description to save: `null` when blank. */
+export function parseGroupDescriptionFromFormData(formData: FormData): string | null {
+  const result = groupDescriptionSchema.safeParse(formDataString(formData, "description"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Ogiltig beskrivning");
+  }
+  return result.data;
 }

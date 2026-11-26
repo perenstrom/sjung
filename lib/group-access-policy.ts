@@ -31,6 +31,11 @@ export type GroupCapability =
    * by `manageContent`; an action on a Running-order note accepts either.
    */
   | "manageRunningOrderNotes"
+  /**
+   * Write, change and clear the Group description: the Creator or
+   * `MANAGE_GROUP_DESCRIPTION`. Never part of `manageContent`, so it alone allows it.
+   */
+  | "manageGroupDescription"
   /** Rename or delete the Group: the Creator only. */
   | "manageGroup"
   /** Remove one Member: `manageMembers`, and the target is neither the Creator nor the viewer. */
@@ -60,6 +65,7 @@ export type GroupAccessDenial =
   | "lacksManageContent"
   | "lacksReorderSetLists"
   | "lacksManageRunningOrderNotes"
+  | "lacksManageGroupDescription"
   | "targetIsSelf"
   | "targetIsCreator";
 
@@ -93,6 +99,9 @@ export function groupAccessDenial(facts: GroupAccessFacts, capability: GroupCapa
   }
   if (capability === "manageRunningOrderNotes") {
     return holds(GroupClaim.MANAGE_RUNNING_ORDER_NOTES) ? null : "lacksManageRunningOrderNotes";
+  }
+  if (capability === "manageGroupDescription") {
+    return holds(GroupClaim.MANAGE_GROUP_DESCRIPTION) ? null : "lacksManageGroupDescription";
   }
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";
