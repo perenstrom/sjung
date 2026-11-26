@@ -16,10 +16,11 @@ const components: Components = {
 };
 
 /**
- * An Announcement's Markdown body, as readers and the editor's preview see it:
- * GFM, with raw HTML skipped and images left out (they aren't supported).
+ * Markdown that Members write for others to read, such as an Announcement's
+ * body: GFM, with raw HTML skipped and images left out (they aren't
+ * supported). Editors' previews render it the same way.
  */
-export function AnnouncementBody({ body, className }: { body: string; className?: string }) {
+export function MarkdownBody({ markdown, className }: { markdown: string; className?: string }) {
   return (
     <div
       className={cn(
@@ -28,7 +29,7 @@ export function AnnouncementBody({ body, className }: { body: string; className?
       )}
     >
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components} skipHtml disallowedElements={["img"]}>
-        {body}
+        {markdown}
       </ReactMarkdown>
     </div>
   );

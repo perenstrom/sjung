@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Newspaper, Settings2 } from "lucide-react";
-import { AnnouncementBody } from "@/components/announcements/AnnouncementBody";
+import { MarkdownBody } from "@/components/markdown/MarkdownBody";
 import { AnnouncementReadMarker } from "@/components/announcements/AnnouncementReadMarker";
 import { MarkAllAnnouncementsReadButton } from "@/components/announcements/MarkAllAnnouncementsReadButton";
 import { UnreadDot } from "@/components/announcements/UnreadDot";
@@ -107,7 +107,7 @@ export function AnnouncementsInbox({ announcements, selected, canManage }: Annou
               <h2 className="text-2xl font-semibold">{selected.title}</h2>
               <p className="text-sm text-muted-foreground">{formatDate(selected.publishedAt)}</p>
             </header>
-            <AnnouncementBody body={selected.body} />
+            <MarkdownBody markdown={selected.body} />
           </article>
         ) : announcements.length > 0 ? (
           <EmptyState icon={Newspaper} heading="Välj en nyhet">
