@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(() => {
     throw new Error("notFound");
@@ -20,6 +23,8 @@ import {
 import { createOperator, OPERATOR_EMAIL } from "../support/operators";
 import { actAs } from "../support/session";
 import { getGroupOverview } from "@/app/actions/operators";
+import { setGroupDescription } from "@/app/actions/groups";
+import { formData } from "../support/form-data";
 
 beforeEach(() => {
   vi.stubEnv("OPERATORS_EMAIL", OPERATOR_EMAIL);
@@ -88,5 +93,22 @@ describe("Group overview", () => {
       },
     ]);
     expect(overview.totalStorageBytes).toBe(2_000_000 + 1024);
+  });
+
+  it("counts a change to the Group description as a change, without showing the text", async () => {
+    const operator = await createOperator();
+    const creator = await createUser();
+    const group = await createGroup({ createdById: creator.id });
+    await createPiece({ groupId: group.id, createdById: creator.id });
+
+    actAs(creator.id);
+    await setGroupDescription(formData({ groupSlug: group.slug, description: "Hemlig repetitionsplats" }));
+    const { descriptionUpdatedAt } = await testPrisma.group.findUniqueOrThrow({ where: { id: group.id } });
+
+    actAs(operator.id);
+    const overview = await getGroupOverview();
+
+    expect(overview.groups[0]?.lastChangedAt).toEqual(descriptionUpdatedAt);
+    expect(JSON.stringify(overview)).not.toContain("Hemlig");
   });
 });

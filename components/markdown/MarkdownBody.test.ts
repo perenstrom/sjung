@@ -1,13 +1,13 @@
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";
-import { AnnouncementBody } from "@/components/announcements/AnnouncementBody";
+import { MarkdownBody } from "@/components/markdown/MarkdownBody";
 import { renderMarkup } from "@/lib/testing/markup";
 
-function render(body: string): string {
-  return renderMarkup(createElement(AnnouncementBody, { body }));
+function render(markdown: string): string {
+  return renderMarkup(createElement(MarkdownBody, { markdown }));
 }
 
-describe("AnnouncementBody", () => {
+describe("MarkdownBody", () => {
   it("renders GFM: headings, emphasis, lists and tables", () => {
     const html = render("## Nytt\n\n**Fet** och *kursiv*\n\n- ett\n- två\n\n| A | B |\n| - | - |\n| 1 | 2 |");
 

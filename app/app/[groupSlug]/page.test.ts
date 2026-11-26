@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 // The page's reads reach the database.
 vi.mock("@/app/actions/groups", () => ({
   getGroups: async () => [{ slug: "kor", name: "Kören" }],
+  getGroupDescription: async () => ({ description: "Vi repar **tisdagar**.", canChange: false }),
+  setGroupDescription: async () => {},
 }));
 vi.mock("@/app/actions/setlists", () => ({
   getCurrentSetLists: async () => [
@@ -16,11 +18,12 @@ import { renderMarkup, textOf } from "@/lib/testing/markup";
 import TenantGroupPage from "./page";
 
 describe("a Group's own address", () => {
-  it("shows the Group's Home, with its Current Set lists", async () => {
+  it("shows the Group's Home, with its description and Current Set lists", async () => {
     const page = await TenantGroupPage({ params: Promise.resolve({ groupSlug: "kor" }) });
     const text = textOf(renderMarkup(createElement(AppBreadcrumbProvider, null, page)));
 
     expect(text).toContain("Hem");
+    expect(text).toContain("Vi repar tisdagar.");
     expect(text).toContain("Aktuell repertoar");
     expect(text).toContain("Lucia");
   });

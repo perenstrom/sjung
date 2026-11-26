@@ -37,6 +37,7 @@ type Expected = {
   manageContent: boolean;
   reorderSetLists: boolean;
   manageRunningOrderNotes: boolean;
+  manageGroupDescription: boolean;
   viewMembers: boolean;
   manageMembers: boolean;
   manageGroup: boolean;
@@ -52,6 +53,7 @@ const NOTHING: Expected = {
   manageContent: false,
   reorderSetLists: false,
   manageRunningOrderNotes: false,
+  manageGroupDescription: false,
   viewMembers: false,
   manageMembers: false,
   manageGroup: false,
@@ -72,6 +74,7 @@ describe("Group access by Member kind", () => {
     ["MANAGE_MEMBER_AUTHORIZATION", { ...NOTHING, viewMembers: true, changeOtherMemberClaims: true }],
     ["REORDER_SET_LISTS", { ...NOTHING, reorderSetLists: true }],
     ["MANAGE_RUNNING_ORDER_NOTES", { ...NOTHING, manageRunningOrderNotes: true }],
+    ["MANAGE_GROUP_DESCRIPTION", { ...NOTHING, manageGroupDescription: true }],
     [
       "Creator",
       {
@@ -79,6 +82,7 @@ describe("Group access by Member kind", () => {
         manageContent: true,
         reorderSetLists: true,
         manageRunningOrderNotes: true,
+        manageGroupDescription: true,
         viewMembers: true,
         manageMembers: true,
         manageGroup: true,
@@ -102,6 +106,7 @@ describe("Group access by Member kind", () => {
         manageContent: can("manageContent"),
         reorderSetLists: can("reorderSetLists"),
         manageRunningOrderNotes: can("manageRunningOrderNotes"),
+        manageGroupDescription: can("manageGroupDescription"),
         viewMembers: can("viewMembers"),
         manageMembers: can("manageMembers"),
         manageGroup: can("manageGroup"),

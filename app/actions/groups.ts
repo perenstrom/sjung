@@ -18,12 +18,17 @@ import {
 import {
   inviteEmailSchema,
   parseGroupClaimsFromFormData,
+  parseGroupDescriptionFromFormData,
   parseGroupNameFromFormData,
   parseInvitationIdFromFormData,
   parseMemberUserIdFromFormData,
   parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
-import { revalidateAppAndMyGroupsWithGroupRoute, revalidateGroupMembersRoutes } from "@/lib/revalidate/group-routes";
+import {
+  revalidateAppAndMyGroupsWithGroupRoute,
+  revalidateGroupHomeRoute,
+  revalidateGroupMembersRoutes,
+} from "@/lib/revalidate/group-routes";
 
 /** The viewer's Groups by name, with what they may do in each. */
 export async function getGroups() {
@@ -119,6 +124,42 @@ export async function deleteGroup(formData: FormData) {
       });
       await deleteGroupFiles(groupId);
       revalidateAppAndMyGroupsWithGroupRoute(groupSlug);
+    },
+  );
+}
+
+/**
+ * The Group description for any Member (`null` when the Group has none), and
+ * whether the viewer may change it, which decides Home's Edit mode.
+ */
+export async function getGroupDescription(
+  groupSlug: string,
+): Promise<{ description: string | null; canChange: boolean }> {
+  const access = await requireGroupAccess(groupSlug);
+  const group = await prisma.group.findUniqueOrThrow({
+    where: { id: access.group.id },
+    select: { description: true },
+  });
+  return { description: group.description, canChange: access.can("manageGroupDescription") };
+}
+
+/**
+ * Saves the Group description from Home's Edit mode; blank text clears it.
+ * The last save wins.
+ */
+export async function setGroupDescription(formData: FormData) {
+  const groupSlug = parseGroupSlugFromFormData(formData);
+  const description = parseGroupDescriptionFromFormData(formData);
+
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageGroupDescription"),
+    async ({ userId, groupId }) => {
+      await prisma.group.update({
+        where: { id: groupId },
+        data: { description, descriptionUpdatedAt: new Date(), updatedById: userId },
+      });
+      revalidateGroupHomeRoute(groupSlug);
     },
   );
 }
