@@ -1,67 +1,53 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { closeMobileSidebar, groupNavItems, isAtOrUnder, switchGroup } from "./sidebar-navigation";
 
+// The injected callbacks are the outcome: they stand in for the sidebar sheet's
+// state and the router, so each test records the calls they receive.
+
 describe("closeMobileSidebar", () => {
-  it("closes the sheet on mobile", () => {
-    const setOpenMobile = vi.fn();
+  it.each([
+    ["closes the sheet on mobile", true, [false]],
+    ["leaves the desktop sidebar alone", false, []],
+  ])("%s", (_, isMobile, expected) => {
+    const opened: boolean[] = [];
 
-    closeMobileSidebar({ isMobile: true, setOpenMobile });
+    closeMobileSidebar({ isMobile, setOpenMobile: (open) => opened.push(open) });
 
-    expect(setOpenMobile).toHaveBeenCalledWith(false);
-  });
-
-  it("leaves the desktop sidebar alone", () => {
-    const setOpenMobile = vi.fn();
-
-    closeMobileSidebar({ isMobile: false, setOpenMobile });
-
-    expect(setOpenMobile).not.toHaveBeenCalled();
+    expect(opened).toEqual(expected);
   });
 });
 
+/** Switches to `korus` with `setActiveGroup`, recording each step taken after it resolves. */
+async function switchToKorus(setActiveGroup: (slug: string) => Promise<void>) {
+  const calls: string[] = [];
+  const error = await switchGroup("korus", {
+    setActiveGroup: async (slug) => {
+      await setActiveGroup(slug);
+      calls.push(`activate ${slug}`);
+    },
+    navigate: (href) => calls.push(`navigate ${href}`),
+    onSwitched: () => calls.push("switched"),
+  });
+  return { error, calls };
+}
+
 describe("switchGroup", () => {
   it("activates the group, navigates to it and reports the switch", async () => {
-    const calls: string[] = [];
-
-    const error = await switchGroup("korus", {
-      setActiveGroup: async (slug) => {
-        calls.push(`activate ${slug}`);
-      },
-      navigate: (href) => calls.push(`navigate ${href}`),
-      onSwitched: () => calls.push("switched"),
+    expect(await switchToKorus(async () => {})).toEqual({
+      error: null,
+      calls: ["activate korus", "navigate /app/korus", "switched"],
     });
-
-    expect(error).toBeNull();
-    expect(calls).toEqual(["activate korus", "navigate /app/korus", "switched"]);
   });
 
-  it("returns the error and neither navigates nor reports a switch when activation fails", async () => {
-    const navigate = vi.fn();
-    const onSwitched = vi.fn();
-
-    const error = await switchGroup("korus", {
-      setActiveGroup: async () => {
-        throw new Error("Du är inte medlem i gruppen");
-      },
-      navigate,
-      onSwitched,
-    });
-
-    expect(error).toBe("Du är inte medlem i gruppen");
-    expect(navigate).not.toHaveBeenCalled();
-    expect(onSwitched).not.toHaveBeenCalled();
-  });
-
-  it("falls back to a generic message when the thrown value has none", async () => {
-    const error = await switchGroup("korus", {
-      setActiveGroup: async () => {
-        throw "nope";
-      },
-      navigate: () => {},
-      onSwitched: () => {},
-    });
-
-    expect(error).toBe("Kunde inte byta grupp");
+  it.each<[string, unknown, string]>([
+    ["the thrown message", new Error("Du är inte medlem i gruppen"), "Du är inte medlem i gruppen"],
+    ["a generic message when the thrown value has none", "nope", "Kunde inte byta grupp"],
+  ])("returns %s and does nothing else when activation fails", async (_, thrown, message) => {
+    expect(
+      await switchToKorus(async () => {
+        throw thrown;
+      }),
+    ).toEqual({ error: message, calls: [] });
   });
 });
 
