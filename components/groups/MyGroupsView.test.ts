@@ -1,8 +1,7 @@
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { textOf } from "@/lib/testing/markup";
+import { renderMarkup, textOf } from "@/lib/testing/markup";
 import { MyGroupsView } from "./MyGroupsView";
 import type { MyGroupsTableRow } from "./MyGroupsTable";
 
@@ -16,9 +15,10 @@ vi.mock("@/app/actions/groups", () => ({
 const EMPTY_HEADING = "Du är inte med i någon grupp än";
 const EMPTY_BODY =
   "När någon bjuder in dig till en grupp får du en inbjudan via e-post. Följ länken i mejlet för att gå med.";
+const START_OWN = "Vill du starta en egen grupp?";
 
 function render(groups: MyGroupsTableRow[]): string {
-  return renderToStaticMarkup(createElement(MyGroupsView, { groups }));
+  return renderMarkup(createElement(MyGroupsView, { groups }));
 }
 
 function countOccurrences(haystack: string, needle: string): number {
@@ -40,9 +40,10 @@ describe("MyGroupsView", () => {
       expect(html).not.toContain('data-slot="mobile-list"');
     });
 
-    it("offers creating a group once, from the empty state", () => {
-      expect(countOccurrences(html, "Skapa ny grupp")).toBe(1);
-      expect(html).toMatch(/data-slot="empty-state"[\s\S]*Skapa ny grupp/);
+    it("offers starting a group only as a link below the invitation guidance", () => {
+      expect(html).not.toContain("Skapa ny grupp");
+      expect(countOccurrences(html, START_OWN)).toBe(1);
+      expect(textOf(html).indexOf(EMPTY_BODY)).toBeLessThan(textOf(html).indexOf(START_OWN));
     });
   });
 
@@ -58,8 +59,10 @@ describe("MyGroupsView", () => {
       expect(html).not.toContain('data-slot="empty-state"');
     });
 
-    it("offers creating a group from the page header", () => {
-      expect(countOccurrences(html, "Skapa ny grupp")).toBe(1);
+    it("offers starting a group only as a link below the table, not in the header", () => {
+      expect(html).not.toContain("Skapa ny grupp");
+      expect(countOccurrences(html, START_OWN)).toBe(1);
+      expect(textOf(html).indexOf("Kammarkören")).toBeLessThan(textOf(html).indexOf(START_OWN));
     });
   });
 });

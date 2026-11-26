@@ -24,6 +24,7 @@ import {
   parseGroupNameFromFormData,
   parseInvitationIdFromFormData,
   parseMemberUserIdFromFormData,
+  parseGroupCreationConfirmedFromFormData,
   parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
 import { parseCoverImageStoragePathFromFormData, parseCoverImageUploadFromFormData } from "@/lib/schemas/cover-image";
@@ -56,6 +57,9 @@ export async function setActiveGroup(groupSlug: string) {
 export async function createGroup(formData: FormData) {
   const user = await requireUser();
   const trimmed = parseGroupNameFromFormData(formData);
+  if (!parseGroupCreationConfirmedFromFormData(formData)) {
+    throw new Error("Bekräfta att du skapar en ny grupp och blir dess administratör");
+  }
   const base = slugifyGroupName(trimmed);
   if (isReservedGroupSlug(base)) {
     throw new Error("Det namnet ger en förbjuden adress. Välj ett annat gruppnamn.");
