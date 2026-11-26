@@ -2,10 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { matchPieceSearch } from "./search";
 
-function pieceMatchesSearch(piece: Parameters<typeof matchPieceSearch>[0], query: string): boolean {
-  return matchPieceSearch(piece, query) !== null;
-}
-
 function piece(name: string, personNames: string[] = [], aliases: string[] = []) {
   return {
     name,
@@ -14,107 +10,105 @@ function piece(name: string, personNames: string[] = [], aliases: string[] = [])
   };
 }
 
+/** "å" as "a" plus a combining ring, as some keyboards and pastes produce it. */
+const DECOMPOSED_Å = "å";
+
+const julsangen = piece("O helga natt", ["Adolphe Adam"], ["Julsången", "Cantique de Noël", "Den långa"]);
+
 describe("matchPieceSearch", () => {
-  it("matches text anywhere in the piece name", () => {
-    expect(pieceMatchesSearch(piece("Cantique de Jean Racine"), "jean")).toBe(true);
-    expect(pieceMatchesSearch(piece("Cantique de Jean Racine"), "Racine")).toBe(true);
-  });
-
-  it("doesn't match a piece whose name and credits lack the text", () => {
-    expect(pieceMatchesSearch(piece("Cantique de Jean Racine", ["Gabriel Fauré"]), "segla")).toBe(false);
-  });
-
-  it("matches text anywhere in a credited Person's name", () => {
-    expect(pieceMatchesSearch(piece("Cantique de Jean Racine", ["Gabriel Fauré"]), "gabriel")).toBe(true);
-    expect(pieceMatchesSearch(piece("Vem kan segla", ["Okänd", "Hugo Alfvén"]), "alfv")).toBe(true);
-  });
-
-  it("ignores case", () => {
-    expect(pieceMatchesSearch(piece("Cantique de Jean Racine"), "CANTIQUE")).toBe(true);
-    expect(pieceMatchesSearch(piece("vem kan segla"), "Vem Kan")).toBe(true);
-  });
-
-  it("ignores accents on letters outside the Swedish alphabet", () => {
-    expect(pieceMatchesSearch(piece("Con te partirò"), "partiro")).toBe(true);
-    expect(pieceMatchesSearch(piece("Cantique", ["Gabriel Fauré"]), "faure")).toBe(true);
-    expect(pieceMatchesSearch(piece("Con te partiro"), "partirò")).toBe(true);
-    expect(pieceMatchesSearch(piece("Ave verum", ["Wilhelm Müller"]), "muller")).toBe(true);
-    expect(pieceMatchesSearch(piece("Noël"), "noel")).toBe(true);
-  });
-
-  it("doesn't treat ü as y, the way Swedish sorting does", () => {
-    expect(pieceMatchesSearch(piece("Ave verum", ["Wilhelm Müller"]), "myller")).toBe(false);
-  });
-
-  it("finds ø and æ by their Swedish letters ö and ä", () => {
-    expect(pieceMatchesSearch(piece("Ave", ["Bjørn Olsen"]), "björn")).toBe(true);
-    expect(pieceMatchesSearch(piece("Ave", ["Bjørn Olsen"]), "BJØRN")).toBe(true);
-    expect(pieceMatchesSearch(piece("Ave", ["Ægidius"]), "ägid")).toBe(true);
-  });
-
-  it("keeps å, ä and ö apart from a and o", () => {
-    expect(pieceMatchesSearch(piece("Bår"), "a")).toBe(false);
-    expect(pieceMatchesSearch(piece("Bör"), "o")).toBe(false);
-    expect(pieceMatchesSearch(piece("Bår"), "bar")).toBe(false);
-    expect(pieceMatchesSearch(piece("Bär"), "bar")).toBe(false);
-    expect(pieceMatchesSearch(piece("Över"), "over")).toBe(false);
-    expect(pieceMatchesSearch(piece("Bår"), "BÅR")).toBe(true);
-  });
-
-  it("matches decomposed and composed å alike", () => {
-    expect(pieceMatchesSearch(piece("Bår"), "bår")).toBe(true);
-    expect(pieceMatchesSearch(piece("Bår"), "bår")).toBe(true);
-  });
-
-  it("ignores leading and trailing whitespace in the search text", () => {
-    expect(pieceMatchesSearch(piece("Vem kan segla"), "  segla ")).toBe(true);
-  });
-
-  it("matches every piece for empty or whitespace-only text", () => {
-    expect(pieceMatchesSearch(piece("Vem kan segla"), "")).toBe(true);
-    expect(pieceMatchesSearch(piece("Vem kan segla"), "   ")).toBe(true);
-  });
-
-  it("doesn't match text longer than the name", () => {
-    expect(pieceMatchesSearch(piece("Ave"), "Ave verum")).toBe(false);
+  it.each<{ rule: string; piece: ReturnType<typeof piece>; query: string; matches: boolean }>([
+    { rule: "text anywhere in the name", piece: piece("Cantique de Jean Racine"), query: "jean", matches: true },
+    { rule: "text anywhere in the name", piece: piece("Cantique de Jean Racine"), query: "Racine", matches: true },
+    {
+      rule: "not when name and credits lack the text",
+      piece: piece("Cantique de Jean Racine", ["Gabriel Fauré"]),
+      query: "segla",
+      matches: false,
+    },
+    {
+      rule: "text anywhere in a credited Person's name",
+      piece: piece("Cantique de Jean Racine", ["Gabriel Fauré"]),
+      query: "gabriel",
+      matches: true,
+    },
+    {
+      rule: "text anywhere in a credited Person's name",
+      piece: piece("Vem kan segla", ["Okänd", "Hugo Alfvén"]),
+      query: "alfv",
+      matches: true,
+    },
+    { rule: "ignoring case", piece: piece("Cantique de Jean Racine"), query: "CANTIQUE", matches: true },
+    { rule: "ignoring case", piece: piece("vem kan segla"), query: "Vem Kan", matches: true },
+    { rule: "ignoring foreign accents", piece: piece("Con te partirò"), query: "partiro", matches: true },
+    { rule: "ignoring foreign accents", piece: piece("Cantique", ["Gabriel Fauré"]), query: "faure", matches: true },
+    { rule: "ignoring foreign accents", piece: piece("Con te partiro"), query: "partirò", matches: true },
+    { rule: "ignoring foreign accents", piece: piece("Ave verum", ["Wilhelm Müller"]), query: "muller", matches: true },
+    { rule: "ignoring foreign accents", piece: piece("Noël"), query: "noel", matches: true },
+    {
+      rule: "not treating ü as y, the way Swedish sorting does",
+      piece: piece("Ave verum", ["Wilhelm Müller"]),
+      query: "myller",
+      matches: false,
+    },
+    { rule: "ø and æ by their Swedish letters", piece: piece("Ave", ["Bjørn Olsen"]), query: "björn", matches: true },
+    { rule: "ø and æ by their Swedish letters", piece: piece("Ave", ["Bjørn Olsen"]), query: "BJØRN", matches: true },
+    { rule: "ø and æ by their Swedish letters", piece: piece("Ave", ["Ægidius"]), query: "ägid", matches: true },
+    { rule: "keeping å, ä and ö apart from a and o", piece: piece("Bår"), query: "a", matches: false },
+    { rule: "keeping å, ä and ö apart from a and o", piece: piece("Bör"), query: "o", matches: false },
+    { rule: "keeping å, ä and ö apart from a and o", piece: piece("Bår"), query: "bar", matches: false },
+    { rule: "keeping å, ä and ö apart from a and o", piece: piece("Bär"), query: "bar", matches: false },
+    { rule: "keeping å, ä and ö apart from a and o", piece: piece("Över"), query: "over", matches: false },
+    { rule: "keeping å, ä and ö apart from a and o", piece: piece("Bår"), query: "BÅR", matches: true },
+    { rule: "decomposed and composed å alike", piece: piece("Bår"), query: `b${DECOMPOSED_Å}r`, matches: true },
+    { rule: "decomposed and composed å alike", piece: piece(`B${DECOMPOSED_Å}r`), query: "bår", matches: true },
+    { rule: "ignoring surrounding whitespace", piece: piece("Vem kan segla"), query: "  segla ", matches: true },
+    { rule: "everything for empty text", piece: piece("Vem kan segla"), query: "", matches: true },
+    { rule: "everything for empty text", piece: piece("Vem kan segla"), query: "   ", matches: true },
+    { rule: "not text longer than the name", piece: piece("Ave"), query: "Ave verum", matches: false },
+    { rule: "an Alias, folding case and accents", piece: julsangen, query: "JULSÅNG", matches: true },
+    { rule: "an Alias, folding case and accents", piece: julsangen, query: "noel", matches: true },
+    { rule: "an Alias, folding case and accents", piece: julsangen, query: "julsang", matches: false },
+  ])("matches $rule: $query in $piece.name is $matches", ({ piece, query, matches }) => {
+    expect(matchPieceSearch(piece, query) !== null).toBe(matches);
   });
 });
 
 describe("matchPieceSearch on Aliases", () => {
-  const julsangen = piece("O helga natt", ["Adolphe Adam"], ["Julsången", "Cantique de Noël", "Den långa"]);
-
-  it("finds a Piece by an Alias, folding case and accents like the name", () => {
-    expect(pieceMatchesSearch(julsangen, "JULSÅNG")).toBe(true);
-    expect(pieceMatchesSearch(julsangen, "noel")).toBe(true);
-    expect(pieceMatchesSearch(julsangen, "julsang")).toBe(false);
+  it.each<{ case: string; piece: Parameters<typeof matchPieceSearch>[0]; query: string; aliases: string[] }>([
+    { case: "none when only the name matches", piece: julsangen, query: "n", aliases: [] },
+    {
+      case: "only those that match when the name doesn't, in order",
+      piece: julsangen,
+      query: "ång",
+      aliases: ["Julsången", "Den långa"],
+    },
+    { case: "an accented Alias", piece: julsangen, query: "noël", aliases: ["Cantique de Noël"] },
+    {
+      case: "none when the name matches too",
+      piece: piece("Julsång", [], ["Julsången"]),
+      query: "julsång",
+      aliases: [],
+    },
+    { case: "none when the search is empty", piece: julsangen, query: " ", aliases: [] },
+    { case: "none for a Piece found only by a credited Person", piece: julsangen, query: "adam", aliases: [] },
+    {
+      case: "a match on a Piece with no credits to search",
+      piece: { name: "O helga natt", aliases: [{ name: "Julsången" }] },
+      query: "jul",
+      aliases: ["Julsången"],
+    },
+  ])("reports $case", ({ piece, query, aliases }) => {
+    expect(matchPieceSearch(piece, query)).toEqual({ matchingAliases: aliases });
   });
 
-  it("reports the Aliases that match when the name doesn't, and only those, in order", () => {
-    expect(matchPieceSearch(julsangen, "n")).toEqual({ matchingAliases: [] });
-    expect(matchPieceSearch(julsangen, "ång")).toEqual({ matchingAliases: ["Julsången", "Den långa"] });
-    expect(matchPieceSearch(julsangen, "noël")).toEqual({ matchingAliases: ["Cantique de Noël"] });
-  });
-
-  it("reports no Aliases when the name matches", () => {
-    expect(matchPieceSearch(piece("Julsång", [], ["Julsången"]), "julsång")).toEqual({ matchingAliases: [] });
-  });
-
-  it("reports no Aliases when the search is empty", () => {
-    expect(matchPieceSearch(julsangen, " ")).toEqual({ matchingAliases: [] });
-  });
-
-  it("reports no Aliases for a Piece found only by a credited Person", () => {
-    expect(matchPieceSearch(julsangen, "adam")).toEqual({ matchingAliases: [] });
-  });
-
-  it("returns null for a Piece that doesn't match", () => {
-    expect(matchPieceSearch(julsangen, "segla")).toBeNull();
-  });
-
-  it("leaves credited People out when the Piece has no credits to search", () => {
-    expect(matchPieceSearch({ name: "O helga natt", aliases: [{ name: "Julsången" }] }, "adam")).toBeNull();
-    expect(matchPieceSearch({ name: "O helga natt", aliases: [{ name: "Julsången" }] }, "jul")).toEqual({
-      matchingAliases: ["Julsången"],
-    });
+  it.each([
+    { case: "a Piece that doesn't match", piece: julsangen, query: "segla" },
+    {
+      case: "a Piece with no credits, searched by a Person",
+      piece: { name: "O helga natt", aliases: [{ name: "Julsången" }] },
+      query: "adam",
+    },
+  ])("returns null for $case", ({ piece, query }) => {
+    expect(matchPieceSearch(piece, query)).toBeNull();
   });
 });

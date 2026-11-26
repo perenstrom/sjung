@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { barAt, formatTime } from "@/lib/player/player";
+import { barAt, clampTempo, formatTime, type Passage, playStart, repeatJump } from "@/lib/player/player";
 
 describe("formatTime", () => {
   it.each([
@@ -29,5 +29,41 @@ describe("barAt", () => {
 
   it("is null for a file without bars", () => {
     expect(barAt([], 12)).toBeNull();
+  });
+});
+
+describe("clampTempo", () => {
+  it.each([
+    [75, 75],
+    [200, 120],
+    [10, 50],
+    [87.6, 88],
+  ])("keeps %s %% to %s %%", (asked, tempo) => {
+    expect(clampTempo(asked)).toBe(tempo);
+  });
+});
+
+describe("repeatJump", () => {
+  it.each<{ passage: Passage | null; position: number; jump: number | null }>([
+    { passage: null, position: 20.05, jump: null },
+    { passage: { start: 10, end: null }, position: 30, jump: null },
+    { passage: { start: 10, end: 20 }, position: 19.9, jump: null },
+    { passage: { start: 10, end: 20 }, position: 20, jump: 10 },
+    { passage: { start: 10, end: 20 }, position: 20.05, jump: 10 },
+  ])("with passage $passage at $position s jumps to $jump", ({ passage, position, jump }) => {
+    expect(repeatJump(passage, position)).toBe(jump);
+  });
+});
+
+describe("playStart", () => {
+  it.each<{ passage: Passage | null; position: number; start: number | null }>([
+    { passage: null, position: 30, start: null },
+    { passage: { start: 10, end: null }, position: 30, start: null },
+    { passage: { start: 10, end: 20 }, position: 15, start: null },
+    { passage: { start: 10, end: 20 }, position: 5, start: 10 },
+    { passage: { start: 10, end: 20 }, position: 20, start: 10 },
+    { passage: { start: 10, end: 20 }, position: 30, start: 10 },
+  ])("with passage $passage at $position s starts at $start", ({ passage, position, start }) => {
+    expect(playStart(passage, position)).toBe(start);
   });
 });
