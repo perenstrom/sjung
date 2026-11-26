@@ -16,7 +16,7 @@ import {
   signPut,
   type StoredObject,
 } from "@/lib/object-storage";
-import { cleanUpStorage, groupStoragePrefix } from "@/lib/group-storage";
+import { cleanUpStorage, groupStoragePrefix } from "@/lib/groups/storage";
 import { PLAYER_SOUNDFONT_KEY } from "@/lib/player/soundfont";
 import prisma from "@/lib/prisma";
 import { assertAllowedStoredFile } from "@/lib/schemas/files";

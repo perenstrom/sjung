@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { inlineDisposition } from "@/lib/content-disposition";
-import { cleanUpStorage, groupStoragePrefix } from "@/lib/group-storage";
+import { cleanUpStorage, groupStoragePrefix } from "@/lib/groups/storage";
 import { deleteObjects, headObject, signGet, signPut } from "@/lib/object-storage";
 import prisma from "@/lib/prisma";
 import { coverImageRefusal } from "@/lib/schemas/cover-image";
