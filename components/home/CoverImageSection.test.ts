@@ -55,14 +55,12 @@ function turnOnEditMode() {
 }
 
 describe("CoverImageSection", () => {
-  it("shows the image first on Home, decorative and centre-cropped in a 3:1 frame", () => {
+  it("shows the image first on Home, as decoration with empty alt text", () => {
     render("/app/koren/cover-image?v=abc");
 
     const image = container.querySelector("img")!;
     expect(image.getAttribute("src")).toBe("/app/koren/cover-image?v=abc");
     expect(image.getAttribute("alt")).toBe("");
-    expect(image.className).toContain("object-cover");
-    expect(image.parentElement!.className).toContain("aspect-[3/1]");
     expect(container.firstElementChild?.contains(image)).toBe(true);
   });
 

@@ -33,14 +33,14 @@ export type GroupMutationContext = {
 /**
  * Server-action prelude for the Group and its Members: resolve tenant
  * membership, run a guard (usually `access.require(...)`), then run the
- * mutation against what the guard returned. Content changes use
+ * mutation if the guard didn't throw. Content changes use
  * {@link runContentMutation} instead. Callers that need to revalidate do so as
  * the last step of `mutation`.
  */
-export async function runGroupMutation<TGuard, TResult>(
+export async function runGroupMutation<TResult>(
   groupSlug: string,
-  guard: (ctx: GroupMutationContext) => Promise<TGuard>,
-  mutation: (ctx: GroupMutationContext, guarded: TGuard) => Promise<TResult>,
+  guard: (ctx: GroupMutationContext) => Promise<void>,
+  mutation: (ctx: GroupMutationContext) => Promise<TResult>,
 ): Promise<TResult> {
   const access = await requireGroupAccess(groupSlug);
   const ctx: GroupMutationContext = {
@@ -49,8 +49,8 @@ export async function runGroupMutation<TGuard, TResult>(
     groupSlug,
     access,
   };
-  const guarded = await guard(ctx);
-  return mutation(ctx, guarded);
+  await guard(ctx);
+  return mutation(ctx);
 }
 
 /**
@@ -77,6 +77,6 @@ export async function runContentMutation<TResult>(
         access.require("manageContent");
       }
     },
-    (ctx) => mutation(ctx),
+    mutation,
   );
 }

@@ -188,6 +188,27 @@ function action(name: string): (fd: FormData) => Promise<unknown> {
   return ACTION_MODULES[name as keyof typeof ACTION_MODULES] as (fd: FormData) => Promise<unknown>;
 }
 
+/**
+ * Every content row in the database, to show a refused action changed nothing.
+ * A new content table belongs here too, or refusals stop proving they leave it alone.
+ */
+async function allContent() {
+  return Promise.all([
+    testPrisma.piece.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.pieceAlias.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.pieceNote.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.link.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.file.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.person.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.personToPiece.findMany({ orderBy: [{ pieceId: "asc" }, { personId: "asc" }, { role: "asc" }] }),
+    testPrisma.setList.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.setListPiece.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.setListNote.findMany({ orderBy: { id: "asc" } }),
+    testPrisma.setListPieceHiddenFile.findMany({ orderBy: [{ setListPieceId: "asc" }, { fileId: "asc" }] }),
+    testPrisma.setListPieceHiddenLink.findMany({ orderBy: [{ setListPieceId: "asc" }, { linkId: "asc" }] }),
+  ]);
+}
+
 async function runningOrder(setListId: string): Promise<string[]> {
   const [pieces, notes] = await Promise.all([
     testPrisma.setListPiece.findMany({ where: { setListId }, select: { id: true, position: true } }),
@@ -216,10 +237,12 @@ describe("content actions require manageContent, or the fine-grained Claim that 
     await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(refusalFor(name));
   });
 
-  it.each(Object.keys(CONTENT_ACTIONS))("%s refuses a Member with no Claims", async (name) => {
+  it.each(Object.keys(CONTENT_ACTIONS))("%s refuses a Member with no Claims and changes nothing", async (name) => {
     actAs((await createMember(group, [])).id);
+    const before = await allContent();
 
     await expect(action(name)(CONTENT_ACTIONS[name](group, content))).rejects.toThrow(refusalFor(name));
+    expect(await allContent()).toEqual(before);
   });
 
   it.each(
