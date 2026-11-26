@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
+/** A short, neutral Markdown reference for writers. */
+const MARKDOWN_REFERENCE_URL = "https://www.markdownguide.org/cheat-sheet/";
+
 type MarkdownFieldProps = {
   id: string;
   name: string;
@@ -84,7 +87,16 @@ export function MarkdownField({
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Markdown: rubriker, fetstil, listor, länkar och tabeller. HTML och bilder visas inte.
+          Markdown: rubriker, fetstil, listor, länkar och tabeller. HTML och bilder visas inte.{" "}
+          {/* A new tab, so following it never loses what was typed. */}
+          <a
+            href={MARKDOWN_REFERENCE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            Så skriver du Markdown
+          </a>
         </p>
       )}
     </div>
