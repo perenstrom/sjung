@@ -14,9 +14,9 @@ import {
   putObject,
   signGet,
   signPut,
-  type DeleteObjectsResult,
   type StoredObject,
 } from "@/lib/object-storage";
+import { cleanUpStorage, groupStoragePrefix } from "@/lib/group-storage";
 import { PLAYER_SOUNDFONT_KEY } from "@/lib/player/soundfont";
 import prisma from "@/lib/prisma";
 import { assertAllowedStoredFile } from "@/lib/schemas/files";
@@ -42,7 +42,6 @@ const DOWNLOAD_URL_EXPIRES_SECONDS = 60 * 5;
  * requests to the same URL, so its URL outlives a long practice session.
  */
 const PLAYBACK_URL_EXPIRES_SECONDS = 60 * 60 * 6;
-const FAILED_KEYS_LOG_SAMPLE_SIZE = 5;
 
 /** The Piece a File belongs to, as far as storage cares. */
 export type StorePiece = { id: string; groupId: string };
@@ -152,14 +151,14 @@ export async function replaceFile(file: StoreFile, upload: FinishedUpload, userI
     }),
   );
 
-  await cleanUp("replaceFile", { fileId: file.id }, () => deleteObjects(storedKeysOf(file)));
+  await cleanUpStorage("replaceFile", { fileId: file.id }, () => deleteObjects(storedKeysOf(file)));
   return savedFile(replaced);
 }
 
 /** Deletes the File and its stored content, its converted copy included. */
 export async function deleteFile(file: Pick<StoreFile, "id" | "storagePath" | "conversionState">) {
   await prisma.file.delete({ where: { id: file.id } });
-  await cleanUp("deleteFile", { fileId: file.id }, () => deleteObjects(storedKeysOf(file)));
+  await cleanUpStorage("deleteFile", { fileId: file.id }, () => deleteObjects(storedKeysOf(file)));
 }
 
 /**
@@ -218,7 +217,7 @@ export async function convertFile(fileId: string) {
     // A retry may have converted the same content meanwhile and stored its
     // copy under the same key; that copy is the File's, so it stays.
     if (count === 0 && converted && !(await isConvertedStoragePathOf(fileId, convertedStoragePath))) {
-      await cleanUp("convertFile", { fileId }, () => deleteObjects([convertedStoragePath]));
+      await cleanUpStorage("convertFile", { fileId }, () => deleteObjects([convertedStoragePath]));
     }
   } catch (error) {
     console.error("convertFile could not record the conversion", { fileId, error });
@@ -230,7 +229,7 @@ export async function convertFile(fileId: string) {
  * including uploads that were never finalized.
  */
 export async function deletePieceFiles(piece: StorePiece) {
-  await cleanUp("deletePieceFiles", { pieceId: piece.id }, () => deletePrefix(pieceStoragePrefix(piece)));
+  await cleanUpStorage("deletePieceFiles", { pieceId: piece.id }, () => deletePrefix(pieceStoragePrefix(piece)));
 }
 
 /**
@@ -238,7 +237,7 @@ export async function deletePieceFiles(piece: StorePiece) {
  * including uploads that were never finalized.
  */
 export async function deleteGroupFiles(groupId: string) {
-  await cleanUp("deleteGroupFiles", { groupId }, () => deletePrefix(groupStoragePrefix(groupId)));
+  await cleanUpStorage("deleteGroupFiles", { groupId }, () => deletePrefix(groupStoragePrefix(groupId)));
 }
 
 async function isConvertedStoragePathOf(fileId: string, convertedStoragePath: string): Promise<boolean> {
@@ -312,10 +311,6 @@ export async function signSoundfont() {
   });
 }
 
-function groupStoragePrefix(groupId: string): string {
-  return `groups/${groupId}/`;
-}
-
 function pieceStoragePrefix(piece: StorePiece): string {
   return `${groupStoragePrefix(piece.groupId)}pieces/${piece.id}/`;
 }
@@ -355,23 +350,6 @@ async function rejectingReusedPath<T>(write: () => Promise<T>): Promise<T> {
       throw new Error(PATH_IN_USE);
     }
     throw error;
-  }
-}
-
-/** Runs a best-effort storage delete, logging what it couldn't remove instead of throwing. */
-async function cleanUp(operation: string, context: Record<string, string>, run: () => Promise<DeleteObjectsResult>) {
-  try {
-    const result = await run();
-    if (result.failedCount > 0) {
-      console.error(`${operation} left objects in storage`, {
-        ...context,
-        failedCount: result.failedCount,
-        totalCount: result.totalCount,
-        failedKeysSample: result.failedKeys.slice(0, FAILED_KEYS_LOG_SAMPLE_SIZE),
-      });
-    }
-  } catch (error) {
-    console.error(`${operation} could not clean up storage`, { ...context, error });
   }
 }
 
