@@ -19,6 +19,13 @@ import {
   withCreditDraftPerson,
 } from "@/lib/pieces/credits";
 
+/** A Credit with its Person's name, as the display functions take it. */
+const personCredit = (personId: string, name: string, role: string) => ({
+  personId,
+  role,
+  person: { name },
+});
+
 describe("assertNoDuplicateCredits", () => {
   it.each([
     ["an empty list", []],
@@ -45,43 +52,43 @@ describe("assertNoDuplicateCredits", () => {
 });
 
 describe("diffCredits", () => {
-  const credit = (personId: string, role: string) => ({ personId, role });
+  const pair = (personId: string, role: string) => ({ personId, role });
 
   it.each([
     {
       case: "nothing when current and next are identical",
-      current: [credit("person-1", "Kompositör")],
-      next: [credit("person-1", "Kompositör")],
+      current: [pair("person-1", "Kompositör")],
+      next: [pair("person-1", "Kompositör")],
       creditsToCreate: [],
       creditsToDelete: [],
     },
     {
       case: "everything as new when current is empty",
       current: [],
-      next: [credit("person-1", "Kompositör")],
-      creditsToCreate: [credit("person-1", "Kompositör")],
+      next: [pair("person-1", "Kompositör")],
+      creditsToCreate: [pair("person-1", "Kompositör")],
       creditsToDelete: [],
     },
     {
       case: "everything as removed when next is empty",
-      current: [credit("person-1", "Kompositör")],
+      current: [pair("person-1", "Kompositör")],
       next: [],
       creditsToCreate: [],
-      creditsToDelete: [credit("person-1", "Kompositör")],
+      creditsToDelete: [pair("person-1", "Kompositör")],
     },
     {
       case: "only the rows that are new or removed",
-      current: [credit("person-1", "Kompositör"), credit("person-2", "Textförfattare")],
-      next: [credit("person-1", "Kompositör"), credit("person-3", "Arrangör")],
-      creditsToCreate: [credit("person-3", "Arrangör")],
-      creditsToDelete: [credit("person-2", "Textförfattare")],
+      current: [pair("person-1", "Kompositör"), pair("person-2", "Textförfattare")],
+      next: [pair("person-1", "Kompositör"), pair("person-3", "Arrangör")],
+      creditsToCreate: [pair("person-3", "Arrangör")],
+      creditsToDelete: [pair("person-2", "Textförfattare")],
     },
     {
       case: "a role change for the same person as a delete plus a create",
-      current: [credit("person-1", "Kompositör")],
-      next: [credit("person-1", "Arrangör")],
-      creditsToCreate: [credit("person-1", "Arrangör")],
-      creditsToDelete: [credit("person-1", "Kompositör")],
+      current: [pair("person-1", "Kompositör")],
+      next: [pair("person-1", "Arrangör")],
+      creditsToCreate: [pair("person-1", "Arrangör")],
+      creditsToDelete: [pair("person-1", "Kompositör")],
     },
   ])("returns $case", ({ current, next, creditsToCreate, creditsToDelete }) => {
     expect(diffCredits(current, next)).toEqual({ creditsToCreate, creditsToDelete });
@@ -89,40 +96,34 @@ describe("diffCredits", () => {
 });
 
 describe("groupCreditsByPerson", () => {
-  const credit = (personId: string, name: string, role: string) => ({
-    personId,
-    role,
-    person: { name },
-  });
-
   it.each([
     { case: "an empty list unchanged", credits: [], expected: [] },
     {
       case: "a Person with a single role as one entry",
-      credits: [credit("p1", "Anna", "Arrangör")],
+      credits: [personCredit("p1", "Anna", "Arrangör")],
       expected: [{ personId: "p1", name: "Anna", roles: ["Arrangör"] }],
     },
     {
       case: "each Person once, with their roles in Credit role order",
       credits: [
-        credit("p1", "Anna", "Textförfattare"),
-        credit("p1", "Anna", "Kompositör"),
-        credit("p1", "Anna", "Arrangör"),
+        personCredit("p1", "Anna", "Textförfattare"),
+        personCredit("p1", "Anna", "Kompositör"),
+        personCredit("p1", "Anna", "Arrangör"),
       ],
       expected: [{ personId: "p1", name: "Anna", roles: ["Arrangör", "Kompositör", "Textförfattare"] }],
     },
     {
       case: "unknown roles after known roles, sorted alphabetically",
       credits: [
-        credit("p1", "Anna", "Ösats"),
-        credit("p1", "Anna", "Textförfattare"),
-        credit("p1", "Anna", "Annan roll"),
+        personCredit("p1", "Anna", "Ösats"),
+        personCredit("p1", "Anna", "Textförfattare"),
+        personCredit("p1", "Anna", "Annan roll"),
       ],
       expected: [{ personId: "p1", name: "Anna", roles: ["Textförfattare", "Annan roll", "Ösats"] }],
     },
     {
       case: "two Persons with the same name apart",
-      credits: [credit("p1", "Anna", "Kompositör"), credit("p2", "Anna", "Textförfattare")],
+      credits: [personCredit("p1", "Anna", "Kompositör"), personCredit("p2", "Anna", "Textförfattare")],
       expected: [
         { personId: "p1", name: "Anna", roles: ["Kompositör"] },
         { personId: "p2", name: "Anna", roles: ["Textförfattare"] },
@@ -136,27 +137,27 @@ describe("groupCreditsByPerson", () => {
     {
       case: "by their highest-ranked role, regardless of input order",
       credits: [
-        credit("p1", "Anna", "Textförfattare"),
-        credit("p2", "Bertil", "Annan roll"),
-        credit("p3", "Cecilia", "Arrangör"),
-        credit("p4", "David", "Textförfattare"),
-        credit("p4", "David", "Kompositör"),
+        personCredit("p1", "Anna", "Textförfattare"),
+        personCredit("p2", "Bertil", "Annan roll"),
+        personCredit("p3", "Cecilia", "Arrangör"),
+        personCredit("p4", "David", "Textförfattare"),
+        personCredit("p4", "David", "Kompositör"),
       ],
       names: ["Cecilia", "David", "Anna", "Bertil"],
     },
     {
       case: "with the same highest role by name using Swedish collation",
       credits: [
-        credit("p1", "Östen", "Kompositör"),
-        credit("p2", "anna", "Kompositör"),
-        credit("p3", "Bertil", "Kompositör"),
-        credit("p3", "Bertil", "Textförfattare"),
+        personCredit("p1", "Östen", "Kompositör"),
+        personCredit("p2", "anna", "Kompositör"),
+        personCredit("p3", "Bertil", "Kompositör"),
+        personCredit("p3", "Bertil", "Textförfattare"),
       ],
       names: ["anna", "Bertil", "Östen"],
     },
     {
       case: "holding only unknown roles alphabetically by that role",
-      credits: [credit("p1", "Anna", "Ösats"), credit("p2", "Bertil", "Annan roll")],
+      credits: [personCredit("p1", "Anna", "Ösats"), personCredit("p2", "Bertil", "Annan roll")],
       names: ["Bertil", "Anna"],
     },
   ])("orders people $case", ({ credits, names }) => {
@@ -295,20 +296,14 @@ describe("toggleCreditRole", () => {
 });
 
 describe("formatCreditsLine", () => {
-  const credit = (personId: string, name: string, role: string) => ({
-    personId,
-    role,
-    person: { name },
-  });
-
   it.each([
     { case: "is empty for a piece without credits", credits: [], line: "" },
     {
       case: "lists each Person once with their Credit roles, in display order",
       credits: [
-        credit("p2", "Bo", "Arrangör"),
-        credit("p1", "Ann", "Textförfattare"),
-        credit("p1", "Ann", "Kompositör"),
+        personCredit("p2", "Bo", "Arrangör"),
+        personCredit("p1", "Ann", "Textförfattare"),
+        personCredit("p1", "Ann", "Kompositör"),
       ],
       line: "Bo (Arrangör) · Ann (Kompositör, Textförfattare)",
     },

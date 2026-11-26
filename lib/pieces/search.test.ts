@@ -15,8 +15,11 @@ const DECOMPOSED_Å = "å";
 
 const julsangen = piece("O helga natt", ["Adolphe Adam"], ["Julsången", "Cantique de Noël", "Den långa"]);
 
+/** Julsången as the Set list piece picker gives it: without credits, so credited People aren't searched. */
+const uncreditedJulsangen = { name: "O helga natt", aliases: [{ name: "Julsången" }] };
+
 describe("matchPieceSearch", () => {
-  it.each<{ rule: string; piece: ReturnType<typeof piece>; query: string; matches: boolean }>([
+  it.each<{ rule: string; piece: Parameters<typeof matchPieceSearch>[0]; query: string; matches: boolean }>([
     { rule: "text anywhere in the name", piece: piece("Cantique de Jean Racine"), query: "jean", matches: true },
     { rule: "text anywhere in the name", piece: piece("Cantique de Jean Racine"), query: "Racine", matches: true },
     {
@@ -68,12 +71,13 @@ describe("matchPieceSearch", () => {
     { rule: "an Alias, folding case and accents", piece: julsangen, query: "JULSÅNG", matches: true },
     { rule: "an Alias, folding case and accents", piece: julsangen, query: "noel", matches: true },
     { rule: "an Alias, folding case and accents", piece: julsangen, query: "julsang", matches: false },
+    { rule: "not a Piece without credits by a Person", piece: uncreditedJulsangen, query: "adam", matches: false },
   ])("matches $rule: $query in $piece.name is $matches", ({ piece, query, matches }) => {
     expect(matchPieceSearch(piece, query) !== null).toBe(matches);
   });
 });
 
-describe("matchPieceSearch on Aliases", () => {
+describe("the Aliases matchPieceSearch reports", () => {
   it.each<{ case: string; piece: Parameters<typeof matchPieceSearch>[0]; query: string; aliases: string[] }>([
     { case: "none when only the name matches", piece: julsangen, query: "n", aliases: [] },
     {
@@ -93,22 +97,11 @@ describe("matchPieceSearch on Aliases", () => {
     { case: "none for a Piece found only by a credited Person", piece: julsangen, query: "adam", aliases: [] },
     {
       case: "a match on a Piece with no credits to search",
-      piece: { name: "O helga natt", aliases: [{ name: "Julsången" }] },
+      piece: uncreditedJulsangen,
       query: "jul",
       aliases: ["Julsången"],
     },
   ])("reports $case", ({ piece, query, aliases }) => {
     expect(matchPieceSearch(piece, query)).toEqual({ matchingAliases: aliases });
-  });
-
-  it.each([
-    { case: "a Piece that doesn't match", piece: julsangen, query: "segla" },
-    {
-      case: "a Piece with no credits, searched by a Person",
-      piece: { name: "O helga natt", aliases: [{ name: "Julsången" }] },
-      query: "adam",
-    },
-  ])("returns null for $case", ({ piece, query }) => {
-    expect(matchPieceSearch(piece, query)).toBeNull();
   });
 });
