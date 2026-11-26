@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_GAIN } from "@/lib/player/mix";
 import type { NotationBar } from "@/lib/player/notation-bars";
 import { createNotationPlayer, type NotationPart, type ScoreEngine } from "@/lib/player/notation-player";
-import type { Player } from "@/lib/player/player";
+import { clampTempo, type Player } from "@/lib/player/player";
 import { createPlayerControls } from "@/lib/player/player-controls";
 import { SOUND_PROGRAMS } from "@/lib/player/soundfont";
 
@@ -183,11 +183,11 @@ describe("createNotationPlayer", () => {
     expect(player.getSnapshot().position).toBe(4.5);
   });
 
-  it("changes the tempo through alphaTab's playback speed", () => {
-    player.setTempo(75);
+  it("plays at the kept tempo through alphaTab's playback speed", () => {
+    player.setTempo(200);
 
-    expect(score.speed).toBe(0.75);
-    expect(player.getSnapshot().tempo).toBe(75);
+    expect(score.speed).toBe(clampTempo(200) / 100);
+    expect(player.getSnapshot().tempo).toBe(clampTempo(200));
   });
 
   it("repeats a passage through alphaTab's own passage, shading its bars in the score, and keeps the playhead where it is", () => {

@@ -198,11 +198,12 @@ describe("the MIDI player", () => {
   });
 
   it("plays each part's channels at the volume it is heard at, the default volume being the file's own", () => {
-    player.setPart("track-1", { gain: DEFAULT_GAIN / 2 });
-    player.setPart("track-4", { muted: true });
+    player.setPart("track-1", { gain: DEFAULT_GAIN / 2, solo: true });
+    player.setPart("track-4", { solo: true });
 
     expect(player.getSnapshot().parts[0].gain).toBe(DEFAULT_GAIN / 2);
-    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([0.5, 1, 0]);
+    // The soloed soprano at half volume, the alto silenced by the solos, the soloed drums at full.
+    expect([0, 1, 9].map((channel) => sequencer.gainOf(channel))).toEqual([0.5, 0, 1]);
   });
 
   it("keeps a channel heard while any part on it is", () => {
