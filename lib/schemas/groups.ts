@@ -45,6 +45,14 @@ export function parseGroupNameFromFormData(formData: FormData): string {
   return result.data;
 }
 
+/**
+ * Whether the create dialog's confirmation is ticked: the user is starting a new
+ * Group and becomes its Creator. A checkbox posts its field only when ticked.
+ */
+export function parseGroupCreationConfirmedFromFormData(formData: FormData): boolean {
+  return formData.has("confirmed");
+}
+
 export function parseGroupSlugFromFormData(formData: FormData): string {
   const result = groupSlugSchema.safeParse(formDataString(formData, "groupSlug"));
   if (!result.success) {
