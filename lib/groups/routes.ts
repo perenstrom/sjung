@@ -35,3 +35,12 @@ export function groupSetListPath(groupSlug: string, setList: { slug: string }): 
 export function groupMembersPath(groupSlug: string): string {
   return `${groupPath(groupSlug)}/members`;
 }
+
+/**
+ * Home's Cover image: a route that sends a Member on to a short-lived signed
+ * URL. `version` changes when the image is replaced, so a browser never
+ * shows the old one from its cache.
+ */
+export function groupCoverImagePath(groupSlug: string, version: string): string {
+  return `${groupPath(groupSlug)}/cover-image?${new URLSearchParams({ v: version })}`;
+}

@@ -33,7 +33,7 @@ const DEFAULT_MESSAGES: Record<GroupAccessDenial, string> = {
   lacksManageContent: "Du har inte behörighet att ändra innehåll i gruppen",
   lacksReorderSetLists: "Du har inte behörighet att ändra ordning i gruppens repertoarer",
   lacksManageRunningOrderNotes: "Du har inte behörighet att hantera anteckningar i gruppens repertoarer",
-  lacksManageGroupDescription: "Du har inte behörighet att ändra gruppens beskrivning",
+  lacksManageGroupHome: "Du har inte behörighet att ändra gruppens startsida",
   targetIsSelf: "Du kan inte ändra ditt eget medlemskap",
   targetIsCreator: "Gruppens administratör kan inte ändras",
 };

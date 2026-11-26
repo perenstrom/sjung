@@ -18,8 +18,9 @@ export type GroupOverviewRow = {
   storageBytes: number;
   /**
    * The latest update of any of the Group's Pieces, Set lists, Files or
-   * People, or of its Group description, or the Group's own creation without
-   * any. Deletions don't count.
+   * People, or of its Group description or Cover image, or the Group's own
+   * creation without any. Deletions don't count, except of the description
+   * or the Cover image.
    */
   lastChangedAt: Date;
 };
@@ -40,8 +41,8 @@ export async function listGroupOverview(): Promise<GroupOverview> {
         name: true,
         slug: true,
         createdAt: true,
-        // Only when it changed: the overview never shows the description itself.
-        descriptionUpdatedAt: true,
+        // Only when it changed: the overview never shows the description or the Cover image.
+        homeUpdatedAt: true,
         createdBy: { select: { name: true, email: true } },
         _count: { select: { users: true, pieces: true, setLists: true } },
       },
@@ -59,7 +60,7 @@ export async function listGroupOverview(): Promise<GroupOverview> {
   // Each Group's latest change, starting from its own creation.
   const lastChangeByGroup = new Map(groups.map(({ id, createdAt }) => [id, createdAt]));
   const updates = [
-    ...groups.map(({ id, descriptionUpdatedAt }) => [id, descriptionUpdatedAt] as const),
+    ...groups.map(({ id, homeUpdatedAt }) => [id, homeUpdatedAt] as const),
     ...[...pieceUpdates, ...setListUpdates, ...personUpdates].map(
       ({ groupId, _max }) => [groupId, _max.updatedAt] as const,
     ),

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 // The page's reads reach the database.
 vi.mock("@/app/actions/groups", () => ({
   getGroups: async () => [{ slug: "kor", name: "Kören" }],
-  getGroupDescription: async () => ({ description: "Vi repar **tisdagar**.", canChange: false }),
+  getGroupHome: async () => ({ description: "Vi repar **tisdagar**.", coverImageHref: null, canChange: false }),
   setGroupDescription: async () => {},
 }));
 vi.mock("@/app/actions/setlists", () => ({

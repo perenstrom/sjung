@@ -6,14 +6,14 @@ vi.mock("next/cache", () => ({
 }));
 
 import type { GroupClaim } from "@/app/generated/prisma/enums";
-import { getGroupDescription, setGroupDescription } from "@/app/actions/groups";
+import { getGroupHome, setGroupDescription } from "@/app/actions/groups";
 import { GROUP_DESCRIPTION_MAX_LENGTH } from "@/lib/schemas/groups";
 import { testPrisma } from "../support/db";
 import { createAccessScenario, createMember } from "../support/fixtures";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 
-const REFUSED = "Du har inte behörighet att ändra gruppens beskrivning";
+const REFUSED = "Du har inte behörighet att ändra gruppens startsida";
 
 function saveDescription(groupSlug: string, description: string) {
   return setGroupDescription(formData({ groupSlug, description }));
@@ -27,7 +27,7 @@ async function storedDescription(groupId: string) {
 describe("setGroupDescription", () => {
   it.each<[string, GroupClaim[] | "Creator", boolean]>([
     ["the Creator", "Creator", true],
-    ["a MANAGE_GROUP_DESCRIPTION holder", ["MANAGE_GROUP_DESCRIPTION"], true],
+    ["a MANAGE_GROUP_HOME holder", ["MANAGE_GROUP_HOME"], true],
     ["a MANAGE_CONTENT-only holder", ["MANAGE_CONTENT"], false],
     ["a Member holding no Claim", [], false],
   ])("lets %s change it: %s", async (_label, kind, allowed) => {
@@ -35,7 +35,7 @@ describe("setGroupDescription", () => {
     const viewer = kind === "Creator" ? creator : await createMember(group, kind);
     actAs(viewer.id);
 
-    expect((await getGroupDescription(group.slug)).canChange).toBe(allowed);
+    expect((await getGroupHome(group.slug)).canChange).toBe(allowed);
     const saving = saveDescription(group.slug, "  Vi repar **tisdagar**.  ");
 
     if (allowed) {
@@ -43,7 +43,7 @@ describe("setGroupDescription", () => {
       expect(await storedDescription(group.id)).toBe("Vi repar **tisdagar**.");
       // Every Member reads the same description.
       actAs((await createMember(group)).id);
-      expect(await getGroupDescription(group.slug)).toEqual({
+      expect(await getGroupHome(group.slug)).toMatchObject({
         description: "Vi repar **tisdagar**.",
         canChange: false,
       });
@@ -58,7 +58,7 @@ describe("setGroupDescription", () => {
     actAs(nonMember.id);
 
     await expect(saveDescription(group.slug, "Hej")).rejects.toThrow("Ogiltig grupp eller saknad behörighet");
-    await expect(getGroupDescription(group.slug)).rejects.toThrow("Ogiltig grupp eller saknad behörighet");
+    await expect(getGroupHome(group.slug)).rejects.toThrow("Ogiltig grupp eller saknad behörighet");
   });
 
   it.each(["", "   \n\t "])("clears the description when saved blank (%j)", async (blank) => {
@@ -69,7 +69,7 @@ describe("setGroupDescription", () => {
     await saveDescription(group.slug, blank);
 
     expect(await storedDescription(group.id)).toBeNull();
-    expect((await getGroupDescription(group.slug)).description).toBeNull();
+    expect((await getGroupHome(group.slug)).description).toBeNull();
   });
 
   it("rejects text over the limit and keeps what was there", async () => {

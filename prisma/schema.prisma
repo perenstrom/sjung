@@ -102,9 +102,14 @@ model Group {
   // The Group description: Markdown for its Members, shown on Home. Blank is
   // stored as null, meaning the Group has none.
   description          String?
-  // When the description last changed, for the Group overview's "last
-  // changed"; renaming the Group doesn't count, so `updatedAt` can't serve.
-  descriptionUpdatedAt DateTime? @map("description_updated_at")
+  // The Cover image: the stored object's key, under the Group's storage
+  // prefix, and its type for serving it. Both null when the Group has none.
+  coverImageKey         String? @map("cover_image_key")
+  coverImageContentType String? @map("cover_image_content_type")
+  // When Home's own content (the description or the Cover image) last
+  // changed, for the Group overview's "last changed"; renaming the Group
+  // doesn't count, so `updatedAt` can't serve.
+  homeUpdatedAt DateTime? @map("home_updated_at")
 
   createdBy User @relation("GroupCreatedBy", fields: [createdById], references: [id])
   updatedBy User? @relation("GroupUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
@@ -181,7 +186,7 @@ enum GroupClaim {
   REORDER_SET_LISTS
   MANAGE_RUNNING_ORDER_NOTES
   MANAGE_MEMBER_AUTHORIZATION
-  MANAGE_GROUP_DESCRIPTION
+  MANAGE_GROUP_HOME
 
   @@map("group_claim")
 }

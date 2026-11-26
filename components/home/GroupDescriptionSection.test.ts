@@ -9,7 +9,11 @@ import { GroupDescriptionSection } from "@/components/home/GroupDescriptionSecti
 import type { EditCapability } from "@/lib/edit-mode";
 
 // The edit dialog imports the server action, which reaches the database.
-vi.mock("@/app/actions/groups", () => ({ setGroupDescription: vi.fn() }));
+vi.mock("@/app/actions/groups", () => ({
+  setGroupDescription: vi.fn(),
+  createGroupCoverImageUploadUrl: vi.fn(),
+  setGroupCoverImage: vi.fn(),
+}));
 
 let container: HTMLDivElement;
 let root: Root;
@@ -28,14 +32,14 @@ afterEach(() => {
 });
 
 /** Home's header and description, as the page puts them together. */
-function render(description: string | null, capabilities: EditCapability[] = []) {
+function render(description: string | null, capabilities: EditCapability[] = [], hasCoverImage = false) {
   act(() =>
     root.render(
       createElement(
         EditModeProvider,
         { capabilities },
         createElement(PageHeader, { title: "Hem" }),
-        createElement(GroupDescriptionSection, { groupSlug: "koren", description }),
+        createElement(GroupDescriptionSection, { groupSlug: "koren", description, hasCoverImage }),
       ),
     ),
   );
@@ -65,21 +69,30 @@ describe("GroupDescriptionSection", () => {
   });
 
   it("renders nothing without a description outside Edit mode", () => {
-    render(null, ["manageGroupDescription"]);
+    render(null, ["manageGroupHome"]);
 
     expect(container.querySelector("section")).toBeNull();
   });
 
   it("offers a holder the Edit mode toggle, and in it a way to write the first description", () => {
-    render(null, ["manageGroupDescription"]);
+    render(null, ["manageGroupHome"]);
     turnOnEditMode();
 
     expect(container.textContent).toContain("Ingen beskrivning än");
     expect(button("Redigera beskrivning")).toBeDefined();
   });
 
+  it("offers Lägg till omslagsbild next to Redigera beskrivning while the Group has no Cover image", () => {
+    render("Vi repar tisdagar.", ["manageGroupHome"]);
+    turnOnEditMode();
+    expect(button("Lägg till omslagsbild")).toBeDefined();
+
+    render("Vi repar tisdagar.", ["manageGroupHome"], true);
+    expect(button("Lägg till omslagsbild")).toBeUndefined();
+  });
+
   it("shows the description and its edit button to a holder in Edit mode", () => {
-    render("Vi repar tisdagar.", ["manageGroupDescription"]);
+    render("Vi repar tisdagar.", ["manageGroupHome"]);
     turnOnEditMode();
 
     expect(container.textContent).toContain("Vi repar tisdagar.");
