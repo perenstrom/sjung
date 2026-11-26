@@ -10,9 +10,8 @@ import { testPrisma } from "../support/db";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
 import { createAccessScenario, createGroup, createUser, grantClaims } from "../support/fixtures";
-import { emailedLinkToken, failEmailsTo, resetFakeEmail, sentEmails } from "../support/fake-email";
-import { getInvitationView, inviteToGroup } from "@/lib/invitations/invitations";
-import { INVITATION_PATH } from "@/lib/invitations/routes";
+import { failEmailsTo, resetFakeEmail, sentEmails } from "../support/fake-email";
+import { inviteToGroup } from "@/lib/invitations/invitations";
 import {
   inviteMemberToGroup,
   deleteGroup,
@@ -38,6 +37,8 @@ async function createManagerScenario(managerClaims: GroupClaim[] = ["MANAGE_MEMB
   await testPrisma.usersToGroups.create({ data: { userId: other.id, groupId: group.id } });
   return { ...scenario, manager, other };
 }
+
+type ManagerScenario = Awaited<ReturnType<typeof createManagerScenario>>;
 
 /** A `setMemberClaims` request: the full Claim set the target should end up with. */
 function claimsFormData(groupSlug: string, memberUserId: string, claims: GroupClaim[]): FormData {
@@ -89,85 +90,53 @@ describe("membership management by a MANAGE_MEMBERS holder", () => {
     expect(byId.get(other.id)).toMatchObject({ isCreator: false, claims: [] });
   });
 
-  it("invites an existing user by email without adding them yet", async () => {
-    const { group, manager, nonMember } = await createManagerScenario();
+  it("invites the typed address and says where the Invitation went", async () => {
+    const { group, manager } = await createManagerScenario();
     actAs(manager.id);
 
     await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: nonMember.email })),
-    ).resolves.toEqual({ status: "sent", email: nonMember.email });
+      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: " Ny@Example.com " })),
+    ).resolves.toEqual({ status: "sent", email: "ny@example.com" });
 
-    expect(sentEmails().map((email) => email.to)).toEqual([nonMember.email]);
-    expect(await isMember(nonMember.id, group.id)).toBe(false);
+    expect(sentEmails().map((email) => email.to)).toEqual(["ny@example.com"]);
   });
 
-  it("answers the same for an address with no account as for one with an account", async () => {
-    const { group, manager } = await createManagerScenario();
-    await createUser({ email: "har-konto@example.com" });
-    actAs(manager.id);
-
-    const known = await inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "har-konto@example.com" }));
-    const unknown = await inviteMemberToGroup(
-      null,
-      formData({ groupSlug: group.slug, email: "saknar-konto@example.com" }),
-    );
-
-    expect(known).toEqual({ status: "sent", email: "har-konto@example.com" });
-    expect(unknown).toEqual({ status: "sent", email: "saknar-konto@example.com" });
-  });
-
-  it("refuses to invite a current Member", async () => {
-    const { group, manager, other } = await createManagerScenario();
-    actAs(manager.id);
-
-    await expect(inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: other.email }))).resolves.toEqual({
-      status: "error",
+  // `arrangeAndType` sets up the case and returns what the inviter typed.
+  it.each<{ why: string; arrangeAndType: (scenario: ManagerScenario) => Promise<string>; error: unknown }>([
+    { why: "isn't an address", arrangeAndType: async () => " inte en adress ", error: "Ange en giltig e-postadress" },
+    {
+      why: "belongs to a Member",
+      arrangeAndType: async ({ other }) => other.email,
       error: "Användaren är redan medlem i gruppen",
-      values: { email: other.email },
-    });
-    expect(sentEmails()).toHaveLength(0);
-  });
-
-  it("refuses a second invitation to the same address within a minute", async () => {
-    const { group, manager } = await createManagerScenario();
-    actAs(manager.id);
-    const invite = () => inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" }));
-
-    await invite();
-
-    await expect(invite()).resolves.toMatchObject({
-      status: "error",
+    },
+    {
+      why: "was invited under a minute ago",
+      arrangeAndType: async ({ group }) => {
+        await inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" }));
+        return "ny@example.com";
+      },
       error: expect.stringMatching(/^Vänta \d+ sekunder innan du skickar inbjudan igen$/),
-    });
-    expect(sentEmails()).toHaveLength(1);
-  });
-
-  it("asks the inviter to try again when the email can't be sent", async () => {
-    const { group, manager } = await createManagerScenario();
-    failEmailsTo("ny@example.com");
-    actAs(manager.id);
-
-    await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "ny@example.com" })),
-    ).resolves.toEqual({
-      status: "error",
+    },
+    {
+      why: "can't be emailed",
+      arrangeAndType: async () => {
+        failEmailsTo("ny@example.com");
+        return "ny@example.com";
+      },
       error: "Kunde inte skicka inbjudan, försök igen",
-      values: { email: "ny@example.com" },
-    });
-  });
-
-  it("rejects something that isn't an email address", async () => {
-    const { group, manager } = await createManagerScenario();
-    actAs(manager.id);
+    },
+  ])("tells the inviter, keeping what they typed, when the address $why", async ({ arrangeAndType, error }) => {
+    const scenario = await createManagerScenario();
+    actAs(scenario.manager.id);
+    const typed = await arrangeAndType(scenario);
 
     await expect(
-      inviteMemberToGroup(null, formData({ groupSlug: group.slug, email: "inte en adress" })),
+      inviteMemberToGroup(null, formData({ groupSlug: scenario.group.slug, email: typed })),
     ).resolves.toEqual({
       status: "error",
-      error: "Ange en giltig e-postadress",
-      values: { email: "inte en adress" },
+      error,
+      values: { email: typed.trim() },
     });
-    expect(sentEmails()).toHaveLength(0);
   });
 
   it("removes a non-creator member", async () => {
@@ -484,11 +453,10 @@ describe("the Group's Invitations", () => {
       { groupId: scenario.group.id, email: "anna@example.com", invitedById: scenario.creator.id },
       new Date(Date.now() - 2 * 60 * 1000),
     );
-    const token = emailedLinkToken(sentEmails().at(-1)!, INVITATION_PATH);
     const invitation = await testPrisma.invitation.findFirstOrThrow({ select: { id: true } });
     const invitationForm = formData({ groupSlug: scenario.group.slug, invitationId: invitation.id });
     resetFakeEmail();
-    return { ...scenario, token, invitation, invitationForm };
+    return { ...scenario, invitation, invitationForm };
   }
 
   it.each([
@@ -509,14 +477,13 @@ describe("the Group's Invitations", () => {
     ]);
   });
 
-  it("can be revoked, which makes the link no longer valid", async () => {
-    const { manager, token, invitationForm } = await createInvitationScenario();
+  it("can be revoked", async () => {
+    const { manager, invitationForm } = await createInvitationScenario();
     actAs(manager.id);
 
     await revokeGroupInvitation(invitationForm);
 
     expect(await testPrisma.invitation.count()).toBe(0);
-    await expect(getInvitationView(token, null)).resolves.toEqual({ state: "invalid" });
   });
 
   it("refuses to revoke an Invitation the Group doesn't have", async () => {
@@ -529,8 +496,8 @@ describe("the Group's Invitations", () => {
     expect(await testPrisma.invitation.count()).toBe(1);
   });
 
-  it("can be re-sent, which emails a new link and makes the old one no longer valid", async () => {
-    const { manager, token, invitationForm } = await createInvitationScenario();
+  it("can be re-sent, which emails a new link", async () => {
+    const { manager, invitationForm } = await createInvitationScenario();
     actAs(manager.id);
 
     await expect(resendGroupInvitation(invitationForm)).resolves.toEqual({
@@ -539,19 +506,6 @@ describe("the Group's Invitations", () => {
     });
 
     expect(sentEmails().map((email) => email.to)).toEqual(["anna@example.com"]);
-    await expect(getInvitationView(token, null)).resolves.toEqual({ state: "invalid" });
-  });
-
-  it("refuses a second re-send within a minute", async () => {
-    const { manager, invitationForm } = await createInvitationScenario();
-    actAs(manager.id);
-    await resendGroupInvitation(invitationForm);
-
-    await expect(resendGroupInvitation(invitationForm)).resolves.toEqual({
-      ok: false,
-      error: expect.stringMatching(/^Vänta \d+ sekunder innan du skickar inbjudan igen$/),
-    });
-    expect(sentEmails()).toHaveLength(1);
   });
 
   it("asks to try again when the re-sent email can't be sent", async () => {

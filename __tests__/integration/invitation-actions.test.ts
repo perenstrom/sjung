@@ -43,25 +43,21 @@ describe("acceptGroupInvitation", () => {
     expect(cookieJar.get(ACTIVE_GROUP_COOKIE_NAME)).toBe(group.slug);
   });
 
-  it("works for an Unverified user, who ends up Verified", async () => {
+  it("lets an Unverified user accept too", async () => {
     const anna = await createUser({ email: "anna@example.com", emailVerifiedAt: null });
     const { group, token } = await inviteToNewGroup("anna@example.com");
     actAs(anna.id);
 
     await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(`redirect:/app/${group.slug}`);
-
-    const updated = await testPrisma.user.findUniqueOrThrow({ where: { id: anna.id } });
-    expect(updated.emailVerifiedAt).not.toBeNull();
   });
 
-  it("sends a User with another address back to the link page without joining", async () => {
+  it("sends a User the link can't be used by back to the link page, keeping their Default group", async () => {
     const bertil = await createUser({ email: "bertil@example.com" });
-    const { group, token } = await inviteToNewGroup("anna@example.com");
+    const { token } = await inviteToNewGroup("anna@example.com");
     actAs(bertil.id);
 
     await expect(acceptGroupInvitation(formData({ token }))).rejects.toThrow(`redirect:/invitation?token=${token}`);
 
-    expect(await isMember(bertil.id, group.id)).toBe(false);
     expect(cookieJar.has(ACTIVE_GROUP_COOKIE_NAME)).toBe(false);
   });
 

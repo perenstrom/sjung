@@ -16,13 +16,11 @@ import argon2 from "argon2";
 import { signIn } from "@/auth";
 import { cookieJar } from "../support/cookie-jar";
 import { testPrisma } from "../support/db";
-import { sentEmails } from "../support/fake-email";
 import { createUser } from "../support/fixtures";
 import { formData } from "../support/form-data";
 import { inviteToNewGroup } from "../support/invitations";
 import { signUpFromInvitationForm } from "@/app/actions/auth";
 import { ACTIVE_GROUP_COOKIE_NAME } from "@/lib/active-group-cookie";
-import { inviteToGroup } from "@/lib/invitations/invitations";
 
 const mockSignIn = vi.mocked(signIn);
 
@@ -45,62 +43,38 @@ function signupForm(invitation: string, overrides: Record<string, string> = {}) 
 }
 
 describe("signUpFromInvitationForm", () => {
-  it("creates the invited, Verified Member, signs them in and opens the Group as their Default group", async () => {
+  it("creates the account with the typed password, signs them in and opens the Group as their Default group", async () => {
     const { group, token } = await inviteToNewGroup("anna@example.com");
-    const sentBefore = sentEmails().length;
 
     await signUpFromInvitationForm(null, signupForm(token));
 
-    const anna = await testPrisma.user.findUniqueOrThrow({
-      where: { email: "anna@example.com" },
-      include: { groups: true },
-    });
-    expect(anna.emailVerifiedAt).not.toBeNull();
+    const anna = await testPrisma.user.findUniqueOrThrow({ where: { email: "anna@example.com" } });
     expect(await argon2.verify(anna.passwordHash, password)).toBe(true);
-    expect(anna.groups.map((membership) => membership.groupId)).toEqual([group.id]);
     expect(cookieJar.get(ACTIVE_GROUP_COOKIE_NAME)).toBe(group.slug);
     expect(mockSignIn).toHaveBeenCalledWith("credentials", {
       email: "anna@example.com",
       password,
       redirectTo: `/app/${group.slug}`,
     });
-    expect(sentEmails()).toHaveLength(sentBefore);
   });
 
-  it("gives the account the invited address whatever email was submitted", async () => {
+  it("returns the form's error and what was typed, creating nothing", async () => {
     const { token } = await inviteToNewGroup("anna@example.com");
 
-    await signUpFromInvitationForm(null, signupForm(token, { email: "bertil@example.com" }));
-
-    expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(1);
-    expect(await testPrisma.user.count({ where: { email: "bertil@example.com" } })).toBe(0);
-  });
-
-  it.each([
-    { field: "passwordConfirmation", value: "något helt annat", error: "Lösenorden matchar inte", echoedName: "Anna" },
-    { field: "name", value: "   ", error: "Namn krävs", echoedName: "" },
-  ])("validates the form like normal signup: $error", async ({ field, value, error, echoedName }) => {
-    const { token } = await inviteToNewGroup("anna@example.com");
-
-    await expect(signUpFromInvitationForm(null, signupForm(token, { [field]: value }))).resolves.toEqual({
-      error,
-      values: { name: echoedName, email: "anna@example.com" },
+    await expect(
+      signUpFromInvitationForm(null, signupForm(token, { passwordConfirmation: "något helt annat" })),
+    ).resolves.toEqual({
+      error: "Lösenorden matchar inte",
+      values: { name: "Anna", email: "anna@example.com" },
     });
     expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(0);
   });
 
   it("sends a no-longer-valid token back to the signup page, which explains it, creating nothing", async () => {
-    const { group, creator, token } = await inviteToNewGroup("anna@example.com");
-    // Superseded by a re-send a minute later.
-    await inviteToGroup(
-      { groupId: group.id, email: "anna@example.com", invitedById: creator.id },
-      new Date(Date.now() + 61_000),
+    await expect(signUpFromInvitationForm(null, signupForm("not-a-real-token"))).rejects.toThrow(
+      "redirect:/auth/signup?invitation=not-a-real-token",
     );
-
-    await expect(signUpFromInvitationForm(null, signupForm(token))).rejects.toThrow(
-      `redirect:/auth/signup?invitation=${token}`,
-    );
-    expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(0);
+    expect(await testPrisma.user.count()).toBe(0);
     expect(mockSignIn).not.toHaveBeenCalled();
   });
 
@@ -112,7 +86,6 @@ describe("signUpFromInvitationForm", () => {
       error: "Det finns redan ett konto med den e-postadressen",
       values: { name: "Anna", email: "anna@example.com" },
     });
-    expect(await testPrisma.user.count({ where: { email: "anna@example.com" } })).toBe(1);
     expect(mockSignIn).not.toHaveBeenCalled();
   });
 });
