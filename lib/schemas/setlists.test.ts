@@ -16,7 +16,7 @@ describe.each([
   { parser: parseSetListIdFromFormData, field: "setListId", message: "Repertoar saknas" },
   { parser: parseSetListPieceIdFromFormData, field: "setListPieceId", message: "Repertoarpost saknas" },
   { parser: parseSetListNoteIdFromFormData, field: "setListNoteId", message: "Anteckning saknas" },
-  // Shared by piece notes and set list notes.
+  // Shared by Performance notes and Running-order notes.
   { parser: parseSetListNoteContentFromFormData, field: "content", message: "Anteckning krävs" },
 ])("$parser.name", ({ parser, field, message }) => {
   it(`returns the trimmed ${field}`, () => {

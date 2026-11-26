@@ -82,7 +82,7 @@ describe("parsePieceCreditsFromFormData", () => {
       JSON.stringify([{ personId: "not-a-uuid", role: "Kompositör" }]),
       INVALID_CREDITS,
     ],
-    ["a role that is blank once trimmed", JSON.stringify([{ personId: personIdA, role: "  " }]), "Roll krävs"],
+    ["a Credit role that is blank once trimmed", JSON.stringify([{ personId: personIdA, role: "  " }]), "Roll krävs"],
   ])("refuses %s", (_case, credits, message) => {
     expect(() => parsePieceCreditsFromFormData(formData({ credits }))).toThrow(message);
   });
@@ -103,14 +103,18 @@ describe("parseCreditPersonIdFromFormData", () => {
 describe("parseCreditRolesFromFormData", () => {
   const parse = (roles: unknown) => parseCreditRolesFromFormData(formData({ roles: JSON.stringify(roles) }));
 
-  it("returns every role, trimmed", () => {
+  it("returns every Credit role, trimmed", () => {
     expect(parse([" Producent ", "Kompositör"])).toEqual(["Producent", "Kompositör"]);
   });
 
   it.each([
-    ["no roles", [], "Välj minst en roll"],
-    ["an empty role", ["Kompositör", "  "], "Roll krävs"],
-    ["a role longer than 50 characters once trimmed", [` ${"x".repeat(51)} `], "Rollen får vara högst 50 tecken"],
+    ["no Credit roles", [], "Välj minst en roll"],
+    ["an empty Credit role", ["Kompositör", "  "], "Roll krävs"],
+    [
+      "a Credit role longer than 50 characters once trimmed",
+      [` ${"x".repeat(51)} `],
+      "Rollen får vara högst 50 tecken",
+    ],
     ["a value that is not a list", "Kompositör", INVALID_CREDITS],
   ])("throws for %s", (_case, roles, message) => {
     expect(() => parse(roles)).toThrow(message);
