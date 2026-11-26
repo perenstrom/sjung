@@ -32,8 +32,9 @@ export type GroupCapability =
    */
   | "manageRunningOrderNotes"
   /**
-   * Write, change and clear the Group description: the Creator or
-   * `MANAGE_GROUP_HOME`. Never part of `manageContent`, so it alone allows it.
+   * Change Home's own content, the Group description and the Cover image:
+   * the Creator or `MANAGE_GROUP_HOME`. Never part of `manageContent`, so it
+   * alone allows it.
    */
   | "manageGroupHome"
   /** Rename or delete the Group: the Creator only. */

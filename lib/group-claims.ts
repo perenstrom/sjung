@@ -34,6 +34,6 @@ export const GROUP_CLAIM_OPTIONS: {
   {
     claim: GroupClaim.MANAGE_GROUP_HOME,
     label: "Hantera startsidan",
-    description: "Kan skriva, ändra och ta bort gruppens beskrivning på startsidan.",
+    description: "Kan ändra gruppens beskrivning och omslagsbild på startsidan.",
   },
 ];

@@ -103,12 +103,12 @@ describe("Group overview", () => {
 
     actAs(creator.id);
     await setGroupDescription(formData({ groupSlug: group.slug, description: "Hemlig repetitionsplats" }));
-    const { descriptionUpdatedAt } = await testPrisma.group.findUniqueOrThrow({ where: { id: group.id } });
+    const { homeUpdatedAt } = await testPrisma.group.findUniqueOrThrow({ where: { id: group.id } });
 
     actAs(operator.id);
     const overview = await getGroupOverview();
 
-    expect(overview.groups[0]?.lastChangedAt).toEqual(descriptionUpdatedAt);
+    expect(overview.groups[0]?.lastChangedAt).toEqual(homeUpdatedAt);
     expect(JSON.stringify(overview)).not.toContain("Hemlig");
   });
 });

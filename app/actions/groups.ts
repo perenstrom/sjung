@@ -8,6 +8,8 @@ import { changeMemberClaims, listGroupAccess, removeMember, requireGroupAccess }
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
+import * as coverImageStore from "@/lib/groups/cover-image-store";
+import { groupCoverImagePath } from "@/lib/groups/routes";
 import {
   findGroupInvitations,
   inviteToGroup,
@@ -24,6 +26,7 @@ import {
   parseMemberUserIdFromFormData,
   parseGroupSlugFromFormData,
 } from "@/lib/schemas/groups";
+import { parseCoverImageStoragePathFromFormData, parseCoverImageUploadFromFormData } from "@/lib/schemas/cover-image";
 import {
   revalidateAppAndMyGroupsWithGroupRoute,
   revalidateGroupHomeRoute,
@@ -129,18 +132,24 @@ export async function deleteGroup(formData: FormData) {
 }
 
 /**
- * The Group description for any Member (`null` when the Group has none), and
- * whether the viewer may change it, which decides Home's Edit mode.
+ * Home's own content for any Member: the Group description (`null` when the
+ * Group has none), where to load its Cover image from (`null` without one),
+ * and whether the viewer may change them, which decides Home's Edit mode.
  */
-export async function getGroupDescription(
+export async function getGroupHome(
   groupSlug: string,
-): Promise<{ description: string | null; canChange: boolean }> {
+): Promise<{ description: string | null; coverImageHref: string | null; canChange: boolean }> {
   const access = await requireGroupAccess(groupSlug);
   const group = await prisma.group.findUniqueOrThrow({
     where: { id: access.group.id },
-    select: { description: true },
+    select: { description: true, coverImageKey: true, coverImageContentType: true },
   });
-  return { description: group.description, canChange: access.can("manageGroupHome") };
+  const coverImage = coverImageStore.toStoredCoverImage(group);
+  return {
+    description: group.description,
+    coverImageHref: coverImage ? groupCoverImagePath(groupSlug, coverImage.key) : null,
+    canChange: access.can("manageGroupHome"),
+  };
 }
 
 /**
@@ -157,8 +166,49 @@ export async function setGroupDescription(formData: FormData) {
     async ({ userId, groupId }) => {
       await prisma.group.update({
         where: { id: groupId },
-        data: { description, descriptionUpdatedAt: new Date(), updatedById: userId },
+        data: { description, homeUpdatedAt: new Date(), updatedById: userId },
       });
+      revalidateGroupHomeRoute(groupSlug);
+    },
+  );
+}
+
+/** A signed upload link for a new Cover image, accepting only this type and size. */
+export async function createGroupCoverImageUploadUrl(formData: FormData) {
+  const groupSlug = parseGroupSlugFromFormData(formData);
+  const image = parseCoverImageUploadFromFormData(formData);
+
+  return runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageGroupHome"),
+    async ({ groupId }) => coverImageStore.signCoverImageUpload(groupId, image),
+  );
+}
+
+/** Makes a finished upload the Group's Cover image, adding or replacing it. The last save wins. */
+export async function setGroupCoverImage(formData: FormData) {
+  const groupSlug = parseGroupSlugFromFormData(formData);
+  const storagePath = parseCoverImageStoragePathFromFormData(formData);
+
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageGroupHome"),
+    async ({ userId, groupId }) => {
+      await coverImageStore.setCoverImage(groupId, storagePath, userId);
+      revalidateGroupHomeRoute(groupSlug);
+    },
+  );
+}
+
+/** _Ta bort omslagsbild_: clears the Group's Cover image. */
+export async function removeGroupCoverImage(formData: FormData) {
+  const groupSlug = parseGroupSlugFromFormData(formData);
+
+  await runGroupMutation(
+    groupSlug,
+    async ({ access }) => access.require("manageGroupHome"),
+    async ({ userId, groupId }) => {
+      await coverImageStore.removeCoverImage(groupId, userId);
       revalidateGroupHomeRoute(groupSlug);
     },
   );

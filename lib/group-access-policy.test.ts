@@ -57,12 +57,7 @@ describe("groupAccessDenial", () => {
       "lacksManageRunningOrderNotes",
     ],
     // The Group description was never part of MANAGE_CONTENT.
-    [
-      "MANAGE_CONTENT: manageGroupHome",
-      facts("MANAGE_CONTENT"),
-      "manageGroupHome",
-      "lacksManageGroupHome",
-    ],
+    ["MANAGE_CONTENT: manageGroupHome", facts("MANAGE_CONTENT"), "manageGroupHome", "lacksManageGroupHome"],
     ["MANAGE_CONTENT: viewMembers", facts("MANAGE_CONTENT"), "viewMembers", "lacksManageMembers"],
     ["MANAGE_CONTENT: removeMember(other)", facts("MANAGE_CONTENT"), removeMember(OTHER), "lacksManageMembers"],
 
@@ -163,18 +158,8 @@ describe("groupAccessDenial", () => {
     ],
     ["MANAGE_RUNNING_ORDER_NOTES: manageGroup", facts("MANAGE_RUNNING_ORDER_NOTES"), "manageGroup", "lacksManageGroup"],
 
-    [
-      "MANAGE_GROUP_HOME: manageGroupHome",
-      facts("MANAGE_GROUP_HOME"),
-      "manageGroupHome",
-      null,
-    ],
-    [
-      "MANAGE_GROUP_HOME: manageContent",
-      facts("MANAGE_GROUP_HOME"),
-      "manageContent",
-      "lacksManageContent",
-    ],
+    ["MANAGE_GROUP_HOME: manageGroupHome", facts("MANAGE_GROUP_HOME"), "manageGroupHome", null],
+    ["MANAGE_GROUP_HOME: manageContent", facts("MANAGE_GROUP_HOME"), "manageContent", "lacksManageContent"],
     ["MANAGE_GROUP_HOME: manageGroup", facts("MANAGE_GROUP_HOME"), "manageGroup", "lacksManageGroup"],
 
     ["both Claims: manageMembers", facts("both"), "manageMembers", null],
