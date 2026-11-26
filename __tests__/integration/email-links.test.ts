@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import { createGroup, createUser } from "../support/fixtures";
+import { emailedLinkToken, sentEmails } from "../support/fake-email";
 import { testPrisma } from "../support/db";
+import { inviteToNewGroup } from "../support/invitations";
 import { UserTokenPurpose } from "@/app/generated/prisma/client";
+import { getVerificationTokenState, sendVerificationEmail } from "@/lib/auth/email-verification";
+import { getPasswordResetTokenState, requestPasswordReset } from "@/lib/auth/password-reset";
+import { CONFIRM_EMAIL_PATH, NEW_PASSWORD_PATH } from "@/lib/auth/routes";
 import { type EmailLinks, invitationLinks, userLinks } from "@/lib/email-links/email-links";
+import { getInvitationView } from "@/lib/invitations/invitations";
 
 const VALID_FOR_HOURS = 24;
 const sentAt = new Date("2026-11-01T12:00:00Z");
@@ -200,5 +206,48 @@ describe("UserToken links of another purpose", () => {
       status: "usable",
       subjectId: userId,
     });
+  });
+});
+
+// The rules above hold for every purpose; only how long its links work differs.
+describe("each purpose's validity window", () => {
+  const lastToken = (path: string) => emailedLinkToken(sentEmails().at(-1)!, path);
+
+  it.each<{
+    purpose: string;
+    hours: number;
+    emailedToken: (now: Date) => Promise<string>;
+    isUsable: (token: string, now: Date) => Promise<boolean>;
+  }>([
+    {
+      purpose: "an Invitation",
+      hours: 14 * 24,
+      emailedToken: async (now) => (await inviteToNewGroup("anna@example.com", now)).token,
+      isUsable: async (token, now) => (await getInvitationView(token, null, now)).state === "sign-in",
+    },
+    {
+      purpose: "a password reset",
+      hours: 1,
+      emailedToken: async (now) => {
+        await createUser({ email: "anna@example.com" });
+        await requestPasswordReset("anna@example.com", now);
+        return lastToken(NEW_PASSWORD_PATH);
+      },
+      isUsable: async (token, now) => (await getPasswordResetTokenState(token, now)).state === "valid",
+    },
+    {
+      purpose: "an email verification",
+      hours: 24,
+      emailedToken: async (now) => {
+        await sendVerificationEmail((await createUser({ emailVerifiedAt: null })).id, now);
+        return lastToken(CONFIRM_EMAIL_PATH);
+      },
+      isUsable: async (token, now) => (await getVerificationTokenState(token, now)).state === "valid",
+    },
+  ])("keeps $purpose link working for $hours hours", async ({ hours, emailedToken, isUsable }) => {
+    const token = await emailedToken(sentAt);
+
+    await expect(isUsable(token, after(hours * 60 * 60 - 1))).resolves.toBe(true);
+    await expect(isUsable(token, after(hours * 60 * 60))).resolves.toBe(false);
   });
 });
