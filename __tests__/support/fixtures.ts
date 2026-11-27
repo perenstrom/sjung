@@ -1,12 +1,14 @@
 import { FileConversionState } from "@/app/generated/prisma/enums";
 import { convertedStoragePathOf } from "@/lib/pieces/file-store";
 import { freeAnnouncementSlug, freeContentSlug } from "@/lib/content-slug";
+import { matchKey } from "@/lib/text/match-key";
 import { testPrisma } from "./db";
 import type {
   User,
   Group,
   GroupClaim,
   GroupMemberClaim,
+  GroupRole,
   Piece,
   PieceAlias,
   PieceNote,
@@ -86,6 +88,25 @@ export async function createGroup(overrides: CreateGroupOptions = {}): Promise<G
 /** Grants Claims to an existing Member (the `UsersToGroups` row must already exist). */
 export async function grantClaims(userId: string, groupId: string, claims: GroupClaim[]): Promise<GroupMemberClaim[]> {
   return Promise.all(claims.map((claim) => testPrisma.groupMemberClaim.create({ data: { userId, groupId, claim } })));
+}
+
+/** A Role in the Group with these Claims, held by nobody yet. */
+export async function createRole(group: Group, name: string, claims: GroupClaim[] = []): Promise<GroupRole> {
+  return testPrisma.groupRole.create({
+    data: {
+      groupId: group.id,
+      name,
+      nameKey: matchKey(name),
+      claims: { create: claims.map((claim) => ({ claim })) },
+    },
+  });
+}
+
+/** Gives Roles to an existing Member (the `UsersToGroups` row must already exist). */
+export async function giveRoles(userId: string, roles: GroupRole[]): Promise<void> {
+  await testPrisma.groupMemberRole.createMany({
+    data: roles.map((role) => ({ userId, groupId: role.groupId, roleId: role.id })),
+  });
 }
 
 /** A new User who is a Member of the Group, holding `claims`. */

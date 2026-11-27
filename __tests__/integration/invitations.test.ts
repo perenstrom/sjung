@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createAccessScenario, createUser } from "../support/fixtures";
+import { createAccessScenario, createRole, createUser } from "../support/fixtures";
 import { emailedLinkToken, failEmailsTo, resetFakeEmail, sentEmails, type SentEmail } from "../support/fake-email";
 import { testPrisma } from "../support/db";
 import { inviteToNewGroup } from "../support/invitations";
@@ -138,9 +138,10 @@ describe("acceptInvitation", () => {
     return user.emailVerifiedAt;
   }
 
-  it("makes the invited User a Member with no Claims and uses up the token", async () => {
+  it("makes the invited User a Member with no Claims or Roles and uses up the token", async () => {
     const anna = await createUser({ email: "anna@example.com" });
     const { group, token } = await inviteToNewGroup("anna@example.com");
+    await createRole(group, "Stämledare", ["MANAGE_CONTENT"]);
 
     await expect(acceptInvitation(token, viewer(anna))).resolves.toEqual({
       ok: true,
@@ -149,6 +150,7 @@ describe("acceptInvitation", () => {
 
     expect(await isMember(anna.id, group.id)).toBe(true);
     expect(await testPrisma.groupMemberClaim.count({ where: { userId: anna.id, groupId: group.id } })).toBe(0);
+    expect(await testPrisma.groupMemberRole.count({ where: { userId: anna.id, groupId: group.id } })).toBe(0);
     await expect(acceptInvitation(token, viewer(anna))).resolves.toEqual({ ok: false });
   });
 

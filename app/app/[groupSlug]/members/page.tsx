@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { listGroupRoles } from "@/app/actions/group-roles";
 import { listGroupInvitations, listGroupMembers } from "@/app/actions/groups";
+import { GroupRolesSection } from "@/components/members/GroupRolesSection";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { InviteGroupMemberForm } from "@/components/InviteGroupMemberForm";
 import { GroupInvitationsTable } from "@/components/members/GroupInvitationsTable";
@@ -22,8 +24,9 @@ export default async function GroupMembersPage({ params }: PageProps) {
   // viewer sees just the member list (ADR-0013).
   const managesMembers = access.can("manageMembers");
 
-  const [members, invitations] = await Promise.all([
+  const [members, roles, invitations] = await Promise.all([
     listGroupMembers(groupSlug),
+    listGroupRoles(groupSlug),
     managesMembers ? listGroupInvitations(groupSlug) : null,
   ]);
 
@@ -47,7 +50,10 @@ export default async function GroupMembersPage({ params }: PageProps) {
 
       {managesMembers ? <InviteGroupMemberForm groupSlug={groupSlug} /> : null}
 
-      <GroupMembersTable groupSlug={groupSlug} members={members} />
+      <GroupMembersTable groupSlug={groupSlug} members={members} roles={roles} />
+
+      {/* Everyone who can open the page sees the Roles; only MANAGE_MEMBER_AUTHORIZATION changes them. */}
+      <GroupRolesSection groupSlug={groupSlug} roles={roles} canManageRoles={access.can("manageRoles")} />
 
       {invitations ? <GroupInvitationsTable groupSlug={groupSlug} invitations={invitations} /> : null}
     </div>

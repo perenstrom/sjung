@@ -121,6 +121,7 @@ model Group {
   pieceNotes PieceNote[]
   setListPieceNotes SetListPieceNote[]
   invitations       Invitation[]
+  roles             GroupRole[]
 
   @@map("groups")
 }
@@ -132,6 +133,7 @@ model UsersToGroups {
   user   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   group  Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
   claims GroupMemberClaim[]
+  roles  GroupMemberRole[]
 
   @@id([userId, groupId])
   @@map("users_to_groups")
@@ -201,6 +203,53 @@ model GroupMemberClaim {
 
   @@id([userId, groupId, claim])
   @@map("group_member_claims")
+}
+
+// A Role: a named set of Claims a Group defines and gives to its Members (see
+// CONTEXT.md, "Role"). Holders get its Claims for as long as they hold it, so
+// changing a Role's Claims changes every holder at once.
+model GroupRole {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  groupId   String   @map("group_id")
+  name      String
+  // `matchKey(name)`: names differing only in letter case or spacing are the same Role.
+  nameKey   String   @map("name_key")
+
+  group   Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  claims  GroupRoleClaim[]
+  holders GroupMemberRole[]
+
+  @@unique([groupId, nameKey])
+  // Lets GroupMemberRole reference a Role together with its Group, so a Member
+  // can only hold Roles of a Group they are in.
+  @@unique([id, groupId])
+  @@map("group_roles")
+}
+
+model GroupRoleClaim {
+  roleId String     @map("role_id")
+  claim  GroupClaim
+
+  role GroupRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, claim])
+  @@map("group_role_claims")
+}
+
+// A Role held by a Member. Hangs off both the membership and the Role, so
+// removing either drops the link.
+model GroupMemberRole {
+  userId  String @map("user_id")
+  groupId String @map("group_id")
+  roleId  String @map("role_id")
+
+  membership UsersToGroups @relation(fields: [userId, groupId], references: [userId, groupId], onDelete: Cascade)
+  role       GroupRole     @relation(fields: [roleId, groupId], references: [id, groupId], onDelete: Cascade)
+
+  @@id([userId, groupId, roleId])
+  @@index([roleId])
+  @@map("group_member_roles")
 }
 
 model Piece {

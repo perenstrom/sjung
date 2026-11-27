@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { GroupClaim } from "@/app/generated/prisma/enums";
 import { formDataString } from "@/lib/schemas/form-data";
+import { normalizeSpacing } from "@/lib/text/match-key";
 
 export const groupNameSchema = z.string().trim().min(1, { error: "Gruppnamn krävs" });
 
@@ -82,6 +83,46 @@ export function parseGroupClaimsFromFormData(formData: FormData): GroupClaim[] {
   const result = z.array(groupClaimSchema).safeParse(formData.getAll("claims"));
   if (!result.success) {
     throw new Error(result.error.issues[0]?.message ?? "Ogiltig behörighet");
+  }
+  return [...new Set(result.data)];
+}
+
+export const ROLE_NAME_MAX_LENGTH = 50;
+
+/** A Role's name as saved: trimmed, with each run of spacing collapsed to one space. */
+export const roleNameSchema = z
+  .string()
+  .transform(normalizeSpacing)
+  .pipe(
+    z
+      .string()
+      .min(1, { error: "Rollnamn krävs" })
+      .max(ROLE_NAME_MAX_LENGTH, { error: `Rollnamnet får vara högst ${ROLE_NAME_MAX_LENGTH} tecken` }),
+  );
+
+export const roleIdSchema = z.uuid({ error: "Ogiltig roll" });
+
+export function parseRoleNameFromFormData(formData: FormData): string {
+  const result = roleNameSchema.safeParse(formDataString(formData, "name"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Rollnamn krävs");
+  }
+  return result.data;
+}
+
+export function parseRoleIdFromFormData(formData: FormData): string {
+  const result = roleIdSchema.safeParse(formDataString(formData, "roleId"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Ogiltig roll");
+  }
+  return result.data;
+}
+
+/** Reads the repeated `roleIds` field as a Member's complete set of Roles; empty means none. */
+export function parseRoleIdsFromFormData(formData: FormData): string[] {
+  const result = z.array(roleIdSchema).safeParse(formData.getAll("roleIds"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? "Ogiltig roll");
   }
   return [...new Set(result.data)];
 }

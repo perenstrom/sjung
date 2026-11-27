@@ -4,7 +4,13 @@ import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { firstFreeSlug, slugsFrom } from "@/lib/slug";
-import { changeMemberClaims, listGroupAccess, removeMember, requireGroupAccess } from "@/lib/group-access";
+import {
+  changeMemberClaims,
+  changeMemberRoles,
+  listGroupAccess,
+  removeMember,
+  requireGroupAccess,
+} from "@/lib/group-access";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
@@ -218,7 +224,10 @@ export async function removeGroupCoverImage(formData: FormData) {
   );
 }
 
-/** The Group's Members with their Claims, and whether the viewer may remove each one or change their Claims. */
+/**
+ * The Group's Members with their individual Claims and their Roles, and whether
+ * the viewer may remove each one or change their Claims or Roles.
+ */
 export async function listGroupMembers(groupSlug: string) {
   const access = await requireGroupAccess(groupSlug);
   access.require("viewMembers");
@@ -237,6 +246,7 @@ export async function listGroupMembers(groupSlug: string) {
         select: { claim: true },
         orderBy: { claim: "asc" },
       },
+      roles: { select: { roleId: true } },
       group: { select: { createdById: true } },
     },
     orderBy: {
@@ -252,7 +262,10 @@ export async function listGroupMembers(groupSlug: string) {
     isCreator: row.user.id === row.group.createdById,
     canRemove: access.can(removeMember(row.user.id)),
     canChangeClaims: access.can(changeMemberClaims(row.user.id)),
+    canChangeRoles: access.can(changeMemberRoles(row.user.id)),
+    /** Held individually; the Claims of the Member's Roles come from `listGroupRoles`. */
     claims: row.claims.map(({ claim }) => claim),
+    roleIds: row.roles.map(({ roleId }) => roleId),
   }));
 }
 

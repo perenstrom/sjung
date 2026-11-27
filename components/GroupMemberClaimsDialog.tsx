@@ -25,7 +25,20 @@ type GroupMember = {
   claims: GroupClaim[];
 };
 
-export function GroupMemberClaimsDialog({ groupSlug, member }: { groupSlug: string; member: GroupMember }) {
+/**
+ * "Behörigheter" on a Member: tick the Claims they hold individually. Claims
+ * they also get through a Role carry a note in `roleNotes`; only the
+ * individual ones are ticked or unticked here.
+ */
+export function GroupMemberClaimsDialog({
+  groupSlug,
+  member,
+  roleNotes,
+}: {
+  groupSlug: string;
+  member: GroupMember;
+  roleNotes?: Partial<Record<GroupClaim, string>>;
+}) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<GroupClaim[]>(member.claims);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +99,12 @@ export function GroupMemberClaimsDialog({ groupSlug, member }: { groupSlug: stri
         <form onSubmit={handleSubmit} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="memberUserId" value={member.id} />
-          <ClaimCheckboxList selected={selected} onSelectedChange={setSelected} disabled={isPending} />
+          <ClaimCheckboxList
+            selected={selected}
+            onSelectedChange={setSelected}
+            disabled={isPending}
+            notes={roleNotes}
+          />
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>

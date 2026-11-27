@@ -9,13 +9,28 @@ import {
   parseGroupNameFromFormData,
   parseGroupSlugFromFormData,
   parseMemberUserIdFromFormData,
+  parseRoleNameFromFormData,
+  ROLE_NAME_MAX_LENGTH,
 } from "@/lib/schemas/groups";
+
+describe("parseRoleNameFromFormData", () => {
+  it("collapses runs of spacing inside the name", () => {
+    expect(parseRoleNameFromFormData(formData({ name: " Kör  ledare " }))).toBe("Kör ledare");
+  });
+
+  it("throws when the name is too long", () => {
+    expect(() => parseRoleNameFromFormData(formData({ name: "a".repeat(ROLE_NAME_MAX_LENGTH + 1) }))).toThrow(
+      "Rollnamnet får vara högst 50 tecken",
+    );
+  });
+});
 
 describe.each([
   { parser: parseGroupNameFromFormData, field: "name", message: "Gruppnamn krävs" },
   { parser: parseGroupSlugFromFormData, field: "groupSlug", message: "Ogiltig grupp" },
   // A member's id is any non-blank string, not necessarily a UUID.
   { parser: parseMemberUserIdFromFormData, field: "memberUserId", message: "Ogiltig medlem" },
+  { parser: parseRoleNameFromFormData, field: "name", message: "Rollnamn krävs" },
 ])("$parser.name", ({ parser, field, message }) => {
   it(`returns the trimmed ${field}`, () => {
     expect(parser(formData({ [field]: "  not-a-uuid  " }))).toBe("not-a-uuid");

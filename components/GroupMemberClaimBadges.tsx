@@ -1,14 +1,14 @@
-import type { GroupClaim } from "@/app/generated/prisma/enums";
 import { Badge } from "@/components/ui/badge";
-import { GROUP_CLAIM_OPTIONS } from "@/lib/group-claims";
+import type { HeldClaim } from "@/lib/group-roles";
 import { cn } from "@/lib/utils";
 
+/** A Member's Claims as badges, each saying whether it is held individually or via which Roles. */
 export function GroupMemberClaimBadges({
   member,
   empty = <span className="text-muted-foreground">–</span>,
   className,
 }: {
-  member: { isCreator: boolean; claims: GroupClaim[] };
+  member: { isCreator: boolean; heldClaims: HeldClaim[] };
   /** Shown when the member holds no Claim. Pass null to render nothing. */
   empty?: React.ReactNode;
   className?: string;
@@ -20,15 +20,20 @@ export function GroupMemberClaimBadges({
       </div>
     );
   }
-  const heldClaims = GROUP_CLAIM_OPTIONS.filter(({ claim }) => member.claims.includes(claim));
-  if (heldClaims.length === 0) {
+  if (member.heldClaims.length === 0) {
     return empty;
   }
   return (
     <div className={cn("flex flex-wrap gap-1", className)}>
-      {heldClaims.map(({ claim, label }) => (
+      {member.heldClaims.map(({ claim, label, individual, viaRoles }) => (
         <Badge key={claim} variant="outline">
           {label}
+          {individual ? null : (
+            <>
+              {" "}
+              <span className="font-normal text-muted-foreground">via {viaRoles.join(", ")}</span>
+            </>
+          )}
         </Badge>
       ))}
     </div>
