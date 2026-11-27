@@ -47,7 +47,7 @@ The Group a User lands in when opening the app, on its Home — whichever Group 
 _Avoid_: Active group, Current group.
 
 **Home**:
-A Group's start page: what every Member sees first when they open that Group, showing its Cover image and Group description and pointing them at the Group's Current Set lists. Headed by the Group's name. The same for every Member. Swedish UI: _Hem_ (what the sidebar link to it says).
+A Group's start page: what every Member sees first when they open that Group, showing its Cover image, Group description and Group links and pointing them at the Group's Current Set lists. Headed by the Group's name. The same for every Member. Swedish UI: _Hem_ (what the sidebar link to it says).
 _Avoid_: Dashboard, Overview — both read as the Operators' Group overview; Start page.
 
 **Cover image**:
@@ -75,7 +75,7 @@ What one User may do in one Group: whether they are a Member at all, and which c
 _Avoid_: Permissions, Role, Rights.
 
 **Edit mode**:
-The state of a Group content page in which it offers controls that change content. Every content page opens read-only and is switched into Edit mode by its own toggle; the mode lasts until the page is left or reloaded, and is never shared between pages or remembered. It is a convenience, not a permission: a Member is offered the toggle only when they hold a capability that matters on that page, and each control in Edit mode shows only to a Member holding the capability it needs (a Set list's move buttons need `reorderSetLists` or `manageContent`; Home's _Redigera beskrivning_ and Cover image actions need `manageGroupHome`, which `manageContent` doesn't give; every other control needs `manageContent`). See ADR-0004, ADR-0012. Swedish UI: _Redigera_ (the toggle), _Klar_ (to leave it).
+The state of a Group content page in which it offers controls that change content. Every content page opens read-only and is switched into Edit mode by its own toggle; the mode lasts until the page is left or reloaded, and is never shared between pages or remembered. It is a convenience, not a permission: a Member is offered the toggle only when they hold a capability that matters on that page, and each control in Edit mode shows only to a Member holding the capability it needs (a Set list's move buttons need `reorderSetLists` or `manageContent`; Home's _Redigera beskrivning_, Cover image and Group link actions need `manageGroupHome`, which `manageContent` doesn't give; every other control needs `manageContent`). See ADR-0004, ADR-0012. Swedish UI: _Redigera_ (the toggle), _Klar_ (to leave it).
 _Avoid_: Admin mode, Write access — those describe Group access, which Edit mode never grants.
 
 **Person**:
