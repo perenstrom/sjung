@@ -40,6 +40,8 @@ model User {
   updatedPeople        Person[]        @relation("PersonUpdatedBy")
   createdLinks         Link[]          @relation("LinkCreatedBy")
   updatedLinks         Link[]          @relation("LinkUpdatedBy")
+  createdGroupLinks    GroupLink[]     @relation("GroupLinkCreatedBy")
+  updatedGroupLinks    GroupLink[]     @relation("GroupLinkUpdatedBy")
   createdSetLists      SetList[]       @relation("SetListCreatedBy")
   updatedSetLists      SetList[]       @relation("SetListUpdatedBy")
   createdSetListPieces SetListPiece[]  @relation("SetListPieceCreatedBy")
@@ -121,6 +123,7 @@ model Group {
   pieceNotes PieceNote[]
   setListPieceNotes SetListPieceNote[]
   invitations       Invitation[]
+  groupLinks        GroupLink[]
 
   @@map("groups")
 }
@@ -264,6 +267,27 @@ model Link {
   hiddenOnSetListPieces SetListPieceHiddenLink[]
 
   @@map("links")
+}
+
+/// A Group link (CONTEXT.md): one of the Group's standing places outside
+/// Sjung, listed on Home. Unrelated to a Piece's `Link`.
+model GroupLink {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+  updatedById String?  @map("updated_by_id")
+
+  label   String
+  url     String
+  groupId String @map("group_id")
+
+  createdBy User? @relation("GroupLinkCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("GroupLinkUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@map("group_links")
 }
 
 /// How preparing a MuseScore File for the player went (ADR-0009).

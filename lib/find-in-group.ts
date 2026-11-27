@@ -54,6 +54,12 @@ const CONTENT = {
     find: (groupId: string, id: string, select: Prisma.PersonSelect) =>
       prisma.person.findFirst({ where: { id, groupId }, select }),
   },
+  /** A Group link on Home (CONTEXT.md), not a Piece's Link. */
+  groupLink: {
+    notFound: "Länk hittades inte",
+    find: (groupId: string, id: string, select: Prisma.GroupLinkSelect) =>
+      prisma.groupLink.findFirst({ where: { id, groupId }, select }),
+  },
 } as const;
 
 /** A kind of row that belongs to one Group's content. */
@@ -99,9 +105,13 @@ type ContentRow<K extends ContentKind, S> = K extends "piece"
                 ? S extends Prisma.PieceNoteSelect
                   ? Prisma.PieceNoteGetPayload<{ select: S }>
                   : never
-                : S extends Prisma.PersonSelect
-                  ? Prisma.PersonGetPayload<{ select: S }>
-                  : never;
+                : K extends "person"
+                  ? S extends Prisma.PersonSelect
+                    ? Prisma.PersonGetPayload<{ select: S }>
+                    : never
+                  : S extends Prisma.GroupLinkSelect
+                    ? Prisma.GroupLinkGetPayload<{ select: S }>
+                    : never;
 
 const ID_ONLY = { id: true } as const;
 
