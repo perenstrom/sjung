@@ -19,3 +19,8 @@ export function textOf(html: string): string {
 export function hasLink(html: string, href: string, label: string): boolean {
   return new RegExp(`<a[^>]*href="${href}"[^>]*>${label}</a>`).test(html);
 }
+
+/** Whether `html` has a level-1 heading whose text is exactly `label`. */
+export function hasHeading(html: string, label: string): boolean {
+  return new RegExp(`<h1[^>]*>${label}</h1>`).test(html);
+}

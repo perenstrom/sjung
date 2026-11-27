@@ -47,7 +47,7 @@ The Group a User lands in when opening the app, on its Home — whichever Group 
 _Avoid_: Active group, Current group.
 
 **Home**:
-A Group's start page: what every Member sees first when they open that Group, showing its Cover image and Group description and pointing them at the Group's Current Set lists. The same for every Member. Swedish UI: _Hem_.
+A Group's start page: what every Member sees first when they open that Group, showing its Cover image and Group description and pointing them at the Group's Current Set lists. Headed by the Group's name. The same for every Member. Swedish UI: _Hem_ (what the sidebar link to it says).
 _Avoid_: Dashboard, Overview — both read as the Operators' Group overview; Start page.
 
 **Cover image**:

@@ -5,7 +5,7 @@ import { createVerifiedCreator } from "./support/members";
 test("an anonymous visitor to a Group is sent to login and lands back in the Group after signing in", async ({
   page,
 }) => {
-  const { email, password, groupSlug } = await createVerifiedCreator();
+  const { email, password, groupName, groupSlug } = await createVerifiedCreator();
 
   await page.goto(groupPath(groupSlug));
 
@@ -18,5 +18,5 @@ test("an anonymous visitor to a Group is sent to login and lands back in the Gro
   await page.getByRole("button", { name: "Logga in" }).click();
 
   await expect(page).toHaveURL((url) => url.pathname === groupPath(groupSlug));
-  await expect(page.getByRole("heading", { name: "Hem" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: groupName })).toBeVisible();
 });
