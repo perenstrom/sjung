@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { RoleActionTooltip } from "@/components/members/RoleActionTooltip";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 /** What deleting the Role does to its holders, in one sentence. */
@@ -58,26 +58,20 @@ export function DeleteGroupRoleDialog({
         }
       }}
     >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {/* A disabled button gets no pointer events, so the tooltip hangs off a wrapper. */}
-          <span tabIndex={disabledReason ? 0 : undefined}>
-            <DialogTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 text-destructive hover:text-destructive"
-                aria-label={`Ta bort ${role.name}`}
-                disabled={disabledReason !== undefined}
-              >
-                <Trash2 className="size-4" aria-hidden="true" />
-              </Button>
-            </DialogTrigger>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{disabledReason ?? "Ta bort"}</TooltipContent>
-      </Tooltip>
+      <RoleActionTooltip label="Ta bort" disabledReason={disabledReason}>
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 text-destructive hover:text-destructive"
+            aria-label={`Ta bort ${role.name}`}
+            disabled={disabledReason !== undefined}
+          >
+            <Trash2 className="size-4" aria-hidden="true" />
+          </Button>
+        </DialogTrigger>
+      </RoleActionTooltip>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Ta bort roll?</DialogTitle>

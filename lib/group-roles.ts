@@ -14,6 +14,14 @@ export type HeldClaim = {
   viaRoles: string[];
 };
 
+/** The Roles a Member holds, in the order of `roles`. */
+export function rolesOf<TRole extends RoleClaims>(
+  member: { roleIds: readonly string[] },
+  roles: readonly TRole[],
+): TRole[] {
+  return roles.filter((role) => member.roleIds.includes(role.id));
+}
+
 /** A Role's Claims as one line of their labels in display order, or a note that it has none. */
 export function roleClaimSummary(role: Pick<RoleClaims, "claims">): string {
   const labels = GROUP_CLAIM_OPTIONS.filter(({ claim }) => role.claims.includes(claim)).map(({ label }) => label);
@@ -29,7 +37,7 @@ export function heldClaims(
   member: { claims: readonly GroupClaim[]; roleIds: readonly string[] },
   roles: readonly RoleClaims[],
 ): HeldClaim[] {
-  const memberRoles = roles.filter((role) => member.roleIds.includes(role.id));
+  const memberRoles = rolesOf(member, roles);
   return GROUP_CLAIM_OPTIONS.map(({ claim, label }) => ({
     claim,
     label,

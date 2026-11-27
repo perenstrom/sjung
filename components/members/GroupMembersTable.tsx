@@ -1,11 +1,11 @@
-import { GroupMemberClaimBadges } from "@/components/GroupMemberClaimBadges";
-import { GroupMemberClaimsDialog } from "@/components/GroupMemberClaimsDialog";
+import { GroupMemberClaimBadges } from "@/components/members/GroupMemberClaimBadges";
+import { GroupMemberClaimsDialog } from "@/components/members/GroupMemberClaimsDialog";
 import { RemoveGroupMemberDialog } from "@/components/RemoveGroupMemberDialog";
 import { GroupMemberRolesDialog } from "@/components/members/GroupMemberRolesDialog";
 import { MobileList, MobileListEmpty, MobileListRow } from "@/components/ui/mobile-list";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { GroupClaim } from "@/app/generated/prisma/enums";
-import { heldClaims, type HeldClaim, type RoleClaims } from "@/lib/group-roles";
+import { heldClaims, rolesOf, type HeldClaim, type RoleClaims } from "@/lib/group-roles";
 
 export type GroupMembersTableRow = {
   id: string;
@@ -41,7 +41,7 @@ export function GroupMembersTable({
 }) {
   const views: MemberView[] = members.map((member) => ({
     ...member,
-    roleNames: roles.filter((role) => member.roleIds.includes(role.id)).map((role) => role.name),
+    roleNames: rolesOf(member, roles).map((role) => role.name),
     heldClaims: heldClaims(member, roles),
   }));
 

@@ -15,6 +15,7 @@ import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group"
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
 import * as coverImageStore from "@/lib/groups/cover-image-store";
+import { lockMembership } from "@/lib/groups/membership-lock";
 import { groupCoverImagePath } from "@/lib/groups/routes";
 import {
   findGroupInvitations,
@@ -425,17 +426,7 @@ export async function setMemberClaims(formData: FormData) {
       }),
     async ({ groupId }) => {
       await prisma.$transaction(async (tx) => {
-        // Locking the membership row queues concurrent saves for this Member, so the
-        // last one replaces the set instead of merging with it. It also proves membership.
-        const membership = await tx.$queryRaw<unknown[]>`
-          SELECT 1 FROM users_to_groups
-          WHERE user_id = ${memberUserId} AND group_id = ${groupId}
-          FOR UPDATE
-        `;
-        if (membership.length === 0) {
-          throw new Error("Medlemmen finns inte i gruppen");
-        }
-
+        await lockMembership(tx, memberUserId, groupId);
         await tx.groupMemberClaim.deleteMany({
           where: { userId: memberUserId, groupId },
         });

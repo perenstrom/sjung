@@ -5,6 +5,7 @@ import type { GroupClaim } from "@/app/generated/prisma/enums";
 import prisma from "@/lib/prisma";
 import { compareCaseInsensitive } from "@/lib/data-table/sorting";
 import { changeMemberRoles, changeRole, requireGroupAccess } from "@/lib/group-access";
+import { lockMembership } from "@/lib/groups/membership-lock";
 import { runGroupMutation } from "@/lib/tenant-group";
 import { matchKey } from "@/lib/text/match-key";
 import {
@@ -145,15 +146,7 @@ export async function setMemberRoles(formData: FormData): Promise<void> {
       }),
     async ({ groupId }) => {
       await prisma.$transaction(async (tx) => {
-        // As in setMemberClaims: the lock queues concurrent saves for this Member and proves membership.
-        const membership = await tx.$queryRaw<unknown[]>`
-          SELECT 1 FROM users_to_groups
-          WHERE user_id = ${memberUserId} AND group_id = ${groupId}
-          FOR UPDATE
-        `;
-        if (membership.length === 0) {
-          throw new Error("Medlemmen finns inte i gruppen");
-        }
+        await lockMembership(tx, memberUserId, groupId);
         const known = await tx.groupRole.count({ where: { id: { in: roleIds }, groupId } });
         if (known !== roleIds.length) {
           throw new Error(ROLE_NOT_FOUND);

@@ -17,11 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { RoleActionTooltip } from "@/components/members/RoleActionTooltip";
+import type { RoleClaims } from "@/lib/group-roles";
 import { ROLE_NAME_MAX_LENGTH } from "@/lib/schemas/groups";
 import { getThrownMessage } from "@/lib/getThrownMessage";
-
-type ExistingRole = { id: string; name: string; claims: GroupClaim[] };
 
 /**
  * "Ny roll" without a `role`, otherwise "Redigera" on that Role: its name and
@@ -34,13 +33,13 @@ export function GroupRoleDialog({
   disabledReason,
 }: {
   groupSlug: string;
-  role?: ExistingRole;
+  role?: RoleClaims;
   disabledReason?: string;
 }) {
   const nameId = useId();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(role?.name ?? "");
-  const [selected, setSelected] = useState<GroupClaim[]>(role?.claims ?? []);
+  const [selected, setSelected] = useState<GroupClaim[]>([...(role?.claims ?? [])]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -48,7 +47,7 @@ export function GroupRoleDialog({
     setOpen(nextOpen);
     if (nextOpen) {
       setName(role?.name ?? "");
-      setSelected(role?.claims ?? []);
+      setSelected([...(role?.claims ?? [])]);
     } else {
       setError(null);
     }
@@ -75,26 +74,20 @@ export function GroupRoleDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {role ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {/* A disabled button gets no pointer events, so the tooltip hangs off a wrapper. */}
-            <span tabIndex={disabledReason ? 0 : undefined}>
-              <DialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  aria-label={`Redigera ${role.name}`}
-                  disabled={disabledReason !== undefined}
-                >
-                  <Pencil className="size-4" aria-hidden="true" />
-                </Button>
-              </DialogTrigger>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{disabledReason ?? "Redigera"}</TooltipContent>
-        </Tooltip>
+        <RoleActionTooltip label="Redigera" disabledReason={disabledReason}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label={`Redigera ${role.name}`}
+              disabled={disabledReason !== undefined}
+            >
+              <Pencil className="size-4" aria-hidden="true" />
+            </Button>
+          </DialogTrigger>
+        </RoleActionTooltip>
       ) : (
         <DialogTrigger asChild>
           <Button type="button" variant="outline" size="sm">
