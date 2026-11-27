@@ -10,6 +10,7 @@ import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
 import * as coverImageStore from "@/lib/groups/cover-image-store";
 import { sortGroupLinks } from "@/lib/groups/group-links";
+import { homeChangedBy } from "@/lib/groups/home-changed";
 import { groupCoverImagePath } from "@/lib/groups/routes";
 import {
   findGroupInvitations,
@@ -183,7 +184,7 @@ export async function setGroupDescription(formData: FormData) {
     async ({ userId, groupId }) => {
       await prisma.group.update({
         where: { id: groupId },
-        data: { description, homeUpdatedAt: new Date(), updatedById: userId },
+        data: { description, ...homeChangedBy(userId) },
       });
       revalidateGroupHomeRoute(groupSlug);
     },

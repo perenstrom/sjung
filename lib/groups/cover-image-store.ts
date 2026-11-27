@@ -4,6 +4,7 @@ import { inlineDisposition } from "@/lib/content-disposition";
 import { cleanUpStorage, groupStoragePrefix } from "@/lib/groups/storage";
 import { deleteObjects, headObject, signGet, signPut } from "@/lib/object-storage";
 import prisma from "@/lib/prisma";
+import { homeChangedBy } from "@/lib/groups/home-changed";
 import { coverImageRefusal, type CoverImageCandidate } from "@/lib/schemas/cover-image";
 
 /**
@@ -65,8 +66,7 @@ export async function setCoverImage(groupId: string, storagePath: string, userId
     data: {
       coverImageKey: storagePath,
       coverImageContentType: stored.contentType,
-      homeUpdatedAt: new Date(),
-      updatedById: userId,
+      ...homeChangedBy(userId),
     },
   });
   if (current) {
@@ -83,7 +83,7 @@ export async function removeCoverImage(groupId: string, userId: string) {
 
   await prisma.group.update({
     where: { id: groupId },
-    data: { coverImageKey: null, coverImageContentType: null, homeUpdatedAt: new Date(), updatedById: userId },
+    data: { coverImageKey: null, coverImageContentType: null, ...homeChangedBy(userId) },
   });
   await cleanUpStorage("removeCoverImage", { groupId }, () => deleteObjects([current.key]));
 }

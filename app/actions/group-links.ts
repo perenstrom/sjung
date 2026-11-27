@@ -2,14 +2,15 @@
 
 import prisma from "@/lib/prisma";
 import { findInGroup } from "@/lib/find-in-group";
+import { homeChangedBy } from "@/lib/groups/home-changed";
 import { runGroupMutation } from "@/lib/tenant-group";
 import { parseGroupSlugFromFormData } from "@/lib/schemas/groups";
 import { parseGroupLinkFromFormData, parseGroupLinkIdFromFormData } from "@/lib/schemas/group-links";
 import { revalidateGroupHomeRoute } from "@/lib/revalidate/group-routes";
 
-/** Marks Home's own content as changed, for the Group overview's "last changed". */
+/** Marks Home's own content as changed, alongside a Group link write. */
 function touchGroupHome(groupId: string, userId: string) {
-  return prisma.group.update({ where: { id: groupId }, data: { homeUpdatedAt: new Date(), updatedById: userId } });
+  return prisma.group.update({ where: { id: groupId }, data: homeChangedBy(userId) });
 }
 
 /** _Lägg till länk_: adds a Group link to Home. */
