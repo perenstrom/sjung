@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { GroupClaim } from "@/app/generated/prisma/enums";
 import {
   changeMemberClaims,
+  changeMemberRoles,
+  changeRole,
   groupAccessDenial,
   removeMember,
   type GroupAccessDenial,
@@ -12,15 +14,17 @@ import {
 const VIEWER = "viewer";
 const OTHER = "other";
 const CREATOR = "creator";
+const HELD_ROLE = "held-role";
+const OTHER_ROLE = "other-role";
 
 function facts(kind: "plain" | GroupClaim | "both" | "creator"): GroupAccessFacts {
   if (kind === "creator") {
-    return { userId: CREATOR, creatorId: CREATOR, claims: [] };
+    return { userId: CREATOR, creatorId: CREATOR, claims: [], roleIds: [] };
   }
   if (kind === "both") {
-    return { userId: VIEWER, creatorId: CREATOR, claims: ["MANAGE_MEMBERS", "MANAGE_CONTENT"] };
+    return { userId: VIEWER, creatorId: CREATOR, claims: ["MANAGE_MEMBERS", "MANAGE_CONTENT"], roleIds: [HELD_ROLE] };
   }
-  return { userId: VIEWER, creatorId: CREATOR, claims: kind === "plain" ? [] : [kind] };
+  return { userId: VIEWER, creatorId: CREATOR, claims: kind === "plain" ? [] : [kind], roleIds: [HELD_ROLE] };
 }
 
 describe("groupAccessDenial", () => {
@@ -75,9 +79,55 @@ describe("groupAccessDenial", () => {
       changeMemberClaims(OTHER),
       "lacksManageMemberAuthorization",
     ],
+    ["MANAGE_MEMBERS: manageRoles", facts("MANAGE_MEMBERS"), "manageRoles", "lacksManageMemberAuthorization"],
+    [
+      "MANAGE_MEMBERS: changeRole(not held)",
+      facts("MANAGE_MEMBERS"),
+      changeRole(OTHER_ROLE),
+      "lacksManageMemberAuthorization",
+    ],
+    [
+      "MANAGE_MEMBERS: changeMemberRoles(other)",
+      facts("MANAGE_MEMBERS"),
+      changeMemberRoles(OTHER),
+      "lacksManageMemberAuthorization",
+    ],
     ["MANAGE_MEMBERS: reorderSetLists", facts("MANAGE_MEMBERS"), "reorderSetLists", "lacksReorderSetLists"],
 
     ["MANAGE_MEMBER_AUTHORIZATION: viewMembers", facts("MANAGE_MEMBER_AUTHORIZATION"), "viewMembers", null],
+    // Roles come under MANAGE_MEMBER_AUTHORIZATION (ADR-0013), with the same target guards as Claims.
+    ["MANAGE_MEMBER_AUTHORIZATION: manageRoles", facts("MANAGE_MEMBER_AUTHORIZATION"), "manageRoles", null],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeRole(not held)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeRole(OTHER_ROLE),
+      null,
+    ],
+    // Like changing your own Claims: a Role you hold is one you can't change.
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeRole(held)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeRole(HELD_ROLE),
+      "roleIsHeld",
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeMemberRoles(other)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeMemberRoles(OTHER),
+      null,
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeMemberRoles(Creator)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeMemberRoles(CREATOR),
+      "targetIsCreator",
+    ],
+    [
+      "MANAGE_MEMBER_AUTHORIZATION: changeMemberRoles(self)",
+      facts("MANAGE_MEMBER_AUTHORIZATION"),
+      changeMemberRoles(VIEWER),
+      "targetIsSelf",
+    ],
     [
       "MANAGE_MEMBER_AUTHORIZATION: changeMemberClaims(other)",
       facts("MANAGE_MEMBER_AUTHORIZATION"),
@@ -177,6 +227,9 @@ describe("groupAccessDenial", () => {
     ["Creator: removeMember(self)", facts("creator"), removeMember(CREATOR), "targetIsSelf"],
     ["Creator: changeMemberClaims(other)", facts("creator"), changeMemberClaims(OTHER), null],
     ["Creator: changeMemberClaims(self)", facts("creator"), changeMemberClaims(CREATOR), "targetIsSelf"],
+    ["Creator: manageRoles", facts("creator"), "manageRoles", null],
+    ["Creator: changeRole", facts("creator"), changeRole(OTHER_ROLE), null],
+    ["Creator: changeMemberRoles(other)", facts("creator"), changeMemberRoles(OTHER), null],
   ])("%s", (_label, groupFacts, capability, expected) => {
     expect(groupAccessDenial(groupFacts, capability)).toBe(expected);
   });

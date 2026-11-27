@@ -4,13 +4,20 @@ import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/require-user";
 import { isReservedGroupSlug, slugifyGroupName } from "@/lib/group-slug";
 import { firstFreeSlug, slugsFrom } from "@/lib/slug";
-import { changeMemberClaims, listGroupAccess, removeMember, requireGroupAccess } from "@/lib/group-access";
+import {
+  changeMemberClaims,
+  changeMemberRoles,
+  listGroupAccess,
+  removeMember,
+  requireGroupAccess,
+} from "@/lib/group-access";
 import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group";
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
 import * as coverImageStore from "@/lib/groups/cover-image-store";
 import { sortGroupLinks } from "@/lib/groups/group-links";
 import { homeChangedBy } from "@/lib/groups/home-changed";
+import { lockMembership } from "@/lib/groups/membership-lock";
 import { groupCoverImagePath } from "@/lib/groups/routes";
 import {
   findGroupInvitations,
@@ -232,7 +239,10 @@ export async function removeGroupCoverImage(formData: FormData) {
   );
 }
 
-/** The Group's Members with their Claims, and whether the viewer may remove each one or change their Claims. */
+/**
+ * The Group's Members with their individual Claims and their Roles, and whether
+ * the viewer may remove each one or change their Claims or Roles.
+ */
 export async function listGroupMembers(groupSlug: string) {
   const access = await requireGroupAccess(groupSlug);
   access.require("viewMembers");
@@ -251,6 +261,7 @@ export async function listGroupMembers(groupSlug: string) {
         select: { claim: true },
         orderBy: { claim: "asc" },
       },
+      roles: { select: { roleId: true } },
       group: { select: { createdById: true } },
     },
     orderBy: {
@@ -266,7 +277,10 @@ export async function listGroupMembers(groupSlug: string) {
     isCreator: row.user.id === row.group.createdById,
     canRemove: access.can(removeMember(row.user.id)),
     canChangeClaims: access.can(changeMemberClaims(row.user.id)),
+    canChangeRoles: access.can(changeMemberRoles(row.user.id)),
+    /** Held individually; the Claims of the Member's Roles come from `listGroupRoles`. */
     claims: row.claims.map(({ claim }) => claim),
+    roleIds: row.roles.map(({ roleId }) => roleId),
   }));
 }
 
@@ -426,17 +440,7 @@ export async function setMemberClaims(formData: FormData) {
       }),
     async ({ groupId }) => {
       await prisma.$transaction(async (tx) => {
-        // Locking the membership row queues concurrent saves for this Member, so the
-        // last one replaces the set instead of merging with it. It also proves membership.
-        const membership = await tx.$queryRaw<unknown[]>`
-          SELECT 1 FROM users_to_groups
-          WHERE user_id = ${memberUserId} AND group_id = ${groupId}
-          FOR UPDATE
-        `;
-        if (membership.length === 0) {
-          throw new Error("Medlemmen finns inte i gruppen");
-        }
-
+        await lockMembership(tx, memberUserId, groupId);
         await tx.groupMemberClaim.deleteMany({
           where: { userId: memberUserId, groupId },
         });
