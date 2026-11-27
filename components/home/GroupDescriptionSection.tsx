@@ -6,6 +6,11 @@ import { CoverImageUploadDialog } from "@/components/home/CoverImageUploadDialog
 import { EditGroupDescriptionDialog } from "@/components/home/EditGroupDescriptionDialog";
 import { GROUP_HOME_CAPABILITIES } from "@/lib/edit-mode";
 
+/** Whether {@link GroupDescriptionSection} shows: with a description, or in Edit mode for a Member who can write one. */
+export function showsGroupDescription(description: string | null, isEditing: boolean): boolean {
+  return Boolean(description) || isEditing;
+}
+
 /**
  * The top of Home: the Group description, with no heading of its own, the
  * same for every Member. Without one it renders nothing, except in Edit mode,
@@ -23,7 +28,7 @@ export function GroupDescriptionSection({
 }) {
   const { isEditing } = useEditMode(GROUP_HOME_CAPABILITIES);
 
-  if (!description && !isEditing) {
+  if (!showsGroupDescription(description, isEditing)) {
     return null;
   }
 

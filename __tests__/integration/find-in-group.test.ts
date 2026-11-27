@@ -7,6 +7,7 @@ import {
   createAnnouncement,
   createFile,
   createGroup,
+  createGroupLink,
   createLink,
   createPerson,
   createPiece,
@@ -46,6 +47,7 @@ const KINDS: Record<ContentKind, { create: (group: Group) => Promise<{ id: strin
     notFound: "Anteckning hittades inte",
   },
   person: { create: (group) => createPerson(group), notFound: "Upphovsperson hittades inte" },
+  groupLink: { create: (group) => createGroupLink(group), notFound: "Länk hittades inte" },
 };
 
 describe.each(Object.entries(KINDS) as [ContentKind, (typeof KINDS)[ContentKind]][])(

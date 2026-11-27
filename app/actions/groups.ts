@@ -15,6 +15,8 @@ import { getWritableGroupIdForSlug, runGroupMutation } from "@/lib/tenant-group"
 import { setActiveGroupSlugCookie } from "@/lib/active-group-cookie";
 import { deleteGroupFiles } from "@/lib/pieces/file-store";
 import * as coverImageStore from "@/lib/groups/cover-image-store";
+import { sortGroupLinks } from "@/lib/groups/group-links";
+import { homeChangedBy } from "@/lib/groups/home-changed";
 import { lockMembership } from "@/lib/groups/membership-lock";
 import { groupCoverImagePath } from "@/lib/groups/routes";
 import {
@@ -142,22 +144,34 @@ export async function deleteGroup(formData: FormData) {
   );
 }
 
+/** A Group link as Home lists it. */
+export type GroupLink = { id: string; label: string; url: string };
+
 /**
  * Home's own content for any Member: the Group description (`null` when the
  * Group has none), where to load its Cover image from (`null` without one),
- * and whether the viewer may change them, which decides Home's Edit mode.
+ * its Group links in the order Home lists them, and whether the viewer may
+ * change them, which decides Home's Edit mode.
  */
-export async function getGroupHome(
-  groupSlug: string,
-): Promise<{ description: string | null; coverImageHref: string | null; canChange: boolean }> {
+export async function getGroupHome(groupSlug: string): Promise<{
+  description: string | null;
+  coverImageHref: string | null;
+  links: GroupLink[];
+  canChange: boolean;
+}> {
   const access = await requireGroupAccess(groupSlug);
   const group = await prisma.group.findUniqueOrThrow({
     where: { id: access.group.id },
-    select: { description: true, ...coverImageStore.COVER_IMAGE_SELECT },
+    select: {
+      description: true,
+      ...coverImageStore.COVER_IMAGE_SELECT,
+      groupLinks: { select: { id: true, label: true, url: true } },
+    },
   });
   const coverImage = coverImageStore.toStoredCoverImage(group);
   return {
     description: group.description,
+    links: sortGroupLinks(group.groupLinks),
     coverImageHref: coverImage ? groupCoverImagePath(groupSlug, coverImageStore.coverImageVersion(coverImage)) : null,
     canChange: access.can("manageGroupHome"),
   };
@@ -177,7 +191,7 @@ export async function setGroupDescription(formData: FormData) {
     async ({ userId, groupId }) => {
       await prisma.group.update({
         where: { id: groupId },
-        data: { description, homeUpdatedAt: new Date(), updatedById: userId },
+        data: { description, ...homeChangedBy(userId) },
       });
       revalidateGroupHomeRoute(groupSlug);
     },

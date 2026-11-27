@@ -18,6 +18,7 @@ import type {
   SetListNote,
   File,
   Link,
+  GroupLink,
   Announcement,
 } from "@/app/generated/prisma/client";
 
@@ -292,6 +293,17 @@ export async function createLink(
 ): Promise<Link> {
   return testPrisma.link.create({
     data: { pieceId: piece.id, url, category, createdById: piece.createdById, updatedById: piece.createdById },
+  });
+}
+
+/** A Group link of the Group, by its Creator. */
+export async function createGroupLink(
+  group: Group,
+  label = "Kalender",
+  url = "https://example.com",
+): Promise<GroupLink> {
+  return testPrisma.groupLink.create({
+    data: { groupId: group.id, label, url, createdById: group.createdById, updatedById: group.createdById },
   });
 }
 
