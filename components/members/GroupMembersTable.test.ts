@@ -58,8 +58,8 @@ describe("GroupMembersTable", () => {
 
     expect(text).toContain("Roller: Stämledare");
     expect(text).toContain("Ändra ordning i repertoarer via Stämledare");
-    // Held individually as well, so shown without a Role.
-    expect(text).toContain("Hantera innehåll");
-    expect(text).not.toContain("Hantera innehåll via");
+    expect(text).toContain("Hantera innehåll egen, via Stämledare");
+    expect(text).toContain("Hantera startsidan");
+    expect(text).not.toContain("Hantera startsidan via");
   });
 });

@@ -2,6 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import type { HeldClaim } from "@/lib/group-roles";
 import { cn } from "@/lib/utils";
 
+/** Where a Claim given by Roles comes from; one with no Role is plainly individual and needs no note. */
+function claimSource(individual: boolean, viaRoles: string[]): string {
+  const roles = `via ${viaRoles.join(", ")}`;
+  return individual ? `egen, ${roles}` : roles;
+}
+
 /** A Member's Claims as badges, each saying whether it is held individually or via which Roles. */
 export function GroupMemberClaimBadges({
   member,
@@ -28,12 +34,12 @@ export function GroupMemberClaimBadges({
       {member.heldClaims.map(({ claim, label, individual, viaRoles }) => (
         <Badge key={claim} variant="outline">
           {label}
-          {individual ? null : (
+          {viaRoles.length > 0 ? (
             <>
               {" "}
-              <span className="font-normal text-muted-foreground">via {viaRoles.join(", ")}</span>
+              <span className="font-normal text-muted-foreground">{claimSource(individual, viaRoles)}</span>
             </>
-          )}
+          ) : null}
         </Badge>
       ))}
     </div>
