@@ -4,7 +4,7 @@
 // Question: how should Group links sit beside the Group description on Home —
 // at what width of Home's own column (a container query, so an open or
 // collapsed sidebar counts) do they go side by side, and how is the width split?
-// Four variants via ?variant=A|B|C|D; ?n= sets how many links (0 hides the
+// Four variants via ?variant=A|B|C|D|E; ?n= sets how many links (0 hides the
 // column), ?desc=real|short|long|none swaps the description.
 
 import { useSearchParams } from "next/navigation";
@@ -20,6 +20,7 @@ const VARIANTS = [
   { key: "B", name: "column ≥ 42rem · ½ + ½, plain list" },
   { key: "C", name: "column ≥ 48rem · fluid + fixed 18rem, bordered rows" },
   { key: "D", name: "column ≥ 42rem · ⅗ + ⅖, bordered rows" },
+  { key: "E", name: "column ≥ 48rem · fluid + fixed 18rem, bulleted list" },
 ];
 
 const ALL_LINKS = [
@@ -75,6 +76,25 @@ function PlainLinks({ links }: { links: GroupLink[] }) {
               {link.label}
             </a>
             <span className="text-sm text-muted-foreground"> · {host(link.href)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Bulleted, label as the link and the host muted on its own line beneath. */
+function BulletLinks({ links }: { links: GroupLink[] }) {
+  return (
+    <section className="space-y-2">
+      <h2 className="text-lg font-medium">Länkar</h2>
+      <ul className="list-disc space-y-2 pl-5 marker:text-muted-foreground">
+        {links.map((link) => (
+          <li key={link.href} className="leading-snug">
+            <a href={link.href} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+              {link.label}
+            </a>
+            <span className="block truncate text-sm text-muted-foreground">{host(link.href)}</span>
           </li>
         ))}
       </ul>
@@ -138,6 +158,13 @@ export function HomeGroupLinksPrototype({
       <div className={cn("grid gap-4 md:gap-6", both && "@3xl:grid-cols-[minmax(0,1fr)_18rem] @3xl:gap-10")}>
         <div className="min-w-0">{descriptionSection}</div>
         {links.length > 0 ? <RowLinks links={links} /> : null}
+      </div>
+    );
+  } else if (variant === "E") {
+    body = (
+      <div className={cn("grid gap-4 md:gap-6", both && "@3xl:grid-cols-[minmax(0,1fr)_18rem] @3xl:gap-10")}>
+        <div className="min-w-0">{descriptionSection}</div>
+        {links.length > 0 ? <BulletLinks links={links} /> : null}
       </div>
     );
   } else {
