@@ -2,10 +2,10 @@ import { getGroupHome, getGroups } from "@/app/actions/groups";
 import { getCurrentSetLists } from "@/app/actions/setlists";
 import { BreadcrumbRegistrar } from "@/components/BreadcrumbRegistrar";
 import { EditModeProvider } from "@/components/EditModeContext";
+import { HomeGroupLinksPrototype } from "@/components/HomeGroupLinksPrototype";
 import { PageHeader } from "@/components/PageHeader";
 import { CoverImageSection } from "@/components/home/CoverImageSection";
 import { CurrentSetListsSection } from "@/components/home/CurrentSetListsSection";
-import { GroupDescriptionSection } from "@/components/home/GroupDescriptionSection";
 import { GROUP_HOME_CAPABILITIES } from "@/lib/edit-mode";
 import { formatDate } from "@/lib/format-date";
 
@@ -39,7 +39,8 @@ export default async function TenantGroupPage({ params }: PageProps) {
         {/* Positioned, so it stacks above the Cover image's fade, which pulls it up. */}
         <div className="relative space-y-4 md:space-y-6">
           <PageHeader title="Hem" />
-          <GroupDescriptionSection
+          {/* PROTOTYPE: Group links beside the description. */}
+          <HomeGroupLinksPrototype
             groupSlug={groupSlug}
             description={description}
             hasCoverImage={coverImageHref !== null}
