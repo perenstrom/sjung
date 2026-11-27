@@ -137,15 +137,16 @@ describe("defining Roles", () => {
     const existing = await createRole(group, "Stämledare", ["MANAGE_CONTENT"]);
     actAs(viewer.id);
 
+    // Each attempt starts only when the previous one has settled, so no refusal goes unhandled.
     const attempts = [
-      createGroupRole(roleFormData(group.slug, { name: "Notansvarig", claims: ["MANAGE_MEMBER_AUTHORIZATION"] })),
-      updateGroupRole(roleFormData(group.slug, { roleId: existing.id, name: "Stämledare", claims: [] })),
+      () => createGroupRole(roleFormData(group.slug, { name: "Notansvarig", claims: ["MANAGE_MEMBER_AUTHORIZATION"] })),
+      () => updateGroupRole(roleFormData(group.slug, { roleId: existing.id, name: "Stämledare", claims: [] })),
     ];
     for (const attempt of attempts) {
       if (allowed) {
-        await expect(attempt).resolves.toBeUndefined();
+        await expect(attempt()).resolves.toBeUndefined();
       } else {
-        await expect(attempt).rejects.toThrow(FORBIDDEN);
+        await expect(attempt()).rejects.toThrow(FORBIDDEN);
       }
     }
     const deleting = deleteGroupRole(formData({ groupSlug: group.slug, roleId: existing.id }));
