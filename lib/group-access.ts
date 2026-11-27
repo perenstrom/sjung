@@ -9,7 +9,13 @@ import {
   type GroupCapability,
 } from "@/lib/group-access-policy";
 
-export { changeMemberClaims, removeMember, type GroupCapability } from "@/lib/group-access-policy";
+export {
+  changeMemberClaims,
+  changeMemberRoles,
+  changeRole,
+  removeMember,
+  type GroupCapability,
+} from "@/lib/group-access-policy";
 export type { GroupAccessDenial } from "@/lib/group-access-policy";
 
 /** Per-refusal wording that replaces the default message from `require`. */
@@ -36,6 +42,7 @@ const DEFAULT_MESSAGES: Record<GroupAccessDenial, string> = {
   lacksManageGroupHome: "Du har inte behörighet att ändra gruppens startsida",
   targetIsSelf: "Du kan inte ändra ditt eget medlemskap",
   targetIsCreator: "Gruppens administratör kan inte ändras",
+  roleIsHeld: "Du kan inte ändra en roll som du själv har",
 };
 
 function accessSelect(userId: string) {
@@ -46,7 +53,10 @@ function accessSelect(userId: string) {
     createdById: true,
     users: {
       where: { userId },
-      select: { claims: { select: { claim: true } } },
+      select: {
+        claims: { select: { claim: true } },
+        roles: { select: { roleId: true, role: { select: { claims: { select: { claim: true } } } } } },
+      },
     },
   } satisfies Prisma.GroupSelect;
 }
@@ -57,7 +67,12 @@ function toGroupAccess(userId: string, loaded: LoadedGroup): GroupAccess {
   const facts: GroupAccessFacts = {
     userId,
     creatorId: loaded.createdById,
-    claims: loaded.users.flatMap((membership) => membership.claims.map(({ claim }) => claim)),
+    // A Role is a live link: its Claims count for as long as the Member holds it.
+    claims: loaded.users.flatMap((membership) => [
+      ...membership.claims.map(({ claim }) => claim),
+      ...membership.roles.flatMap(({ role }) => role.claims.map(({ claim }) => claim)),
+    ]),
+    roleIds: loaded.users.flatMap((membership) => membership.roles.map(({ roleId }) => roleId)),
   };
 
   return {

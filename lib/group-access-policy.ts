@@ -39,16 +39,34 @@ export type GroupCapability =
   | "manageGroupHome"
   /** Rename or delete the Group: the Creator only. */
   | "manageGroup"
+  /**
+   * Create Roles, and see the controls for changing them: the Creator or
+   * `MANAGE_MEMBER_AUTHORIZATION` (ADR-0013).
+   */
+  | "manageRoles"
+  /**
+   * Rename, change the Claims of or delete one Role: `manageRoles`, and the
+   * viewer doesn't hold that Role. The Creator holds no Roles, so may change any.
+   */
+  | ChangeRole
   /** Remove one Member: `manageMembers`, and the target is neither the Creator nor the viewer. */
   | RemoveMember
   /**
    * Grant or revoke any Claim on one Member (ADR-0013): the Creator or
    * `MANAGE_MEMBER_AUTHORIZATION`, and the target is neither the Creator nor the viewer.
    */
-  | ChangeMemberClaims;
+  | ChangeMemberClaims
+  /** Give or take Roles on one Member: the same rule as {@link ChangeMemberClaims}. */
+  | ChangeMemberRoles;
 
+export type ChangeRole = { capability: "changeRole"; roleId: string };
 export type RemoveMember = { capability: "removeMember"; targetUserId: string };
 export type ChangeMemberClaims = { capability: "changeMemberClaims"; targetUserId: string };
+export type ChangeMemberRoles = { capability: "changeMemberRoles"; targetUserId: string };
+
+export function changeRole(roleId: string): ChangeRole {
+  return { capability: "changeRole", roleId };
+}
 
 export function removeMember(targetUserId: string): RemoveMember {
   return { capability: "removeMember", targetUserId };
@@ -56,6 +74,10 @@ export function removeMember(targetUserId: string): RemoveMember {
 
 export function changeMemberClaims(targetUserId: string): ChangeMemberClaims {
   return { capability: "changeMemberClaims", targetUserId };
+}
+
+export function changeMemberRoles(targetUserId: string): ChangeMemberRoles {
+  return { capability: "changeMemberRoles", targetUserId };
 }
 
 /** Why a capability was refused. */
@@ -68,13 +90,17 @@ export type GroupAccessDenial =
   | "lacksManageRunningOrderNotes"
   | "lacksManageGroupHome"
   | "targetIsSelf"
-  | "targetIsCreator";
+  | "targetIsCreator"
+  | "roleIsHeld";
 
 /** What one Member's access is derived from. Never stored. */
 export type GroupAccessFacts = {
   userId: string;
   creatorId: string;
+  /** Every Claim the Member holds, individually or through any of their Roles. */
   claims: readonly GroupClaim[];
+  /** The Roles the Member holds. */
+  roleIds: readonly string[];
 };
 
 /** `null` when the Member has the capability, otherwise why not. */
@@ -107,12 +133,19 @@ export function groupAccessDenial(facts: GroupAccessFacts, capability: GroupCapa
   if (capability === "manageGroup") {
     return isCreator ? null : "lacksManageGroup";
   }
-
-  if (capability.capability === "removeMember" && !holds(GroupClaim.MANAGE_MEMBERS)) {
-    return "lacksManageMembers";
+  if (capability === "manageRoles") {
+    return holds(GroupClaim.MANAGE_MEMBER_AUTHORIZATION) ? null : "lacksManageMemberAuthorization";
   }
-  if (capability.capability === "changeMemberClaims" && !holds(GroupClaim.MANAGE_MEMBER_AUTHORIZATION)) {
+
+  // Every remaining capability needs one of the member Claims: removing needs
+  // MANAGE_MEMBERS, everything about Claims and Roles MANAGE_MEMBER_AUTHORIZATION.
+  if (capability.capability === "removeMember") {
+    if (!holds(GroupClaim.MANAGE_MEMBERS)) return "lacksManageMembers";
+  } else if (!holds(GroupClaim.MANAGE_MEMBER_AUTHORIZATION)) {
     return "lacksManageMemberAuthorization";
+  }
+  if (capability.capability === "changeRole") {
+    return facts.roleIds.includes(capability.roleId) ? "roleIsHeld" : null;
   }
   if (capability.targetUserId === facts.userId) {
     return "targetIsSelf";

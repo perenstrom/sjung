@@ -1,11 +1,11 @@
 "use client";
 
 import { ShieldCheck } from "lucide-react";
-import { useId, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { setMemberClaims } from "@/app/actions/groups";
 import type { GroupClaim } from "@/app/generated/prisma/enums";
+import { ClaimCheckboxList } from "@/components/members/ClaimCheckboxList";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -15,9 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { GROUP_CLAIM_OPTIONS } from "@/lib/group-claims";
 import { getThrownMessage } from "@/lib/getThrownMessage";
 
 type GroupMember = {
@@ -27,8 +25,20 @@ type GroupMember = {
   claims: GroupClaim[];
 };
 
-export function GroupMemberClaimsDialog({ groupSlug, member }: { groupSlug: string; member: GroupMember }) {
-  const idPrefix = useId();
+/**
+ * "Behörigheter" on a Member: tick the Claims they hold individually. Claims
+ * they also get through a Role carry a note in `roleNotes`; only the
+ * individual ones are ticked or unticked here.
+ */
+export function GroupMemberClaimsDialog({
+  groupSlug,
+  member,
+  roleNotes,
+}: {
+  groupSlug: string;
+  member: GroupMember;
+  roleNotes?: Partial<Record<GroupClaim, string>>;
+}) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<GroupClaim[]>(member.claims);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +51,6 @@ export function GroupMemberClaimsDialog({ groupSlug, member }: { groupSlug: stri
     } else {
       setError(null);
     }
-  }
-
-  function toggleClaim(claim: GroupClaim, checked: boolean) {
-    setSelected((current) => (checked ? [...current, claim] : current.filter((entry) => entry !== claim)));
   }
 
   // Submitted via onSubmit rather than a form action: React resets a form after its action,
@@ -93,32 +99,12 @@ export function GroupMemberClaimsDialog({ groupSlug, member }: { groupSlug: stri
         <form onSubmit={handleSubmit} className="space-y-4">
           <input type="hidden" name="groupSlug" value={groupSlug} />
           <input type="hidden" name="memberUserId" value={member.id} />
-          {selected.map((claim) => (
-            <input key={claim} type="hidden" name="claims" value={claim} />
-          ))}
-          <div className="space-y-4">
-            {GROUP_CLAIM_OPTIONS.map(({ claim, label, description }) => {
-              const checkboxId = `${idPrefix}-${claim}`;
-              return (
-                <div key={claim} className="flex items-start gap-3">
-                  <Checkbox
-                    id={checkboxId}
-                    className="mt-0.5"
-                    checked={selected.includes(claim)}
-                    onCheckedChange={(checked) => toggleClaim(claim, checked === true)}
-                    disabled={isPending}
-                    aria-describedby={`${checkboxId}-description`}
-                  />
-                  <div className="space-y-1">
-                    <Label htmlFor={checkboxId}>{label}</Label>
-                    <p id={`${checkboxId}-description`} className="text-sm text-muted-foreground">
-                      {description}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ClaimCheckboxList
+            selected={selected}
+            onSelectedChange={setSelected}
+            disabled={isPending}
+            notes={roleNotes}
+          />
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
