@@ -151,11 +151,12 @@ A File or Link marked as not shown on one Set list piece, to keep only what that
 _Avoid_: Allowed, Excluded, Filtered.
 
 **Piece note**:
-A note attached directly to a Piece and visible everywhere that Piece appears — persistent, Group-wide. Swedish UI: _Anteckning_ / _Anteckningar_.
+A note attached directly to a Piece and visible everywhere that Piece appears — persistent, Group-wide. Swedish UI: _Anteckning_ / _Anteckningar_; on a Set list, where Performance notes show beside them, they are headed _För stycket_.
 _Avoid_: Note, Comment — always qualify which of the three note types (see Performance note, Running-order note) you mean.
 
 **Performance note**:
-A note scoped to one Set list piece — one specific appearance of a Piece within one Set list (e.g. "watch the key change here for the Nov concert"). Does not affect that Piece's Piece note, or its appearances in other Set lists.
+A note scoped to one Set list piece — one specific appearance of a Piece within one Set list (e.g. "watch the key change here for the Nov concert"). Does not affect that Piece's Piece notes, or its appearances in other Set lists. A Set list piece has any number of them, most recently changed first, like Piece notes. Every Member can read them, wherever that Set list piece is shown and on the Piece's page opened from it, but only Members holding `MANAGE_CONTENT` can add, edit or delete them. Swedish UI: _Anteckning i repertoaren_ (_för "Julkonsert 2026"_ where the Set list isn't obvious); on the Set list they are headed _I repertoaren_.
+_Avoid_: Set list note — a Running-order note also belongs to the Set list.
 
 **Running-order note**:
 A freestanding entry in a Set list's ordered sequence that isn't tied to any Piece at all (e.g. a pause or an announcement slot) — ordered via the same position sequence as Set list pieces. Its text can be changed without moving it, but never emptied; removing it is always a deletion of its own. Swedish UI: _Anteckning_ (on the Set list page, where it is the only kind of note shown).
