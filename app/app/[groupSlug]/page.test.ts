@@ -14,15 +14,17 @@ vi.mock("@/app/actions/setlists", () => ({
 }));
 
 import { AppBreadcrumbProvider } from "@/components/AppBreadcrumbContext";
-import { renderMarkup, textOf } from "@/lib/testing/markup";
+import { hasHeading, renderMarkup, textOf } from "@/lib/testing/markup";
 import TenantGroupPage from "./page";
 
 describe("a Group's own address", () => {
-  it("shows the Group's Home, with its description and Current Set lists", async () => {
+  it("shows the Group's Home, headed by the Group's name, with its description and Current Set lists", async () => {
     const page = await TenantGroupPage({ params: Promise.resolve({ groupSlug: "kor" }) });
-    const text = textOf(renderMarkup(createElement(AppBreadcrumbProvider, null, page)));
+    const html = renderMarkup(createElement(AppBreadcrumbProvider, null, page));
+    const text = textOf(html);
 
-    expect(text).toContain("Hem");
+    expect(hasHeading(html, "Kören")).toBe(true);
+    expect(hasHeading(html, "Hem")).toBe(false);
     expect(text).toContain("Vi repar tisdagar.");
     expect(text).toContain("Aktuell repertoar");
     expect(text).toContain("Lucia");

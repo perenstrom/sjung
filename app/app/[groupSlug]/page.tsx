@@ -14,7 +14,8 @@ type PageProps = {
 };
 
 /**
- * A Group's Home, at the Group's own address: what every Member sees first.
+ * A Group's Home, at the Group's own address: what every Member sees first,
+ * headed by the Group's name.
  * A one-column stack of sections, each deciding for itself whether it shows;
  * the same for every Member. Edit mode only changes the Cover image and the
  * Group description.
@@ -38,7 +39,7 @@ export default async function TenantGroupPage({ params }: PageProps) {
         <CoverImageSection groupSlug={groupSlug} href={coverImageHref} />
         {/* Positioned, so it stacks above the Cover image's fade, which pulls it up. */}
         <div className="relative space-y-4 md:space-y-6">
-          <PageHeader title="Hem" />
+          <PageHeader title={groupName} />
           <GroupDescriptionSection
             groupSlug={groupSlug}
             description={description}

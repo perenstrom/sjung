@@ -4,7 +4,7 @@ import argon2 from "argon2";
 import { Client } from "pg";
 import { requireDisposableDatabaseUrl } from "@/lib/testing/disposable-database-url";
 
-export type VerifiedCreator = { email: string; password: string; groupSlug: string };
+export type VerifiedCreator = { email: string; password: string; groupName: string; groupSlug: string };
 
 /**
  * A Verified user who is Creator, and so a Member, of their own Group, written
@@ -21,6 +21,7 @@ export async function createVerifiedCreator(): Promise<VerifiedCreator> {
   const groupId = randomUUID();
   const email = `e2e-${id}@test.local`;
   const password = `e2e-password-${id}`;
+  const groupName = "E2E Group";
   const groupSlug = `e2e-${id}`;
   const passwordHash = await argon2.hash(password);
 
@@ -35,8 +36,8 @@ export async function createVerifiedCreator(): Promise<VerifiedCreator> {
     );
     await client.query(
       `INSERT INTO groups (id, updated_at, created_by_id, updated_by_id, name, slug)
-       VALUES ($1, now(), $2, $2, 'E2E Group', $3)`,
-      [groupId, userId, groupSlug],
+       VALUES ($1, now(), $2, $2, $3, $4)`,
+      [groupId, userId, groupName, groupSlug],
     );
     // Creator ⇒ Member, as in app/actions/groups.ts.
     await client.query(`INSERT INTO users_to_groups (user_id, group_id) VALUES ($1, $2)`, [userId, groupId]);
@@ -48,5 +49,5 @@ export async function createVerifiedCreator(): Promise<VerifiedCreator> {
     await client.end();
   }
 
-  return { email, password, groupSlug };
+  return { email, password, groupName, groupSlug };
 }
