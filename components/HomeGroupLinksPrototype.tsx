@@ -2,11 +2,13 @@
 
 // PROTOTYPE: throwaway. Never merge to main.
 // Question: how should Group links sit beside the Group description on Home —
-// at which breakpoint do they go side by side, and how is the width split?
+// at what width of Home's own column (a container query, so an open or
+// collapsed sidebar counts) do they go side by side, and how is the width split?
 // Four variants via ?variant=A|B|C|D; ?n= sets how many links (0 hides the
 // column), ?desc=real|short|long|none swaps the description.
 
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { PrototypeSwitcher } from "@/components/PrototypeSwitcher";
 import { GroupDescriptionSection } from "@/components/home/GroupDescriptionSection";
@@ -14,10 +16,10 @@ import { MobileList, MobileListRow } from "@/components/ui/mobile-list";
 import { cn } from "@/lib/utils";
 
 const VARIANTS = [
-  { key: "A", name: "lg · ⅔ + ⅓, plain list" },
-  { key: "B", name: "md · ½ + ½, plain list" },
-  { key: "C", name: "lg · fluid + fixed 18rem bordered rows" },
-  { key: "D", name: "md · ⅗ + ⅖, bordered rows" },
+  { key: "A", name: "column ≥ 48rem · ⅔ + ⅓, plain list" },
+  { key: "B", name: "column ≥ 42rem · ½ + ½, plain list" },
+  { key: "C", name: "column ≥ 48rem · fluid + fixed 18rem, bordered rows" },
+  { key: "D", name: "column ≥ 42rem · ⅗ + ⅖, bordered rows" },
 ];
 
 const ALL_LINKS = [
@@ -119,31 +121,31 @@ export function HomeGroupLinksPrototype({
   let body: React.ReactNode;
   if (variant === "A") {
     body = (
-      <div className={cn("grid gap-4 md:gap-6", both && "lg:grid-cols-3 lg:gap-10")}>
-        <div className={cn(both && "lg:col-span-2")}>{descriptionSection}</div>
+      <div className={cn("grid gap-4 md:gap-6", both && "@3xl:grid-cols-3 @3xl:gap-10")}>
+        <div className={cn(both && "@3xl:col-span-2")}>{descriptionSection}</div>
         {links.length > 0 ? <PlainLinks links={links} /> : null}
       </div>
     );
   } else if (variant === "B") {
     body = (
-      <div className={cn("grid gap-4 md:gap-6", both && "md:grid-cols-2 md:gap-8")}>
+      <div className={cn("grid gap-4 md:gap-6", both && "@2xl:grid-cols-2 @2xl:gap-8")}>
         {descriptionSection}
         {links.length > 0 ? <PlainLinks links={links} /> : null}
       </div>
     );
   } else if (variant === "C") {
     body = (
-      <div className={cn("grid gap-4 md:gap-6", both && "lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10")}>
+      <div className={cn("grid gap-4 md:gap-6", both && "@3xl:grid-cols-[minmax(0,1fr)_18rem] @3xl:gap-10")}>
         <div className="min-w-0">{descriptionSection}</div>
         {links.length > 0 ? <RowLinks links={links} /> : null}
       </div>
     );
   } else {
     body = (
-      <div className={cn("grid gap-4 md:gap-6", both && "md:grid-cols-5 md:gap-8")}>
-        <div className={cn("min-w-0", both && "md:col-span-3")}>{descriptionSection}</div>
+      <div className={cn("grid gap-4 md:gap-6", both && "@2xl:grid-cols-5 @2xl:gap-8")}>
+        <div className={cn("min-w-0", both && "@2xl:col-span-3")}>{descriptionSection}</div>
         {links.length > 0 ? (
-          <div className={cn(both && "md:col-span-2")}>
+          <div className={cn(both && "@2xl:col-span-2")}>
             <RowLinks links={links} />
           </div>
         ) : null}
@@ -153,14 +155,29 @@ export function HomeGroupLinksPrototype({
 
   return (
     <>
-      {body}
+      {/* The query container: Home's own column, whatever the sidebar is doing. */}
+      <div className="@container">{body}</div>
       <PrototypeSwitcher variants={VARIANTS} current={variant}>
         <div className="flex items-center gap-3 text-xs text-white/80">
           <span>n={n}</span>
           <span>desc={desc}</span>
+          <ColumnWidth />
           <span className="text-white/50">?n=0–12 · ?desc=real|short|long|none</span>
         </div>
       </PrototypeSwitcher>
     </>
   );
+}
+
+/** Shows the width of Home's column live, so the thresholds can be judged with the sidebar open and closed. */
+function ColumnWidth() {
+  const [width, setWidth] = useState<number | null>(null);
+  useEffect(() => {
+    const column = document.querySelector<HTMLElement>(".\\@container");
+    if (!column) return;
+    const observer = new ResizeObserver(() => setWidth(column.clientWidth));
+    observer.observe(column);
+    return () => observer.disconnect();
+  }, []);
+  return width === null ? null : <span>column={width}px ({(width / 16).toFixed(1)}rem)</span>;
 }
