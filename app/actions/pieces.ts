@@ -12,6 +12,7 @@ import { parseCategoryFromFormData } from "@/lib/schemas/categories";
 import { assertNoDuplicateCredits, DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
 import {
   parseCreditPersonIdFromFormData,
+  parseCreditRoleFromFormData,
   parseCreditRolesFromFormData,
   parseLinkIdFromFormData,
   parsePieceAliasIdFromFormData,
@@ -375,6 +376,28 @@ export async function removePersonCredits(formData: FormData) {
 
     if (count === 0) {
       throw new Error("Upphovspersonen finns inte på stycket");
+    }
+
+    await revalidatePieceRoutes(groupSlug, piece.id);
+  });
+}
+
+/** Removes one Credit: that Person in that Credit role on a saved Piece. */
+export async function removeCredit(formData: FormData) {
+  const groupSlug = parseWritableGroupSlugFromFormData(formData);
+  const pieceId = parsePieceIdFromFormData(formData);
+  const personId = parseCreditPersonIdFromFormData(formData);
+  const role = parseCreditRoleFromFormData(formData);
+
+  await runContentMutation(groupSlug, async ({ groupId }) => {
+    const piece = await findInGroup(groupId, "piece", pieceId);
+    const person = await findInGroup(groupId, "person", personId);
+    const { count } = await prisma.personToPiece.deleteMany({
+      where: { pieceId: piece.id, personId: person.id, role },
+    });
+
+    if (count === 0) {
+      throw new Error("Rollen finns inte på stycket");
     }
 
     await revalidatePieceRoutes(groupSlug, piece.id);

@@ -116,6 +116,8 @@ const CONTENT_ACTIONS: Record<string, (group: Group, c: Seeded) => FormData> = {
       roles: JSON.stringify(["Arrangör", "Dirigent"]),
     }),
   removePersonCredits: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, personId: c.person.id }),
+  removeCredit: (g, c) =>
+    formData({ groupSlug: g.slug, pieceId: c.piece.id, personId: c.person.id, role: "Kompositör" }),
   createPieceNote: (g, c) => formData({ groupSlug: g.slug, pieceId: c.piece.id, content: "Andas" }),
   updatePieceNote: (g, c) => formData({ groupSlug: g.slug, pieceNoteId: c.pieceNote.id, content: "Andas" }),
   deletePieceNote: (g, c) => formData({ groupSlug: g.slug, pieceNoteId: c.pieceNote.id }),

@@ -121,6 +121,7 @@ describe("PiecesTable on Alla noter", () => {
   it.each([
     ["rename the piece", 'aria-label="Byt namn på Vem kan segla"'],
     ["remove a Person's Credits", 'aria-label="Ta bort Anna Andersson"'],
+    ["remove one Credit role", 'aria-label="Ta bort rollen Kompositör från Anna Andersson"'],
   ])("offers to %s in edit mode only", (_, control) => {
     editMode.isEditing = true;
     expect(desktopTable(renderPieces([piece]))).toContain(control);
