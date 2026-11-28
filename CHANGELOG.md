@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.0](https://github.com/perenstrom/sjung/compare/v0.3.1...v0.4.0) (2026-11-28)
+
+
+### Features
+
+* **account:** let a User change their own name on Mitt konto (PER-486) ([#236](https://github.com/perenstrom/sjung/issues/236)) ([60dff38](https://github.com/perenstrom/sjung/commit/60dff382459eb63c613972eef98aac36a7389072))
+* **auth:** nudge people to give their full name when signing up (PER-487) ([#238](https://github.com/perenstrom/sjung/issues/238)) ([0aaaf8d](https://github.com/perenstrom/sjung/commit/0aaaf8d8891a9e4b87a47d8898abb554b8afab29))
+* **credits:** remove a single Credit role from a Piece (PER-203) ([#270](https://github.com/perenstrom/sjung/issues/270)) ([50b1249](https://github.com/perenstrom/sjung/commit/50b12492ee7cdd9dc47bca50c3a6e71bbd41787f))
+* **groups:** make creating a Group a deliberate act, with an explanation and a confirmation (PER-501) ([#253](https://github.com/perenstrom/sjung/issues/253)) ([f333fe6](https://github.com/perenstrom/sjung/commit/f333fe6ff5d958e4dc089337a6b52889538b8a9e))
+* **home:** give each Group a Home page with its Current Set lists (PER-498) ([#249](https://github.com/perenstrom/sjung/issues/249)) ([1d1ffc3](https://github.com/perenstrom/sjung/commit/1d1ffc35a23e1a289b74cfeb4ab66374dbb2cb64))
+* **home:** head a group's home with the group's name instead of "Hem" (PER-509) ([#259](https://github.com/perenstrom/sjung/issues/259)) ([4e2845b](https://github.com/perenstrom/sjung/commit/4e2845bc769c3c1170bbddeaec7af9849f49a25c))
+* **home:** list Group links on Home beside the description (PER-510) ([#263](https://github.com/perenstrom/sjung/issues/263)) ([0821a71](https://github.com/perenstrom/sjung/commit/0821a717ccf42973ce4c8c9077afd4cbef026793))
+* **home:** show a Cover image at the top of Home, managed with MANAGE_GROUP_HOME (PER-500) ([#252](https://github.com/perenstrom/sjung/issues/252)) ([d73131c](https://github.com/perenstrom/sjung/commit/d73131c9b03f8558e809dcca227e62a7652c76ac))
+* **home:** show a Group description on Home, edited with the new MANAGE_GROUP_DESCRIPTION Claim (PER-499) ([#251](https://github.com/perenstrom/sjung/issues/251)) ([fba70cc](https://github.com/perenstrom/sjung/commit/fba70cc9e00fd13c4287ab239e68acec26cd78dd))
+* **members:** let a Group define Roles and give them to Members (PER-508) ([#262](https://github.com/perenstrom/sjung/issues/262)) ([1e9986a](https://github.com/perenstrom/sjung/commit/1e9986ab7fa2bcfe223692e1e61e2536567a8656))
+* **members:** split granting Claims off MANAGE_MEMBERS into MANAGE_MEMBER_AUTHORIZATION (PER-492) ([#247](https://github.com/perenstrom/sjung/issues/247)) ([9425a97](https://github.com/perenstrom/sjung/commit/9425a97ad71dde26e35e525ba0ff23a576746de0))
+* **pieces:** show a treble clef for MusicXML and MuseScore Files in a Piece's file list (PER-483) ([#239](https://github.com/perenstrom/sjung/issues/239)) ([5a6b2f1](https://github.com/perenstrom/sjung/commit/5a6b2f190c11ab67b9221bcc931fbbb2803a7418))
+* **setlists:** let a content manager edit a Running-order note's text (PER-489) ([#244](https://github.com/perenstrom/sjung/issues/244)) ([a069b65](https://github.com/perenstrom/sjung/commit/a069b654a12252e579dd68c37d9ba0ffd9f97750))
+* **setlists:** let a Member manage Running-order notes with the new MANAGE_RUNNING_ORDER_NOTES Claim (PER-490) ([#245](https://github.com/perenstrom/sjung/issues/245)) ([3fb235b](https://github.com/perenstrom/sjung/commit/3fb235bd4ee9f719afa9f646118223ebcc2ef054))
+* **setlists:** let a Member reorder any Set list with the new REORDER_SET_LISTS Claim (PER-488) ([#241](https://github.com/perenstrom/sjung/issues/241)) ([45ba29b](https://github.com/perenstrom/sjung/commit/45ba29bf4e2ced6fb465d891d6ddb5927c0ca437))
+* **setlists:** let an editor hide Files and Links on one Set list piece (PER-137) ([#248](https://github.com/perenstrom/sjung/issues/248)) ([d14424d](https://github.com/perenstrom/sjung/commit/d14424dac289d86cb06d249ef586a1b322756249))
+* **setlists:** let the Running-order notes Claim move notes (PER-189) ([#267](https://github.com/perenstrom/sjung/issues/267)) ([3141d55](https://github.com/perenstrom/sjung/commit/3141d5594f1cf1cd8fd6a00cc39c85913da20136))
+* **setlists:** name the add-a-Running-order-note form once and explain what the note is (PER-491) ([#246](https://github.com/perenstrom/sjung/issues/246)) ([6cd256e](https://github.com/perenstrom/sjung/commit/6cd256e6a7615e421169cf725fc54f9e1214dc83))
+
 ## [0.3.1](https://github.com/perenstrom/sjung/compare/v0.3.0...v0.3.1) (2026-11-24)
 
 
