@@ -165,6 +165,28 @@ _Avoid_: Set list note — a Running-order note also belongs to the Set list.
 **Running-order note**:
 A freestanding entry in a Set list's ordered sequence that isn't tied to any Piece at all (e.g. a pause or an announcement slot) — ordered via the same position sequence as Set list pieces. Its text can be changed without moving it, but never emptied; removing it is always a deletion of its own. Swedish UI: _Anteckning_ (on the Set list page, where it is the only kind of note shown).
 
+### Sign-up lists
+
+**Sign-up list**:
+A Group's list of Sign-up options that its Members put themselves down for: who brings what to the Christmas party, which concerts each singer can do. Has a title and an optional Markdown description. Two settings shape it: whether each Sign-up option takes one Sign-up or any number, and how many Sign-up options one Member may sign up for (a number, or any). Both can change at any time; a Sign-up already over a new limit stays, but nobody can add another until it is back under it. A list may also Expect responses. It may have a deadline, and can be closed and reopened by hand; once closed or past its deadline, Members can no longer change their own Sign-ups or Declines. Every Member sees who has signed up on each Sign-up option. Only the Creator and Members holding `MANAGE_SIGN_UP_LISTS` create, change, close and delete lists, and they can also sign other Members up or remove their Sign-ups. Swedish UI: _Anmälningslista_ / _Anmälningslistor_.
+_Avoid_: Poll, Survey, Form — Members pick among options, they don't fill anything in; Doodle.
+
+**Sign-up option**:
+One row of a Sign-up list that Members sign up for: a date, a concert, a dish. Only free text; it has no date or link of its own. Sign-up options keep a manual order, with a new one added last. Renaming one keeps its Sign-ups; deleting one deletes them too. Swedish UI: _Alternativ_.
+_Avoid_: Slot, Row, Item, Choice.
+
+**Sign-up**:
+One Member put down for one Sign-up option. A Member signs up and withdraws only themselves, while the list is open. A Member who leaves the Group loses their Sign-ups. Swedish UI: _Anmälan_ (_Anmäl mig_, _Ta bort min anmälan_ for the actions).
+_Avoid_: Registration, Booking, Vote.
+
+**Expects responses**:
+A Sign-up list's setting saying every Member is expected to answer it, either with at least one Sign-up or with a Decline. Who counts is whoever is a Member right now, including those who joined after the list was made. Only the Creator and Members holding `MANAGE_SIGN_UP_LISTS` see who has declined and who hasn't answered yet; the other Members see only the Sign-ups. Swedish UI: _Alla ska svara_.
+_Avoid_: Mandatory, Required.
+
+**Decline**:
+A Member's answer to a Sign-up list that Expects responses, saying none of its Sign-up options works for them. It counts as a response, unlike not answering. A Member has either Sign-ups on a list or a Decline, never both: signing up clears a Decline, and declining removes their Sign-ups. Only offered on lists that Expect responses. Swedish UI: _Kan inte_.
+_Avoid_: Opt-out, No (as a noun).
+
 ### About Sjung itself
 
 **Feedback**:
