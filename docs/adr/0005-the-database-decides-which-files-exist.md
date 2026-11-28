@@ -12,5 +12,5 @@ We can't change the database and object storage together atomically, so some fai
 
 ## Consequences
 
-- Orphaned objects are expected and harmless. Deleting a Piece or a Group removes everything under its storage prefix, which also sweeps up uploads that were never finalized. The orphan audit (PER-210) remains the way to find what's left.
+- Stray objects are expected and harmless. Deleting a Piece or a Group removes everything under its storage prefix, which also sweeps up uploads that were never finalized. The Storage audit (PER-210) is the way to find what's left.
 - Replace writes the new object's key to the row before deleting the old object, so a crash in between leaves an orphan, never a broken File.
