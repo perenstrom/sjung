@@ -164,6 +164,15 @@ export function parseCreditPersonIdFromFormData(formData: FormData): string {
   return result.data;
 }
 
+/** The `role` field: one Credit role, as stored on a Credit. */
+export function parseCreditRoleFromFormData(formData: FormData): string {
+  const result = pieceCreditItemSchema.shape.role.safeParse(formDataString(formData, "role"));
+  if (!result.success) {
+    throw new Error(result.error.issues[0]?.message ?? INVALID_CREDITS_ERROR);
+  }
+  return result.data;
+}
+
 /** The `roles` field: a JSON list of at least one Credit role. */
 export function parseCreditRolesFromFormData(formData: FormData): string[] {
   let parsed: unknown;

@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 
 import { hasLink, renderMarkup } from "@/lib/testing/markup";
-import { PieceCreditsList, RemoveCreditedPersonButton } from "./PieceCreditsList";
+import { PieceCreditsList, RemoveCreditedPersonButton, RemoveCreditRoleButton } from "./PieceCreditsList";
 
 const credits = [
   { personId: "person-1", role: "Kompositör", person: { name: "Anna Andersson" } },
@@ -23,6 +23,18 @@ describe("PieceCreditsList", () => {
     );
 
     expect(html.match(/aria-label="Ta bort Anna Andersson"/g)).toHaveLength(1);
+  });
+
+  it("puts a remove control on each Credit role badge, naming the role and the Person", () => {
+    const html = renderMarkup(
+      createElement(PieceCreditsList, {
+        credits,
+        renderRoleAction: (person, role) => createElement(RemoveCreditRoleButton, { person, role, onRemove: () => {} }),
+      }),
+    );
+
+    expect(html).toContain('aria-label="Ta bort rollen Kompositör från Anna Andersson"');
+    expect(html).toContain('aria-label="Ta bort rollen Textförfattare från Anna Andersson"');
   });
 
   it("links each name to the Person's page when given personHref", () => {

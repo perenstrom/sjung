@@ -11,6 +11,7 @@ import {
   addCredits,
   createPiece as createPieceAction,
   getCreditRoles,
+  removeCredit,
   removePersonCredits,
 } from "@/app/actions/pieces";
 import { DUPLICATE_CREDITS_ERROR } from "@/lib/pieces/credits";
@@ -155,7 +156,7 @@ describe("Credit roles are free text, stored in the spelling the Group already u
   });
 });
 
-describe("A Person gets several Credit roles on a Piece at once, and loses them together", () => {
+describe("A Person gets several Credit roles on a Piece at once, and loses them one at a time or together", () => {
   let group: Group;
   let person: Person;
 
@@ -206,6 +207,39 @@ describe("A Person gets several Credit roles on a Piece at once, and loses them 
     expect(await rolesOf(piece.id, person.id)).toEqual([]);
     expect(await rolesOf(piece.id, otherPerson.id)).toEqual(["Arrangör"]);
     expect(await rolesOf(otherPiece.id, person.id)).toEqual(["Kompositör"]);
+  });
+
+  const removeCreditInput = (pieceId: string, personId: string, role: string) =>
+    formData({ groupSlug: group.slug, pieceId, personId, role });
+
+  it("removeCredit removes that one Credit and leaves the Person's other roles", async () => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    await createCredit(piece, person, "Kompositör");
+    await createCredit(piece, person, "Arrangör");
+
+    await removeCredit(removeCreditInput(piece.id, person.id, "Arrangör"));
+
+    expect(await rolesOf(piece.id, person.id)).toEqual(["Kompositör"]);
+  });
+
+  it("removeCredit of a Person's only role leaves them no longer credited on the Piece", async () => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    await createCredit(piece, person, "Arrangör");
+
+    await removeCredit(removeCreditInput(piece.id, person.id, "Arrangör"));
+
+    expect(await rolesOf(piece.id, person.id)).toEqual([]);
+  });
+
+  it("removeCredit refuses a Credit that no longer exists and changes nothing", async () => {
+    const piece = await createPiece({ groupId: group.id, createdById: group.createdById });
+    await createCredit(piece, person, "Kompositör");
+
+    await expect(removeCredit(removeCreditInput(piece.id, person.id, "Arrangör"))).rejects.toThrow(
+      "Rollen finns inte på stycket",
+    );
+
+    expect(await rolesOf(piece.id, person.id)).toEqual(["Kompositör"]);
   });
 
   it("removePersonCredits refuses a Person without Credits on the Piece", async () => {
