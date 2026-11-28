@@ -44,4 +44,22 @@ export const SetListPositions = {
 
     return updates;
   },
+
+  /**
+   * Whether `orderedStepIds` keeps the Set list pieces in the order they have among themselves in
+   * `steps`, so that only Running-order notes have moved. `steps` is read in position order; steps
+   * sharing a position keep the order they are given in.
+   */
+  keepsPieceOrder(steps: SetListSequenceStep[], orderedStepIds: string[]): boolean {
+    const currentPieceIds = steps
+      .filter((step) => step.kind === "piece")
+      .sort((a, b) => a.position - b.position)
+      .map((step) => step.id);
+    const pieceIds = new Set(currentPieceIds);
+    const newPieceIds = orderedStepIds.filter((id) => pieceIds.has(id));
+
+    return (
+      newPieceIds.length === currentPieceIds.length && newPieceIds.every((id, index) => id === currentPieceIds[index])
+    );
+  },
 };

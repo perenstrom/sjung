@@ -299,7 +299,10 @@ async function setHiddenOnSetListPiece(formData: FormData, hidden: boolean) {
   });
 }
 
-/** Allowed with `manageContent` or `reorderSetLists` (ADR-0012), for any of the Group's Set lists. */
+/**
+ * Allowed for any of the Group's Set lists with `manageContent` or `reorderSetLists`, or with
+ * `manageRunningOrderNotes` as long as only Running-order notes move (ADR-0012).
+ */
 export async function reorderSetListSteps(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const setListId = parseSetListIdFromFormData(formData);
@@ -307,18 +310,24 @@ export async function reorderSetListSteps(formData: FormData) {
 
   await runContentMutation(
     groupSlug,
-    async ({ userId, groupId }) => {
+    async ({ userId, groupId, access }) => {
       const setList = await findInGroup(groupId, "setList", setListId, { select: { id: true, slug: true } });
-      await SetListSequence.reorder(setList.id, orderedSetListStepIds, userId);
+      const mayMovePieces = access.can("manageContent") || access.can("reorderSetLists");
+      await SetListSequence.reorder(
+        setList.id,
+        orderedSetListStepIds,
+        userId,
+        mayMovePieces ? {} : { onPieceOrderChange: () => access.require("reorderSetLists") },
+      );
 
       revalidateGroupSetListDetailRoutes(groupSlug, setList.slug);
     },
-    { alsoAllowedBy: "reorderSetLists" },
+    { alsoAllowedBy: ["reorderSetLists", "manageRunningOrderNotes"] },
   );
 }
 
 /** What a Running-order note action also accepts besides `manageContent` (ADR-0012), in any of the Group's Set lists. */
-const ALSO_ALLOWED_BY_NOTES_CLAIM = { alsoAllowedBy: "manageRunningOrderNotes" } as const;
+const ALSO_ALLOWED_BY_NOTES_CLAIM = { alsoAllowedBy: ["manageRunningOrderNotes"] } as const;
 
 export async function appendSetListNote(formData: FormData) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);

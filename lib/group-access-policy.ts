@@ -22,13 +22,17 @@ export type GroupCapability =
   /**
    * Change the order of the steps in any of the Group's Set lists (ADR-0012):
    * the Creator or `REORDER_SET_LISTS`. Not implied by `manageContent`; an
-   * action that allows reordering accepts either.
+   * action that allows reordering accepts either. Without it,
+   * `manageRunningOrderNotes` still allows a new order that moves only
+   * Running-order notes.
    */
   | "reorderSetLists"
   /**
-   * Add, edit and delete the Running-order notes in any of the Group's Set
-   * lists (ADR-0012): the Creator or `MANAGE_RUNNING_ORDER_NOTES`. Not implied
-   * by `manageContent`; an action on a Running-order note accepts either.
+   * Add, edit, delete and move the Running-order notes in any of the Group's
+   * Set lists (ADR-0012): the Creator or `MANAGE_RUNNING_ORDER_NOTES`. Not
+   * implied by `manageContent`; an action on a Running-order note accepts
+   * either. A move may put a note anywhere, as long as the Set list pieces
+   * keep their order among themselves.
    */
   | "manageRunningOrderNotes"
   /**

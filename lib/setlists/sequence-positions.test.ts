@@ -74,3 +74,23 @@ describe("SetListPositions.positionsAfterReorder", () => {
     expect(() => SetListPositions.positionsAfterReorder(steps, ["A", "X"])).toThrow("Ogiltig ordning");
   });
 });
+
+describe("SetListPositions.keepsPieceOrder", () => {
+  // Running order: piece A, note N, piece B, note M.
+  const steps = [step("piece", "A", 1), step("note", "N", 2), step("piece", "B", 3), step("note", "M", 4)];
+
+  it.each([
+    { label: "a note moved before the first piece", orderedStepIds: ["N", "A", "B", "M"], keeps: true },
+    { label: "a note moved past another note", orderedStepIds: ["A", "B", "M", "N"], keeps: true },
+    { label: "the order unchanged", orderedStepIds: ["A", "N", "B", "M"], keeps: true },
+    { label: "two pieces swapped", orderedStepIds: ["B", "N", "A", "M"], keeps: false },
+    { label: "a piece moved past every note", orderedStepIds: ["N", "B", "M", "A"], keeps: false },
+  ])("$label: keeps the pieces in order is $keeps", ({ orderedStepIds, keeps }) => {
+    expect(SetListPositions.keepsPieceOrder(steps, orderedStepIds)).toBe(keeps);
+  });
+
+  it("reads the current order from positions, not from the order the steps are given in", () => {
+    const unsorted = [step("piece", "B", 3), step("piece", "A", 1)];
+    expect(SetListPositions.keepsPieceOrder(unsorted, ["A", "B"])).toBe(true);
+  });
+});

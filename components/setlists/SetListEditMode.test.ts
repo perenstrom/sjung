@@ -95,6 +95,12 @@ function buttonsNamed(name: string): HTMLButtonElement[] {
   return [...container.querySelectorAll("button")].filter((button) => button.textContent?.trim() === name);
 }
 
+/** Which step a control belongs to: the note's text, or the piece's name. */
+function stepOf(control: Element): string | undefined {
+  const row = control.closest("tr, li");
+  return ["Paus", "Vem kan segla"].find((name) => row?.textContent?.includes(name));
+}
+
 function noteEditors(): HTMLTextAreaElement[] {
   return [...container.querySelectorAll<HTMLTextAreaElement>('textarea[aria-label="Anteckning"]')];
 }
@@ -123,7 +129,7 @@ describe("Edit mode on a Set list", () => {
     expect(container.querySelector('[aria-label^="Byt namn"]')).toBeNull();
   });
 
-  it("lets a Member who manages only Running-order notes add, edit and delete them, and nothing else", () => {
+  it("lets a Member who manages only Running-order notes add, edit, move and delete them, and nothing else", () => {
     render(["manageRunningOrderNotes"]);
     turnOnEditMode();
 
@@ -131,7 +137,9 @@ describe("Edit mode on a Set list", () => {
     expect(text).toContain("Lägg till anteckning");
     expect(buttonsNamed("Ta bort")).not.toEqual([]);
     expect(text).not.toContain("Ta bort från repertoaren");
-    expect(text).not.toContain("Flytta upp");
+    const moves = [...buttonsNamed("Flytta upp"), ...buttonsNamed("Flytta ner")];
+    expect(moves).not.toEqual([]);
+    expect(moves.map((button) => stepOf(button))).toEqual(moves.map(() => "Paus"));
     expect(text).not.toContain("Lägg till stycke");
     expect(container.querySelector('[aria-label="Lägg till upphovsperson"]')).toBeNull();
 

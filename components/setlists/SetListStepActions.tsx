@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   MANAGE_CONTENT_CAPABILITIES,
+  MOVE_RUNNING_ORDER_NOTE_CAPABILITIES,
   REORDER_SET_LIST_CAPABILITIES,
   RUNNING_ORDER_NOTE_CAPABILITIES,
 } from "@/lib/edit-mode";
@@ -70,7 +71,7 @@ function MoveStepButton({
 /**
  * Move up, move down and remove controls for one step of a set list, and an
  * edit control for a Running-order note. Each shows only with the capability
- * it needs: moving with `reorderSetLists`, a note's edit and remove with
+ * it needs: moving with `reorderSetLists`, a note's move, edit and remove with
  * `manageRunningOrderNotes`, removing a piece with `manageContent`, which
  * allows all of them.
  */
@@ -88,7 +89,9 @@ export function SetListStepActions({
   setListId: string;
 }) {
   const isNote = step.kind === "note";
-  const { isEditing: showsMoves } = useEditMode(REORDER_SET_LIST_CAPABILITIES);
+  const { isEditing: showsMoves } = useEditMode(
+    isNote ? MOVE_RUNNING_ORDER_NOTE_CAPABILITIES : REORDER_SET_LIST_CAPABILITIES,
+  );
   const { isEditing: showsEditAndRemove } = useEditMode(
     isNote ? RUNNING_ORDER_NOTE_CAPABILITIES : MANAGE_CONTENT_CAPABILITIES,
   );

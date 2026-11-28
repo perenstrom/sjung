@@ -21,9 +21,11 @@ import {
   createPiece,
   createPieceAlias,
   createPieceNote,
+  createRole,
   createSetList,
   createSetListNote,
   createSetListPiece,
+  giveRoles,
 } from "../support/fixtures";
 import { formData } from "../support/form-data";
 import { actAs } from "../support/session";
@@ -249,6 +251,8 @@ describe("content actions require manageContent, or the fine-grained Claim that 
     FINE_GRAINED_CLAIMS.flatMap((claim) =>
       Object.keys(CONTENT_ACTIONS)
         .filter((name) => ALSO_ALLOWED_BY[name]?.claim !== claim)
+        // The fixture's reorder moves only a note, which this Claim allows (covered below).
+        .filter((name) => !(name === REORDER && claim === GroupClaim.MANAGE_RUNNING_ORDER_NOTES))
         .map((name) => [name, claim] as const),
     ),
   )("%s refuses a Member with only %s", async (name, claim) => {
@@ -269,6 +273,70 @@ describe("content actions require manageContent, or the fine-grained Claim that 
     await setListActions.reorderSetListSteps(CONTENT_ACTIONS[REORDER](group, content));
 
     expect(await runningOrder(content.setList.id)).toEqual([content.setListNote.id, content.setListPiece.id]);
+  });
+
+  describe("moving Running-order notes without REORDER_SET_LISTS", () => {
+    /** Running order P, N, Q, M: the seeded piece and note, then a second piece and note. */
+    let order: { P: string; N: string; Q: string; M: string };
+
+    beforeEach(async () => {
+      const second = await createPiece({ groupId: group.id, createdById: group.createdById });
+      order = {
+        P: content.setListPiece.id,
+        N: content.setListNote.id,
+        Q: (await createSetListPiece(content.setList, second, 3000)).id,
+        M: (await createSetListNote(content.setList, "Presentation", 4000)).id,
+      };
+    });
+
+    function reorder(orderedSetListStepIds: string[]) {
+      return setListActions.reorderSetListSteps(
+        formData({
+          groupSlug: group.slug,
+          setListId: content.setList.id,
+          orderedSetListStepIds: JSON.stringify(orderedSetListStepIds),
+        }),
+      );
+    }
+
+    it.each(["directly", "through a Role"])(
+      "moves notes past pieces and past each other, holding the Claim %s",
+      async (holding) => {
+        const member = await createMember(group, holding === "directly" ? [GroupClaim.MANAGE_RUNNING_ORDER_NOTES] : []);
+        if (holding === "through a Role") {
+          await giveRoles(member.id, [
+            await createRole(group, "Konferencier", [GroupClaim.MANAGE_RUNNING_ORDER_NOTES]),
+          ]);
+        }
+        actAs(member.id);
+        const { P, N, Q, M } = order;
+
+        await reorder([N, P, Q, M]); // N up past a piece
+        await reorder([N, P, M, Q]); // M up past a piece
+        await reorder([P, N, M, Q]); // N down past a piece
+        await reorder([P, M, N, Q]); // M up past a note
+
+        expect(await runningOrder(content.setList.id)).toEqual([P, M, N, Q]);
+      },
+    );
+
+    it("is refused when the order swaps two pieces, and nothing changes", async () => {
+      actAs((await createMember(group, [GroupClaim.MANAGE_RUNNING_ORDER_NOTES])).id);
+      const before = await allContent();
+      const { P, N, Q, M } = order;
+
+      await expect(reorder([Q, N, P, M])).rejects.toThrow(REORDER_REFUSED);
+      expect(await allContent()).toEqual(before);
+    });
+
+    it("leaves a REORDER_SET_LISTS Member free to swap pieces", async () => {
+      actAs((await createMember(group, [GroupClaim.REORDER_SET_LISTS])).id);
+      const { P, N, Q, M } = order;
+
+      await reorder([Q, N, P, M]);
+
+      expect(await runningOrder(content.setList.id)).toEqual([Q, N, P, M]);
+    });
   });
 
   it.each<[string, boolean, () => Promise<string>]>([
