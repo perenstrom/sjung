@@ -172,12 +172,24 @@ A free-text message a Verified user sends to the people running Sjung, about the
 _Avoid_: Support, Ticket, Bug report — nothing tracks or guarantees an answer.
 
 **Operator**:
-One of the people running Sjung. A site-wide standing, unrelated to any Group: it is not a Claim, grants no Group access, and lets them publish, edit and delete Announcements and see the Group overview. Granted outside the app, never by another User. See ADR-0008.
+One of the people running Sjung. A site-wide standing, unrelated to any Group: it is not a Claim, grants no Group access, and lets them publish, edit and delete Announcements and see the Group overview and the Storage audit. Granted outside the app, never by another User. See ADR-0008.
 _Avoid_: Admin, Site admin (the Creator is _Administratör_ in the UI), Staff, Superuser.
 
 **Group overview**:
 The Operators' list of every Group in Sjung, showing what each Group is and how big it is (name, slug, when it was created, its Creator, how much it holds and when its content last changed) but never what is in it: no Piece titles, no Member names, no Files. Seeing a Group there gives an Operator no Group access. Swedish UI: _Grupper_, under _Drift_.
 _Avoid_: Admin panel, Dashboard.
+
+**Storage audit**:
+The Operators' comparison of what object storage holds with what Sjung expects it to hold: every File's content, the score Sjung converted it to for playing, and every Group's cover image. It finds Stray objects and Missing content and only reports them; it never deletes or repairs anything. Like the Group overview, it shows Group names but never what is in a Group: no Piece titles, no File names, only storage keys, sizes and dates. Swedish UI: _Lagring_, under _Drift_.
+_Avoid_: Orphan audit, Admin tool.
+
+**Stray object**:
+Something in object storage that no File, converted score or cover image points at, such as an upload that was never finished or a delete that only partly succeeded. Nobody can see or download it, so it costs only storage (ADR-0005). An object stored in the last 24 hours doesn't count yet, because its upload may still be under way.
+_Avoid_: Orphan, Orphaned file — it is not a File.
+
+**Missing content**:
+A File, converted score or cover image whose stored content isn't in object storage. Unlike a Stray object, Members see it: a download that fails, a score that won't play, a Home without its image.
+_Avoid_: Broken file, Missing file.
 
 **Announcement**:
 News about Sjung itself (new features, changes, planned downtime), published by an Operator to every Verified user, whichever Groups they are in. It is never addressed to a single Group, and Groups cannot publish them: a Group's own news is a Notice. Each User has read or not read each Announcement on its own: it becomes read when they open it, or when they mark all of them as read at once. Announcements published before a User's account was created count as already read. Swedish UI: _Nyheter_.
