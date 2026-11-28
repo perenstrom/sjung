@@ -24,7 +24,12 @@ async function lockSetList(tx: Prisma.TransactionClient, setListId: string): Pro
 
 async function readSequenceSteps(tx: Prisma.TransactionClient, setListId: string): Promise<SetListSequenceStep[]> {
   const [pieces, notes] = await Promise.all([
-    tx.setListPiece.findMany({ where: { setListId }, select: { id: true, position: true } }),
+    // Pieces sharing a position keep creation order, as in `steps`, for `keepsPieceOrder`.
+    tx.setListPiece.findMany({
+      where: { setListId },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: { id: true, position: true },
+    }),
     tx.setListNote.findMany({ where: { setListId }, select: { id: true, position: true } }),
   ]);
 
@@ -109,12 +114,24 @@ export const SetListSequence = {
   /**
    * Puts the steps in the order of `orderedStepIds`.
    * Throws "Ogiltig ordning" when the ids aren't exactly the set list's current steps.
+   *
+   * `onPieceOrderChange` runs when the new order changes the order of the Set list pieces among
+   * themselves, rather than only moving Running-order notes. It runs inside the set list's lock,
+   * against its current order, and throwing from it refuses the reorder before anything is written.
    */
-  async reorder(setListId: string, orderedStepIds: string[], userId: string): Promise<void> {
+  async reorder(
+    setListId: string,
+    orderedStepIds: string[],
+    userId: string,
+    { onPieceOrderChange }: { onPieceOrderChange?: () => void } = {},
+  ): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await lockSetList(tx, setListId);
       const steps = await readSequenceSteps(tx, setListId);
       const updates = SetListPositions.positionsAfterReorder(steps, orderedStepIds);
+      if (onPieceOrderChange && !SetListPositions.keepsPieceOrder(steps, orderedStepIds)) {
+        onPieceOrderChange();
+      }
 
       for (const update of updates) {
         const data = { position: update.position, updatedById: userId };

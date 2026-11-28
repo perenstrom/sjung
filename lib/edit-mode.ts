@@ -15,13 +15,22 @@ export const REORDER_SET_LIST_CAPABILITIES: readonly EditCapability[] = ["reorde
 /** What adding, editing and deleting a Running-order note need: either capability allows it (ADR-0012). */
 export const RUNNING_ORDER_NOTE_CAPABILITIES: readonly EditCapability[] = ["manageRunningOrderNotes", "manageContent"];
 
+/**
+ * What a Running-order note's move buttons need: either reorder capability, or the notes capability,
+ * which may move a note but never a Set list piece (ADR-0012).
+ */
+export const MOVE_RUNNING_ORDER_NOTE_CAPABILITIES: readonly EditCapability[] = [
+  ...new Set([...REORDER_SET_LIST_CAPABILITIES, ...RUNNING_ORDER_NOTE_CAPABILITIES]),
+];
+
 /** What changing Home's Group description and Cover image needs: only its own capability, never `manageContent`. */
 export const GROUP_HOME_CAPABILITIES: readonly EditCapability[] = ["manageGroupHome"];
 
-/** What a Set list's step actions need: any of the capabilities behind its move, edit and remove controls. */
-export const SET_LIST_STEP_CAPABILITIES: readonly EditCapability[] = [
-  ...new Set([...REORDER_SET_LIST_CAPABILITIES, ...RUNNING_ORDER_NOTE_CAPABILITIES]),
-];
+/**
+ * What a Set list's step actions need: any of the capabilities behind its move, edit and remove
+ * controls. Moving a Running-order note already takes every one of them.
+ */
+export const SET_LIST_STEP_CAPABILITIES: readonly EditCapability[] = MOVE_RUNNING_ORDER_NOTE_CAPABILITIES;
 
 /**
  * The capabilities among `relevant` (those that matter on the page) the

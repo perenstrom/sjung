@@ -59,23 +59,22 @@ export async function runGroupMutation<TResult>(
  * `manageContent` once, then run the mutation. The mutation looks up the rows
  * it touches with `findInGroup`, and revalidates as its last step.
  *
- * A change that a fine-grained Claim also allows (ADR-0012) names its
- * capability in `alsoAllowedBy`: either it or `manageContent` lets the change
- * through, and a Member holding neither is told about the narrower one.
+ * A change that fine-grained Claims also allow (ADR-0012) names their
+ * capabilities in `alsoAllowedBy`: any of them or `manageContent` lets the
+ * change through, and a Member holding none is told about the first one.
  */
 export async function runContentMutation<TResult>(
   groupSlug: string,
   mutation: (ctx: GroupMutationContext) => Promise<TResult>,
-  { alsoAllowedBy }: { alsoAllowedBy?: GroupCapability } = {},
+  { alsoAllowedBy = [] }: { alsoAllowedBy?: readonly GroupCapability[] } = {},
 ): Promise<TResult> {
   return runGroupMutation(
     groupSlug,
     async ({ access }) => {
-      if (alsoAllowedBy && !access.can("manageContent")) {
-        access.require(alsoAllowedBy);
-      } else {
-        access.require("manageContent");
+      if (access.can("manageContent") || alsoAllowedBy.some((capability) => access.can(capability))) {
+        return;
       }
+      access.require(alsoAllowedBy[0] ?? "manageContent");
     },
     mutation,
   );
