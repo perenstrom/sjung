@@ -363,41 +363,30 @@ export async function addCredits(formData: FormData) {
 
 /** Removes every Credit a Person has on a saved Piece. */
 export async function removePersonCredits(formData: FormData) {
-  const groupSlug = parseWritableGroupSlugFromFormData(formData);
-  const pieceId = parsePieceIdFromFormData(formData);
-  const personId = parseCreditPersonIdFromFormData(formData);
-
-  await runContentMutation(groupSlug, async ({ groupId }) => {
-    const piece = await findInGroup(groupId, "piece", pieceId);
-    const person = await findInGroup(groupId, "person", personId);
-    const { count } = await prisma.personToPiece.deleteMany({
-      where: { pieceId: piece.id, personId: person.id },
-    });
-
-    if (count === 0) {
-      throw new Error("Upphovspersonen finns inte på stycket");
-    }
-
-    await revalidatePieceRoutes(groupSlug, piece.id);
-  });
+  await removeCreditsOfPerson(formData, {}, "Upphovspersonen finns inte på stycket");
 }
 
 /** Removes one Credit: that Person in that Credit role on a saved Piece. */
 export async function removeCredit(formData: FormData) {
+  const role = parseCreditRoleFromFormData(formData);
+  await removeCreditsOfPerson(formData, { role }, "Rollen finns inte på stycket");
+}
+
+/** Removes a Person's Credits on a saved Piece, narrowed by `where`; throws `notFoundError` if none matched. */
+async function removeCreditsOfPerson(formData: FormData, where: Prisma.PersonToPieceWhereInput, notFoundError: string) {
   const groupSlug = parseWritableGroupSlugFromFormData(formData);
   const pieceId = parsePieceIdFromFormData(formData);
   const personId = parseCreditPersonIdFromFormData(formData);
-  const role = parseCreditRoleFromFormData(formData);
 
   await runContentMutation(groupSlug, async ({ groupId }) => {
     const piece = await findInGroup(groupId, "piece", pieceId);
     const person = await findInGroup(groupId, "person", personId);
     const { count } = await prisma.personToPiece.deleteMany({
-      where: { pieceId: piece.id, personId: person.id, role },
+      where: { ...where, pieceId: piece.id, personId: person.id },
     });
 
     if (count === 0) {
-      throw new Error("Rollen finns inte på stycket");
+      throw new Error(notFoundError);
     }
 
     await revalidatePieceRoutes(groupSlug, piece.id);
