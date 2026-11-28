@@ -10,7 +10,9 @@ Each new Claim stands on its own. It does not imply or require `MANAGE_CONTENT`,
 
 - **Tie new Claims to `MANAGE_CONTENT`** (for example, show them as implied in the Behörigheter dialog). Rejected: it would build on a Claim that is going away.
 - **Grant reordering per Set list** instead of Group-wide. Rejected: nothing else in the model has per-row permissions, and a Group-wide Claim reuses the Claims table ADR-0002 chose for exactly this.
+- **Add a Running-order note at a chosen position** so that `MANAGE_RUNNING_ORDER_NOTES` never needs to move anything (PER-189). Rejected: it needs new insert controls between every pair of steps, and a note added in the wrong place would still be stuck. Instead `MANAGE_RUNNING_ORDER_NOTES` may also move Running-order notes; see Consequences.
 
 ## Consequences
 
 - Edit mode is no longer one switch tied to `manageContent`. It is offered when the Member has any capability that matters on the page, and each control inside it checks its own capability.
+- Two Claims can allow a reorder. `REORDER_SET_LISTS` allows any new order of the steps. `MANAGE_RUNNING_ORDER_NOTES` allows a new order only if the Set list pieces keep their order among themselves, so only Running-order notes have moved (PER-189). Each Claim covers one kind of step, so neither overlaps the other.
